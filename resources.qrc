@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/citydb_loader" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
