@@ -146,7 +146,7 @@ class DBLoader:
 
         if add_to_toolbar:
             # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
+            self.iface.addDatabaseToolBarIcon(action)
 
         if add_to_menu:
             self.iface.addPluginToDatabaseMenu(
@@ -177,7 +177,7 @@ class DBLoader:
             self.iface.removePluginDatabaseMenu(
                 self.tr(u'&3DCityDB-Loader'),
                 action)
-            self.iface.removeToolBarIcon(action)
+            self.iface.removeDatabaseToolBarIcon(action)
 
 
     def run(self):
