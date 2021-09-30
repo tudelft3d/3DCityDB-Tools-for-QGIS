@@ -1,5 +1,0 @@
-<RCC>
-  <qresource prefix="/plugins/3DCityDB-Loader" >
-     <file>icon.png</file>
-  </qresource>
-</RCC>
