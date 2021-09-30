@@ -1,0 +1,43 @@
+; Mandatory metadata
+[general]
+name=3DCityDB-Loader
+email=konstantinospantelios@yahoo.com
+author=Konstantinos Pantelios
+qgisMinimumVersion=3.0
+description=This is an experimental plugin for 3DCityDB data visualization and manipulation.
+about=Relational database are very good at storing and handling massive amount of 
+data, however everyday users often find it hard to navigate, explore and work with data directly from the database.
+This plugin can be used to bring 3DCityDB data into the more widespread and straitforward world of QGIS. 
+version=version 0.1
+tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+; end of mandatory metadata
+
+; start of optional metadata
+category=Database
+changelog=Nothing yet
+
+; Tags are in comma separated value format, spaces are allowed within the
+; tag name.
+; Tags should be in English language. Please also check for existing tags and
+; synonyms before creating a new one.
+tags=database,3DCityDB,postgres,loader
+
+; these metadata can be empty, they will eventually become mandatory.
+homepage=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+icon=icon.png
+
+; experimental flag (applies to the single version)
+experimental=True
+
+; deprecated flag (applies to the whole plugin and not only to the uploaded version)
+deprecated=False
+
+; if empty, it will be automatically set to major version + .99
+qgisMaximumVersion=3.99
+
+; Since QGIS 3.8, a comma separated list of plugins to be installed
+; (or upgraded) can be specified.
+; The example below will try to install (or upgrade) "MyOtherPlugin" version 1.12
+; and any version of "YetAnotherPlugin"
+; plugin_dependencies=MyOtherPlugin==1.12,YetAnotherPlugin
