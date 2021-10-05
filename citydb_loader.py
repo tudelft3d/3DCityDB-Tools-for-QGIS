@@ -23,7 +23,8 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from qgis.core import QgsProject, Qgis #imported by pankost
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -31,6 +32,8 @@ from .resources import *
 from .citydb_loader_dialog import DBLoaderDialog
 import os.path
 
+import re 
+import configparser
 
 class DBLoader:
     """QGIS Plugin Implementation."""
@@ -179,6 +182,16 @@ class DBLoader:
                 action)
             self.iface.removeDatabaseToolBarIcon(action)
 
+    #pankost
+    def select_output_file(self):
+        filename, _filter = QFileDialog.getSaveFileName(
+        self.dlg, "Select   output file ","")
+        self.dlg.lineEdit.setText(filename)
+
+    def success_msg(self,filename):
+        self.iface.messageBar().pushMessage("Success", 
+                "Output file written at " + filename,
+                level=Qgis.Success, duration=5)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -188,6 +201,23 @@ class DBLoader:
         if self.first_start == True:
             self.first_start = False
             self.dlg = DBLoaderDialog()
+            #self.dlg.pushButton.clicked.connect(self.select_output_file)
+
+
+        # Clear the contents of the comboBox from previous runs
+        self.dlg.comboBox.clear()
+        # Populate the comboBox with names of all the loaded layers
+        ini_path = '/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini'
+        parser = configparser.ConfigParser()
+
+        parser.read(ini_path)
+
+        wms = re.compile('.*\database')
+        for key in parser['PostgreSQL']:
+            if '\database' in str(key):
+                self.dlg.comboBox.addItems([parser['PostgreSQL'][key]])
+
+
 
         # show the dialog
         self.dlg.show()
@@ -197,4 +227,12 @@ class DBLoader:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
-            pass
+            
+            selectedLayerIndex = self.dlg.comboBox.currentIndex()
+
+            print("all is good for now")
+            filename = self.dlg.lineEdit.text()
+
+
+            self.success_msg(filename)
+            
