@@ -204,6 +204,7 @@ class DBLoader:
             #self.dlg.pushButton.clicked.connect(self.select_output_file)
 
 
+################## GET CONNECTION DETAILS ################################
         # Clear the contents of the comboBox from previous runs
         self.dlg.comboBox.clear()
         # Populate the comboBox with names of all the loaded layers
@@ -212,27 +213,29 @@ class DBLoader:
 
         parser.read(ini_path)
 
-        wms = re.compile('.*\database')
+        db_name = re.compile('.*\database')
         for key in parser['PostgreSQL']:
             if '\database' in str(key):
                 self.dlg.comboBox.addItems([parser['PostgreSQL'][key]])
-
+################################################################################################
 
 
         # show the dialog
         self.dlg.show()
+        
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
+        
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             
             selectedLayerIndex = self.dlg.comboBox.currentIndex()
 
-            print("all is good for now")
-            filename = self.dlg.lineEdit.text()
+            msg= "all is good for now"
+            #filename = self.dlg.lineEdit.text()
 
 
-            self.success_msg(filename)
+            self.success_msg(msg)
             
