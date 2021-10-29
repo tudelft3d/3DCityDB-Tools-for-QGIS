@@ -32,6 +32,8 @@ from .resources import *
 from .citydb_loader_dialog import DBLoaderDialog
 import os.path
 
+import sys, os, subprocess
+
 import re 
 import configparser
 
@@ -170,9 +172,17 @@ class DBLoader:
             callback=self.run,
             parent=self.iface.mainWindow())
 
+## Adds extra 'plugin' but it runs the Loader's process instead of its own. <TODO>   ##########    
+        icon_path = os.path.join(os.path.dirname(__file__), "update.png")
+        self.add_action(
+            icon_path,
+            text=self.tr(u'Update 3DCityDB'),
+            callback=self.run,
+            parent=self.iface.mainWindow())
+
         # will be set False in run()
         self.first_start = True
-
+###########################################################################################3        
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
