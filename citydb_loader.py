@@ -218,15 +218,19 @@ class DBLoader:
         # Clear the contents of the comboBox from previous runs
         self.dlg.comboBox.clear()
         # Populate the comboBox with names of all the loaded layers
-        ini_path = '/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini'
+        ini_path = '/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini' #TODO: convert it to relative path
         parser = configparser.ConfigParser()
+        parser.optionxform = str #Makes path 'Case Sensitive'
 
         parser.read(ini_path)
 
-        db_name = re.compile('.*\database')
+        #db_name = re.compile('.*\database')
         for key in parser['PostgreSQL']:
+    
             if '\database' in str(key):
-                self.dlg.comboBox.addItems([parser['PostgreSQL'][key]])
+                connection_name = str(key).split("\\")[1]
+                self.dlg.comboBox.addItems(['   '.join((parser['PostgreSQL'][key],f"(Connection name: {connection_name})"))])
+
 ################################################################################################
 
 
