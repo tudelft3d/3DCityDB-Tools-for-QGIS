@@ -168,17 +168,10 @@ class DBLoader:
         icon_path = ':/plugins/citydb_loader/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u'Load 3DCityDB'),
+            text=self.tr(u'&3DCityDB-Loader'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
-## Adds extra 'plugin' but it runs the Loader's process instead of its own. <TODO>   ##########    
-        icon_path = os.path.join(os.path.dirname(__file__), "update.png")
-        self.add_action(
-            icon_path,
-            text=self.tr(u'Update 3DCityDB'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
 
         # will be set False in run()
         self.first_start = True
@@ -233,7 +226,8 @@ class DBLoader:
 
 ################################################################################################
 
-
+        print(self.dlg)
+        print(self)
         # show the dialog
         self.dlg.show()
         
