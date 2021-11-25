@@ -43,5 +43,8 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         
+
+
+
         #TODO: Add QT slots here either from other files or better from method of this class
-        print('here: ',self)
+        

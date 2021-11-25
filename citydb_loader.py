@@ -23,13 +23,16 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import QgsProject, Qgis #imported by pankost
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .citydb_loader_dialog import DBLoaderDialog
+from .connector import DlgConnector
+
+
 import os.path
 
 import sys, os, subprocess
@@ -195,6 +198,16 @@ class DBLoader:
         self.iface.messageBar().pushMessage("Success", 
                 "Output file written at " + filename,
                 level=Qgis.Success, duration=5)
+                
+    def evt_btnConnect_clicked(self):
+        dlgConnector = DlgConnector()
+        dlgConnector.show()
+        dlgConnector.exec_()
+
+    def evt_btnCeckCityDB_clicked(self):
+        #TODO: Validation query to see if DB is 3DCITYDB
+        QMessageBox.information(self.dlg,"Success", "Connection to <insert db name here> established successfuly!")
+
 
     def run(self):
         """Run method that performs all the real work"""
@@ -204,7 +217,8 @@ class DBLoader:
         if self.first_start == True:
             self.first_start = False
             self.dlg = DBLoaderDialog()
-            #self.dlg.pushButton.clicked.connect(self.select_output_file)
+            self.dlg.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
+            self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
 
 
 ################## GET CONNECTION DETAILS ################################
@@ -226,11 +240,8 @@ class DBLoader:
 
 ################################################################################################
 
-        print(self.dlg)
-        print(self)
         # show the dialog
         self.dlg.show()
-        
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
@@ -243,7 +254,16 @@ class DBLoader:
 
             msg= "all is good for now"
             #filename = self.dlg.lineEdit.text()
+            
+            
+            
 
-
+		
             self.success_msg(msg)
+
+
+            
+
+
+    
             
