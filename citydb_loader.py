@@ -246,6 +246,8 @@ class DBLoader:
 #--EVENTS--#####################################################################
 #----------#####################################################################
 
+
+### 'Connection' tab ###########################################################
     def evt_btnNewConn_clicked(self):
         dlgConnector = DlgConnector()
         dlgConnector.show()
@@ -254,11 +256,23 @@ class DBLoader:
     def evt_btnCeckCityDB_clicked(self):
         #TODO: Validation query to see if DB is 3DCITYDB
         QMessageBox.information(self.dlg,"Success", "Connection to <insert db name here> established successfuly!")
-
-    def evt_btnConnToExist_changed(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
+    
+    def evt_btnConnToExist_changed(self, idx):
+        selected_db=self.dlg.btnConnToExist.itemData(idx)
+        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of {selected_db.database}")
+    
+    def evt_btnConnToExist_chanasdasdasdged(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
         selected_db=self.dlg.btnConnToExist.itemData(idx)
 
         print(f'DB:{selected_db.database} is active: {selected_db.is_active}')
+
+###------------------###########################################################
+
+
+
+
+
+
 
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
         self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)            
