@@ -11,6 +11,7 @@ class database_cred:
         self.username=None
         self.password='*****'
         self.store_creds=None
+        self.is_active=None
         
 
     def __str__(self):
@@ -54,12 +55,13 @@ def get_postgres_conn(self):
         if 'database' in str(key):
             database_cred
             database = parser['PostgreSQL'][key]
-            self.btnConnToExist.addItem(f'{current_connection_name}',hex(id(self)))
 
             #Create DB instance based on current connection. This IF (and the rest) is visited only once per connection  
             db_instance =database_cred(current_connection_name,database)
             db_instance.add_to_collection(db_collection)
 
+            self.btnConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
+            
         if 'host' in str(key):
             host = parser['PostgreSQL'][key]
             db_instance.host=host
