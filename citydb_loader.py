@@ -225,8 +225,11 @@ class DBLoader:
             
 
         print("everytime")
-        get_postgres_conn(self.dlg)
-        print(QgsApplication.qgisSettingsDirPath())
+        #Get existing connections
+        databases=get_postgres_conn(self.dlg)
+
+        #Get new connection
+       
         
         # show the dialog
         self.dlg.show()
