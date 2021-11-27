@@ -88,8 +88,9 @@ def get_postgres_conn(self):
     return db_collection
 
 def connect(db):
+
     # connect to the PostgreSQL server
-    print('Connecting to the PostgreSQL database...')
+    # print('Connecting to the PostgreSQL database...')
     connection = psycopg2.connect(dbname= db.database,
                             user= db.user,
                             password= db.password,
@@ -161,7 +162,66 @@ def connect_and_check(db):
         if conn is not None:
             # close the communication with the PostgreSQL
             cur.close()
+            conn.close()
     return 1
 
 
+def fill_schema_box(self,db):
+
+    conn = None
+    try:
+
+        conn = connect(db)
+
+        # create a cursor
+        cur = conn.cursor()
+
+        #Get all schemas
+        cur.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name != 'information_schema' AND NOT schema_name LIKE '%pg%' ORDER BY schema_name ASC")
+        schema = cur.fetchall()
+
+        #schema check
+        schemas=[]
+        for pair in schema:
+            #print(pair[0])
+            schemas.append(pair[0])
+
+        self.cbxScema.clear()
+        self.cbxScema.addItems(schemas)
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            # close the communication with the PostgreSQL
+            cur.close()
+            conn.close()
+    return 1
+
+def check_schema(self,db,idx):
+
+    conn = None
+    try:
+
+        conn = connect(db)
+
+        #Get schema stored in 'schema combobox'
+        schema=self.cbxScema.currentText()
     
+        #TODO: Check if current schema has cityobject, building features.
+
+        
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            # close the communication with the PostgreSQL
+            #cur.close()
+            pass
+    return 1
+
+
+
+#NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 
+#Maybe find a way to keep the connection open until the plugin ultimately closes

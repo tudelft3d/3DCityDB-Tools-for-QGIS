@@ -206,17 +206,23 @@ class DBLoader:
             self.dlg = DBLoaderDialog()
 
         ## 'Connection' tab ######################################################################################
-            self.dlg.btnConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)#NOTE:delete this (check line 255)
+            self.dlg.btnConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)
             self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked) #New Dialog TODO: leave this for later
             self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
-        ##----------------######################################################################################
+        ##----------------########################################################################################
+
+        ## 'Import' tab ######################################################################################
+            self.dlg.cbxScema.currentIndexChanged.connect(self.evt_cbxScema_changed)
+        ##----------------########################################################################################
+
+
             print("only once")
             
         #Get existing connections
             databases=get_postgres_conn(self.dlg)
     
         #Get new connection
-        #TODO:
+        #TODO: For later
        
         
         # show the dialog
@@ -248,26 +254,31 @@ class DBLoader:
         dlgConnector.exec_()
 
     def evt_btnCeckCityDB_clicked(self):
-        #TODO: Validation query to see if DB is 3DCITYDB
+
         selected_db=self.dlg.btnConnToExist.currentData()
         if connect_and_check(selected_db):
-            QMessageBox.information(self.dlg,"Success", f"Connection to {selected_db.database} established successfuly and the structure seems fine!")
+            QMessageBox.information(self.dlg,"Success", f"Connection to '{selected_db.database}' established successfuly and the structure seems fine!")
 
             #Parially enable the 'Import' tab.
             self.dlg.tbImport.setDisabled(False)
+            self.dlg.grbSchema.setDisabled(False)
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
+            fill_schema_box(self.dlg,selected_db)
+            
+
         else:
-            QMessageBox.critical(self.dlg,"Fail", f"Connection to {selected_db.database} FAILED or the DB structure is not compatible with 3DCityDB!")
+            QMessageBox.critical(self.dlg,"Fail", f"Connection to '{selected_db.database}' FAILED or the DB structure is not compatible with 3DCityDB!")
             #Disable 'Import' tab in case of connection fail
             self.dlg.tbImport.setDisabled(True)
+            self.dlg.cbxScema.clear()
         
         #TODO: Display more insightfull fail messages
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.btnConnToExist.itemData(idx)
-        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of {selected_db.database}")
+        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database}'")
     
     # def evt_btnConnToExist_chanasdasdasdged(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
     #     selected_db=self.dlg.btnConnToExist.itemData(idx)
@@ -275,10 +286,12 @@ class DBLoader:
     #     print(f'DB:{selected_db.database} is active: {selected_db.is_active}')
 
 ###------------------###########################################################
+### 'Import' tab ###############################################################
+    def evt_cbxScema_changed(self, idx):
+        selected_db=self.dlg.btnConnToExist.currentData()
+        check_schema(self.dlg,selected_db,idx)
 
-
-
-
+###------------------###########################################################
 
 
 

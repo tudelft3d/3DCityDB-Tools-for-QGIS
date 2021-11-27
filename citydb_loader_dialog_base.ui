@@ -44,7 +44,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="documentMode">
       <bool>false</bool>
@@ -161,7 +161,7 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QgsCheckableComboBox" name="cbxScema"/>
+               <widget class="QComboBox" name="cbxScema"/>
               </item>
              </layout>
             </item>
@@ -171,7 +171,7 @@
          <item>
           <widget class="QGroupBox" name="grbFeature">
            <property name="title">
-            <string>Feature</string>
+            <string>CityObject Feature</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
             <item>
@@ -184,7 +184,7 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QgsCheckableComboBox" name="qcbxFeature"/>
+               <widget class="QComboBox" name="qcbxFeature"/>
               </item>
              </layout>
             </item>
@@ -207,7 +207,7 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QgsCheckableComboBox" name="cbxGeometryLvl"/>
+               <widget class="QComboBox" name="cbxGeometryLvl"/>
               </item>
              </layout>
             </item>
@@ -221,7 +221,7 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QgsCheckableComboBox" name="cbxGeomteryType"/>
+               <widget class="QComboBox" name="cbxGeomteryType"/>
               </item>
              </layout>
             </item>
@@ -298,11 +298,6 @@ p, li { white-space: pre-wrap; }
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QgsCheckableComboBox</class>
-   <extends>QComboBox</extends>
-   <header>qgscheckablecombobox.h</header>
-  </customwidget>
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
