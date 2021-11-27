@@ -54,9 +54,9 @@ def get_postgres_conn(self):
         if 'database' in str(key):
             database_cred
             database = parser['PostgreSQL'][key]
-            self.btnConnToExist.addItems(['   '.join((parser['PostgreSQL'][key],f"(Connection name: {current_connection_name})"))])
+            self.btnConnToExist.addItem(f'{current_connection_name}',hex(id(self)))
 
-            #Create DB instance based on current connection. This IF (and the rest) is visited only once per connection 
+            #Create DB instance based on current connection. This IF (and the rest) is visited only once per connection  
             db_instance =database_cred(current_connection_name,database)
             db_instance.add_to_collection(db_collection)
 

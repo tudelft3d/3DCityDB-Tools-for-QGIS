@@ -68,7 +68,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="lblConnToExist">
            <property name="text">
-            <string>Connect to an existing database:</string>
+            <string>Select an existing connection:</string>
            </property>
           </widget>
          </item>
