@@ -204,20 +204,19 @@ class DBLoader:
         if self.first_start == True:
             self.first_start = False
             self.dlg = DBLoaderDialog()
-            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
-            self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
+
+        ## 'Connection' tab ######################################################################################
             self.dlg.btnConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)#NOTE:delete this (check line 255)
+            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked) #New Dialog TODO: leave this for later
+            self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
+        ##----------------######################################################################################
             print("only once")
             
-
-        print("everytime")
         #Get existing connections
-        databases=get_postgres_conn(self.dlg)
-
+            databases=get_postgres_conn(self.dlg)
     
-
-
         #Get new connection
+        #TODO:
        
         
         # show the dialog
@@ -230,15 +229,10 @@ class DBLoader:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             
-            selectedLayerIndex = self.dlg.comboBox.currentIndex()
+            
 
             msg= "all is good for now"
             #filename = self.dlg.lineEdit.text()
-            
-            
-            
-
-		
             self.success_msg(msg)
 
 
@@ -255,16 +249,30 @@ class DBLoader:
 
     def evt_btnCeckCityDB_clicked(self):
         #TODO: Validation query to see if DB is 3DCITYDB
-        QMessageBox.information(self.dlg,"Success", "Connection to <insert db name here> established successfuly!")
+        selected_db=self.dlg.btnConnToExist.currentData()
+        if connect_and_check(selected_db):
+            QMessageBox.information(self.dlg,"Success", f"Connection to {selected_db.database} established successfuly and the structure seems fine!")
+
+            #Parially enable the 'Import' tab.
+            self.dlg.tbImport.setDisabled(False)
+            self.dlg.grbFeature.setDisabled(True)
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.grbExtent.setDisabled(True)
+        else:
+            QMessageBox.critical(self.dlg,"Fail", f"Connection to {selected_db.database} FAILED or the DB structure is not compatible with 3DCityDB!")
+            #Disable 'Import' tab in case of connection fail
+            self.dlg.tbImport.setDisabled(True)
+        
+        #TODO: Display more insightfull fail messages
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.btnConnToExist.itemData(idx)
         self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of {selected_db.database}")
     
-    def evt_btnConnToExist_chanasdasdasdged(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
-        selected_db=self.dlg.btnConnToExist.itemData(idx)
+    # def evt_btnConnToExist_chanasdasdasdged(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
+    #     selected_db=self.dlg.btnConnToExist.itemData(idx)
 
-        print(f'DB:{selected_db.database} is active: {selected_db.is_active}')
+    #     print(f'DB:{selected_db.database} is active: {selected_db.is_active}')
 
 ###------------------###########################################################
 

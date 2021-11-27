@@ -42,28 +42,7 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        
-    def get_postgres_conn(self):
-        """ Reads QGIS3.ini to get saved user connection parameters of postgres databases""" 
-        
-################## GET CONNECTION DETAILS ################################
-        # Clear the contents of the comboBox from previous runs
-        self.btnConnToExist.clear()
-        # Populate the comboBox with names of all the loaded layers
-        ini_path = '/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini' #TODO: convert it to relative path
-        parser = configparser.ConfigParser()
-        parser.optionxform = str #Makes path 'Case Sensitive'
-
-        parser.read(ini_path)
-
-        #db_name = re.compile('.*\database')
-        for key in parser['PostgreSQL']:
-    
-            if '\database' in str(key):
-                connection_name = str(key).split("\\")[1]
-                self.btnConnToExist.addItems(['   '.join((parser['PostgreSQL'][key],f"(Connection name: {connection_name})"))])
-
-################################################################################################                 
+                   
 
 
 
