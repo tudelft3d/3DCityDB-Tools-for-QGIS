@@ -24,13 +24,14 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox
-from qgis.core import QgsProject, Qgis #imported by pankost
+from qgis.core import QgsApplication, QgsProject, Qgis #imported by pankost
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
-from .citydb_loader_dialog import DBLoaderDialog
-from .connector import DlgConnector
+from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
+from .connector import DlgConnector                 #New Connection dialog
+from .functions import *
 
 
 import os.path
@@ -177,8 +178,7 @@ class DBLoader:
 
 
         # will be set False in run()
-        self.first_start = True
-###########################################################################################3        
+        self.first_start = True    
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -188,18 +188,11 @@ class DBLoader:
                 action)
             self.iface.removeDatabaseToolBarIcon(action)
 
-    #pankost
-    def select_output_file(self):
-        filename, _filter = QFileDialog.getSaveFileName(
-        self.dlg, "Select   output file ","")
-        self.dlg.lineEdit.setText(filename)
+#----------#####################################################################
+#--EVENTS--#####################################################################
+#----------#####################################################################
 
-    def success_msg(self,filename):
-        self.iface.messageBar().pushMessage("Success", 
-                "Output file written at " + filename,
-                level=Qgis.Success, duration=5)
-                
-    def evt_btnConnect_clicked(self):
+    def evt_btnNewConn_clicked(self):
         dlgConnector = DlgConnector()
         dlgConnector.show()
         dlgConnector.exec_()
@@ -207,6 +200,15 @@ class DBLoader:
     def evt_btnCeckCityDB_clicked(self):
         #TODO: Validation query to see if DB is 3DCITYDB
         QMessageBox.information(self.dlg,"Success", "Connection to <insert db name here> established successfuly!")
+
+
+    def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
+        self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)
+
+#-----------#####################################################################
+#--METHODS--#####################################################################
+#----------######################################################################
+
 
 
     def run(self):
@@ -217,29 +219,15 @@ class DBLoader:
         if self.first_start == True:
             self.first_start = False
             self.dlg = DBLoaderDialog()
-            self.dlg.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
+            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
             self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
+            print("only once")
+            
 
-
-################## GET CONNECTION DETAILS ################################
-        # Clear the contents of the comboBox from previous runs
-        self.dlg.comboBox.clear()
-        # Populate the comboBox with names of all the loaded layers
-        ini_path = '/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini' #TODO: convert it to relative path
-        parser = configparser.ConfigParser()
-        parser.optionxform = str #Makes path 'Case Sensitive'
-
-        parser.read(ini_path)
-
-        #db_name = re.compile('.*\database')
-        for key in parser['PostgreSQL']:
-    
-            if '\database' in str(key):
-                connection_name = str(key).split("\\")[1]
-                self.dlg.comboBox.addItems(['   '.join((parser['PostgreSQL'][key],f"(Connection name: {connection_name})"))])
-
-################################################################################################
-
+        print("everytime")
+        get_postgres_conn(self.dlg)
+        print(QgsApplication.qgisSettingsDirPath())
+        
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
