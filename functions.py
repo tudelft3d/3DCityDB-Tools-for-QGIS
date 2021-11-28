@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, configparser
 import psycopg2
-from qgis.core import QgsApplication, TableFlags
+from qgis.core import QgsApplication, Qgis
 
 class database_cred:
     def __init__(self,connection_name,database): 
@@ -134,7 +134,7 @@ def connect_and_check(db):
 
 
         #Check conditions for a valid the 3DCityDB structure. NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
-        exists = {'cityobject':False,'building':False,'citydb_pkg':False}
+        exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False}
         
         #table check
         for pair in table_schema: #TODO: break the pair to table, schema 
@@ -144,19 +144,18 @@ def connect_and_check(db):
                 exists['building']=True
             if 'citydb_pkg' in pair:
                 exists['citydb_pkg']=True
+            if 'objectclass' in pair:
+                exists['objectclass']=True
         #chema check
         for pair in schema:
             if 'citydb_pkg' in pair:
                 exists['citydb_pkg']=True
         
-        if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg']):
+        if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg' and exists['objectclass']]):
             # close the communication with the PostgreSQL
             cur.close()
             conn.close()
             return 0
-
-        
-
 
 	
     except (Exception, psycopg2.DatabaseError) as error:
@@ -230,6 +229,8 @@ def check_schema(self,db):
         #NOTE: This only works for the two features (cityobject,building). In the future if more features are added adjust the code so that it breaks only when cityboject is not found
         for f in features:
             if not features[f]:
+                cur.close()
+                conn.close()
                 return 0
             else:
                 features_to_display.append(f)
@@ -246,8 +247,55 @@ def check_schema(self,db):
             # close the communication with the PostgreSQL
             #cur.close()
             pass
+    cur.close()
+    conn.close()
     return 1
 
+def set_map_extents(self):
+    print('here')
+    
+    #Get the canvas extent
+    
+    # extent = canvas.extent()
+    # self.dlg.qgrbExtent.setCurrentExtent(extent,canvas.mapSettings().destinationCrs())
+    # self.dlg.qgrbExtent.setOutputExtentFromCurrent()
+
+
+# def check_geometries(self,db,sc,ft):
+ 
+#     conn = None
+#     try:
+
+#         conn = connect(db)
+    
+#         cur=conn.cursor(f"""SELECT * FROM {sc}.{ft};""")
+
+#         columns=cur.fea
+
+        
+#         features_to_display=[]
+#         #NOTE: This only works for the two features (cityobject,building). In the future if more features are added adjust the code so that it breaks only when cityboject is not found
+#         for f in features:
+#             if not features[f]:
+#                 return 0
+#             else:
+#                 features_to_display.append(f)
+        
+#         # Add to combobox ONLY cityobject features
+#         features_to_display.remove('cityobject')
+#         self.qcbxFeature.clear()
+#         self.qcbxFeature.addItems(features_to_display)
+
+#     except (Exception, psycopg2.DatabaseError) as error:
+#         print(error)
+#     finally:
+#         if conn is not None:
+#             # close the communication with the PostgreSQL
+#             #cur.close()
+#             pass
+#     cur.close()
+#     conn.close()
+#     return 1
 
 
 #NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 

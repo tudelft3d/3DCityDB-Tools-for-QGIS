@@ -23,8 +23,10 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
 from qgis.core import QgsApplication, QgsProject, Qgis #imported by pankost
+from qgis.core import QgsCoordinateReferenceSystem
+from qgis.gui import QgsMapCanvas
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -203,6 +205,8 @@ class DBLoader:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
             self.first_start = False
+
+
             self.dlg = DBLoaderDialog()
 
         ## 'Connection' tab ######################################################################################
@@ -213,6 +217,17 @@ class DBLoader:
 
         ## 'Import' tab ######################################################################################
             self.dlg.cbxScema.currentIndexChanged.connect(self.evt_cbxScema_changed)
+            self.dlg.qcbxFeature.currentIndexChanged.connect(self.evt_qcbxFeature_changed)
+            #Get initial canvas extent
+            canvas = self.iface.mapCanvas()
+            extent = canvas.extent()
+            #self.dlg.qgrbExtent.setOriginalExtent(extent,canvas.mapSettings().destinationCrs())
+            self.dlg.qgrbExtent.setMapCanvas(canvas)
+            self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem('EPSG:4326')) #TODO: get crs from canvas or layer
+            self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem('EPSG:4326'))
+            #Set extent change signal
+            self.iface.mapCanvas().extentsChanged.connect(self.evt_canvas_extChange)
+
         ##----------------########################################################################################
 
 
@@ -223,7 +238,8 @@ class DBLoader:
     
         #Get new connection
         #TODO: For later
-       
+        
+
         
         # show the dialog
         self.dlg.show()
@@ -290,18 +306,36 @@ class DBLoader:
 ### 'Import' tab ###############################################################
     def evt_cbxScema_changed(self):
         selected_db=self.dlg.btnConnToExist.currentData()
-        current_schema=self.dlg.cbxScema.currentText()
-        if not current_schema: return #This is a guard
+        selected_schema=self.dlg.cbxScema.currentText()
+        if not selected_schema: return #This is a guard
 
         #Check current schema for features
         if check_schema(self.dlg,selected_db):
             self.dlg.grbFeature.setDisabled(False)
+            self.dlg.grbExtent.setDisabled(False)
+            self.dlg.qgrbExtent.setDisabled(False)
+            set_map_extents(self)
 
         else:
             self.dlg.qcbxFeature.clear()
+            #self.dlg.grbExtent.clear() 
             self.dlg.grbFeature.setDisabled(True)
-            QMessageBox.critical(self.dlg,"Fail", f"Schema '{current_schema}' does NOT contain any valid features!\nSelect different schema.")
+            self.dlg.grbExtent.setDisabled(True)
+            QMessageBox.critical(self.dlg,"Fail", f"Schema '{selected_schema}' does NOT contain any valid features!\nSelect different schema.")
 
+    
+    def evt_qcbxFeature_changed(self):
+        selected_db=self.dlg.btnConnToExist.currentData()
+        selected_schema=self.dlg.cbxScema.currentText()
+        selected_feature=self.dlg.qcbxFeature.currentText()
+        if not selected_schema and selected_feature: return #This is a guard
+        #check_geometries(self,selected_db,selected_schema,selected_feature)
+
+    
+    
+    def evt_canvas_extChange(self):
+        extent = self.iface.mapCanvas().extent()
+        self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem('EPSG:3857'))
 
 
 ###------------------###########################################################
