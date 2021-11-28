@@ -24,9 +24,9 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
-from qgis.core import QgsApplication, QgsProject, Qgis #imported by pankost
+from qgis.core import QgsApplication, QgsProject, Qgis
 from qgis.core import QgsCoordinateReferenceSystem
-from qgis.gui import QgsMapCanvas
+
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -35,13 +35,7 @@ from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
 from .connector import DlgConnector                 #New Connection dialog
 from .functions import *
 
-
 import os.path
-
-import sys, os, subprocess
-
-import re 
-import configparser
 
 class DBLoader:
     """QGIS Plugin Implementation."""
@@ -191,11 +185,9 @@ class DBLoader:
             self.iface.removeDatabaseToolBarIcon(action)
 
 
-
 #-----------#####################################################################
 #--METHODS--#####################################################################
-#----------######################################################################
-
+#-----------#####################################################################
 
 
     def run(self):
@@ -220,26 +212,27 @@ class DBLoader:
             self.dlg.qcbxFeature.currentIndexChanged.connect(self.evt_qcbxFeature_changed)
             #Get initial canvas extent
             canvas = self.iface.mapCanvas()
+            crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
             extent = canvas.extent()
             #self.dlg.qgrbExtent.setOriginalExtent(extent,canvas.mapSettings().destinationCrs())
             self.dlg.qgrbExtent.setMapCanvas(canvas)
-            self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem('EPSG:4326')) #TODO: get crs from canvas or layer
-            self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem('EPSG:4326'))
+            self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs)) #TODO: get crs from canvas or layer
+            self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
             #Set extent change signal
-            self.iface.mapCanvas().extentsChanged.connect(self.evt_canvas_extChange)
+            self.iface.mapCanvas().extentsChanged.connect(self.evt_canvas_extChanged)
+            self.dlg.qgrbExtent.extentChanged.connect(self.evt_qgrbExtent_extChanged)
+
+            self.dlg.cbxGeometryLvl.currentIndexChanged.connect(self.evt_cbxGeometryLvl_changed)
 
         ##----------------########################################################################################
 
-
-            print("only once")
+            print("Initial start")
             
         #Get existing connections
             databases=get_postgres_conn(self.dlg)
     
         #Get new connection
         #TODO: For later
-        
-
         
         # show the dialog
         self.dlg.show()
@@ -290,19 +283,18 @@ class DBLoader:
             #Disable 'Import' tab in case of connection fail
             self.dlg.tbImport.setDisabled(True)
             self.dlg.cbxScema.clear()
+            self.dlg.qcbxFeature.clear()
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.cbxGeometryLvl.clear()
+
         
         #TODO: Display more insightfull fail messages
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.btnConnToExist.itemData(idx)
         self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database}'")
-    
-    # def evt_btnConnToExist_chanasdasdasdged(self, idx): #NOTE:TODO: Assign this slot to the CHECK 3DCITYDB button
-    #     selected_db=self.dlg.btnConnToExist.itemData(idx)
 
-    #     print(f'DB:{selected_db.database} is active: {selected_db.is_active}')
-
-###------------------###########################################################
+###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################
     def evt_cbxScema_changed(self):
         selected_db=self.dlg.btnConnToExist.currentData()
@@ -314,33 +306,62 @@ class DBLoader:
             self.dlg.grbFeature.setDisabled(False)
             self.dlg.grbExtent.setDisabled(False)
             self.dlg.qgrbExtent.setDisabled(False)
-            set_map_extents(self)
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.cbxGeometryLvl.clear()
 
         else:
             self.dlg.qcbxFeature.clear()
             #self.dlg.grbExtent.clear() 
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.cbxGeometryLvl.clear()
             QMessageBox.critical(self.dlg,"Fail", f"Schema '{selected_schema}' does NOT contain any valid features!\nSelect different schema.")
 
-    
     def evt_qcbxFeature_changed(self):
         selected_db=self.dlg.btnConnToExist.currentData()
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
         if not selected_schema and selected_feature: return #This is a guard
         #check_geometries(self,selected_db,selected_schema,selected_feature)
-
     
-    
-    def evt_canvas_extChange(self):
+    def evt_canvas_extChanged(self):
         extent = self.iface.mapCanvas().extent()
-        self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem('EPSG:3857'))
+        crs =self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+        self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs))
+        self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
 
+    def evt_qgrbExtent_extChanged(self):
+        selected_db=self.dlg.btnConnToExist.currentData()
+        selected_schema=self.dlg.cbxScema.currentText()
+        selected_feature=self.dlg.qcbxFeature.currentText()
+        if not selected_schema and selected_feature: return #This is a guard
 
-###------------------###########################################################
+        res = check_geometry(self,selected_db,selected_schema,selected_feature)
+        if res == 3:
+            self.dlg.grbGeometry.setDisabled(False)
+            self.dlg.cbxGeometryLvl.setDisabled(False)        
+            self.dlg.cbxGeomteryType.setDisabled(False)
+        elif res==2:
+            self.dlg.cbxGeometryLvl.clear()
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.cbxGeometryLvl.setDisabled(True)        
+            self.dlg.cbxGeomteryType.setDisabled(True)   
+        elif res == 1:
+            self.dlg.cbxGeomteryType.setDisabled(True)
+        elif res == 0:
+            self.dlg.cbxGeometryLvl.setDisabled(True) 
 
+    def evt_cbxGeometryLvl_changed(self,idx):
+        self.dlg.cbxGeomteryType.clear()
+        types = self.dlg.cbxGeometryLvl.itemData(idx)
+        if types is not None:
+            self.dlg.cbxGeomteryType.addItems(types)
 
+###--'Import' tab--###########################################################
 
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
         self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)
@@ -350,6 +371,9 @@ class DBLoader:
 #TODO: Find if psycog2 cursor is client or server-sided and adjust for better practice.
 # https://medium.com/dev-bits/understanding-postgresql-cursors-with-python-ebc3da591fe7            
 
+#TODO:NOTE: DRAW ON CANVAS exibits wierd behaviour
+#1. The extent is updated on the QGScombobox but not in the internal value that the code reads.
+#2. After clicking the button it seems that the drawing tools remains open at all times 
 
     
             

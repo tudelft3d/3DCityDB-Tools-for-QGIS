@@ -2,6 +2,7 @@
 import os, configparser
 import psycopg2
 from qgis.core import QgsApplication, Qgis
+from qgis.PyQt.QtWidgets import QMessageBox
 
 class database_cred:
     def __init__(self,connection_name,database): 
@@ -90,14 +91,12 @@ def get_postgres_conn(self):
 def connect(db):
 
     # connect to the PostgreSQL server
-    # print('Connecting to the PostgreSQL database...')
     connection = psycopg2.connect(dbname= db.database,
                             user= db.user,
                             password= db.password,
                             host= db.host,
                             port= db.port)
     return connection
-
 
 def connect_and_check(db):
     """ Connect to the PostgreSQL database server """
@@ -134,7 +133,7 @@ def connect_and_check(db):
 
 
         #Check conditions for a valid the 3DCityDB structure. NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
-        exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False}
+        exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False} #TODO: add PostGIS and other extentions to the check  
         
         #table check
         for pair in table_schema: #TODO: break the pair to table, schema 
@@ -166,7 +165,6 @@ def connect_and_check(db):
             cur.close()
             conn.close()
     return 1
-
 
 def fill_schema_box(self,db):
 
@@ -251,51 +249,119 @@ def check_schema(self,db):
     conn.close()
     return 1
 
-def set_map_extents(self):
-    print('here')
-    
-    #Get the canvas extent
-    
-    # extent = canvas.extent()
-    # self.dlg.qgrbExtent.setCurrentExtent(extent,canvas.mapSettings().destinationCrs())
-    # self.dlg.qgrbExtent.setOutputExtentFromCurrent()
-
-
-# def check_geometries(self,db,sc,ft):
+def check_geometry(self,db,sc,ft):
  
-#     conn = None
-#     try:
+    conn = None
+    extents=self.dlg.qgrbExtent.currentExtent().asWktPolygon() 
 
-#         conn = connect(db)
-    
-#         cur=conn.cursor(f"""SELECT * FROM {sc}.{ft};""")
+    try:
 
-#         columns=cur.fea
+        conn = connect(db)
+        cur=conn.cursor()
 
+        #Get amount of features inside the extents 
+        cur.execute(f"""SELECT count(*),'' 
+                        FROM {sc}.cityobject co
+                        JOIN {sc}.{ft} bg 
+                        ON co.id = bg.id
+                        WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
+        count=cur.fetchone()
+        count,empty=count
+
+        #Guard against importing many feutures
+        if count>3000:
+            QMessageBox.warning(self.dlg,"Warning", f"Too many features set to be import ({count})'!\n"
+                                                    "This could hinder perfomance and even cause frequent crashes.") #TODO: justify it better with storage size to 
+        else:
+            QMessageBox.information(self.dlg,"Info", f"{count} '{ft}' features contained in current extent.")
+            if count == 0:
+                cur.close()
+                conn.close()
+                return 2
+        #Get geometry columns
+        cur.execute(f"""SELECT column_name,'' 
+                        FROM information_schema.columns 
+                        WHERE table_name = '{ft}' 
+                        AND table_schema = '{sc}' 
+                        AND column_name 
+                        LIKE 'lod%%id'""")
+
+        columns=cur.fetchall()
+        columns,empty=zip(*columns)
+
+        #Get amount of features inside the extents #TODO: select from a list of columns
+        cur.execute(f"""SELECT lod0_footprint_id, lod0_roofprint_id, lod1_multi_surface_id,lod1_solid_id,
+                        lod2_multi_surface_id,lod2_solid_id
+                        FROM {sc}.cityobject co
+                        JOIN {sc}.{ft} bg 
+                        ON co.id = bg.id""")
+        attributes=cur.fetchall()
+
+
+        geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
+                        'LOD1':{'Muilti_surface':False,"Solid":False},
+                        'LOD2':{'Muilti_surface':False,"Solid":False}}
+
+        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.cbxGeomteryType.clear()
         
-#         features_to_display=[]
-#         #NOTE: This only works for the two features (cityobject,building). In the future if more features are added adjust the code so that it breaks only when cityboject is not found
-#         for f in features:
-#             if not features[f]:
-#                 return 0
-#             else:
-#                 features_to_display.append(f)
-        
-#         # Add to combobox ONLY cityobject features
-#         features_to_display.remove('cityobject')
-#         self.qcbxFeature.clear()
-#         self.qcbxFeature.addItems(features_to_display)
+        lod0=[]
+        lod1=[]
+        lod2=[]
 
-#     except (Exception, psycopg2.DatabaseError) as error:
-#         print(error)
-#     finally:
-#         if conn is not None:
-#             # close the communication with the PostgreSQL
-#             #cur.close()
-#             pass
-#     cur.close()
-#     conn.close()
-#     return 1
+        for feature in attributes:
+            if feature[0] is not None:
+                if not geometry_lvls['LOD0']['Footprint']:
+                    lod0.append('Footprint')
+                    geometry_lvls['LOD0']['Footprint']=True
+                else: continue
+
+            if feature[1] is not None:  
+                if not geometry_lvls['LOD0']['Roofprint']:
+                    lod0.append('Roofprint')
+                    geometry_lvls['LOD0']['Roofprint']=True
+                else: continue
+
+            if feature[2] is not None:
+                if not geometry_lvls['LOD1']['Muilti_surface']:
+                    lod1.append('Muilti_surface')
+                    geometry_lvls['LOD1']['Muilti_surface']=True
+                else: continue
+
+            if feature[3] is not None:
+                if not geometry_lvls['LOD1']['Solid']:
+                    lod1.append('Solid')
+                    geometry_lvls['LOD1']['Solid']=True
+                else: continue
+
+            if feature[4] is not None:
+                if not geometry_lvls['LOD2']['Muilti_surface']:
+                    lod2.append('Muilti_surface')
+                    geometry_lvls['LOD2']['Muilti_surface']=True
+                else: continue
+
+            if feature[5] is not None:
+                if not geometry_lvls['LOD2']['Solid']:
+                    lod2.append('Solid')
+                    geometry_lvls['LOD2']['Solid']=True
+                else: continue
+
+        lvls = {'LoD0':lod0,'LoD1':lod1,'LoD2':lod2}
+        for lvl,types in lvls.items():
+            if lvl:
+                self.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
+
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            # close the communication with the PostgreSQL
+            #cur.close()
+            pass
+    cur.close()
+    conn.close()
+    return 3
 
 
 #NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 

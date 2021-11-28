@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
+    <width>674</width>
     <height>541</height>
    </rect>
   </property>
@@ -44,7 +44,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="documentMode">
       <bool>false</bool>
@@ -192,6 +192,45 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="grbExtent">
+           <property name="title">
+            <string>Extent</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <item>
+             <layout class="QFormLayout" name="formLayout_17">
+              <item row="1" column="1">
+               <widget class="QgsExtentGroupBox" name="qgrbExtent">
+                <property name="autoFillBackground">
+                 <bool>false</bool>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+                <property name="checkable">
+                 <bool>false</bool>
+                </property>
+                <property name="collapsed">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="lblExtent">
+                <property name="text">
+                 <string>Select extent:</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="grbGeometry">
            <property name="title">
             <string>Geometry</string>
@@ -222,29 +261,6 @@
               </item>
               <item row="0" column="1">
                <widget class="QComboBox" name="cbxGeomteryType"/>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="grbExtent">
-           <property name="title">
-            <string>Extent</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_9">
-            <item>
-             <layout class="QFormLayout" name="formLayout_17">
-              <item row="1" column="1">
-               <widget class="QgsExtentGroupBox" name="qgrbExtent"/>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="lblExtent">
-                <property name="text">
-                 <string>Select extent:</string>
-                </property>
-               </widget>
               </item>
              </layout>
             </item>
