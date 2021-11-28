@@ -265,6 +265,7 @@ class DBLoader:
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
+            self.dlg.wdgMain.setCurrentIndex(1)
             fill_schema_box(self.dlg,selected_db)
             
 
@@ -287,16 +288,33 @@ class DBLoader:
 
 ###------------------###########################################################
 ### 'Import' tab ###############################################################
-    def evt_cbxScema_changed(self, idx):
+    def evt_cbxScema_changed(self):
         selected_db=self.dlg.btnConnToExist.currentData()
-        check_schema(self.dlg,selected_db,idx)
+        current_schema=self.dlg.cbxScema.currentText()
+        if not current_schema: return #This is a guard
+
+        #Check current schema for features
+        if check_schema(self.dlg,selected_db):
+            self.dlg.grbFeature.setDisabled(False)
+
+        else:
+            self.dlg.qcbxFeature.clear()
+            self.dlg.grbFeature.setDisabled(True)
+            QMessageBox.critical(self.dlg,"Fail", f"Schema '{current_schema}' does NOT contain any valid features!\nSelect different schema.")
+
+
 
 ###------------------###########################################################
 
 
 
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
-        self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)            
+        self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)
+
+
+
+#TODO: Find if psycog2 cursor is client or server-sided and adjust for better practice.
+# https://medium.com/dev-bits/understanding-postgresql-cursors-with-python-ebc3da591fe7            
 
 
     

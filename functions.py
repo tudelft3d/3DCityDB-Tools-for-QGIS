@@ -137,7 +137,7 @@ def connect_and_check(db):
         exists = {'cityobject':False,'building':False,'citydb_pkg':False}
         
         #table check
-        for pair in table_schema:
+        for pair in table_schema: #TODO: break the pair to table, schema 
             if 'cityobject' in pair:
                 exists['cityobject']=True
             if 'building' in pair:
@@ -150,6 +150,9 @@ def connect_and_check(db):
                 exists['citydb_pkg']=True
         
         if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg']):
+            # close the communication with the PostgreSQL
+            cur.close()
+            conn.close()
             return 0
 
         
@@ -182,8 +185,7 @@ def fill_schema_box(self,db):
 
         #schema check
         schemas=[]
-        for pair in schema:
-            #print(pair[0])
+        for pair in schema: #TODO: break the pair to table , schema
             schemas.append(pair[0])
 
         self.cbxScema.clear()
@@ -198,8 +200,11 @@ def fill_schema_box(self,db):
             conn.close()
     return 1
 
-def check_schema(self,db,idx):
+def check_schema(self,db):
 
+    features={'cityobject':False,'building':False} #Named after their main corresponding table name from the 3DCityDB.
+    #NOTE: the above list is currently (28/11/21) restricted only to cityobject->building.  
+ 
     conn = None
     try:
 
@@ -208,9 +213,31 @@ def check_schema(self,db,idx):
         #Get schema stored in 'schema combobox'
         schema=self.cbxScema.currentText()
     
-        #TODO: Check if current schema has cityobject, building features.
+        cur=conn.cursor()
 
+        #Check if current schema has cityobject, building features.
+        cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
+                        WHERE table_schema = '{schema}' 
+                        AND table_name = '{list(features.keys())[0]}' OR table_name = '{list(features.keys())[1]}'
+                        ORDER BY table_name ASC""")
+        feature_table= cur.fetchall()
+
+        for t, s in feature_table:
+            if t in list(features.keys()):
+                features[t]=True
         
+        features_to_display=[]
+        #NOTE: This only works for the two features (cityobject,building). In the future if more features are added adjust the code so that it breaks only when cityboject is not found
+        for f in features:
+            if not features[f]:
+                return 0
+            else:
+                features_to_display.append(f)
+        
+        # Add to combobox ONLY cityobject features
+        features_to_display.remove('cityobject')
+        self.qcbxFeature.clear()
+        self.qcbxFeature.addItems(features_to_display)
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
