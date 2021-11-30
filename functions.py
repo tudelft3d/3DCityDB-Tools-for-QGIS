@@ -252,7 +252,7 @@ def check_schema(self,db):
 def check_geometry(self,db,sc,ft):
  
     conn = None
-    extents=self.dlg.qgrbExtent.currentExtent().asWktPolygon() 
+    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
 
     try:
 

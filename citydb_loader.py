@@ -372,8 +372,10 @@ class DBLoader:
 # https://medium.com/dev-bits/understanding-postgresql-cursors-with-python-ebc3da591fe7            
 
 #TODO:NOTE: DRAW ON CANVAS exibits wierd behaviour
-#1. The extent is updated on the QGScombobox but not in the internal value that the code reads.
 #2. After clicking the button it seems that the drawing tools remains open at all times 
+
+#TODO:NOTE: extent groupbox doesnt work for manual user input
+#for every value change in any of the 4 inputs the extent signal is fired
 
     
             
