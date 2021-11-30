@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, configparser
 import psycopg2
-from qgis.core import QgsApplication, Qgis
+from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri
 from qgis.PyQt.QtWidgets import QMessageBox
 
 class database_cred:
@@ -250,7 +250,6 @@ def check_schema(self,db):
     return 1
 
 def check_geometry(self,db,sc,ft):
- 
     conn = None
     extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
 
@@ -362,6 +361,48 @@ def check_geometry(self,db,sc,ft):
     cur.close()
     conn.close()
     return 3
+
+#NOTE: currently only works for footpirnts #TODO:Create Different Updatable view for every geometry lvl/type combination
+def import_layer(self): 
+    selected_db=self.dlg.btnConnToExist.currentData()
+    selected_schema=self.dlg.cbxScema.currentText()
+    selected_feature=self.dlg.qcbxFeature.currentText()
+    selected_geometryLvl=self.dlg.cbxGeometryLvl.currentText()
+    selected_geometryLvl=self.dlg.cbxGeomteryType.currentText()
+    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
+    view_name= 'v_building'
+
+    conn = None
+    conn = connect(selected_db)
+    cur=conn.cursor()
+
+    #Get layer view containg all attributes from feature 
+    cur.execute(f"""CREATE OR REPLACE VIEW {view_name} AS
+                    SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
+                    FROM {selected_schema}.cityobject o
+                    JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
+                    JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
+                """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    #Create view to import based on user attributes
+
+
+    uri = QgsDataSourceUri()
+    uri.setConnection(selected_db.host,selected_db.port,selected_db.database,selected_db.user,selected_db.password)
+    #params: schema, table, geometry, [subset], primary key
+    uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
+    vlayer = QgsVectorLayer(uri.uri(False), f"{selected_feature}", "postgres")
+    QgsProject.instance().addMapLayer(vlayer)
+
+
+
+    
+
+
+
 
 
 #NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 

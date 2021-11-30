@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>674</width>
-    <height>541</height>
+    <width>629</width>
+    <height>581</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -201,6 +201,9 @@
              <layout class="QFormLayout" name="formLayout_17">
               <item row="1" column="1">
                <widget class="QgsExtentGroupBox" name="qgrbExtent">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="autoFillBackground">
                  <bool>false</bool>
                 </property>
@@ -268,6 +271,16 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="btnImport">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Import &lt;feature&gt; feature</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

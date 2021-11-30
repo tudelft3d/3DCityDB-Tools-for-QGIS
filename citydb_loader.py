@@ -223,7 +223,8 @@ class DBLoader:
             self.dlg.qgrbExtent.extentChanged.connect(self.evt_qgrbExtent_extChanged)
 
             self.dlg.cbxGeometryLvl.currentIndexChanged.connect(self.evt_cbxGeometryLvl_changed)
-
+            self.dlg.cbxGeomteryType.currentTextChanged.connect(self.evt_cbxGeomteryType_changed)
+            self.dlg.btnImport.clicked.connect(self.evt_btnImport_clicked)
         ##----------------########################################################################################
 
             print("Initial start")
@@ -307,25 +308,29 @@ class DBLoader:
             self.dlg.grbExtent.setDisabled(False)
             self.dlg.qgrbExtent.setDisabled(False)
             self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.btnImport.setDisabled(True)
+
             self.dlg.cbxGeomteryType.clear()
             self.dlg.cbxGeometryLvl.clear()
 
         else:
             self.dlg.qcbxFeature.clear()
-            #self.dlg.grbExtent.clear() 
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.cbxGeometryLvl.clear()
+            self.dlg.btnImport.setDisabled(True)
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.cbxGeometryLvl.clear()
+
             QMessageBox.critical(self.dlg,"Fail", f"Schema '{selected_schema}' does NOT contain any valid features!\nSelect different schema.")
 
     def evt_qcbxFeature_changed(self):
         selected_db=self.dlg.btnConnToExist.currentData()
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
+        self.dlg.btnImport.setText(f'Import {selected_feature} feature.')
+        self.dlg.btnImport.setDisabled(True)
         if not selected_schema and selected_feature: return #This is a guard
-        #check_geometries(self,selected_db,selected_schema,selected_feature)
     
     def evt_canvas_extChanged(self):
         extent = self.iface.mapCanvas().extent()
@@ -349,17 +354,34 @@ class DBLoader:
             self.dlg.cbxGeomteryType.clear()
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.cbxGeometryLvl.setDisabled(True)        
-            self.dlg.cbxGeomteryType.setDisabled(True)   
-        elif res == 1:
+            self.dlg.cbxGeomteryType.setDisabled(True) 
+            self.dlg.btnImport.setDisabled(True)   
+        elif res == 1:  
+            self.dlg.cbxGeomteryType.clear()
             self.dlg.cbxGeomteryType.setDisabled(True)
+            self.dlg.btnImport.setDisabled(True)
         elif res == 0:
+            self.dlg.cbxGeometryLvl.clear()
             self.dlg.cbxGeometryLvl.setDisabled(True) 
+            self.dlg.btnImport.setDisabled(True)
 
     def evt_cbxGeometryLvl_changed(self,idx):
         self.dlg.cbxGeomteryType.clear()
         types = self.dlg.cbxGeometryLvl.itemData(idx)
         if types is not None:
             self.dlg.cbxGeomteryType.addItems(types)
+            self.dlg.cbxGeomteryType.setDisabled(False)
+
+    def evt_cbxGeomteryType_changed(self):
+        print(self.dlg.cbxGeomteryType.currentText())
+        if self.dlg.cbxGeomteryType.currentText() == "":
+            self.dlg.btnImport.setDisabled(True)
+        else: self.dlg.btnImport.setDisabled(False)
+
+    def evt_btnImport_clicked(self):
+        import_layer(self)
+
+
 
 ###--'Import' tab--###########################################################
 
