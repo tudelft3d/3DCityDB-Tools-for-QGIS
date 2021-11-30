@@ -369,7 +369,7 @@ def import_layer(self):
     selected_feature=self.dlg.qcbxFeature.currentText()
     selected_geometryLvl=self.dlg.cbxGeometryLvl.currentText()
     selected_geometryLvl=self.dlg.cbxGeomteryType.currentText()
-    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
+    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon()
     view_name= 'v_building'
 
     conn = None
@@ -377,12 +377,13 @@ def import_layer(self):
     cur=conn.cursor()
 
     #Get layer view containg all attributes from feature 
-    cur.execute(f"""CREATE OR REPLACE VIEW {view_name} AS
+    cur.execute(f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
                     SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
                     FROM {selected_schema}.cityobject o
                     JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
                     JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
                 """)
+    
     conn.commit()
     cur.close()
     conn.close()
