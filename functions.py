@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, configparser
 import psycopg2
-from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri
+from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem
 from qgis.PyQt.QtWidgets import QMessageBox
 
 class database_cred:
@@ -373,31 +373,49 @@ def import_layer(dbLoader):
     view_name= 'v_building'
 
     conn = None
-    conn = connect(selected_db)
-    cur=conn.cursor()
 
-    #Get layer view containg all attributes from feature 
-    cur.execute(f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                    SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
-                    FROM {selected_schema}.cityobject o
-                    JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
-                    JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
-                """)
-    
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
 
-    #Create view to import based on user attributes
+        conn = connect(selected_db)
+        cur=conn.cursor()
+
+        #Get layer view containg all attributes from feature 
+        cur.execute(f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                        SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
+                        FROM {selected_schema}.cityobject o
+                        JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
+                        JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
+                    """)
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        #Create view to import based on user attributes
+        dbLoader.iface.mainWindow().blockSignals(True)
+
+        uri = QgsDataSourceUri()
+        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
+        #params: schema, table, geometry, [subset], primary key
+        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
+        vlayer = QgsVectorLayer(uri.uri(False), f"{selected_feature}", "postgres")
+        crs = vlayer.crs()
+        crs.createFromId(28992)  #TODO: Dont hardcode it
+        vlayer.setCrs(crs)
+
+        QgsProject.instance().addMapLayer(vlayer)
+        dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
 
 
-    uri = QgsDataSourceUri()
-    uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
-    #params: schema, table, geometry, [subset], primary key
-    uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
-    vlayer = QgsVectorLayer(uri.uri(False), f"{selected_feature}", "postgres")
-    QgsProject.instance().addMapLayer(vlayer)
-
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        dbLoader.show_Qmsg('Import failed! Check Log Messages')
+    finally:
+        if conn is not None:
+            # close the communication with the PostgreSQL
+            #cur.close()
+            cur.close()
+            conn.close()
 
 
     

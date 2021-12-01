@@ -249,7 +249,8 @@ class DBLoader:
 
             msg= "all is good for now"
             #filename = self.dlg.lineEdit.text()
-            self.success_msg(msg)
+            self.show_Qmsg(msg)
+
 
 
 #----------#####################################################################
@@ -326,7 +327,7 @@ class DBLoader:
     def evt_qcbxFeature_changed(self):
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
-        self.dlg.btnImport.setText(f'Import {selected_feature} feature.')
+        self.dlg.btnImport.setText(f'Import {selected_feature} feature')
         self.dlg.btnImport.setDisabled(True)
         if not selected_schema and selected_feature: return #This is a guard
     
@@ -376,6 +377,8 @@ class DBLoader:
 
     def evt_btnImport_clicked(self):
         import_layer(self)
+        self.dlg.close()
+        self.show_Qmsg('Success')
 
 
 
