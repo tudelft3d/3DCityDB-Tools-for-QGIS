@@ -230,7 +230,7 @@ class DBLoader:
             print("Initial start")
             
         #Get existing connections
-            databases=get_postgres_conn(self.dlg)
+            get_postgres_conn(self)
     
         #Get new connection
         #TODO: For later
@@ -266,8 +266,8 @@ class DBLoader:
     def evt_btnCeckCityDB_clicked(self):
 
         selected_db=self.dlg.btnConnToExist.currentData()
-        if connect_and_check(selected_db):
-            QMessageBox.information(self.dlg,"Success", f"Connection to '{selected_db.database}' established successfuly and the structure seems fine!")
+        if connect_and_check(self):
+            QMessageBox.information(self.dlg,"Success", f"Connection to '{selected_db.database_name}' established successfuly and the structure seems fine!")
 
             #Parially enable the 'Import' tab.
             self.dlg.tbImport.setDisabled(False)
@@ -276,11 +276,11 @@ class DBLoader:
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
             self.dlg.wdgMain.setCurrentIndex(1)
-            fill_schema_box(self.dlg,selected_db)
+            fill_schema_box(self)
             
 
         else:
-            QMessageBox.critical(self.dlg,"Fail", f"Connection to '{selected_db.database}' FAILED or the DB structure is not compatible with 3DCityDB!")
+            QMessageBox.critical(self.dlg,"Fail", f"Connection to '{selected_db.database_name}' FAILED or the DB structure is not compatible with 3DCityDB!")
             #Disable 'Import' tab in case of connection fail
             self.dlg.tbImport.setDisabled(True)
             self.dlg.cbxScema.clear()
@@ -293,17 +293,16 @@ class DBLoader:
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.btnConnToExist.itemData(idx)
-        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database}'")
+        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database_name}'")
 
 ###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################
     def evt_cbxScema_changed(self):
-        selected_db=self.dlg.btnConnToExist.currentData()
         selected_schema=self.dlg.cbxScema.currentText()
         if not selected_schema: return #This is a guard
 
         #Check current schema for features
-        if check_schema(self.dlg,selected_db):
+        if check_schema(self):
             self.dlg.grbFeature.setDisabled(False)
             self.dlg.grbExtent.setDisabled(False)
             self.dlg.qgrbExtent.setDisabled(False)
@@ -325,7 +324,6 @@ class DBLoader:
             QMessageBox.critical(self.dlg,"Fail", f"Schema '{selected_schema}' does NOT contain any valid features!\nSelect different schema.")
 
     def evt_qcbxFeature_changed(self):
-        selected_db=self.dlg.btnConnToExist.currentData()
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
         self.dlg.btnImport.setText(f'Import {selected_feature} feature.')
@@ -339,12 +337,11 @@ class DBLoader:
         self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
 
     def evt_qgrbExtent_extChanged(self):
-        selected_db=self.dlg.btnConnToExist.currentData()
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
         if not selected_schema and selected_feature: return #This is a guard
 
-        res = check_geometry(self,selected_db,selected_schema,selected_feature)
+        res = check_geometry(self)
         if res == 3:
             self.dlg.grbGeometry.setDisabled(False)
             self.dlg.cbxGeometryLvl.setDisabled(False)        
@@ -373,7 +370,6 @@ class DBLoader:
             self.dlg.cbxGeomteryType.setDisabled(False)
 
     def evt_cbxGeomteryType_changed(self):
-        print(self.dlg.cbxGeomteryType.currentText())
         if self.dlg.cbxGeomteryType.currentText() == "":
             self.dlg.btnImport.setDisabled(True)
         else: self.dlg.btnImport.setDisabled(False)

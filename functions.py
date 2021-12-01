@@ -7,7 +7,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 class database_cred:
     def __init__(self,connection_name,database): 
         self.connection_name=connection_name
-        self.database=database
+        self.database_name=database
         self.host=None
         self.port=None
         self.user=None
@@ -20,7 +20,7 @@ class database_cred:
 
     def __str__(self):
         print(f"connection name: {self.connection_name}") 
-        print(f"db name: {self.database}")
+        print(f"db name: {self.database_name}")
         print(f"host:{self.host}")
         print(f"port:{self.port}")
         print(f"user:{self.user}")
@@ -31,9 +31,8 @@ class database_cred:
     
     def add_to_collection(self,db_collection):
         db_collection.append(self)
-        #print(f"{hex(id(self))} was added to db collection {db_collection}")
 
-def get_postgres_conn(self):
+def get_postgres_conn(dbLoader):
     """ Reads QGIS3.ini to get saved user connection parameters of postgres databases""" 
 
     #Current active profile directory #TODO: check if path exists #os.path.exists(my_path)
@@ -42,7 +41,7 @@ def get_postgres_conn(self):
     ini_path=os.path.normpath(ini_path)
 
     # Clear the contents of the comboBox from previous runs
-    self.btnConnToExist.clear()
+    dbLoader.dlg.btnConnToExist.clear()
 
     
 
@@ -66,7 +65,7 @@ def get_postgres_conn(self):
             db_instance =database_cred(current_connection_name,database)
             db_instance.add_to_collection(db_collection)
 
-            self.btnConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
+            dbLoader.dlg.btnConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
             
         if 'host' in str(key):
             host = parser['PostgreSQL'][key]
@@ -91,20 +90,20 @@ def get_postgres_conn(self):
 def connect(db):
 
     # connect to the PostgreSQL server
-    connection = psycopg2.connect(dbname= db.database,
+    connection = psycopg2.connect(dbname= db.database_name,
                             user= db.user,
                             password= db.password,
                             host= db.host,
                             port= db.port)
     return connection
 
-def connect_and_check(db):
+def connect_and_check(dbLoader):
     """ Connect to the PostgreSQL database server """
-
+    database = dbLoader.dlg.btnConnToExist.currentData()
     conn = None
     try:
 
-        conn = connect(db)
+        conn = connect(database)
 		
         # create a cursor
         cur = conn.cursor()
@@ -166,27 +165,24 @@ def connect_and_check(db):
             conn.close()
     return 1
 
-def fill_schema_box(self,db):
-
+def fill_schema_box(dbLoader):
+    database = dbLoader.dlg.btnConnToExist.currentData()
     conn = None
     try:
 
-        conn = connect(db)
+        conn = connect(database)
 
         # create a cursor
         cur = conn.cursor()
 
         #Get all schemas
-        cur.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name != 'information_schema' AND NOT schema_name LIKE '%pg%' ORDER BY schema_name ASC")
-        schema = cur.fetchall()
+        cur.execute("SELECT schema_name,'' FROM information_schema.schemata WHERE schema_name != 'information_schema' AND NOT schema_name LIKE '%pg%' ORDER BY schema_name ASC")
+        schemas = cur.fetchall()
 
-        #schema check
-        schemas=[]
-        for pair in schema: #TODO: break the pair to table , schema
-            schemas.append(pair[0])
+        schemas,empty=zip(*schemas)
 
-        self.cbxScema.clear()
-        self.cbxScema.addItems(schemas)
+        dbLoader.dlg.cbxScema.clear()
+        dbLoader.dlg.cbxScema.addItems(sorted(schemas))
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -197,7 +193,8 @@ def fill_schema_box(self,db):
             conn.close()
     return 1
 
-def check_schema(self,db):
+def check_schema(dbLoader):
+    database = dbLoader.dlg.btnConnToExist.currentData()
 
     features={'cityobject':False,'building':False} #Named after their main corresponding table name from the 3DCityDB.
     #NOTE: the above list is currently (28/11/21) restricted only to cityobject->building.  
@@ -205,10 +202,10 @@ def check_schema(self,db):
     conn = None
     try:
 
-        conn = connect(db)
+        conn = connect(database)
 
         #Get schema stored in 'schema combobox'
-        schema=self.cbxScema.currentText()
+        schema=dbLoader.dlg.cbxScema.currentText()
     
         cur=conn.cursor()
 
@@ -235,8 +232,8 @@ def check_schema(self,db):
         
         # Add to combobox ONLY cityobject features
         features_to_display.remove('cityobject')
-        self.qcbxFeature.clear()
-        self.qcbxFeature.addItems(features_to_display)
+        dbLoader.dlg.qcbxFeature.clear()
+        dbLoader.dlg.qcbxFeature.addItems(features_to_display)
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -249,19 +246,22 @@ def check_schema(self,db):
     conn.close()
     return 1
 
-def check_geometry(self,db,sc,ft):
+def check_geometry(dbLoader):
     conn = None
-    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
+    database = dbLoader.dlg.btnConnToExist.currentData()
+    schema = dbLoader.dlg.cbxScema.currentText()
+    feature = dbLoader.dlg.qcbxFeature.currentText()
+    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() 
 
     try:
 
-        conn = connect(db)
+        conn = connect(database)
         cur=conn.cursor()
 
         #Get amount of features inside the extents 
         cur.execute(f"""SELECT count(*),'' 
-                        FROM {sc}.cityobject co
-                        JOIN {sc}.{ft} bg 
+                        FROM {schema}.cityobject co
+                        JOIN {schema}.{feature} bg 
                         ON co.id = bg.id
                         WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
         count=cur.fetchone()
@@ -269,10 +269,10 @@ def check_geometry(self,db,sc,ft):
 
         #Guard against importing many feutures
         if count>3000:
-            QMessageBox.warning(self.dlg,"Warning", f"Too many features set to be import ({count})'!\n"
+            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be import ({count})'!\n"
                                                     "This could hinder perfomance and even cause frequent crashes.") #TODO: justify it better with storage size to 
         else:
-            QMessageBox.information(self.dlg,"Info", f"{count} '{ft}' features contained in current extent.")
+            QMessageBox.information(dbLoader.dlg,"Info", f"{count} '{feature}' features contained in current extent.")
             if count == 0:
                 cur.close()
                 conn.close()
@@ -280,8 +280,8 @@ def check_geometry(self,db,sc,ft):
         #Get geometry columns
         cur.execute(f"""SELECT column_name,'' 
                         FROM information_schema.columns 
-                        WHERE table_name = '{ft}' 
-                        AND table_schema = '{sc}' 
+                        WHERE table_name = '{feature}' 
+                        AND table_schema = '{schema}' 
                         AND column_name 
                         LIKE 'lod%%id'""")
 
@@ -291,8 +291,8 @@ def check_geometry(self,db,sc,ft):
         #Get amount of features inside the extents #TODO: select from a list of columns
         cur.execute(f"""SELECT lod0_footprint_id, lod0_roofprint_id, lod1_multi_surface_id,lod1_solid_id,
                         lod2_multi_surface_id,lod2_solid_id
-                        FROM {sc}.cityobject co
-                        JOIN {sc}.{ft} bg 
+                        FROM {schema}.cityobject co
+                        JOIN {schema}.{feature} bg 
                         ON co.id = bg.id""")
         attributes=cur.fetchall()
 
@@ -301,8 +301,8 @@ def check_geometry(self,db,sc,ft):
                         'LOD1':{'Muilti_surface':False,"Solid":False},
                         'LOD2':{'Muilti_surface':False,"Solid":False}}
 
-        self.dlg.cbxGeometryLvl.clear()
-        self.dlg.cbxGeomteryType.clear()
+        dbLoader.dlg.cbxGeometryLvl.clear()
+        dbLoader.dlg.cbxGeomteryType.clear()
         
         lod0=[]
         lod1=[]
@@ -348,7 +348,7 @@ def check_geometry(self,db,sc,ft):
         lvls = {'LoD0':lod0,'LoD1':lod1,'LoD2':lod2}
         for lvl,types in lvls.items():
             if lvl:
-                self.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
+                dbLoader.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
 
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -363,13 +363,13 @@ def check_geometry(self,db,sc,ft):
     return 3
 
 #NOTE: currently only works for footpirnts #TODO:Create Different Updatable view for every geometry lvl/type combination
-def import_layer(self): 
-    selected_db=self.dlg.btnConnToExist.currentData()
-    selected_schema=self.dlg.cbxScema.currentText()
-    selected_feature=self.dlg.qcbxFeature.currentText()
-    selected_geometryLvl=self.dlg.cbxGeometryLvl.currentText()
-    selected_geometryLvl=self.dlg.cbxGeomteryType.currentText()
-    extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon()
+def import_layer(dbLoader): 
+    selected_db=dbLoader.dlg.btnConnToExist.currentData()
+    selected_schema=dbLoader.dlg.cbxScema.currentText()
+    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
+    selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
+    selected_geometryLvl=dbLoader.dlg.cbxGeomteryType.currentText()
+    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon()
     view_name= 'v_building'
 
     conn = None
@@ -392,7 +392,7 @@ def import_layer(self):
 
 
     uri = QgsDataSourceUri()
-    uri.setConnection(selected_db.host,selected_db.port,selected_db.database,selected_db.user,selected_db.password)
+    uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
     #params: schema, table, geometry, [subset], primary key
     uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
     vlayer = QgsVectorLayer(uri.uri(False), f"{selected_feature}", "postgres")
