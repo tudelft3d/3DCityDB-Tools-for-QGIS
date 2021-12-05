@@ -103,11 +103,10 @@ def connect_and_check(dbLoader):
     conn = None
     try:
 
-        conn = connect(database)
+        dbLoader.conn = connect(database)
 		
         # create a cursor
-        cur = conn.cursor()
-        
+        cur = dbLoader.conn.cursor()  
         # get all tables with theirs schemas    inspired from https://www.codedrome.com/reading-postgresql-database-schemas-with-python/ (access on 27/11/21)
         cur.execute("""SELECT table_schema,table_name
                       FROM information_schema.tables
@@ -152,7 +151,7 @@ def connect_and_check(dbLoader):
         if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg' and exists['objectclass']]):
             # close the communication with the PostgreSQL
             cur.close()
-            conn.close()
+            dbLoader.conn.close()
             return 0
 
 	
@@ -162,7 +161,7 @@ def connect_and_check(dbLoader):
         if conn is not None:
             # close the communication with the PostgreSQL
             cur.close()
-            conn.close()
+
     return 1
 
 def fill_schema_box(dbLoader):
@@ -170,10 +169,8 @@ def fill_schema_box(dbLoader):
     conn = None
     try:
 
-        conn = connect(database)
-
         # create a cursor
-        cur = conn.cursor()
+        cur = dbLoader.conn.cursor()
 
         #Get all schemas
         cur.execute("SELECT schema_name,'' FROM information_schema.schemata WHERE schema_name != 'information_schema' AND NOT schema_name LIKE '%pg%' ORDER BY schema_name ASC")
@@ -190,7 +187,7 @@ def fill_schema_box(dbLoader):
         if conn is not None:
             # close the communication with the PostgreSQL
             cur.close()
-            conn.close()
+
     return 1
 
 def check_schema(dbLoader):
@@ -202,12 +199,10 @@ def check_schema(dbLoader):
     conn = None
     try:
 
-        conn = connect(database)
-
         #Get schema stored in 'schema combobox'
         schema=dbLoader.dlg.cbxScema.currentText()
     
-        cur=conn.cursor()
+        cur=dbLoader.conn.cursor()
 
         #Check if current schema has cityobject, building features.
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
@@ -225,7 +220,7 @@ def check_schema(dbLoader):
         for f in features:
             if not features[f]:
                 cur.close()
-                conn.close()
+
                 return 0
             else:
                 features_to_display.append(f)
@@ -243,7 +238,7 @@ def check_schema(dbLoader):
             #cur.close()
             pass
     cur.close()
-    conn.close()
+
     return 1
 
 def check_geometry(dbLoader):
@@ -255,8 +250,8 @@ def check_geometry(dbLoader):
 
     try:
 
-        conn = connect(database)
-        cur=conn.cursor()
+
+        cur=dbLoader.conn.cursor()
 
         #Get amount of features inside the extents 
         cur.execute(f"""SELECT count(*),'' 
@@ -275,7 +270,6 @@ def check_geometry(dbLoader):
             QMessageBox.information(dbLoader.dlg,"Info", f"{count} '{feature}' features contained in current extent.")
             if count == 0:
                 cur.close()
-                conn.close()
                 return 2
         #Get geometry columns
         cur.execute(f"""SELECT column_name,'' 
@@ -359,7 +353,7 @@ def check_geometry(dbLoader):
             #cur.close()
             pass
     cur.close()
-    conn.close()
+
     return 3
 
 #NOTE: currently only works for footpirnts #TODO:Create Different Updatable view for every geometry lvl/type combination
@@ -376,9 +370,8 @@ def import_layer(dbLoader):
 
     try:
 
-        conn = connect(selected_db)
-        cur=conn.cursor()
 
+        cur=dbLoader.conn.cursor()
         #Get layer view containg all attributes from feature 
         cur.execute(f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
                         SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
@@ -386,10 +379,9 @@ def import_layer(dbLoader):
                         JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
                         JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
                     """)
-        
-        conn.commit()
+        dbLoader.conn.commit()
         cur.close()
-        conn.close()
+
 
         #Create view to import based on user attributes
         dbLoader.iface.mainWindow().blockSignals(True)
@@ -406,6 +398,7 @@ def import_layer(dbLoader):
         QgsProject.instance().addMapLayer(vlayer)
         dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
 
+        dbLoader.conn.close()
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -414,8 +407,8 @@ def import_layer(dbLoader):
         if conn is not None:
             # close the communication with the PostgreSQL
             #cur.close()
-            cur.close()
-            conn.close()
+            pass
+
 
 
     
@@ -426,3 +419,5 @@ def import_layer(dbLoader):
 
 #NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 
 #Maybe find a way to keep the connection open until the plugin ultimately closes
+
+#TODO: Check if Commit is needed after every query execution https://www.psycopg.org/docs/faq.html
