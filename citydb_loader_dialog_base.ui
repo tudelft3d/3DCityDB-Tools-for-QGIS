@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>629</width>
-    <height>581</height>
+    <width>665</width>
+    <height>593</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -18,6 +18,10 @@
   </property>
   <property name="windowTitle">
    <string>3DCityDB-Loader</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icon.png</normaloff>icon.png</iconset>
   </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
@@ -59,6 +63,10 @@
       <bool>false</bool>
      </property>
      <widget class="QWidget" name="tbConn">
+      <attribute name="icon">
+       <iconset>
+        <normaloff>Postgresql_elephant.svg</normaloff>Postgresql_elephant.svg</iconset>
+      </attribute>
       <attribute name="title">
        <string>Connection</string>
       </attribute>
@@ -73,7 +81,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="btnConnToExist">
+          <widget class="QComboBox" name="cbxConnToExist">
            <property name="toolTip">
             <string>uylilu</string>
            </property>
@@ -127,9 +135,62 @@
         </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="btnCeckCityDB">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnCheckConn">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
-          <string>Check 3DCityDb compatability of &lt;DB&gt;</string>
+          <string>Connect to &lt;DB&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblConnection">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnCeckCityDB">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Check 3DCityDB compatability of &lt;DB&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblCityDbStatus">
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>
@@ -139,6 +200,10 @@
       <property name="enabled">
        <bool>false</bool>
       </property>
+      <attribute name="icon">
+       <iconset>
+        <normaloff>../../../../../../../../../Desktop/Thesis_3DCityDB_plugin/cover page/3DCityDB_Logo.png</normaloff>../../../../../../../../../Desktop/Thesis_3DCityDB_plugin/cover page/3DCityDB_Logo.png</iconset>
+      </attribute>
       <attribute name="title">
        <string>Import</string>
       </attribute>
