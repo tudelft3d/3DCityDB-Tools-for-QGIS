@@ -202,8 +202,9 @@ class DBLoader:
             self.dlg = DBLoaderDialog()
 
         ## 'Connection' tab ######################################################################################
-            self.dlg.btnConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)
+            self.dlg.cbxConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)
             self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked) #New Dialog TODO: leave this for later
+            self.dlg.btnCheckConn.clicked.connect(self.evt_btnCheckConn_clicked)
             self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
         ##----------------########################################################################################
 
@@ -230,7 +231,7 @@ class DBLoader:
             print("Initial start")
             
         #Get existing connections
-            get_postgres_conn(self)
+            dbs=get_postgres_conn(self)
     
         #Get new connection
         #TODO: For later
@@ -264,13 +265,28 @@ class DBLoader:
         dlgConnector.show()
         dlgConnector.exec_()
 
+    def evt_btnCheckConn_clicked(self):
+        selected_db=self.dlg.cbxConnToExist.currentData()
+        if is_connected(self):
+            self.dlg.lblConnection.setText(f"You are connected to '{selected_db.database_name}' on server version '{selected_db.s_version}'")
+            self.dlg.lblConnection.setStyleSheet("color:green")     
+            self.dlg.btnCeckCityDB.setDisabled(False)
+
+        else:
+            QMessageBox.critical(self.dlg,"Connection Failure", f"Failed to connect to '{selected_db.database_name}'! ")
+            self.dlg.btnCeckCityDB.setDisabled(True)
+
     def evt_btnCeckCityDB_clicked(self):
 
-        selected_db=self.dlg.btnConnToExist.currentData()
-        if connect_and_check(self):
-            QMessageBox.information(self.dlg,"Success", f"Connection to '{selected_db.database_name}' established successfuly and the structure seems fine!")
+        selected_db=self.dlg.cbxConnToExist.currentData()
+        #print(is_3dcitydb(self))
+
+        if is_3dcitydb(self):
+            QMessageBox.information(self.dlg,"Success", f"'{selected_db.database_name}' is 3DCityDB!")
 
             #Parially enable the 'Import' tab.
+            self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: '{selected_db.c_version}'")
+            self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
             self.dlg.tbImport.setDisabled(False)
             self.dlg.grbSchema.setDisabled(False)
             self.dlg.grbFeature.setDisabled(True)
@@ -281,7 +297,7 @@ class DBLoader:
             
 
         else:
-            QMessageBox.critical(self.dlg,"Fail", f"Connection to '{selected_db.database_name}' FAILED or the DB structure is not compatible with 3DCityDB!")
+            QMessageBox.critical(self.dlg,"Fail", f"'{selected_db.database_name}' is NOT 3DCityDB!")
             #Disable 'Import' tab in case of connection fail
             self.dlg.tbImport.setDisabled(True)
             self.dlg.cbxScema.clear()
@@ -293,8 +309,15 @@ class DBLoader:
         #TODO: Display more insightfull fail messages
     
     def evt_btnConnToExist_changed(self, idx):
-        selected_db=self.dlg.btnConnToExist.itemData(idx)
+        selected_db=self.dlg.cbxConnToExist.itemData(idx)
+        print(selected_db)
         self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database_name}'")
+        self.dlg.btnCheckConn.setText(f"Connect to '{selected_db.database_name}'")
+        
+        self.dlg.lblConnection.clear()
+        self.dlg.lblCityDbStatus.clear()
+        self.dlg.btnCheckConn.setDisabled(False)
+        self.dlg.btnCeckCityDB.setDisabled(True)
 
 ###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################

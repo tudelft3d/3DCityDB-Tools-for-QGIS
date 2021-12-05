@@ -14,6 +14,8 @@ class database_cred:
         self.password='*****'
         self.store_creds=None
         self.is_active=None
+        self.s_version=None
+        self.c_version=None
         self.id=id(self)
         self.hex_location=hex(self.id)
         
@@ -26,6 +28,8 @@ class database_cred:
         print(f"user:{self.user}")
         print(f"password:{self.password[0]}{self.password[1]}*****")
         print(f"id:{self.id}")
+        print(f"DB version:{self.s_version}")
+        print(f"3DCityDB version:{self.c_version}")
         print(f"hex location:{self.hex_location}")
         return('\n')
     
@@ -41,7 +45,7 @@ def get_postgres_conn(dbLoader):
     ini_path=os.path.normpath(ini_path)
 
     # Clear the contents of the comboBox from previous runs
-    dbLoader.dlg.btnConnToExist.clear()
+    dbLoader.dlg.cbxConnToExist.clear()
 
     
 
@@ -65,7 +69,7 @@ def get_postgres_conn(dbLoader):
             db_instance =database_cred(current_connection_name,database)
             db_instance.add_to_collection(db_collection)
 
-            dbLoader.dlg.btnConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
+            dbLoader.dlg.cbxConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
             
         if 'host' in str(key):
             host = parser['PostgreSQL'][key]
@@ -97,75 +101,94 @@ def connect(db):
                             port= db.port)
     return connection
 
-def connect_and_check(dbLoader):
-    """ Connect to the PostgreSQL database server """
-    database = dbLoader.dlg.btnConnToExist.currentData()
+def is_connected(dbLoader):
+    database = dbLoader.dlg.cbxConnToExist.currentData()
     conn = None
+    dbLoader.conn = connect(database)
     try:
+        cur = dbLoader.conn.cursor()
+        cur.execute("SHOW server_version;")
+        version = cur.fetchone()
+        database.s_version= version[0]
 
-        dbLoader.conn = connect(database)
-		
-        # create a cursor
-        cur = dbLoader.conn.cursor()  
-        # get all tables with theirs schemas    inspired from https://www.codedrome.com/reading-postgresql-database-schemas-with-python/ (access on 27/11/21)
-        cur.execute("""SELECT table_schema,table_name
-                      FROM information_schema.tables
-                      WHERE table_schema != 'pg_catalog'
-                      AND table_schema != 'information_schema'
-                      AND table_type='BASE TABLE'
-                      ORDER BY table_schema,table_name""")
-        table_schema = cur.fetchall() #NOTE: For some reason it can't get ALL the schemas
-
-        #Get all schemas
-        cur.execute("SELECT schema_name FROM information_schema.schemata")
-        schema = cur.fetchall()
-
-	    # # get all tables
-        # cur.execute("""SELECT table_name
-        #               FROM information_schema.tables
-        #               WHERE table_schema != 'pg_catalog'
-        #               AND table_schema != 'information_schema'
-        #               AND table_type='BASE TABLE'
-        #               ORDER BY table_name""")
-        # tables = cur.fetchall()
-
-
-        #Check conditions for a valid the 3DCityDB structure. NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
-        exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False} #TODO: add PostGIS and other extentions to the check  
-        
-        #table check
-        for pair in table_schema: #TODO: break the pair to table, schema 
-            if 'cityobject' in pair:
-                exists['cityobject']=True
-            if 'building' in pair:
-                exists['building']=True
-            if 'citydb_pkg' in pair:
-                exists['citydb_pkg']=True
-            if 'objectclass' in pair:
-                exists['objectclass']=True
-        #chema check
-        for pair in schema:
-            if 'citydb_pkg' in pair:
-                exists['citydb_pkg']=True
-        
-        if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg' and exists['objectclass']]):
-            # close the communication with the PostgreSQL
-            cur.close()
-            dbLoader.conn.close()
-            return 0
-
-	
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
-        if conn is not None:
-            # close the communication with the PostgreSQL
+        if dbLoader.conn is not None:
             cur.close()
+
+    return 1
+def is_3dcitydb(dbLoader):
+    """ Connect to the PostgreSQL database server """
+    database = dbLoader.dlg.cbxConnToExist.currentData()
+
+		
+    # create a cursor
+    cur = dbLoader.conn.cursor()  
+
+    # get all tables with theirs schemas    inspired from https://www.codedrome.com/reading-postgresql-database-schemas-with-python/ (access on 27/11/21)
+    cur.execute("""SELECT table_schema,table_name
+                    FROM information_schema.tables
+                    WHERE table_schema != 'pg_catalog'
+                    AND table_schema != 'information_schema'
+                    AND table_type='BASE TABLE'
+                    ORDER BY table_schema,table_name""")
+    table_schema = cur.fetchall() #NOTE: For some reason it can't get ALL the schemas
+    cur.close()
+
+    cur = dbLoader.conn.cursor()  
+    #Get all schemas
+    cur.execute("SELECT schema_name FROM information_schema.schemata")
+    schema = cur.fetchall()
+    cur.close()
+
+    # # get all tables
+    # cur.execute("""SELECT table_name
+    #               FROM information_schema.tables
+    #               WHERE table_schema != 'pg_catalog'
+    #               AND table_schema != 'information_schema'
+    #               AND table_type='BASE TABLE'
+    #               ORDER BY table_name""")
+    # tables = cur.fetchall()
+
+
+    #Check conditions for a valid the 3DCityDB structure. NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
+    exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False} #TODO: add PostGIS and other extentions to the check  
+    
+    #table check
+    for pair in table_schema: #TODO: break the pair to table, schema 
+        if 'cityobject' in pair:
+            exists['cityobject']=True
+        if 'building' in pair:
+            exists['building']=True
+        if 'citydb_pkg' in pair:
+            exists['citydb_pkg']=True
+        if 'objectclass' in pair:
+            exists['objectclass']=True
+    #chema check
+    for pair in schema:
+        if 'citydb_pkg' in pair:
+            exists['citydb_pkg']=True
+
+    
+    if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg'] and exists['objectclass']):
+        # close the communication with the PostgreSQL
+        print('No')
+        cur.close()
+        return 0
+        
+    # cur = dbLoader.conn.cursor()  
+    # cur.execute("SELECT citydb_pkg.citydb_version();")
+    # version= cur.fetchall()
+    # cur.close()
+    # print("ger")
+    # print('heer',version)
+    # database.c_version= version[0]
 
     return 1
 
 def fill_schema_box(dbLoader):
-    database = dbLoader.dlg.btnConnToExist.currentData()
+    database = dbLoader.dlg.cbxConnToExist.currentData()
     conn = None
     try:
 
@@ -184,14 +207,14 @@ def fill_schema_box(dbLoader):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
-        if conn is not None:
+        if dbLoader.conn is not None:
             # close the communication with the PostgreSQL
             cur.close()
 
     return 1
 
 def check_schema(dbLoader):
-    database = dbLoader.dlg.btnConnToExist.currentData()
+    database = dbLoader.dlg.cbxConnToExist.currentData()
 
     features={'cityobject':False,'building':False} #Named after their main corresponding table name from the 3DCityDB.
     #NOTE: the above list is currently (28/11/21) restricted only to cityobject->building.  
@@ -210,6 +233,7 @@ def check_schema(dbLoader):
                         AND table_name = '{list(features.keys())[0]}' OR table_name = '{list(features.keys())[1]}'
                         ORDER BY table_name ASC""")
         feature_table= cur.fetchall()
+        cur.close()
 
         for t, s in feature_table:
             if t in list(features.keys()):
@@ -233,17 +257,17 @@ def check_schema(dbLoader):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
-        if conn is not None:
+        if dbLoader.conn is not None:
             # close the communication with the PostgreSQL
             #cur.close()
             pass
-    cur.close()
+    
 
     return 1
 
 def check_geometry(dbLoader):
     conn = None
-    database = dbLoader.dlg.btnConnToExist.currentData()
+    database = dbLoader.dlg.cbxConnToExist.currentData()
     schema = dbLoader.dlg.cbxScema.currentText()
     feature = dbLoader.dlg.qcbxFeature.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() 
@@ -260,6 +284,7 @@ def check_geometry(dbLoader):
                         ON co.id = bg.id
                         WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
         count=cur.fetchone()
+        cur.close()
         count,empty=count
 
         #Guard against importing many feutures
@@ -271,6 +296,7 @@ def check_geometry(dbLoader):
             if count == 0:
                 cur.close()
                 return 2
+        cur=dbLoader.conn.cursor()
         #Get geometry columns
         cur.execute(f"""SELECT column_name,'' 
                         FROM information_schema.columns 
@@ -280,8 +306,10 @@ def check_geometry(dbLoader):
                         LIKE 'lod%%id'""")
 
         columns=cur.fetchall()
+        cur.close()
         columns,empty=zip(*columns)
-
+        
+        cur=dbLoader.conn.cursor()
         #Get amount of features inside the extents #TODO: select from a list of columns
         cur.execute(f"""SELECT lod0_footprint_id, lod0_roofprint_id, lod1_multi_surface_id,lod1_solid_id,
                         lod2_multi_surface_id,lod2_solid_id
@@ -289,6 +317,7 @@ def check_geometry(dbLoader):
                         JOIN {schema}.{feature} bg 
                         ON co.id = bg.id""")
         attributes=cur.fetchall()
+        cur.close()
 
 
         geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
@@ -348,17 +377,17 @@ def check_geometry(dbLoader):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
-        if conn is not None:
+        if dbLoader.conn is not None:
             # close the communication with the PostgreSQL
             #cur.close()
             pass
-    cur.close()
+    
 
     return 3
 
 #NOTE: currently only works for footpirnts #TODO:Create Different Updatable view for every geometry lvl/type combination
 def import_layer(dbLoader): 
-    selected_db=dbLoader.dlg.btnConnToExist.currentData()
+    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_feature=dbLoader.dlg.qcbxFeature.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
@@ -398,13 +427,12 @@ def import_layer(dbLoader):
         QgsProject.instance().addMapLayer(vlayer)
         dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
 
-        dbLoader.conn.close()
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
         dbLoader.show_Qmsg('Import failed! Check Log Messages')
     finally:
-        if conn is not None:
+        if dbLoader.conn is not None:
             # close the communication with the PostgreSQL
             #cur.close()
             pass
@@ -417,7 +445,6 @@ def import_layer(dbLoader):
 
 
 
-#NOTE:TODO: for every event and every check of database, a new connection Opens/Closes. 
-#Maybe find a way to keep the connection open until the plugin ultimately closes
-
 #TODO: Check if Commit is needed after every query execution https://www.psycopg.org/docs/faq.html
+
+#TODO: drop view when layer is removed from project
