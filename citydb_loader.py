@@ -310,7 +310,6 @@ class DBLoader:
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.cbxConnToExist.itemData(idx)
-        print(selected_db)
         self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database_name}'")
         self.dlg.btnCheckConn.setText(f"Connect to '{selected_db.database_name}'")
         
@@ -401,7 +400,6 @@ class DBLoader:
     def evt_btnImport_clicked(self):
         import_layer(self)
         self.dlg.close()
-        self.show_Qmsg('Success')
 
 
 

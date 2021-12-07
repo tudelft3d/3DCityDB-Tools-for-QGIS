@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, configparser
 import psycopg2
-from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem
+from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem,Qgis
 from qgis.PyQt.QtWidgets import QMessageBox
 
 class database_cred:
@@ -310,19 +310,31 @@ def check_geometry(dbLoader):
         columns,empty=zip(*columns)
         
         cur=dbLoader.conn.cursor()
-        #Get amount of features inside the extents #TODO: select from a list of columns
-        cur.execute(f"""SELECT lod0_footprint_id, lod0_roofprint_id, lod1_multi_surface_id,lod1_solid_id,
-                        lod2_multi_surface_id,lod2_solid_id
-                        FROM {schema}.cityobject co
-                        JOIN {schema}.{feature} bg 
-                        ON co.id = bg.id""")
+        cur.execute(f"SELECT * FROM {schema}.thematic_surface;")
+        hasThematic = cur.fetchone()
+        if hasThematic:
+
+            #Get amount of features inside the extents #TODO: select from a list of columns
+            cur.execute(f"""SELECT  bg.lod0_footprint_id, bg.lod0_roofprint_id, bg.lod1_multi_surface_id,bg.lod1_solid_id, bg.lod2_multi_surface_id,
+                                    bg.lod2_solid_id,th.lod2_multi_surface_id
+                            FROM {schema}.cityobject co
+                            JOIN {schema}.{feature} bg ON co.id = bg.id
+                            JOIN {schema}.thematic_surface th ON th.building_id = bg.id;
+                        """)
+            
+        else:
+            cur.execute(f"""SELECT  bg.lod0_footprint_id, bg.lod0_roofprint_id, bg.lod1_multi_surface_id,bg.lod1_solid_id, bg.lod2_multi_surface_id,
+                                    bg.lod2_solid_id,NULL
+                            FROM {schema}.cityobject co
+                            JOIN {schema}.{feature} bg ON co.id = bg.id;""")
         attributes=cur.fetchall()
         cur.close()
 
 
         geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
-                        'LOD1':{'Muilti_surface':False,"Solid":False},
-                        'LOD2':{'Muilti_surface':False,"Solid":False}}
+                        'LOD1':{'Multi surface':False,"Solid":False},
+                        'LOD2':{'Multi surface':False,"Solid":False,"Thematic surface":False}
+                    }
 
         dbLoader.dlg.cbxGeometryLvl.clear()
         dbLoader.dlg.cbxGeomteryType.clear()
@@ -332,6 +344,7 @@ def check_geometry(dbLoader):
         lod2=[]
 
         for feature in attributes:
+            
             if feature[0] is not None:
                 if not geometry_lvls['LOD0']['Footprint']:
                     lod0.append('Footprint')
@@ -345,9 +358,9 @@ def check_geometry(dbLoader):
                 else: continue
 
             if feature[2] is not None:
-                if not geometry_lvls['LOD1']['Muilti_surface']:
-                    lod1.append('Muilti_surface')
-                    geometry_lvls['LOD1']['Muilti_surface']=True
+                if not geometry_lvls['LOD1']['Multi surface']:
+                    lod1.append('Multi surface')
+                    geometry_lvls['LOD1']['Multi surface']=True
                 else: continue
 
             if feature[3] is not None:
@@ -357,9 +370,9 @@ def check_geometry(dbLoader):
                 else: continue
 
             if feature[4] is not None:
-                if not geometry_lvls['LOD2']['Muilti_surface']:
-                    lod2.append('Muilti_surface')
-                    geometry_lvls['LOD2']['Muilti_surface']=True
+                if not geometry_lvls['LOD2']['Multi surface']:
+                    lod2.append('Multi surface')
+                    geometry_lvls['LOD2']['Multi surface']=True
                 else: continue
 
             if feature[5] is not None:
@@ -367,6 +380,13 @@ def check_geometry(dbLoader):
                     lod2.append('Solid')
                     geometry_lvls['LOD2']['Solid']=True
                 else: continue
+            
+            if feature[6] is not None:
+                if not geometry_lvls['LOD2']['Thematic surface']:
+                    lod2.append('Thematic surface')
+                    geometry_lvls['LOD2']['Thematic surface']=True
+                else: continue
+
 
         lvls = {'LoD0':lod0,'LoD1':lod1,'LoD2':lod2}
         for lvl,types in lvls.items():
@@ -392,22 +412,94 @@ def import_layer(dbLoader):
     selected_feature=dbLoader.dlg.qcbxFeature.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon()
+    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
     view_name= 'v_building'
-
+    building_attr=  """
+                                b.id, o.gmlid,
+                                o.envelope,
+                                b.class,
+                                b.function, b.usage,
+                                b.year_of_construction, b.year_of_demolition,
+                                b.roof_type,
+                                b.measured_height,measured_height_unit,
+                                b.storeys_above_ground, b.storeys_below_ground,
+                                b.storey_heights_above_ground, b.storey_heights_ag_unit,
+                                b.storey_heights_below_ground, b.storey_heights_bg_unit
+                    """
     conn = None
 
     try:
 
-
         cur=dbLoader.conn.cursor()
+
+        if selected_geometryLvl == 'LoD0':
+            if selected_geometryType == 'Footprint':
+                view_name+='_lod0_footprint'
+                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                                {building_attr},
+                                geom.geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod0_footprint_id
+                                WHERE geom.geometry IS NOT NULL;
+                            """
+            elif selected_geometryType == 'Roofprint': #NOTE: roofprint is not tested on real data case 
+                view_name+='_lod0_roofprint'
+                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                                {building_attr},
+                                geom.geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod0_roofprint_id
+                                WHERE geom.geometry IS NOT NULL;
+                            """
+        elif selected_geometryLvl == 'LoD1':
+            if selected_geometryType == 'Solid':
+                view_name+='_lod1_solid'
+                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                                {building_attr},
+                                geom.solid_geometry as geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_solid_id
+                                WHERE geom.solid_geometry IS NOT NULL;
+                            """
+            elif selected_geometryType == 'Multisurface': #TODO
+                pass
+        elif selected_geometryLvl == 'LoD2':
+            if selected_geometryType == 'Solid':
+                view_name+='_lod2_solid'
+                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                                {building_attr},
+                                geom.solid_geometry as geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_solid_id
+                                WHERE geom.solid_geometry IS NOT NULL;
+                            """
+            elif selected_geometryType == 'Multi surface': #TODO
+                pass
+            elif selected_geometryType == "Thematic surface":
+                view_name+='_lod2_thematic'
+                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() OVER (ORDER BY b.id) as gid,
+                                {building_attr},
+                                ST_COLLECT(geom.geometry) as geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.thematic_surface th ON th.building_id = b.id 
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id = th.lod2_multi_surface_id
+                                WHERE geom.geometry IS NOT NULL
+                                GROUP BY b.id,o.gmlid,o.envelope;
+                            """
+
         #Get layer view containg all attributes from feature 
-        cur.execute(f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                        SELECT row_number() OVER (ORDER BY o.id) as gid, o.id, o.envelope, b.class, b.year_of_construction, b.lod0_footprint_id, g.geometry
-                        FROM {selected_schema}.cityobject o
-                        JOIN {selected_schema}.{selected_feature} b ON o.id=b.id
-                        JOIN {selected_schema}.surface_geometry g ON g.parent_id=b.lod0_footprint_id;
-                    """)
+        #cur.execute(f'DROP VIEW IF EXISTS {view_name};')
+        cur.execute(sql_query)
         dbLoader.conn.commit()
         cur.close()
 
@@ -418,7 +510,7 @@ def import_layer(dbLoader):
         uri = QgsDataSourceUri()
         uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
         #params: schema, table, geometry, [subset], primary key
-        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
+        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))", aKeyColumn='gid')
         vlayer = QgsVectorLayer(uri.uri(False), f"{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}", "postgres")
         crs = vlayer.crs()
         crs.createFromId(28992)  #TODO: Dont hardcode it
@@ -427,15 +519,18 @@ def import_layer(dbLoader):
         QgsProject.instance().addMapLayer(vlayer)
         dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
 
+        dbLoader.show_Qmsg('Success!!')
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
-        dbLoader.show_Qmsg('Import failed! Check Log Messages')
+        dbLoader.show_Qmsg('Import failed! Check Log Messages',msg_type=Qgis.Critical)
     finally:
         if dbLoader.conn is not None:
             # close the communication with the PostgreSQL
             #cur.close()
             pass
+            
+    
 
 
 
