@@ -391,7 +391,7 @@ def import_layer(dbLoader):
     selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_feature=dbLoader.dlg.qcbxFeature.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
-    selected_geometryLvl=dbLoader.dlg.cbxGeomteryType.currentText()
+    selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon()
     view_name= 'v_building'
 
@@ -419,7 +419,7 @@ def import_layer(dbLoader):
         uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
         #params: schema, table, geometry, [subset], primary key
         uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),envelope)", aKeyColumn='gid')
-        vlayer = QgsVectorLayer(uri.uri(False), f"{selected_feature}", "postgres")
+        vlayer = QgsVectorLayer(uri.uri(False), f"{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}", "postgres")
         crs = vlayer.crs()
         crs.createFromId(28992)  #TODO: Dont hardcode it
         vlayer.setCrs(crs)
