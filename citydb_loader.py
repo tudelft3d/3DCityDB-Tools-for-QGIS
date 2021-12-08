@@ -34,6 +34,7 @@ from .resources import *
 from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
 from .connector import DlgConnector                 #New Connection dialog
 from .functions import *
+from .connection import *
 
 import os.path
 
@@ -268,7 +269,7 @@ class DBLoader:
     def evt_btnCheckConn_clicked(self):
         selected_db=self.dlg.cbxConnToExist.currentData()
         if is_connected(self):
-            self.dlg.lblConnection.setText(f"You are connected to '{selected_db.database_name}' on server version '{selected_db.s_version}'")
+            self.dlg.lblConnection.setText(f"Connected: '{selected_db.database_name}'\nServer version: '{selected_db.s_version}'")
             self.dlg.lblConnection.setStyleSheet("color:green")     
             self.dlg.btnCeckCityDB.setDisabled(False)
 

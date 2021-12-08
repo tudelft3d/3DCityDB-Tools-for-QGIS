@@ -3,103 +3,10 @@ import os, configparser
 import psycopg2
 from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem,Qgis
 from qgis.PyQt.QtWidgets import QMessageBox
+from .connection import *
 
-class database_cred:
-    def __init__(self,connection_name,database): 
-        self.connection_name=connection_name
-        self.database_name=database
-        self.host=None
-        self.port=None
-        self.user=None
-        self.password='*****'
-        self.store_creds=None
-        self.is_active=None
-        self.s_version=None
-        self.c_version=None
-        self.id=id(self)
-        self.hex_location=hex(self.id)
-        
 
-    def __str__(self):
-        print(f"connection name: {self.connection_name}") 
-        print(f"db name: {self.database_name}")
-        print(f"host:{self.host}")
-        print(f"port:{self.port}")
-        print(f"user:{self.user}")
-        print(f"password:{self.password[0]}{self.password[1]}*****")
-        print(f"id:{self.id}")
-        print(f"DB version:{self.s_version}")
-        print(f"3DCityDB version:{self.c_version}")
-        print(f"hex location:{self.hex_location}")
-        return('\n')
-    
-    def add_to_collection(self,db_collection):
-        db_collection.append(self)
 
-def get_postgres_conn(dbLoader):
-    """ Reads QGIS3.ini to get saved user connection parameters of postgres databases""" 
-
-    #Current active profile directory #TODO: check if path exists #os.path.exists(my_path)
-    profile_dir = QgsApplication.qgisSettingsDirPath()
-    ini_path=os.path.join(profile_dir,"QGIS","QGIS3.ini")
-    ini_path=os.path.normpath(ini_path)
-
-    # Clear the contents of the comboBox from previous runs
-    dbLoader.dlg.cbxConnToExist.clear()
-
-    
-
-    parser = configparser.ConfigParser()
-
-    #Makes path 'Case Sensitive'
-    parser.optionxform = str 
-
-    parser.read(ini_path)
-
-    db_collection = []
-    for key in parser['PostgreSQL']:
-        current_connection_name = str(key).split("\\")[1] #NOTE: seems too hardcoded, might break in the feature if .ini structure changes
-        
-        #Show database and connection name into combobox
-        if 'database' in str(key):
-            database_cred
-            database = parser['PostgreSQL'][key]
-
-            #Create DB instance based on current connection. This IF (and the rest) is visited only once per connection  
-            db_instance =database_cred(current_connection_name,database)
-            db_instance.add_to_collection(db_collection)
-
-            dbLoader.dlg.cbxConnToExist.addItem(f'{current_connection_name}',db_instance)#hex(id(db_instance)))
-            
-        if 'host' in str(key):
-            host = parser['PostgreSQL'][key]
-            db_instance.host=host
-
-        if 'port' in str(key):
-            port = parser['PostgreSQL'][key]
-            db_instance.port=port
-
-        if 'user' in str(key):
-            user = parser['PostgreSQL'][key]
-            db_instance.user=user
-
-        if 'password' in str(key): 
-            password = parser['PostgreSQL'][key]
-            db_instance.password=password
- 
-    #NOTE: the above implementation works but feels unstable! Test it 
-
-    return db_collection
-
-def connect(db):
-
-    # connect to the PostgreSQL server
-    connection = psycopg2.connect(dbname= db.database_name,
-                            user= db.user,
-                            password= db.password,
-                            host= db.host,
-                            port= db.port)
-    return connection
 
 def is_connected(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
@@ -118,15 +25,16 @@ def is_connected(dbLoader):
             cur.close()
 
     return 1
-def is_3dcitydb(dbLoader):
-    """ Connect to the PostgreSQL database server """
+
+def is_3dcitydb(dbLoader): #TODO: Tidy up this function
+
     database = dbLoader.dlg.cbxConnToExist.currentData()
 
 		
     # create a cursor
     cur = dbLoader.conn.cursor()  
 
-    # get all tables with theirs schemas    inspired from https://www.codedrome.com/reading-postgresql-database-schemas-with-python/ (access on 27/11/21)
+    # get all tables with theirs schemas    
     cur.execute("""SELECT table_schema,table_name
                     FROM information_schema.tables
                     WHERE table_schema != 'pg_catalog'
@@ -405,7 +313,7 @@ def check_geometry(dbLoader):
 
     return 3
 
-#NOTE: currently only works for footpirnts #TODO:Create Different Updatable view for every geometry lvl/type combination
+#NOTE: currently only works for lod0 footpirnts, lod1 solid, lod2 solid, lod2 thematic   #TODO:Create Different Updatable view for every geometry lvl/type combination
 def import_layer(dbLoader): 
     selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText()
@@ -435,8 +343,8 @@ def import_layer(dbLoader):
         if selected_geometryLvl == 'LoD0':
             if selected_geometryType == 'Footprint':
                 view_name+='_lod0_footprint'
-                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.geometry
                                 FROM {selected_schema}.{selected_feature} b
@@ -446,8 +354,8 @@ def import_layer(dbLoader):
                             """
             elif selected_geometryType == 'Roofprint': #NOTE: roofprint is not tested on real data case 
                 view_name+='_lod0_roofprint'
-                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.geometry
                                 FROM {selected_schema}.{selected_feature} b
@@ -458,8 +366,8 @@ def import_layer(dbLoader):
         elif selected_geometryLvl == 'LoD1':
             if selected_geometryType == 'Solid':
                 view_name+='_lod1_solid'
-                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.solid_geometry as geometry
                                 FROM {selected_schema}.{selected_feature} b
@@ -472,8 +380,8 @@ def import_layer(dbLoader):
         elif selected_geometryLvl == 'LoD2':
             if selected_geometryType == 'Solid':
                 view_name+='_lod2_solid'
-                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() OVER (ORDER BY o.id) as gid,
+                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.solid_geometry as geometry
                                 FROM {selected_schema}.{selected_feature} b
@@ -485,8 +393,8 @@ def import_layer(dbLoader):
                 pass
             elif selected_geometryType == "Thematic surface":
                 view_name+='_lod2_thematic'
-                sql_query = f"""CREATE OR REPLACE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() OVER (ORDER BY b.id) as gid,
+                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 ST_COLLECT(geom.geometry) as geometry
                                 FROM {selected_schema}.{selected_feature} b
@@ -498,7 +406,7 @@ def import_layer(dbLoader):
                             """
 
         #Get layer view containg all attributes from feature 
-        #cur.execute(f'DROP VIEW IF EXISTS {view_name};')
+        cur.execute(f'DROP VIEW IF EXISTS {selected_schema}.{view_name};')
         cur.execute(sql_query)
         dbLoader.conn.commit()
         cur.close()
@@ -508,9 +416,9 @@ def import_layer(dbLoader):
         dbLoader.iface.mainWindow().blockSignals(True)
 
         uri = QgsDataSourceUri()
-        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.user,selected_db.password)
+        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
         #params: schema, table, geometry, [subset], primary key
-        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))", aKeyColumn='gid')
+        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
         vlayer = QgsVectorLayer(uri.uri(False), f"{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}", "postgres")
         crs = vlayer.crs()
         crs.createFromId(28992)  #TODO: Dont hardcode it
@@ -518,8 +426,11 @@ def import_layer(dbLoader):
 
         QgsProject.instance().addMapLayer(vlayer)
         dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
-
-        dbLoader.show_Qmsg('Success!!')
+        
+        if not vlayer or not vlayer.isValid():
+            dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
+        else:
+            dbLoader.show_Qmsg('Success!!')
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -531,14 +442,6 @@ def import_layer(dbLoader):
             pass
             
     
-
-
-
-    
-
-
-
-
 
 #TODO: Check if Commit is needed after every query execution https://www.psycopg.org/docs/faq.html
 
