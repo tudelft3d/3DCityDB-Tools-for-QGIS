@@ -1,0 +1,3 @@
+[09-12-2021]
+<X> Let user to store his settings (schema,feature,extents,LOD,geometry) into file that can be read in future use. 
+<X> Load layer into Group named after current database.   
