@@ -278,12 +278,13 @@ class DBLoader:
             self.dlg.btnCeckCityDB.setDisabled(True)
 
     def evt_btnCeckCityDB_clicked(self):
+        """event when 'Check 3DCityDB compatability of <database>' button is pressed  """
 
         selected_db=self.dlg.cbxConnToExist.currentData()
-        #print(is_3dcitydb(self))
 
-        if is_3dcitydb(self):
-            QMessageBox.information(self.dlg,"Success", f"'{selected_db.database_name}' is 3DCityDB!")
+        res = is_3dcitydb(self)
+        if res == 1:
+            QMessageBox.information(self.dlg,"Success", f"Database '{selected_db.database_name}' is 3DCityDB!")
 
             #Parially enable the 'Import' tab.
             self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: '{selected_db.c_version}'")
@@ -293,12 +294,12 @@ class DBLoader:
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
-            self.dlg.wdgMain.setCurrentIndex(1)
+            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab 
             fill_schema_box(self)
             
 
         else:
-            QMessageBox.critical(self.dlg,"Fail", f"'{selected_db.database_name}' is NOT 3DCityDB!")
+            QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nRequirement '{res}' cannot be found")
             #Disable 'Import' tab in case of connection fail
             self.dlg.tbImport.setDisabled(True)
             self.dlg.cbxScema.clear()
@@ -306,12 +307,10 @@ class DBLoader:
             self.dlg.cbxGeomteryType.clear()
             self.dlg.cbxGeometryLvl.clear()
 
-        
-        #TODO: Display more insightfull fail messages
     
     def evt_btnConnToExist_changed(self, idx):
         selected_db=self.dlg.cbxConnToExist.itemData(idx)
-        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDb compatability of '{selected_db.database_name}'")
+        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDB compatability of '{selected_db.database_name}'")
         self.dlg.btnCheckConn.setText(f"Connect to '{selected_db.database_name}'")
         
         self.dlg.lblConnection.clear()

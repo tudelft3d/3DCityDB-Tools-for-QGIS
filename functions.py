@@ -11,8 +11,8 @@ from .connection import *
 def is_connected(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
     conn = None
-    dbLoader.conn = connect(database)
     try:
+        dbLoader.conn = connect(database)
         cur = dbLoader.conn.cursor()
         cur.execute("SHOW server_version;")
         version = cur.fetchone()
@@ -26,71 +26,78 @@ def is_connected(dbLoader):
 
     return 1
 
-def is_3dcitydb(dbLoader): #TODO: Tidy up this function
+def is_3dcitydb(dbLoader):
+    """ Checks if current database has specific 3DCityDB requirements.\n
+    Requiremnt list:
+        > Extentions: postgis, uuid-ossp, postgis_sfcgal
+        > Schemas: citydb_pkg
+        > Tables: cityobject, building, surface_geometry
+        
+        for version 3.X
+    """ 
+    #Check conditions for a valid the 3DCityDB structure. 
+    # ALL MUST BE TRUE
+    # NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
+    conditions_met = {  'postgis':False, 'postgis_sfcgal':False, 'uuid-ossp':False,             #Extentions
+                        'citydb_pkg':False,                                                     #Schemas
+                        'cityobject':False,'building':False,'surface_geometry':False}           #Tables
+
+                        
 
     database = dbLoader.dlg.cbxConnToExist.currentData()
-
 		
-    # create a cursor
-    cur = dbLoader.conn.cursor()  
 
+    cur = dbLoader.conn.cursor() 
     # get all tables with theirs schemas    
-    cur.execute("""SELECT table_schema,table_name
+    cur.execute("""SELECT table_name
                     FROM information_schema.tables
                     WHERE table_schema != 'pg_catalog'
                     AND table_schema != 'information_schema'
                     AND table_type='BASE TABLE'
-                    ORDER BY table_schema,table_name""")
-    table_schema = cur.fetchall() #NOTE: For some reason it can't get ALL the schemas
+                """)
+    tables = cur.fetchall()
     cur.close()
 
-    cur = dbLoader.conn.cursor()  
+    cur = dbLoader.conn.cursor()
     #Get all schemas
     cur.execute("SELECT schema_name FROM information_schema.schemata")
-    schema = cur.fetchall()
+    schemas = cur.fetchall()
     cur.close()
 
-    # # get all tables
-    # cur.execute("""SELECT table_name
-    #               FROM information_schema.tables
-    #               WHERE table_schema != 'pg_catalog'
-    #               AND table_schema != 'information_schema'
-    #               AND table_type='BASE TABLE'
-    #               ORDER BY table_name""")
-    # tables = cur.fetchall()
-
-
-    #Check conditions for a valid the 3DCityDB structure. NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
-    exists = {'cityobject':False,'building':False,'citydb_pkg':False,'objectclass':False} #TODO: add PostGIS and other extentions to the check  
+    cur = dbLoader.conn.cursor() 
+    #Get all extentions
+    cur.execute("SELECT extname FROM pg_extension")
+    extentions = cur.fetchall()
+    cur.close()
     
+    #extention check
+    for pair in extentions:
+        if 'postgis' in pair: conditions_met['postgis']=True
+        elif 'postgis_sfcgal' in pair: conditions_met['postgis_sfcgal']=True
+        elif 'uuid-ossp' in pair: conditions_met['uuid-ossp']=True
+        
+
+    #schema check
+    for pair in schemas:
+        if 'citydb_pkg' in pair:
+            conditions_met['citydb_pkg']=True
+
     #table check
-    for pair in table_schema: #TODO: break the pair to table, schema 
-        if 'cityobject' in pair:
-            exists['cityobject']=True
-        if 'building' in pair:
-            exists['building']=True
-        if 'citydb_pkg' in pair:
-            exists['citydb_pkg']=True
-        if 'objectclass' in pair:
-            exists['objectclass']=True
-    #chema check
-    for pair in schema:
-        if 'citydb_pkg' in pair:
-            exists['citydb_pkg']=True
+    for pair in tables:
+        if 'cityobject' in pair: conditions_met['cityobject']=True
+        elif 'building' in pair: conditions_met['building']=True
+        elif 'citydb_pkg' in pair: conditions_met['citydb_pkg']=True
+        elif 'surface_geometry' in pair: conditions_met['surface_geometry']=True
 
-    
-    if not (exists['cityobject'] and exists['building'] and exists['citydb_pkg'] and exists['objectclass']):
-        # close the communication with the PostgreSQL
-        print('No')
-        cur.close()
-        return 0
+
+    for condition in conditions_met:
+        if not conditions_met[condition]:
+            return condition
         
     # cur = dbLoader.conn.cursor()  
     # cur.execute("SELECT citydb_pkg.citydb_version();")
     # version= cur.fetchall()
     # cur.close()
-    # print("ger")
-    # print('heer',version)
     # database.c_version= version[0]
 
     return 1
