@@ -197,7 +197,7 @@ def check_geometry(dbLoader):
 
         #Guard against importing many feutures
         if count>3000:
-            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be import ({count})'!\n"
+            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be imported ({count})!\n"
                                                     "This could hinder perfomance and even cause frequent crashes.") #TODO: justify it better with storage size to 
         else:
             QMessageBox.information(dbLoader.dlg,"Info", f"{count} '{feature}' features contained in current extent.")
