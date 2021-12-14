@@ -265,6 +265,7 @@ class DBLoader:
         dlgConnector = DlgConnector()
         dlgConnector.show()
         dlgConnector.exec_()
+        self.dlg.cbxConnToExist.addItem(f'{dlgConnector.new_connection.connection_name}',dlgConnector.new_connection)
 
     def evt_btnCheckConn_clicked(self):
         selected_db=self.dlg.cbxConnToExist.currentData()

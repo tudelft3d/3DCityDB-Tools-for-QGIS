@@ -12,7 +12,7 @@ def is_connected(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
     conn = None
     try:
-        dbLoader.conn = connect(database)
+        dbLoader.conn = connect(database) #Open the connection
         cur = dbLoader.conn.cursor()
         cur.execute("SHOW server_version;")
         version = cur.fetchone()

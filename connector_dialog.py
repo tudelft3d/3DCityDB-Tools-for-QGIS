@@ -8,18 +8,25 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from qgis.gui import QgsMessageBar
+from qgis.PyQt.QtWidgets import *
 
 class Ui_dlgConnector(object):
     def setupUi(self, dlgConnector):
         dlgConnector.setObjectName("dlgConnector")
         dlgConnector.resize(380, 610)
+        
         self.gridLayout = QtWidgets.QGridLayout(dlgConnector)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.gbxConnDet = QtWidgets.QGroupBox(dlgConnector)
         self.gbxConnDet.setObjectName("gbxConnDet")
+
+        self.gbxConnDet.bar = QgsMessageBar()
+        self.gbxConnDet.bar.setSizePolicy( QSizePolicy.Minimum, QSizePolicy.Fixed )
+        self.verticalLayout.addWidget(self.gbxConnDet.bar, 0)
+
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.gbxConnDet)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.lblConnName = QtWidgets.QLabel(self.gbxConnDet)
