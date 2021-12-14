@@ -10,7 +10,7 @@ class connection:
         self.port=None
         self.username=None
         self.password='*****'
-        self.store_creds=None
+        self.store_creds=False
         self.is_active=None
         self.s_version=None
         self.c_version=None
@@ -23,12 +23,13 @@ class connection:
         print(f"db name: {self.database_name}")
         print(f"host:{self.host}")
         print(f"port:{self.port}")
-        print(f"username:{self.user}")
+        print(f"username:{self.username}")
         print(f"password:{self.password[0]}{self.password[1]}*****")
         print(f"id:{self.id}")
         print(f"DB version:{self.s_version}")
         print(f"3DCityDB version:{self.c_version}")
         print(f"hex location:{self.hex_location}")
+        print(f"to store:{self.store_creds}")
         return('\n')
     
     # def add_to_collection(self,db_collection):
