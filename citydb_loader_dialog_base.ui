@@ -48,7 +48,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="documentMode">
       <bool>false</bool>
@@ -202,7 +202,7 @@
       </property>
       <attribute name="icon">
        <iconset>
-        <normaloff>../../../../../../../../../Desktop/Thesis_3DCityDB_plugin/cover page/3DCityDB_Logo.png</normaloff>../../../../../../../../../Desktop/Thesis_3DCityDB_plugin/cover page/3DCityDB_Logo.png</iconset>
+        <normaloff>icon.png</normaloff>icon.png</iconset>
       </attribute>
       <attribute name="title">
        <string>Import</string>
