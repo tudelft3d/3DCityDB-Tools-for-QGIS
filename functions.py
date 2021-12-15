@@ -350,7 +350,7 @@ def import_layer(dbLoader):
         if selected_geometryLvl == 'LoD0':
             if selected_geometryType == 'Footprint':
                 view_name+='_lod0_footprint'
-                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
                                 SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.geometry
@@ -359,9 +359,53 @@ def import_layer(dbLoader):
                                 JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod0_footprint_id
                                 WHERE geom.geometry IS NOT NULL;
                             """
+                # sql_update_func =  f"""
+                #                 CREATE OR REPLACE FUNCTION {selected_schema}.tr_upd_v_building ()
+                #                 RETURNS trigger AS $$
+                #                 DECLARE
+                #                 updated_id integer;
+                #                 BEGIN
+                #                 UPDATE {selected_schema}.cityobject AS t1 SET
+                #                 gmlid                          = NEW.gmlid,
+                #                 envelope                       = NEW.envelope
+
+                #                 WHERE t1.id = OLD.id RETURNING id INTO updated_id;
+
+                #                 UPDATE {selected_schema}.{selected_feature} AS t2 SET
+                #                 class                       = NEW.class,
+                #                 function                    = NEW.function,
+                #                 usage                       = NEW.usage,
+                #                 year_of_construction        = NEW.year_of_construction,
+                #                 year_of_demolition          = NEW.year_of_demolition,
+                #                 roof_type                   = NEW.roof_type,
+                #                 measured_height             = NEW.measured_height,
+                #                 measured_height_unit        = NEW.measured_height_unit,
+                #                 storeys_above_ground        = NEW.storeys_above_ground,
+                #                 storeys_below_ground        = NEW.storeys_below_ground,
+                #                 storey_heights_above_ground = NEW.storey_heights_above_ground,
+                #                 storey_heights_ag_unit      = NEW.storey_heights_ag_unit,
+                #                 storey_heights_below_ground = NEW.storey_heights_below_ground,
+                #                 storey_heights_bg_unit      = NEW.storey_heights_bg_unit
+                #                 WHERE t2.id = updated_id;
+                #                 RETURN NEW;
+                #                 EXCEPTION
+                #                 WHEN OTHERS THEN RAISE NOTICE '{selected_schema}.tr_upd_v_building(id: %): %', OLD.id, SQLERRM;
+                #                 END;
+                #                 $$ LANGUAGE plpgsql;
+                #                 COMMENT ON FUNCTION {selected_schema}.tr_upd_v_building IS 'Update record in view {view_name}';
+                #                 """
+
+                # sql_trigger =  f""" 
+                #                     CREATE TRIGGER         tr_upd_v_building
+                #                     INSTEAD OF UPDATE ON {selected_schema}.{view_name}
+                #                     FOR EACH ROW
+                #                     EXECUTE PROCEDURE {selected_schema}.tr_upd_v_building();
+                #                     COMMENT ON TRIGGER tr_upd_v_building ON {selected_schema}.{view_name} IS 'Fired upon update of view {selected_schema}.{view_name}';
+                #                 """
+                        
             elif selected_geometryType == 'Roofprint': #NOTE: roofprint is not tested on real data case 
                 view_name+='_lod0_roofprint'
-                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
                                 SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.geometry
@@ -373,7 +417,7 @@ def import_layer(dbLoader):
         elif selected_geometryLvl == 'LoD1':
             if selected_geometryType == 'Solid':
                 view_name+='_lod1_solid'
-                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
                                 SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.solid_geometry as geometry
@@ -387,7 +431,7 @@ def import_layer(dbLoader):
         elif selected_geometryLvl == 'LoD2':
             if selected_geometryType == 'Solid':
                 view_name+='_lod2_solid'
-                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
                                 SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 geom.solid_geometry as geometry
@@ -400,7 +444,7 @@ def import_layer(dbLoader):
                 pass
             elif selected_geometryType == "Thematic surface":
                 view_name+='_lod2_thematic'
-                sql_query = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
                                 SELECT row_number() over() AS view_id,
                                 {building_attr},
                                 ST_COLLECT(geom.geometry) as geometry
@@ -414,7 +458,11 @@ def import_layer(dbLoader):
 
         #Get layer view containg all attributes from feature 
         cur.execute(f'DROP VIEW IF EXISTS {selected_schema}.{view_name};')
-        cur.execute(sql_query)
+        #cur.execute(f'DROP FUNCTION IF EXISTS {selected_schema}.tr_upd_v_building CASCADE;')
+        #cur.execute(f'DROP TRIGGER IF EXISTS tr_upd_v_building ON {selected_schema}.{view_name};')
+        cur.execute(sql_view)
+        #cur.execute(sql_update_func)
+        #cur.execute(sql_trigger)
         dbLoader.conn.commit()
         cur.close()
 
