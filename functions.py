@@ -94,11 +94,11 @@ def is_3dcitydb(dbLoader):
         if not conditions_met[condition]:
             return condition
         
-    # cur = dbLoader.conn.cursor()  
-    # cur.execute("SELECT citydb_pkg.citydb_version();")
-    # version= cur.fetchall()
-    # cur.close()
-    # database.c_version= version[0]
+    cur = dbLoader.conn.cursor()  
+    cur.execute("SELECT version FROM citydb_pkg.citydb_version();")
+    version= cur.fetchall()
+    cur.close()
+    database.c_version= version[0][0]
 
     return 1
 

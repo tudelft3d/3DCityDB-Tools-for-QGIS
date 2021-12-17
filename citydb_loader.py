@@ -270,7 +270,7 @@ class DBLoader:
     def evt_btnCheckConn_clicked(self):
         selected_db=self.dlg.cbxConnToExist.currentData()
         if is_connected(self):
-            self.dlg.lblConnection.setText(f"Connected: '{selected_db.database_name}'\nServer version: '{selected_db.s_version}'")
+            self.dlg.lblConnection.setText(f"Connected: {selected_db.database_name}\nServer version: {selected_db.s_version}")
             self.dlg.lblConnection.setStyleSheet("color:green")     
             self.dlg.btnCeckCityDB.setDisabled(False)
 
@@ -288,7 +288,7 @@ class DBLoader:
             QMessageBox.information(self.dlg,"Success", f"Database '{selected_db.database_name}' is 3DCityDB!")
 
             #Parially enable the 'Import' tab.
-            self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: '{selected_db.c_version}'")
+            self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
             self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
             self.dlg.tbImport.setDisabled(False)
             self.dlg.grbSchema.setDisabled(False)
