@@ -247,8 +247,8 @@ def check_geometry(dbLoader):
 
 
         geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
-                        'LOD1':{'Multi surface':False,"Solid":False},
-                        'LOD2':{'Multi surface':False,"Solid":False,"Thematic surface":False}
+                        'LOD1':{'Multi-surface':False,"Solid":False},
+                        'LOD2':{'Multi-surface':False,"Solid":False,"Thematic surface":False}
                     }
 
         dbLoader.dlg.cbxGeometryLvl.clear()
@@ -273,9 +273,9 @@ def check_geometry(dbLoader):
                 else: continue
 
             if feature[2] is not None:
-                if not geometry_lvls['LOD1']['Multi surface']:
-                    lod1.append('Multi surface')
-                    geometry_lvls['LOD1']['Multi surface']=True
+                if not geometry_lvls['LOD1']['Multi-surface']:
+                    lod1.append('Multi-surface')
+                    geometry_lvls['LOD1']['Multi-surface']=True
                 else: continue
 
             if feature[3] is not None:
@@ -285,9 +285,9 @@ def check_geometry(dbLoader):
                 else: continue
 
             if feature[4] is not None:
-                if not geometry_lvls['LOD2']['Multi surface']:
-                    lod2.append('Multi surface')
-                    geometry_lvls['LOD2']['Multi surface']=True
+                if not geometry_lvls['LOD2']['Multi-surface']:
+                    lod2.append('Multi-surface')
+                    geometry_lvls['LOD2']['Multi-surface']=True
                 else: continue
 
             if feature[5] is not None:
@@ -426,8 +426,17 @@ def import_layer(dbLoader):
                                 JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_solid_id
                                 WHERE geom.solid_geometry IS NOT NULL;
                             """
-            elif selected_geometryType == 'Multisurface': #TODO
-                pass
+            elif selected_geometryType == 'Multi-surface': #TODO
+                view_name+='_lod1_multisurface'
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
+                                {building_attr},
+                                geom.geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_multi_surface_id
+                                WHERE geom.geometry IS NOT NULL;
+                            """
         elif selected_geometryLvl == 'LoD2':
             if selected_geometryType == 'Solid':
                 view_name+='_lod2_solid'
@@ -440,8 +449,17 @@ def import_layer(dbLoader):
                                 JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_solid_id
                                 WHERE geom.solid_geometry IS NOT NULL;
                             """
-            elif selected_geometryType == 'Multi surface': #TODO
-                pass
+            elif selected_geometryType == 'Multi-surface': #TODO
+                view_name+='_lod2_multisurface'
+                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+                                SELECT row_number() over() AS view_id,
+                                {building_attr},
+                                geom.geometry
+                                FROM {selected_schema}.{selected_feature} b
+                                JOIN {selected_schema}.cityobject o ON o.id=b.id
+                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_multi_surface_id
+                                WHERE geom.geometry IS NOT NULL;
+                            """
             elif selected_geometryType == "Thematic surface":
                 view_name+='_lod2_thematic'
                 sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
