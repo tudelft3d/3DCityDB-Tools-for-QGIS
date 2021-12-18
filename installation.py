@@ -206,8 +206,23 @@ def install_views(dbLoader):
     cur.close()
     dbLoader.dlg.cbxConnToExist.currentData().has_installation=True
     
-def uninstall_views():
-    pass
+def uninstall_views(dbLoader):
+    selected_db = dbLoader.dlg.cbxConnToExist.currentData()
+    cur = dbLoader.conn.cursor()
+    for schema in dbLoader.schemas:
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_f']}""")
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_r']}""")
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_s']}""")
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_m']}""")
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_s']}""")
+        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_m']}""")
+    dbLoader.conn.commit()
+    selected_db.has_installation = False
+                     
+                    
+                     
+                    
+                    
 
 def check_install(dbLoader):
     """

@@ -349,6 +349,28 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tbSettings">
+      <attribute name="icon">
+       <iconset>
+        <normaloff>cogs.svg</normaloff>cogs.svg</iconset>
+      </attribute>
+      <attribute name="title">
+       <string>Settings</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QPushButton" name="btnClearDB">
+           <property name="text">
+            <string>Clear &lt;Database&gt; from plugin contents</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tbAbout">
       <attribute name="title">
        <string>About</string>

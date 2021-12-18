@@ -35,7 +35,7 @@ from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
 from .connector import DlgConnector                 #New Connection dialog
 from .functions import *
 from .connection import *
-from .installation import check_install, install_views
+from .installation import check_install, install_views, uninstall_views
 
 import os.path
 
@@ -230,6 +230,12 @@ class DBLoader:
             self.dlg.btnImport.clicked.connect(self.evt_btnImport_clicked)
         ##----------------########################################################################################
 
+        ## 'Settings' tab ######################################################################################
+
+            self.dlg.btnClearDB.clicked.connect(self.evt_btnClearDB_clicked)
+
+        ##----------------########################################################################################
+
             print("Initial start")
             
         #Get existing connections
@@ -305,8 +311,8 @@ class DBLoader:
             print(selected_db.has_installation)
             fill_schema_box(self)
             
-            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab 
-
+            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
+            self.dlg.btnClearDB.setText(f'Clear {selected_db.database_name} from plugin contents')
         else:
             QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nRequirement '{res}' cannot be found")
             #Disable 'Import' tab in case of connection fail
@@ -414,6 +420,11 @@ class DBLoader:
 
 ###--'Import' tab--###########################################################
 
+###--'Settings' tab--###########################################################
+    def evt_btnClearDB_clicked(self):
+        uninstall_views(self)
+
+###--'Settings' tab--###########################################################
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
         self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)
 
