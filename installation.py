@@ -1,5 +1,8 @@
 import psycopg2
-from qgis.PyQt.QtWidgets import QMessageBox
+import time
+from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.PyQt.QtCore import *
+from qgis.core import Qgis
 
 global building_attr
 building_attr=  """
@@ -207,21 +210,33 @@ def install_views(dbLoader):
     dbLoader.dlg.cbxConnToExist.currentData().has_installation=True
     
 def uninstall_views(dbLoader):
+
+    progress = QProgressBar(dbLoader.dlg.gbxInstall.bar)
+    progress.setMaximum(len(dbLoader.schemas))
+    progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+    dbLoader.dlg.gbxInstall.bar.pushWidget(progress, Qgis.Info)
+
     selected_db = dbLoader.dlg.cbxConnToExist.currentData()
     cur = dbLoader.conn.cursor()
-    for schema in dbLoader.schemas:
+    for count,schema in enumerate(dbLoader.schemas): #TODO: Catch DB errors
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_f']}""")
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_r']}""")
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_s']}""")
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_m']}""")
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_s']}""")
         cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_m']}""")
+        progress.setValue(count+1)
     dbLoader.conn.commit()
+
+    msg = dbLoader.dlg.gbxInstall.bar.createMessage( u'Database has been cleared' )
+    dbLoader.dlg.gbxInstall.bar.clearWidgets()
+    dbLoader.dlg.gbxInstall.bar.pushWidget(msg, Qgis.Success, duration=4)
+      
     selected_db.has_installation = False
                      
-                    
-                     
-                    
+            
+                   
+    
                     
 
 def check_install(dbLoader):

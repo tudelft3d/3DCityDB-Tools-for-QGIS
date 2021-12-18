@@ -298,10 +298,12 @@ class DBLoader:
             self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
             self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
             self.dlg.tbImport.setDisabled(False)
+            self.dlg.tbSettings.setDisabled(False)
             self.dlg.grbSchema.setDisabled(False)
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
+            
             get_schemas(self)
 
             if check_install(self): selected_db.has_installation = True

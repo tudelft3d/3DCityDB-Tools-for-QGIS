@@ -26,6 +26,8 @@ import os, configparser
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.gui import QgsMessageBar
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -42,9 +44,8 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+
+        self.gbxInstall.bar = QgsMessageBar()
+        self.verticalLayout_3.addWidget(self.gbxInstall.bar, 0)
                    
-
-
-
-        #TODO: Add QT slots here either from other files or better from method of this class
         

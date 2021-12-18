@@ -182,6 +182,9 @@
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="toolTip">
+          <string>It also check for necessary contents and installs contents when required</string>
+         </property>
          <property name="text">
           <string>Check 3DCityDB compatability of &lt;DB&gt;</string>
          </property>
@@ -350,6 +353,9 @@
       </layout>
      </widget>
      <widget class="QWidget" name="tbSettings">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="icon">
        <iconset>
         <normaloff>cogs.svg</normaloff>cogs.svg</iconset>
@@ -361,10 +367,32 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <widget class="QPushButton" name="btnClearDB">
-           <property name="text">
-            <string>Clear &lt;Database&gt; from plugin contents</string>
+          <widget class="QGroupBox" name="gbxInstall">
+           <property name="title">
+            <string>Installation</string>
            </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QPushButton" name="btnClearDB">
+              <property name="text">
+               <string>Clear &lt;Database&gt; from plugin contents</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </widget>
          </item>
         </layout>
