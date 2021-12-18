@@ -102,7 +102,7 @@ def is_3dcitydb(dbLoader):
 
     return 1
 
-def fill_schema_box(dbLoader):
+def get_schemas(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
     conn = None
     try:
@@ -115,9 +115,7 @@ def fill_schema_box(dbLoader):
         schemas = cur.fetchall()
 
         schemas,empty=zip(*schemas)
-
-        dbLoader.dlg.cbxScema.clear()
-        dbLoader.dlg.cbxScema.addItems(sorted(schemas))
+        dbLoader.schemas = schemas
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -126,7 +124,10 @@ def fill_schema_box(dbLoader):
             # close the communication with the PostgreSQL
             cur.close()
 
-    return 1
+def fill_schema_box(dbLoader):
+    dbLoader.dlg.cbxScema.clear()
+    dbLoader.dlg.cbxScema.addItems(sorted(dbLoader.schemas))
+
 
 def check_schema(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
@@ -328,7 +329,6 @@ def import_layer(dbLoader):
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
-    view_name= 'v_building'
     building_attr=  """
                                 b.id, o.gmlid,
                                 o.envelope,
@@ -345,20 +345,12 @@ def import_layer(dbLoader):
 
     try:
 
-        cur=dbLoader.conn.cursor()
+        # cur=dbLoader.conn.cursor()
 
         if selected_geometryLvl == 'LoD0':
             if selected_geometryType == 'Footprint':
-                view_name+='_lod0_footprint'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod0_footprint_id
-                                WHERE geom.geometry IS NOT NULL;
-                            """
+                query_view='v_building_lod0_footprint'
+                
                 # sql_update_func =  f"""
                 #                 CREATE OR REPLACE FUNCTION {selected_schema}.tr_upd_v_building ()
                 #                 RETURNS trigger AS $$
@@ -404,85 +396,76 @@ def import_layer(dbLoader):
                 #                 """
                         
             elif selected_geometryType == 'Roofprint': #NOTE: roofprint is not tested on real data case 
-                view_name+='_lod0_roofprint'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod0_roofprint_id
-                                WHERE geom.geometry IS NOT NULL;
-                            """
-        elif selected_geometryLvl == 'LoD1':
-            if selected_geometryType == 'Solid':
-                view_name+='_lod1_solid'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.solid_geometry as geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_solid_id
-                                WHERE geom.solid_geometry IS NOT NULL;
-                            """
-            elif selected_geometryType == 'Multi-surface': #TODO
-                view_name+='_lod1_multisurface'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_multi_surface_id
-                                WHERE geom.geometry IS NOT NULL;
-                            """
-        elif selected_geometryLvl == 'LoD2':
-            if selected_geometryType == 'Solid':
-                view_name+='_lod2_solid'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.solid_geometry as geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_solid_id
-                                WHERE geom.solid_geometry IS NOT NULL;
-                            """
-            elif selected_geometryType == 'Multi-surface': #TODO
-                view_name+='_lod2_multisurface'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                geom.geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_multi_surface_id
-                                WHERE geom.geometry IS NOT NULL;
-                            """
-            elif selected_geometryType == "Thematic surface":
-                view_name+='_lod2_thematic'
-                sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-                                SELECT row_number() over() AS view_id,
-                                {building_attr},
-                                ST_COLLECT(geom.geometry) as geometry
-                                FROM {selected_schema}.{selected_feature} b
-                                JOIN {selected_schema}.cityobject o ON o.id=b.id
-                                JOIN {selected_schema}.thematic_surface th ON th.building_id = b.id 
-                                JOIN {selected_schema}.surface_geometry geom ON geom.root_id = th.lod2_multi_surface_id
-                                WHERE geom.geometry IS NOT NULL
-                                GROUP BY b.id,o.gmlid,o.envelope;
-                            """
+                query_view='v_building_lod0_roofprint'
+        # elif selected_geometryLvl == 'LoD1':
+        #     if selected_geometryType == 'Solid':
+        #         view_name+='_lod1_solid'
+        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+        #                         SELECT row_number() over() AS view_id,
+        #                         {building_attr},
+        #                         geom.solid_geometry as geometry
+        #                         FROM {selected_schema}.{selected_feature} b
+        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
+        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_solid_id
+        #                         WHERE geom.solid_geometry IS NOT NULL;
+        #                     """
+        #     elif selected_geometryType == 'Multi-surface': #TODO
+        #         view_name+='_lod1_multisurface'
+        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+        #                         SELECT row_number() over() AS view_id,
+        #                         {building_attr},
+        #                         geom.geometry
+        #                         FROM {selected_schema}.{selected_feature} b
+        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
+        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod1_multi_surface_id
+        #                         WHERE geom.geometry IS NOT NULL;
+        #                     """
+        # elif selected_geometryLvl == 'LoD2':
+        #     if selected_geometryType == 'Solid':
+        #         view_name+='_lod2_solid'
+        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+        #                         SELECT row_number() over() AS view_id,
+        #                         {building_attr},
+        #                         geom.solid_geometry as geometry
+        #                         FROM {selected_schema}.{selected_feature} b
+        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
+        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_solid_id
+        #                         WHERE geom.solid_geometry IS NOT NULL;
+        #                     """
+        #     elif selected_geometryType == 'Multi-surface': #TODO
+        #         view_name+='_lod2_multisurface'
+        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+        #                         SELECT row_number() over() AS view_id,
+        #                         {building_attr},
+        #                         geom.geometry
+        #                         FROM {selected_schema}.{selected_feature} b
+        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
+        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id=b.lod2_multi_surface_id
+        #                         WHERE geom.geometry IS NOT NULL;
+        #                     """
+        #     elif selected_geometryType == "Thematic surface":
+        #         view_name+='_lod2_thematic'
+        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
+        #                         SELECT row_number() over() AS view_id,
+        #                         {building_attr},
+        #                         ST_COLLECT(geom.geometry) as geometry
+        #                         FROM {selected_schema}.{selected_feature} b
+        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
+        #                         JOIN {selected_schema}.thematic_surface th ON th.building_id = b.id 
+        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id = th.lod2_multi_surface_id
+        #                         WHERE geom.geometry IS NOT NULL
+        #                         GROUP BY b.id,o.gmlid,o.envelope;
+        #                     """
 
         #Get layer view containg all attributes from feature 
-        cur.execute(f'DROP VIEW IF EXISTS {selected_schema}.{view_name};')
+        #cur.execute(f'DROP VIEW IF EXISTS {selected_schema}.{view_name};')
         #cur.execute(f'DROP FUNCTION IF EXISTS {selected_schema}.tr_upd_v_building CASCADE;')
         #cur.execute(f'DROP TRIGGER IF EXISTS tr_upd_v_building ON {selected_schema}.{view_name};')
-        cur.execute(sql_view)
+        #cur.execute(sql_view)
         #cur.execute(sql_update_func)
         #cur.execute(sql_trigger)
-        dbLoader.conn.commit()
-        cur.close()
+        #dbLoader.conn.commit()
+        #cur.close()
 
 
         #Create view to import based on user attributes
@@ -491,7 +474,7 @@ def import_layer(dbLoader):
         uri = QgsDataSourceUri()
         uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
         #params: schema, table, geometry, [subset], primary key
-        uri.setDataSource(aSchema= selected_schema,aTable= f'{view_name}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
+        uri.setDataSource(aSchema= selected_schema,aTable= f'{query_view}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
         vlayer = QgsVectorLayer(uri.uri(False), f"{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}", "postgres")
         crs = vlayer.crs()
         crs.createFromId(28992)  #TODO: Dont hardcode it

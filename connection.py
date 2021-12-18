@@ -14,6 +14,7 @@ class connection:
         self.is_active=None
         self.s_version=None
         self.c_version=None
+        self.has_installation=False
         self.id=id(self)
         self.hex_location=hex(self.id)
         

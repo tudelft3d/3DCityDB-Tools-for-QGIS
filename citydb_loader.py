@@ -35,6 +35,7 @@ from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
 from .connector import DlgConnector                 #New Connection dialog
 from .functions import *
 from .connection import *
+from .installation import check_install, install_views
 
 import os.path
 
@@ -295,9 +296,16 @@ class DBLoader:
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
-            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab 
+            get_schemas(self)
+
+            if check_install(self): selected_db.has_installation = True
+
+            print(selected_db.has_installation)
+            if not selected_db.has_installation: install_views(self)
+            print(selected_db.has_installation)
             fill_schema_box(self)
             
+            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab 
 
         else:
             QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nRequirement '{res}' cannot be found")
