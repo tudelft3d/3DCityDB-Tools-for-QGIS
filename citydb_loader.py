@@ -271,8 +271,10 @@ class DBLoader:
     def evt_btnNewConn_clicked(self):
         dlgConnector = DlgConnector()
         dlgConnector.show()
-        dlgConnector.exec_()
-        self.dlg.cbxConnToExist.addItem(f'{dlgConnector.new_connection.connection_name}',dlgConnector.new_connection)
+        res=dlgConnector.exec_()
+        if dlgConnector.new_connection:
+            self.dlg.cbxConnToExist.addItem(f'{dlgConnector.new_connection.connection_name}',dlgConnector.new_connection)
+        else: return None
 
     def evt_btnCheckConn_clicked(self):
         selected_db=self.dlg.cbxConnToExist.currentData()
@@ -292,7 +294,6 @@ class DBLoader:
 
         res = is_3dcitydb(self)
         if res == 1:
-            QMessageBox.information(self.dlg,"Success", f"Database '{selected_db.database_name}' is 3DCityDB!")
 
             #Parially enable the 'Import' tab.
             self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
@@ -308,9 +309,13 @@ class DBLoader:
 
             if check_install(self): selected_db.has_installation = True
 
-            print(selected_db.has_installation)
-            if not selected_db.has_installation: install_views(self)
-            print(selected_db.has_installation)
+
+            if not selected_db.has_installation:
+                res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires updatable views to be installed.\nDo you want to proceed?")
+                if res == 16384: #YES
+                    install_views(self)
+                else: return None
+           
             fill_schema_box(self)
             
             self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
@@ -417,6 +422,7 @@ class DBLoader:
     def evt_btnImport_clicked(self):
         import_layer(self)
         self.dlg.close()
+        
 
 
 
@@ -425,6 +431,17 @@ class DBLoader:
 ###--'Settings' tab--###########################################################
     def evt_btnClearDB_clicked(self):
         uninstall_views(self)
+        self.conn.close()
+        self.dlg.lblCityDbStatus.clear()
+        self.dlg.lblConnection.clear()
+        self.dlg.tbImport.setDisabled(True)
+        self.dlg.cbxScema.clear()
+        self.dlg.qcbxFeature.clear()
+        self.dlg.cbxGeomteryType.clear()
+        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.lblCityDbStatus.clear()
+        self.dlg.btnCeckCityDB.setDisabled(True)
+
 
 ###--'Settings' tab--###########################################################
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):

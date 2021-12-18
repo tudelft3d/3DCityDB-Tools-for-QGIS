@@ -14,7 +14,7 @@ class DlgConnector(QDialog, Ui_dlgConnector):
         self.setupUi(self)
 
         self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
-
+        self.new_connection = None
         
 
 

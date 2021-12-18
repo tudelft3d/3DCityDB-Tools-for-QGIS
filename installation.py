@@ -202,7 +202,7 @@ def install_views(dbLoader):
             install_lod1_multisurface(cur,schema)
             install_lod2_solid(cur,schema)
             install_lod2_multisurface(cur,schema)
-            print('installing')
+            print(f'installing view for: {schema}')
             dbLoader.conn.commit()
 
 
