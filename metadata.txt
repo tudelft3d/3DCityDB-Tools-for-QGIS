@@ -10,8 +10,7 @@ version=0.1
 author=Konstantinos Pantelios
 email=konstantinospantelios@yahoo.com
 
-about=Relational database are very good at storing and handling massive amount of data, however everyday users often find it hard to navigate, explore and work with data directly from the database. This plugin can be used to bring 3DCityDB data into the more widespread and straitforward world of QGIS.
-
+about=Load layers from 3DCityDB to QGIS. All geometries of LOD0,LOD1 and LOD2 are supported 
 tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
 repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
 # End of mandatory metadata
@@ -23,7 +22,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python
+tags=python,3DCityDB,postgres
 
 homepage=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
 category=Database
