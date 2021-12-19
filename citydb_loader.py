@@ -241,8 +241,6 @@ class DBLoader:
         #Get existing connections
             dbs=get_postgres_conn(self)
     
-        #Get new connection
-        #TODO: For later
         
         # show the dialog
         self.dlg.show()
@@ -298,12 +296,7 @@ class DBLoader:
             #Parially enable the 'Import' tab.
             self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
             self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
-            self.dlg.tbImport.setDisabled(False)
-            self.dlg.tbSettings.setDisabled(False)
-            self.dlg.grbSchema.setDisabled(False)
-            self.dlg.grbFeature.setDisabled(True)
-            self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.grbExtent.setDisabled(True)
+
             
             get_schemas(self)
 
@@ -316,6 +309,13 @@ class DBLoader:
                     install_views(self)
                 else: return None
            
+            self.dlg.tbImport.setDisabled(False)
+            self.dlg.btnClearDB.setDisabled(False)
+            self.dlg.grbSchema.setDisabled(False)
+            self.dlg.grbFeature.setDisabled(True)
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.grbExtent.setDisabled(True)
+
             fill_schema_box(self)
             
             self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
@@ -432,15 +432,17 @@ class DBLoader:
     def evt_btnClearDB_clicked(self):
         uninstall_views(self)
         self.conn.close()
+        self.dlg.tbImport.setDisabled(True)
+        self.dlg.btnCeckCityDB.setDisabled(True)
+        self.dlg.btnClearDB.setDisabled(True)
         self.dlg.lblCityDbStatus.clear()
         self.dlg.lblConnection.clear()
-        self.dlg.tbImport.setDisabled(True)
         self.dlg.cbxScema.clear()
         self.dlg.qcbxFeature.clear()
         self.dlg.cbxGeomteryType.clear()
         self.dlg.cbxGeometryLvl.clear()
         self.dlg.lblCityDbStatus.clear()
-        self.dlg.btnCeckCityDB.setDisabled(True)
+        
 
 
 ###--'Settings' tab--###########################################################

@@ -354,7 +354,7 @@
      </widget>
      <widget class="QWidget" name="tbSettings">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <attribute name="icon">
        <iconset>
@@ -368,12 +368,18 @@
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QGroupBox" name="gbxInstall">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Installation</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
              <widget class="QPushButton" name="btnClearDB">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Clear &lt;Database&gt; from plugin contents</string>
               </property>

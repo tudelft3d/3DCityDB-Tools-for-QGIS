@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, configparser
 import psycopg2
-from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem,Qgis
+from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem,Qgis,QgsEditorWidgetSetup
 from qgis.PyQt.QtWidgets import QMessageBox
 from .connection import *
 from .installation import view_names
@@ -322,11 +322,43 @@ def check_geometry(dbLoader):
 
     return 3
 
-#NOTE: currently only works for lod0 footpirnts, lod1 solid, lod2 solid, lod2 thematic   #TODO:Create Different Updatable view for every geometry lvl/type combination
-def import_layer(dbLoader): 
+
+def fieldVisibility (layer,fname):
+    setup = QgsEditorWidgetSetup('Hidden', {})
+    for i, column in enumerate(layer.fields()):
+        if column.name()==fname:
+            layer.setEditorWidgetSetup(i, setup)
+            break
+        else:
+            continue
+
+def create_views(dbLoader,view):
     selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_feature=dbLoader.dlg.qcbxFeature.currentText()
+    selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
+    selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
+    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+
+    uri = QgsDataSourceUri()
+    uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
+    uri.setDataSource(aSchema= selected_schema,aTable= f'{view}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
+    vlayer = QgsVectorLayer(uri.uri(False), f"{view}", "postgres")
+    crs = vlayer.crs()
+    crs.createFromId(28992)  #TODO: Dont hardcode it
+    vlayer.setCrs(crs)
+    fieldVisibility(vlayer,'envelope')
+
+    return vlayer
+
+def group_to_top(root,node):
+    move_group =  node.clone()
+    root.insertChildNode(0, move_group)
+    root.removeChildNode(node)
+
+def import_layer(dbLoader): 
+
+    selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
@@ -410,50 +442,37 @@ def import_layer(dbLoader):
             elif selected_geometryType == 'Multi-surface': 
                 query_view=view_names['lod2_m']
 
-        #     elif selected_geometryType == "Thematic surface":
-        #         view_name+='_lod2_thematic'
-        #         sql_view = f"""CREATE VIEW {selected_schema}.{view_name} AS
-        #                         SELECT row_number() over() AS view_id,
-        #                         {building_attr},
-        #                         ST_COLLECT(geom.geometry) as geometry
-        #                         FROM {selected_schema}.{selected_feature} b
-        #                         JOIN {selected_schema}.cityobject o ON o.id=b.id
-        #                         JOIN {selected_schema}.thematic_surface th ON th.building_id = b.id 
-        #                         JOIN {selected_schema}.surface_geometry geom ON geom.root_id = th.lod2_multi_surface_id
-        #                         WHERE geom.geometry IS NOT NULL
-        #                         GROUP BY b.id,o.gmlid,o.envelope;
-        #                     """
+            elif selected_geometryType == "Thematic surface":
+                query_view=view_names['lod2_th']
 
-        #Get layer view containg all attributes from feature 
-        #cur.execute(f'DROP VIEW IF EXISTS {selected_schema}.{view_name};')
-        #cur.execute(f'DROP FUNCTION IF EXISTS {selected_schema}.tr_upd_v_building CASCADE;')
-        #cur.execute(f'DROP TRIGGER IF EXISTS tr_upd_v_building ON {selected_schema}.{view_name};')
-        #cur.execute(sql_view)
-        #cur.execute(sql_update_func)
-        #cur.execute(sql_trigger)
-        #dbLoader.conn.commit()
-        #cur.close()
-
-
-        #Create view to import based on user attributes
-        dbLoader.iface.mainWindow().blockSignals(True)
-
-        uri = QgsDataSourceUri()
-        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-        #params: schema, table, geometry, [subset], primary key
-        uri.setDataSource(aSchema= selected_schema,aTable= f'{query_view}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
-        vlayer = QgsVectorLayer(uri.uri(False), f"{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}", "postgres")
-        crs = vlayer.crs()
-        crs.createFromId(28992)  #TODO: Dont hardcode it
-        vlayer.setCrs(crs)
-
-        QgsProject.instance().addMapLayer(vlayer)
-        dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
+        layer_name= f'{selected_schema}_{selected_geometryLvl}_{selected_geometryType}'
+        root = QgsProject.instance().layerTreeRoot()
+        if not root.findGroup(layer_name):
+            node_group = root.addGroup(layer_name)
+        else: 
+            node_group = root.findGroup(layer_name)
+            
+        for view in query_view:
+            vlayer = create_views(dbLoader,view)
         
-        if not vlayer or not vlayer.isValid():
-            dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
-        else:
-            dbLoader.show_Qmsg('Success!!')
+            if not vlayer or not vlayer.isValid():
+                dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
+            else:
+                if vlayer.featureCount()==0:
+                    continue
+                dbLoader.iface.mainWindow().blockSignals(True)
+                QgsProject.instance().addMapLayer(vlayer,False)
+
+                node_group.addLayer(vlayer)
+                
+
+                dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
+                dbLoader.show_Qmsg('Success!!')
+        group_to_top(root,node_group)
+            
+
+
+
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)

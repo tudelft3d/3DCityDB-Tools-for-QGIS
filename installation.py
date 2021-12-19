@@ -2,7 +2,7 @@ import psycopg2
 import time
 from qgis.PyQt.QtWidgets import QProgressBar
 from qgis.PyQt.QtCore import *
-from qgis.core import Qgis
+from qgis.core import Qgis, QgsMessageLog
 
 global building_attr
 building_attr=  """
@@ -18,9 +18,11 @@ building_attr=  """
                 b.storey_heights_below_ground, b.storey_heights_bg_unit
                 """
 global view_names
-view_names = {'lod0_f':'v_building_lod0_footprint','lod0_r':'v_building_lod0_roofprint',
-            'lod1_s':'v_building_lod1_solid','lod1_m':'v_building_lod2_multisurface',
-            'lod2_s':'v_building_lod2_solid','lod2_m':'v_building_lod2_multisurface', 'lod2_th':''}
+view_names = {'lod0_f':['v_building_lod0_footprint'],'lod0_r':['v_building_lod0_roofprint'],
+            'lod1_s':['v_building_lod1_solid'],'lod1_m':['v_building_lod1_multisurface'],
+            'lod2_s':['v_building_lod2_solid','v_buildinginstallation_lod2_solid'],
+            'lod2_m':['v_building_lod2_multisurface','v_buildinginstallation_lod2_multisurface'],
+            'lod2_th':['v_building_lod2_roofsurface','v_building_lod2_wallsurface','v_building_lod2_groundsurface','v_building_lod2_closuresurface','v_building_lod2_ceilingsurface','v_building_lod2_interiorwallsurface','v_building_lod2_floorsurface','v_building_lod2_outerceilingsurface','v_building_lod2_outerfloorsurface']}
 
 def install_upd_function():
     # sql_update_func =  f"""
@@ -71,9 +73,8 @@ def install_tr_upd():
 
 def install_lod0_footprint(cursor,schema):
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod0_f']};"
     sql_create = f"""
-                    CREATE OR REPLACE VIEW {schema}.{view_names['lod0_f']} AS
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod0_f'][0]} AS
                     SELECT row_number() over() AS view_id,
                     {building_attr},
                     geom.geometry
@@ -84,17 +85,18 @@ def install_lod0_footprint(cursor,schema):
                 """
 
     try:
-        cursor.execute(sql_drop)
+
         cursor.execute(sql_create)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod0_f']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod0_f']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
 
 
 def install_lod0_roofprint(cursor,schema):
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod0_r']};"
     sql_create = f"""
-                CREATE VIEW {schema}.{view_names['lod0_r']} AS
+                CREATE OR REPLACE VIEW {schema}.{view_names['lod0_r'][0]} AS
                 SELECT row_number() over() AS view_id,
                 {building_attr},
                 geom.geometry
@@ -104,17 +106,18 @@ def install_lod0_roofprint(cursor,schema):
                 WHERE geom.geometry IS NOT NULL;
             """
     try:
-        cursor.execute(sql_drop)
+
         cursor.execute(sql_create)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod0_r']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod0_r']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
         
 
 def install_lod1_solid(cursor,schema):
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod1_s']};"
     sql_create = f"""
-                    CREATE VIEW {schema}.{view_names['lod1_s']} AS
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod1_s'][0]} AS
                     SELECT row_number() over() AS view_id,
                     {building_attr},
                     geom.solid_geometry as geometry
@@ -125,15 +128,16 @@ def install_lod1_solid(cursor,schema):
                 """
      
     try:
-        cursor.execute(sql_drop)
         cursor.execute(sql_create)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod1_s']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod1_s']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
+
 def install_lod1_multisurface(cursor,schema):
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod1_m']};"
     sql_create = f"""
-                    CREATE VIEW {schema}.{view_names['lod1_m']} AS
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod1_m'][0]} AS
                     SELECT row_number() over() AS view_id,
                     {building_attr},
                     geom.geometry
@@ -143,17 +147,19 @@ def install_lod1_multisurface(cursor,schema):
                     WHERE geom.geometry IS NOT NULL;
                 """
     try:
-        cursor.execute(sql_drop)
         cursor.execute(sql_create)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod1_m']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod1_m']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
+
     
 
 def install_lod2_solid(cursor,schema):
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod2_s']};"
-    sql_create =f"""
-                    CREATE VIEW {schema}.{view_names['lod2_s']} AS
+
+    sql_building =f"""
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod2_s'][0]} AS
                     SELECT row_number() over() AS view_id,
                     {building_attr},
                     geom.solid_geometry as geometry
@@ -163,17 +169,31 @@ def install_lod2_solid(cursor,schema):
                     WHERE geom.solid_geometry IS NOT NULL;
                 """
 
+    sql_build_install = f"""
+                CREATE OR REPLACE VIEW {schema}.{view_names['lod2_s'][1]} AS
+                SELECT row_number() over() AS view_id,
+                bi.id, bi.class,bi.function, bi.usage, o.envelope, geom.solid_geometry AS geometry
+                FROM {schema}.building_installation bi
+                JOIN {schema}.cityobject o ON o.id = bi.id
+                JOIN {schema}.surface_geometry geom ON geom.cityobject_id=bi.id
+                WHERE geom.solid_geometry IS NOT NULL;
+                """
+    
+
     try:
-        cursor.execute(sql_drop)
-        cursor.execute(sql_create)
+        cursor.execute(sql_building)
+        cursor.execute(sql_build_install)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_s']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_s']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
+
 
 def install_lod2_multisurface(cursor,schema):    
 
-    sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod2_m']};"
-    sql_create = f"""
-                    CREATE VIEW {schema}.{view_names['lod2_m']} AS
+
+    sql_building = f"""
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod2_m'][0]} AS
                     SELECT row_number() over() AS view_id,
                     {building_attr},
                     geom.geometry
@@ -182,18 +202,82 @@ def install_lod2_multisurface(cursor,schema):
                     JOIN {schema}.surface_geometry geom ON geom.root_id=b.lod2_multi_surface_id
                     WHERE geom.geometry IS NOT NULL;
                     """
+    sql_build_install = f"""
+                    CREATE OR REPLACE VIEW {schema}.{view_names['lod2_m'][1]} AS
+                    SELECT row_number() over() AS view_id,
+                    bi.id, bi.class,bi.function, bi.usage, o.envelope, geom.geometry
+                    FROM {schema}.building_installation bi
+                    JOIN {schema}.cityobject o ON o.id = bi.id
+                    JOIN {schema}.surface_geometry geom ON geom.cityobject_id=bi.id
+                    WHERE geom.geometry IS NOT NULL;
+                    """
+
+
+    
     try:
-        cursor.execute(sql_drop)
-        cursor.execute(sql_create)
+        
+        cursor.execute(sql_building)
+        cursor.execute(sql_build_install)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_m']}' for schema: '{schema}'",level=Qgis.Success)
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_m']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
 
 
+def install_lod2_thematic(cursor,schema):
+
+    #sql_drop = f"DROP VIEW IF EXISTS {schema}.{view_names['lod2_th']};"
+    sql_body = f""" AS
+                    SELECT row_number() over() AS view_id,
+                    {building_attr},
+                    geom.geometry
+                    FROM {schema}.building b
+                    JOIN {schema}.cityobject o ON o.id=b.id
+                    JOIN {schema}.thematic_surface th ON th.building_id = b.id 
+                    JOIN {schema}.surface_geometry geom ON geom.root_id=th.lod2_multi_surface_id
+                    JOIN {schema}.objectclass oc ON th.objectclass_id = oc.id
+                    WHERE geom.geometry IS NOT NULL AND oc.classname = """
+
+    sql_roof = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][0]}"""
+
+    sql_wall = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][1]}"""
+
+    sql_ground = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][2]}"""
+
+    sql_closure = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][3]}"""
+
+    sql_ceiling = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][4]}"""
+
+    sql_int_wall = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][5]}"""
+
+    sql_floor = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][6]}"""
+
+    sql_out_ceiling = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][7]}"""
+
+    sql_out_floor = f"""CREATE OR REPLACE VIEW {schema}.{view_names['lod2_th'][8]}"""
+
+
+    try:
+       # cursor.execute(sql_drop)
+        cursor.execute(sql_roof+sql_body+"'BuildingRoofSurface'")
+        cursor.execute(sql_wall+sql_body+"'BuildingWallSurface'")
+        cursor.execute(sql_ground+sql_body+"'BuildingGroundSurface'")
+        cursor.execute(sql_closure+sql_body+"'BuildingClosureSurface'")
+        cursor.execute(sql_ceiling+sql_body+"'BuildingCeilingSurface'")
+        cursor.execute(sql_int_wall+sql_body+"'InteriorBuildingWallSurface'")
+        cursor.execute(sql_floor+sql_body+"'BuildingFloorSurface'")
+        cursor.execute(sql_out_ceiling+sql_body+"'OuterBuildingCeilingSurface'")
+        cursor.execute(sql_out_floor+sql_body+"'OuterBuildingFloorSurface'")
+
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_th']}' for schema: '{schema}'",level=Qgis.Success)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        QgsMessageLog.logMessage(f"installed view '{view_names['lod2_th']}' for schema: '{schema}' FAILED",level=Qgis.Critical)
 def install_views(dbLoader):
     
     cur = dbLoader.conn.cursor()
     for schema in dbLoader.schemas:
-        print(schema)
+
         if schema not in ['public','citydb_pkg']:
 
             install_lod0_footprint(cur,schema)
@@ -202,8 +286,10 @@ def install_views(dbLoader):
             install_lod1_multisurface(cur,schema)
             install_lod2_solid(cur,schema)
             install_lod2_multisurface(cur,schema)
+            install_lod2_thematic(cur,schema)
             print(f'installing view for: {schema}')
             dbLoader.conn.commit()
+            
 
 
     cur.close()
@@ -219,12 +305,22 @@ def uninstall_views(dbLoader):
     selected_db = dbLoader.dlg.cbxConnToExist.currentData()
     cur = dbLoader.conn.cursor()
     for count,schema in enumerate(dbLoader.schemas): #TODO: Catch DB errors
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_f']}""")
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod0_r']}""")
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_s']}""")
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod1_m']}""")
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_s']}""")
-        cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_m']}""")
+        print(f"uninstalling view from: {schema}")
+        for view in view_names['lod0_f']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod0_r']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod1_s']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod1_m']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod2_s']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod2_m']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        for view in view_names['lod2_th']:
+            cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view}""")
+        #cur.execute(f"""DROP VIEW IF EXISTS {schema}.{view_names['lod2_th']}""")
         progress.setValue(count+1)
     dbLoader.conn.commit()
 
@@ -247,28 +343,21 @@ def check_install(dbLoader):
     cur = dbLoader.conn.cursor()
     for schema in dbLoader.schemas:
         if schema not in ['public','citydb_pkg']:
-
-            sql=    f"""
-                    SELECT EXISTS(
-                        SELECT FROM information_schema.tables
-                        WHERE table_schema='{schema}'
-                        AND (
-                            table_name='{view_names['lod0_f']}'
-                        OR  table_name='{view_names['lod0_r']}'
-                        OR  table_name='{view_names['lod1_s']}'
-                        OR  table_name='{view_names['lod1_m']}'
-                        OR  table_name='{view_names['lod2_s']}'
-                        OR  table_name='{view_names['lod2_m']}'
+            for view in view_names['lod0_f']:
+                sql=    f"""
+                        SELECT EXISTS(
+                            SELECT FROM information_schema.tables
+                            WHERE table_schema='{schema}'
+                            AND table_name='{view}'
                             )
-                        )
-                    """
-            
-            cur.execute(sql)
-            res = cur.fetchone()[0]
-            print('res',res,schema)
-            if not res:
-                cur.close()
-                return False 
+                        """
+                
+                cur.execute(sql)
+                res = cur.fetchone()[0]
+                print('res',res,schema)
+                if not res:
+                    cur.close()
+                    return False 
     cur.close()
     return True
     
