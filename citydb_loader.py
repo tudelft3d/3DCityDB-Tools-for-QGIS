@@ -35,7 +35,7 @@ from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
 from .connector import DlgConnector                 #New Connection dialog
 from .functions import *
 from .connection import *
-from .installation import check_install, install_views, uninstall_views
+from .installation import *
 
 import os.path
 
@@ -300,26 +300,31 @@ class DBLoader:
             
             get_schemas(self)
 
+            upd_conn_file(self)
+
             if check_install(self): selected_db.has_installation = True
 
 
             if not selected_db.has_installation:
                 res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires updatable views to be installed.\nDo you want to proceed?")
                 if res == 16384: #YES
-                    install_views(self)
+                    install(selected_db)
                 else: return None
            
             self.dlg.tbImport.setDisabled(False)
             self.dlg.btnClearDB.setDisabled(False)
+            self.dlg.btnClearDB.setText(f'Clear {selected_db.database_name} from plugin contents')
             self.dlg.grbSchema.setDisabled(False)
             self.dlg.grbFeature.setDisabled(True)
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.grbExtent.setDisabled(True)
+            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
 
+            get_schemas(self)
             fill_schema_box(self)
             
-            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
-            self.dlg.btnClearDB.setText(f'Clear {selected_db.database_name} from plugin contents')
+            
+            
         else:
             QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nRequirement '{res}' cannot be found")
             #Disable 'Import' tab in case of connection fail
@@ -430,22 +435,27 @@ class DBLoader:
 
 ###--'Settings' tab--###########################################################
     def evt_btnClearDB_clicked(self):
-        uninstall_views(self)
+        uninstall(self)
         self.conn.close()
         self.dlg.tbImport.setDisabled(True)
         self.dlg.btnCeckCityDB.setDisabled(True)
         self.dlg.btnClearDB.setDisabled(True)
+        self.dlg.btnClearDB.setText(f'Clear <Database> from plugin contents')
         self.dlg.lblCityDbStatus.clear()
         self.dlg.lblConnection.clear()
         self.dlg.cbxScema.clear()
         self.dlg.qcbxFeature.clear()
         self.dlg.cbxGeomteryType.clear()
         self.dlg.cbxGeometryLvl.clear()
-        self.dlg.lblCityDbStatus.clear()
+        
         
 
 
 ###--'Settings' tab--###########################################################
+
+
+
+
     def show_Qmsg(self,msg,msg_type=Qgis.Success,time=5):
         self.iface.messageBar().pushMessage(msg,level=msg_type, duration=time)
 

@@ -341,23 +341,96 @@ def check_install(dbLoader):
     This function helps to avoid new installation on top of existing ones (case when the plugin runs from start)
     """
     cur = dbLoader.conn.cursor()
-    for schema in dbLoader.schemas:
-        if schema not in ['public','citydb_pkg']:
-            for view in view_names['lod0_f']:
-                sql=    f"""
-                        SELECT EXISTS(
-                            SELECT FROM information_schema.tables
-                            WHERE table_schema='{schema}'
-                            AND table_name='{view}'
-                            )
-                        """
-                
-                cur.execute(sql)
-                res = cur.fetchone()[0]
-                print('res',res,schema)
-                if not res:
-                    cur.close()
-                    return False 
-    cur.close()
-    return True
+    if 'qgis_pkg' in dbLoader.schemas:
+        return True
+
+import os
+import subprocess
+def upd_conn_file(dbLoader):
+
+    #Get selected connection details 
+    database = dbLoader.dlg.cbxConnToExist.currentData() 
     
+    #Get plugin directory
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
+
+    if os.name == 'posix': #Linux or MAC
+
+        #Create path to the 'connections' file
+        path_connection_params = os.path.join(cur_dir,'qgis_pkg', 'CONNECTION_params.sh')
+
+        #Get psql executable path
+        cmd = ['which', 'psql']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        o, e = proc.communicate()
+        psql_path = o.decode('ascii') 
+        
+
+        #Rewrite the 'connections' file with current database parameters.
+        with open (path_connection_params, 'w') as f:
+            f.write(f"""\
+#!/bin/bash
+
+export PGHOST={database.host}
+export PGPORT={database.port}
+export CITYDB={database.database_name}
+export PGUSER={database.username}
+export PGBIN={psql_path}
+export PGPASS={database.password}
+""")    
+        #Give executable rights    
+        os.chmod(path_connection_params, 0o755)
+
+    else: #Windows TODO: Find how to translate the above into windows batch
+        pass
+    return 0
+
+
+def install(db):
+    #Get plugin directory
+
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(cur_dir)
+
+    if os.name == 'posix': #Linux or MAC
+        path_installation_sh = os.path.join('./','qgis_pkg', 'CREATE_DB_qgis_pkg.sh')
+        path_installation_sql = os.path.join(cur_dir,'qgis_pkg', 'INSTALL_qgis_pkg.sql')
+        
+        #Give executable rights
+        os.chmod(os.path.join(os.getcwd(),'qgis_pkg', 'CREATE_DB_qgis_pkg.sh'), 0o755)
+
+        #Run installation script
+        p = subprocess.Popen(path_installation_sh,  stdin = subprocess.PIPE,
+                                                    stdout=subprocess.PIPE ,
+                                                    stderr=subprocess.PIPE ,
+                                                    universal_newlines=True)
+
+        output,e = p.communicate(f'{db.password}\n')
+
+        QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
+
+
+    else: #Windows TODO: Find how to translate the above into windows batch
+        pass
+    return 0
+
+def uninstall(dbLoader):
+    progress = QProgressBar(dbLoader.dlg.gbxInstall.bar)
+    progress.setMaximum(len(dbLoader.schemas))
+    progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+    dbLoader.dlg.gbxInstall.bar.pushWidget(progress, Qgis.Info)
+
+    if 'qgis_pkg' in dbLoader.schemas:
+        cur = dbLoader.conn.cursor()
+        cur.execute(f"""DROP SCHEMA qgis_pkg CASCADE""")
+
+        dbLoader.conn.commit()
+
+        msg = dbLoader.dlg.gbxInstall.bar.createMessage( u'Database has been cleared' )
+        dbLoader.dlg.gbxInstall.bar.clearWidgets()
+        dbLoader.dlg.gbxInstall.bar.pushWidget(msg, Qgis.Success, duration=4)
+        
+        dbLoader.dlg.cbxConnToExist.currentData().has_installation = False
+                     
+    else:
+        QgsMessageLog.logMessage('This message should never be able to be printed. Check installation.py ',level= Qgis.Critical,notifyUser=True)
