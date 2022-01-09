@@ -406,13 +406,16 @@ def install(db):
                                                     universal_newlines=True)
 
         output,e = p.communicate(f'{db.password}\n')
-
-        QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
+        if 'ERROR' in e:
+            QgsMessageLog.logMessage('Installation failed!',level= Qgis.Critical,notifyUser=True)
+            QgsMessageLog.logMessage(e[29:],level= Qgis.Info,notifyUser=True) #e[29:] skips manually 'Password for user postgres:', the stdin of the subprocess
+            return 0
+        else: QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
 
 
     else: #Windows TODO: Find how to translate the above into windows batch
         pass
-    return 0
+    return 1
 
 def uninstall(dbLoader):
     progress = QProgressBar(dbLoader.dlg.gbxInstall.bar)

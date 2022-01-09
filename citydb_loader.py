@@ -308,7 +308,13 @@ class DBLoader:
             if not selected_db.has_installation:
                 res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires updatable views to be installed.\nDo you want to proceed?")
                 if res == 16384: #YES
-                    install(selected_db)
+                    success = install(selected_db)
+                    if not success: 
+                        get_schemas(self) #NOTE:This wont work in the case that the installation fails at creating qgis_pkg schema at all
+                        self.dlg.btnClearDB.setDisabled(False)
+                        self.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
+                        self.dlg.wdgMain.setCurrentIndex(2)                      
+                        return None
                 else: return None
            
             self.dlg.tbImport.setDisabled(False)
