@@ -4,7 +4,7 @@ import psycopg2
 from qgis.core import QgsApplication, QgsVectorLayer, QgsProject, QgsDataSourceUri, QgsCoordinateReferenceSystem,Qgis,QgsEditorWidgetSetup
 from qgis.PyQt.QtWidgets import QMessageBox
 from .connection import *
-from .installation import view_names
+from .installation import plugin_view_syntax,feature_subclasses
 
 
 
@@ -332,7 +332,7 @@ def fieldVisibility (layer,fname):
         else:
             continue
 
-def create_views(dbLoader,view):
+def create_layers(dbLoader,view):
     selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_feature=dbLoader.dlg.qcbxFeature.currentText()
@@ -340,14 +340,15 @@ def create_views(dbLoader,view):
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
 
+    #SELECT UpdateGeometrySRID('roads','geom',4326);
     uri = QgsDataSourceUri()
     uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-    uri.setDataSource(aSchema= selected_schema,aTable= f'{view}',aGeometryColumn= 'geometry',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(envelope))",aKeyColumn= 'view_id')
+    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{view}',aGeometryColumn= 'geom',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))",aKeyColumn= 'id')
     vlayer = QgsVectorLayer(uri.uri(False), f"{view}", "postgres")
-    crs = vlayer.crs()
-    crs.createFromId(28992)  #TODO: Dont hardcode it
-    vlayer.setCrs(crs)
-    fieldVisibility(vlayer,'envelope')
+
+    vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:28992'))#TODO: Dont hardcode it
+
+    #fieldVisibility(vlayer,'geom') 
 
     return vlayer
 
@@ -356,104 +357,55 @@ def group_to_top(root,node):
     root.insertChildNode(0, move_group)
     root.removeChildNode(node)
 
-def import_layer(dbLoader): 
+def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
 
     selected_schema=dbLoader.dlg.cbxScema.currentText()
+    selected_feature = dbLoader.dlg.qcbxFeature.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
-    building_attr=  """
-                                b.id, o.gmlid,
-                                o.envelope,
-                                b.class,
-                                b.function, b.usage,
-                                b.year_of_construction, b.year_of_demolition,
-                                b.roof_type,
-                                b.measured_height,measured_height_unit,
-                                b.storeys_above_ground, b.storeys_below_ground,
-                                b.storey_heights_above_ground, b.storey_heights_ag_unit,
-                                b.storey_heights_below_ground, b.storey_heights_bg_unit
-                    """
+
     conn = None
 
     try:
 
-        # cur=dbLoader.conn.cursor()
+        
 
-        if selected_geometryLvl == 'LoD0':
-            if selected_geometryType == 'Footprint':
-                query_view=view_names['lod0_f']
-                
-                # sql_update_func =  f"""
-                #                 CREATE OR REPLACE FUNCTION {selected_schema}.tr_upd_v_building ()
-                #                 RETURNS trigger AS $$
-                #                 DECLARE
-                #                 updated_id integer;
-                #                 BEGIN
-                #                 UPDATE {selected_schema}.cityobject AS t1 SET
-                #                 gmlid                          = NEW.gmlid,
-                #                 envelope                       = NEW.envelope
+        if selected_geometryType == "Thematic surface":
+            query_view=[f'{selected_schema}_bdg_closuresurface_lod2_multisurf',
+                        f'{selected_schema}_bdg_groundsurface_lod2_multisurf',
+                        f'{selected_schema}_bdg_outerceilingsurface_lod2_multisurf',
+                        f'{selected_schema}_bdg_outerfloorsurface_lod2_multisurf',
+                        f'{selected_schema}_bdg_outerinstallation_lod2_multisurf',
+                        f'{selected_schema}_bdg_roofsurface_lod2_multisurf',
+                        f'{selected_schema}_bdg_wallsurface_lod2_multisurf']
+        else:
+            building_view=f'{selected_schema}_{plugin_view_syntax[selected_feature]}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}'
+            building_parts_view=f'{selected_schema}_{plugin_view_syntax[selected_feature]}_part_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}'
+            query_view=[building_view,building_parts_view]
 
-                #                 WHERE t1.id = OLD.id RETURNING id INTO updated_id;
-
-                #                 UPDATE {selected_schema}.{selected_feature} AS t2 SET
-                #                 class                       = NEW.class,
-                #                 function                    = NEW.function,
-                #                 usage                       = NEW.usage,
-                #                 year_of_construction        = NEW.year_of_construction,
-                #                 year_of_demolition          = NEW.year_of_demolition,
-                #                 roof_type                   = NEW.roof_type,
-                #                 measured_height             = NEW.measured_height,
-                #                 measured_height_unit        = NEW.measured_height_unit,
-                #                 storeys_above_ground        = NEW.storeys_above_ground,
-                #                 storeys_below_ground        = NEW.storeys_below_ground,
-                #                 storey_heights_above_ground = NEW.storey_heights_above_ground,
-                #                 storey_heights_ag_unit      = NEW.storey_heights_ag_unit,
-                #                 storey_heights_below_ground = NEW.storey_heights_below_ground,
-                #                 storey_heights_bg_unit      = NEW.storey_heights_bg_unit
-                #                 WHERE t2.id = updated_id;
-                #                 RETURN NEW;
-                #                 EXCEPTION
-                #                 WHEN OTHERS THEN RAISE NOTICE '{selected_schema}.tr_upd_v_building(id: %): %', OLD.id, SQLERRM;
-                #                 END;
-                #                 $$ LANGUAGE plpgsql;
-                #                 COMMENT ON FUNCTION {selected_schema}.tr_upd_v_building IS 'Update record in view {view_name}';
-                #                 """
-
-                # sql_trigger =  f""" 
-                #                     CREATE TRIGGER         tr_upd_v_building
-                #                     INSTEAD OF UPDATE ON {selected_schema}.{view_name}
-                #                     FOR EACH ROW
-                #                     EXECUTE PROCEDURE {selected_schema}.tr_upd_v_building();
-                #                     COMMENT ON TRIGGER tr_upd_v_building ON {selected_schema}.{view_name} IS 'Fired upon update of view {selected_schema}.{view_name}';
-                #                 """
-                        
-            elif selected_geometryType == 'Roofprint':
-                query_view=view_names['lod0_r']
-        elif selected_geometryLvl == 'LoD1':
-            if selected_geometryType == 'Solid':
-                query_view=view_names['lod1_s']
-            elif selected_geometryType == 'Multi-surface': 
-                query_view=view_names['lod1_m']
-
-        elif selected_geometryLvl == 'LoD2':
-            if selected_geometryType == 'Solid':
-                query_view=view_names['lod2_s']
-            elif selected_geometryType == 'Multi-surface': 
-                query_view=view_names['lod2_m']
-
-            elif selected_geometryType == "Thematic surface":
-                query_view=view_names['lod2_th']
-
-        layer_name= f'{selected_schema}_{selected_geometryLvl}_{selected_geometryType}'
+        layer_name= f'{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}'
+        
         root = QgsProject.instance().layerTreeRoot()
-        if not root.findGroup(layer_name):
-            node_group = root.addGroup(layer_name)
-        else: 
-            node_group = root.findGroup(layer_name)
+        if not root.findGroup(selected_schema): node_schema = root.addGroup(selected_schema)
+        else: node_schema = root.findGroup(selected_schema)
+
+        if not node_schema.findGroup(selected_feature): node_feature = node_schema.addGroup(selected_feature)
+        else: node_feature = root.findGroup(selected_feature)
+
+        if not node_feature.findGroup(selected_geometryLvl): 
+            node_lod = node_feature.addGroup(selected_geometryLvl)
+        else: node_lod = root.findGroup(selected_geometryLvl)
+
+
+                
+
+        
+        #if not node_feature.findGroup(selected_geometryLvl): node_lod = node_feature.addGroup(selected_geometryLvl)
+
             
         for view in query_view:
-            vlayer = create_views(dbLoader,view)
+            vlayer = create_layers(dbLoader,view)
         
             if not vlayer or not vlayer.isValid():
                 dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
@@ -463,12 +415,17 @@ def import_layer(dbLoader):
                 dbLoader.iface.mainWindow().blockSignals(True)
                 QgsProject.instance().addMapLayer(vlayer,False)
 
-                node_group.addLayer(vlayer)
+                if selected_geometryType == 'Thematic surface':
+                    if not node_feature.findGroup("ThematicSurfaces"):
+                        node_them = node_feature.addGroup("ThematicSurfaces")
+                    else: node_them = root.findGroup("ThematicSurfaces")
+                    node_them.addLayer(vlayer)
+                else: node_lod.addLayer(vlayer)
                 
 
                 dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
                 dbLoader.show_Qmsg('Success!!')
-        group_to_top(root,node_group)
+        group_to_top(root,node_schema)
             
 
 
