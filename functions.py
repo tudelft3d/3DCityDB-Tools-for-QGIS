@@ -3,6 +3,7 @@ from distutils.command.config import config
 import os, configparser
 import psycopg2
 from qgis.core import *
+from qgis.gui import QgsLayerTreeView
 from qgis.PyQt.QtWidgets import QMessageBox
 from .connection import *
 from .installation import plugin_view_syntax,feature_subclasses
@@ -343,19 +344,46 @@ def fieldVisibility (layer,fname):
 #     return QgsEditorWidgetSetup(type= 'DateTime',config= config)
 
 # def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
-#                     Layer= '', Key= '', Value= '',
+#                     LayerName= '', Key= '', Value= '',
 #                     NofColumns= 1, OrderByValue= False, UseCompleter= False):
 
 #     config =   {'AllowMulti': AllowMulti,
 #                 'AllowNull': AllowNull,
 #                 'FilterExpression':FilterExpression,
-#                 'Layer': Layer,
+#                 'LayerName': LayerName,
 #                 'Key': Key,
 #                 'Value': Value,
 #                 'NofColumns': NofColumns,
 #                 'OrderByValue': OrderByValue,
 #                 'UseCompleter': UseCompleter}
 #     return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
+
+# def create_lookup_relations(layer):
+#     for field in layer.fields():
+#         field_name = field.name()
+#         field_idx = layer.fields().indexOf(field_name)
+#         print(field_name,field_idx)
+
+
+#         if field_name == 'relative_to_water':
+#             print('nai')
+#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_water')[0] #TODO: Import lookuptables, Check if they exists, first
+#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))  
+#         elif field_name == 'relative_to_terrain':
+#             print('nai')
+#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_terrain')[0] #TODO: Import lookuptables, Check if they exists, first
+#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))   
+#         elif field_name == 'class':
+#             target_layer = QgsProject.instance().mapLayersByName('lu_building_class')[0] #TODO: Import lookuptables, Check if they exists, first
+#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))
+#         elif field_name == 'function':
+#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
+#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
+#         elif field_name == 'usage':
+#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
+#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
+
+  
 
 def create_relations(layer):
     project = QgsProject.instance()
@@ -379,6 +407,7 @@ def create_relations(layer):
     layer_root_container.addChildElement(relation_field)
 
     layer.setEditFormConfig(layer_configuration)
+    #create_lookup_relations(layer)
 
 # def create_form(layer): 
 
@@ -431,6 +460,41 @@ def create_relations(layer):
 
 #     layer.setEditFormConfig(layer_configuration)
 
+def group_has_layer(group,layer_name):
+    if layer_name in [child.name() for child in group.children()] : return True
+    return False
+
+
+def import_lookups(dbLoader): #NOTE: make lookups as a CLASS ???? hmm
+    lookup_group_name = "Look-up tables"
+    
+
+    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
+    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
+    cur=dbLoader.conn.cursor()
+
+    root= QgsProject.instance().layerTreeRoot()
+    if not root.findGroup(lookup_group_name): node_lookups = root.addGroup(lookup_group_name)
+    else: node_lookups= root.findGroup(lookup_group_name)
+
+    #Get all existing look-up tables from database
+    cur.execute(f"""SELECT table_name,'' FROM information_schema.tables 
+                    WHERE table_schema = 'qgis_pkg' AND table_name LIKE 'lu_%';
+                    """)
+    lookups=cur.fetchall()
+    cur.close()
+    lookups,empty=zip(*lookups)
+    
+    for table in lookups:
+        if not group_has_layer(node_lookups,table):
+            uri = QgsDataSourceUri()
+            uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
+            uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{table}',aGeometryColumn= None,aKeyColumn= '')
+            layer = QgsVectorLayer(uri.uri(False), f"{table}", "postgres")
+            node_lookups.addLayer(layer)
+            QgsProject.instance().addMapLayer(layer,False)
+
+    order_ToC(node_lookups)
 
 
 def create_layers(dbLoader,view):
@@ -472,14 +536,11 @@ def order_ToC(group):
     for n in mLNED.values():
         group.removeChildNode(n)  # group instead of root
     #############################################################################################################################
-    
-    
+    group.setExpanded(True)
     for child in group.children():
         if isinstance(child, QgsLayerTreeGroup):
             order_ToC(child)
         else: return None
-
-
 
 
 def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
@@ -533,8 +594,9 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
 
             
         for view in query_view:
+            import_lookups(dbLoader)
             vlayer = create_layers(dbLoader,view)
-        
+
             if not vlayer or not vlayer.isValid():
                 dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
             else:
@@ -544,8 +606,7 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                 QgsProject.instance().addMapLayer(vlayer,False)
 
                 if selected_geometryType == 'Thematic surface':
-                    if not node_feature.findGroup("ThematicSurfaces"):
-                        node_them = node_feature.addGroup("ThematicSurfaces")
+                    if not node_feature.findGroup("ThematicSurfaces"): node_them = node_lod.addGroup("ThematicSurfaces")
                     else: node_them = root.findGroup("ThematicSurfaces")
                     node_them.addLayer(vlayer)
                 else: node_lod.addLayer(vlayer)
@@ -554,11 +615,10 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                 dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
                 dbLoader.show_Qmsg('Success!!')
 
-                
                 vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
                 create_relations(vlayer)
-        #Its important to first order the ToC and then send it to the top.
-        order_ToC(node_database)       
+        #Its important to first order the ToC and then send it to the top. 
+        order_ToC(node_database)     
         send_to_top_ToC(root,node_database)
         
 
