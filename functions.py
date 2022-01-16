@@ -6,6 +6,7 @@ from qgis.core import *
 from qgis.PyQt.QtWidgets import QMessageBox
 from .connection import *
 from .installation import plugin_view_syntax,feature_subclasses
+from collections import OrderedDict
 
 
 
@@ -451,13 +452,39 @@ def create_layers(dbLoader,view):
 
     return vlayer
 
-def group_to_top(root,node):
-    move_group =  node.clone()
+def send_to_top_ToC(root,group):
+    move_group =  group.clone()
     root.insertChildNode(0, move_group)
-    root.removeChildNode(node)
+    root.removeChildNode(group)
+
+
+def order_ToC(group):
+
+    #### Germán Carrillo: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree ########
+    LayerNamesEnumDict=lambda listCh:{listCh[q[0]].name()+str(q[0]):q[1] for q in enumerate(listCh)}
+        
+    # group instead of root
+    mLNED = LayerNamesEnumDict(group.children())
+    mLNEDkeys = OrderedDict(sorted(LayerNamesEnumDict(group.children()).items(), reverse=False)).keys()
+
+    mLNEDsorted = [mLNED[k].clone() for k in mLNEDkeys]
+    group.insertChildNodes(0,mLNEDsorted)  # group instead of root
+    for n in mLNED.values():
+        group.removeChildNode(n)  # group instead of root
+    #############################################################################################################################
+    
+    
+    for child in group.children():
+        if isinstance(child, QgsLayerTreeGroup):
+            order_ToC(child)
+        else: return None
+
+
+
 
 def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
 
+    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText()
     selected_feature = dbLoader.dlg.qcbxFeature.currentText()
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
@@ -486,15 +513,17 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
         layer_name= f'{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}'
         
         root = QgsProject.instance().layerTreeRoot()
-        if not root.findGroup(selected_schema): node_schema = root.addGroup(selected_schema)
-        else: node_schema = root.findGroup(selected_schema)
+        if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
+        else: node_database = root.findGroup(selected_db.database_name)
+
+        if not node_database.findGroup(selected_schema): node_schema = node_database.addGroup(selected_schema)
+        else: node_schema = node_database.findGroup(selected_schema)
 
         if not node_schema.findGroup(selected_feature): node_feature = node_schema.addGroup(selected_feature)
-        else: node_feature = root.findGroup(selected_feature)
+        else: node_feature = node_schema.findGroup(selected_feature)
 
-        if not node_feature.findGroup(selected_geometryLvl): 
-            node_lod = node_feature.addGroup(selected_geometryLvl)
-        else: node_lod = root.findGroup(selected_geometryLvl)
+        if not node_feature.findGroup(selected_geometryLvl): node_lod = node_feature.addGroup(selected_geometryLvl)
+        else: node_lod = node_feature.findGroup(selected_geometryLvl)
 
 
                 
@@ -528,8 +557,10 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                 
                 vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
                 create_relations(vlayer)
-        group_to_top(root,node_schema)
-
+        #Its important to first order the ToC and then send it to the top.
+        order_ToC(node_database)       
+        send_to_top_ToC(root,node_database)
+        
 
 
 
