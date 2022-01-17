@@ -335,54 +335,50 @@ def fieldVisibility (layer,fname):
         else:
             continue
 
-# def date_widget(allow_null=True,calendar_popup=True,display_format='dd-MM-yyyy HH:mm:ss',field_format='dd-MM-yyyy HH:mm:ss',field_iso_format=False):
-#     config= {'allow_null':allow_null,
-#             'calendar_popup':calendar_popup,
-#             'display_format':display_format,
-#             'field_format':field_format,
-#             'field_iso_format':field_iso_format}
-#     return QgsEditorWidgetSetup(type= 'DateTime',config= config)
+def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
+                    Layer= '', Key= '', Value= '',
+                    NofColumns= 1, OrderByValue= False, UseCompleter= False):
 
-# def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
-#                     LayerName= '', Key= '', Value= '',
-#                     NofColumns= 1, OrderByValue= False, UseCompleter= False):
+    config =   {'AllowMulti': AllowMulti,
+                'AllowNull': AllowNull,
+                'FilterExpression':FilterExpression,
+                'Layer': Layer,
+                'Key': Key,
+                'Value': Value,
+                'NofColumns': NofColumns,
+                'OrderByValue': OrderByValue,
+                'UseCompleter': UseCompleter}
+    return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
 
-#     config =   {'AllowMulti': AllowMulti,
-#                 'AllowNull': AllowNull,
-#                 'FilterExpression':FilterExpression,
-#                 'LayerName': LayerName,
-#                 'Key': Key,
-#                 'Value': Value,
-#                 'NofColumns': NofColumns,
-#                 'OrderByValue': OrderByValue,
-#                 'UseCompleter': UseCompleter}
-#     return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
+    
+def create_lookup_relations(layer):
+    for field in layer.fields():
+        field_name = field.name()
+        field_idx = layer.fields().indexOf(field_name)
 
-# def create_lookup_relations(layer):
-#     for field in layer.fields():
-#         field_name = field.name()
-#         field_idx = layer.fields().indexOf(field_name)
-#         print(field_name,field_idx)
-
-
-#         if field_name == 'relative_to_water':
-#             print('nai')
-#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_water')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))  
-#         elif field_name == 'relative_to_terrain':
-#             print('nai')
-#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_terrain')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))   
-#         elif field_name == 'class':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_class')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value'))
-#         elif field_name == 'function':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
-#         elif field_name == 'usage':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(LayerName= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
-
+        assertion_msg="ValueRelation Error: layer '{}' doesn\'t exist in project. This layers is also being imported with every layer import (if it doesn\'t already exist)."
+        if field_name == 'relative_to_water':
+            target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_water')
+            assert target_layer, assertion_msg.format('lu_relative_to_water')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))  
+        elif field_name == 'relative_to_terrain':
+            target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_terrain')
+            assert target_layer, assertion_msg.format('lu_relative_to_terrain')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))   
+        elif field_name == 'class':
+            target_layer = QgsProject.instance().mapLayersByName('lu_building_class')
+            assert target_layer, assertion_msg.format('lu_building_class')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))
+        elif field_name == 'function':
+            target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')
+            assert target_layer, assertion_msg.format('lu_building_function_usage')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  'NL BAG Gebruiksdoel'"))
+        
+        elif field_name == 'usage':
+            target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')
+            assert target_layer, assertion_msg.format('lu_building_function_usage')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  'NL BAG Gebruiksdoel'"))
+            
   
 
 def create_relations(layer):
@@ -391,74 +387,25 @@ def create_relations(layer):
     layer_root_container = layer_configuration.invisibleRootContainer()
     
     curr_layer = project.mapLayersByName(layer.name())[0]
-    genericAtt_layer = project.mapLayersByName("cityobject_genericattrib")[0]
+    genericAtt_layer = project.mapLayersByName("cityobject_genericattrib")
+    assert genericAtt_layer, f"Layer: '{'cityobject_genericattrib'}' doesn\'t exist in project. This layers should also being imported with every layer import (if it doesn't already exist). 17-01-2021 It is not imported automatically yet, so DONT DELETE THE LAYER."
+
 
     rel = QgsRelation()
     rel.setReferencedLayer(curr_layer.id())
-    rel.setReferencingLayer(genericAtt_layer.id())
+    rel.setReferencingLayer(genericAtt_layer[0].id())
     rel.addFieldPair('cityobject_id','id')
     rel.generateId()
     rel.setName('re_'+layer.name())
     rel.setStrength(0)
-    assert rel.isValid() # It will only be added if it is valid. If not, check the ids and field names
+    assert rel.isValid(), "RelationError: Relation is NOT valid, Check ids and field names"
     QgsProject.instance().relationManager().addRelation(rel)
 
     relation_field = QgsAttributeEditorRelation(rel, layer_root_container)
     layer_root_container.addChildElement(relation_field)
 
     layer.setEditFormConfig(layer_configuration)
-    #create_lookup_relations(layer)
-
-# def create_form(layer): 
-
-#     relation = create_relations(layer)
-
-#     layer_configuration = layer.editFormConfig()
-#     layer_configuration.setLayout(1)
-#     layer_root_container = layer_configuration.invisibleRootContainer()
-
-#     for field in layer.fields():
-#         field_name = field.name()
-#         field_idx = layer.fields().indexOf(field_name)
-#         widget_type = field.editorWidgetSetup().type()
-#         print(f'{field_name}, {field_idx}, {widget_type}')
-
-
-
-#         if field_name == 'id':
-#             layer_configuration.setReadOnly(field_idx,True)
-#         elif field_name == 'gmlid':
-#             layer_configuration.setReadOnly(field_idx,True)
-#         elif '_date' in field_name:
-#             layer.setEditorWidgetSetup(field_idx,date_widget())
-#             if field_name == 'termination_date' or field_name == 'creation_date':
-#                 layer_configuration.setReadOnly(field_idx,True)
-#         elif 'year_' in field_name:
-#             layer.setEditorWidgetSetup(field_idx,date_widget(display_format='dd/MM/yyyy',field_format='dd/MM/yyyy'))
-#         elif 'realtive_' and 'water' in field_name:
-#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_water')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer.id(), Key= 'code_value', Value= 'code_value'))  
-#         elif 'realtive_' and 'terrain' in field_name:
-#             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_terrain')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer.id(), Key= 'code_value', Value= 'code_value'))   
-#         elif field_name == 'class':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_class')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer.id(), Key= 'code_value', Value= 'code_value'))
-#         elif field_name == 'function':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
-#         elif field_name == 'usage':
-#             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')[0] #TODO: Import lookuptables, Check if they exists, first
-#             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer.id(), Key= 'code_value', Value= 'code_value', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  NL BAG Gebruiksdoel"))
-
-    
-#     relation_field = QgsAttributeEditorField(relation,32, layer_root_container)
-#     layer_root_container.addChildElement(relation_field)    
-
-
-#     #a.setUiForm('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/attrib_form.ui')
-
-#     layer.setEditFormConfig(layer_configuration)
+    create_lookup_relations(layer)
 
 def group_has_layer(group,layer_name):
     if layer_name in [child.name() for child in group.children()] : return True
