@@ -70,6 +70,7 @@ export PGHOST={database.host}
 export PGPORT={database.port}
 export CITYDB={database.database_name}
 export PGUSER={database.username}
+export PGBIN={psql_path}
 """)    
         #Give executable rights    
         os.chmod(path_connection_params, 0o755)
