@@ -136,8 +136,11 @@ def fill_schema_box(dbLoader):
 def check_schema(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
 
-    features={'cityobject':False,'building':False} #Named after their main corresponding table name from the 3DCityDB.
-    #NOTE: the above list is currently (28/11/21) restricted only to cityobject->building.  
+    features_names=["City Object","Building","DTM","Tunnel","Bridge","Water Bodies","Vegetation Objects", "City Furniture", "Land Use"] #Named after their main corresponding table name from the 3DCityDB.
+    features_tables=["cityobject","building","relief_feature","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
+    features_array='{"cityobject","building","relief_feature","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"}' #TODO:19/01/2022 FIND A BETTER WAY TO GET THIS. I WANT TO USE IT AS AN ARRAY
+
+    #NOTE: the above list is currently (19/01/22) limited to what makes sense for now. Check citygml docs to see the complete list
  
     conn = None
     try:
@@ -150,27 +153,27 @@ def check_schema(dbLoader):
         #Check if current schema has cityobject, building features.
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 
-                        AND table_name = '{list(features.keys())[0]}' OR table_name = '{list(features.keys())[1]}'
+                        AND table_name = ANY('{features_array}')
                         ORDER BY table_name ASC""")
-        feature_table= cur.fetchall()
+        feature_response= cur.fetchall()
         cur.close()
-
-        for t, s in feature_table:
-            if t in list(features.keys()):
-                features[t]=True
+        features_names_status = list(map(list, zip(features_names,[False]*len(features_tables))))
+        features_dict = dict(zip(features_tables,features_names_status))
+        for t, s in feature_response:
+            if t in features_tables:
+                features_dict[t][1]=True
+        
         
         features_to_display=[]
-        #NOTE: This only works for the two features (cityobject,building). In the future if more features are added adjust the code so that it breaks only when cityboject is not found
-        for f in features:
-            if not features[f]:
+        #NOTE:TODO: This for loop below seems redundunt check if its easier to just append the list to the above for loop
+        for f_table in features_dict:
+            print(f_table,features_dict[f_table])
+            if not features_dict[f_table][1]:
                 cur.close()
-
                 return 0
             else:
-                features_to_display.append(f)
+                features_to_display.append(features_dict[f_table][0])
         
-        # Add to combobox ONLY cityobject features
-        features_to_display.remove('cityobject')
         dbLoader.dlg.qcbxFeature.clear()
         dbLoader.dlg.qcbxFeature.addItems(features_to_display)
 
