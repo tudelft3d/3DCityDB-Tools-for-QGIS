@@ -2,12 +2,15 @@
 <ui version="4.0">
  <class>DBLoaderDialogBase</class>
  <widget class="QDialog" name="DBLoaderDialogBase">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>665</width>
-    <height>593</height>
+    <height>618</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -63,6 +66,9 @@
       <bool>false</bool>
      </property>
      <widget class="QWidget" name="tbConn">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <attribute name="icon">
        <iconset>
         <normaloff>Postgresql_elephant.svg</normaloff>Postgresql_elephant.svg</iconset>
@@ -238,10 +244,16 @@
          </item>
          <item>
           <widget class="QGroupBox" name="grbFeature">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="title">
             <string>CityObject Feature</string>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_10">
+           <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <layout class="QFormLayout" name="formLayout_10">
               <item row="0" column="0">
@@ -255,6 +267,14 @@
                <widget class="QComboBox" name="qcbxFeature"/>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
+              <property name="title">
+               <string>Select sub-features</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_2"/>
+             </widget>
             </item>
            </layout>
           </widget>

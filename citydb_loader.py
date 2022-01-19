@@ -385,6 +385,8 @@ class DBLoader:
         self.dlg.btnImport.setText(f'Import {selected_feature} feature')
         self.dlg.btnImport.setDisabled(True)
         if not selected_schema and selected_feature: return #This is a guard
+        delete_all_sufeatures_widgets(self)
+        create_subfeatures_widgets(self)
     
     def evt_canvas_extChanged(self):
         extent = self.iface.mapCanvas().extent()

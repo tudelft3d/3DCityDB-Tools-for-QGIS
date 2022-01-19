@@ -22,10 +22,12 @@ plugin_view_syntax =    {'building':'building',
                          'LoD0':'lod0',
                          'LoD1':'lod1',
                          'LoD2':'lod2',
+                         'LoD3':'lod3',
                          'Footprint':'footprint',
                          'Roofprint':'roofedge',
                          'Multi-surface':'multisurf',
-                         'Solid':'solid'}
+                         'Solid':'solid',
+                         'Implicit':'implicitrep'}
 
 global feature_subclasses
 feature_subclasses = {'building': ('Building Part', 'Building installation')}
