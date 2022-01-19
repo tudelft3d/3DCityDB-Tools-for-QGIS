@@ -1,3 +1,18 @@
+def table_to_name(table):
+    if table=="building": return "Building"
+    elif table=="cityobject":return "City Object"
+    elif table=="tin_relief":return "DTM"
+    elif table=="tunnel":return "Tunnel"
+    elif table=="bridge":return "Bridge"
+    elif table=="waterbody":return "Water Bodies"
+    elif table=="solitary_vegetat_object":return "City Furniture"
+    elif table=="city_furniture":return "City Object"
+    elif table=="land_use":return "Land Use"
+    elif table=="building_installation":return "Building installation"
+    elif table=="building_installation":return "Building furniture"
+    elif table=="building":return "Building Parts"
+    elif table=="thematic_surface":return "Thematic Surfaces"
+
 #Qgis Layer Fields
 
 #Lookup-table names
@@ -40,12 +55,16 @@ features_tables_array='{"cityobject","building","tin_relief","tunnel","bridge","
 
 #Thematic Feature names
 features_names=["City Object","Building","DTM","Tunnel","Bridge","Water Bodies","Vegetation Objects", "City Furniture", "Land Use"] #Named after their main corresponding table name from the 3DCityDB.
-subfeatures_names={'Buildings':("Building installations","Building furniture","Building Parts", "Thematic Surfaces")} #NOTE: ONLY buildings ATM
+subfeatures_names={'Building':("Building installation","Building furniture","Building Parts", "Thematic Surfaces")} #NOTE: ONLY buildings ATM
 feature_tables_to_names = dict(zip(features_tables,features_names))
+feature_names_to_tables = dict(zip(features_names,features_tables))
 
 subfeature_tables_to_names={}
+subfeature_names_to_tables={}
 for feature in subfeatures_tables.keys():
-    subfeature_tables_to_names[feature]= dict(zip(subfeatures_tables['building'],subfeatures_names['Buildings']))
+    subfeature_tables_to_names[feature]= dict(zip(subfeatures_tables['building'],subfeatures_names['Building']))
+for feature in subfeatures_names.keys():
+    subfeature_names_to_tables[feature]= dict(zip(subfeatures_names['Building'],subfeatures_tables['building']))
 #LOD names
 
 #Geometry type names?

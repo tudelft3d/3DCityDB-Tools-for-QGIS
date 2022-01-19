@@ -137,9 +137,6 @@ def fill_schema_box(dbLoader):
 def check_schema(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
 
-    features_names=["City Object","Building","DTM","Tunnel","Bridge","Water Bodies","Vegetation Objects", "City Furniture", "Land Use"] #Named after their main corresponding table name from the 3DCityDB.
-    features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
-    features_array='{"cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"}' #TODO:19/01/2022 FIND A BETTER WAY TO GET THIS. I WANT TO USE IT AS AN ARRAY
 
     #NOTE: the above list is currently (19/01/22) limited to what makes sense for now. Check citygml docs to see the complete list
  
@@ -154,7 +151,7 @@ def check_schema(dbLoader):
         #Check if current schema has cityobject, building features.
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 
-                        AND table_name = ANY('{features_array}')
+                        AND table_name = ANY('{features_tables_array}')
                         ORDER BY table_name ASC""")
         feature_response= cur.fetchall()
         cur.close()
@@ -191,28 +188,37 @@ def check_schema(dbLoader):
 
 def create_subfeatures_widgets(dbLoader):
     feature = dbLoader.dlg.qcbxFeature.currentData()
-    print("Subfeatures VIEWS:",subfeatures_view[feature])
-    print("Subfeatures names:",subfeature_tables_to_names[feature])
 
     row=-1
     col=0
-    for c,subfeature in enumerate(subfeature_tables_to_names[feature]):
-        print("\tsub",subfeature,'\n')
-        check_box= QCheckBox(subfeature_tables_to_names[feature][subfeature])
-        if c%3==0:
-            row+=1
-            col=0
-        dbLoader.dlg.gridLayout_2.addWidget(check_box,row,col)
-        col+=1
+    try:
+        for c,subfeature in enumerate(subfeature_tables_to_names[feature]):
+            check_box= QCheckBox(subfeature_tables_to_names[feature][subfeature])
+            if c%3==0:
+                row+=1
+                col=0
+            dbLoader.dlg.gridLayout_2.addWidget(check_box,row,col)
+            if c==0:dbLoader.dlg.gbxSubFeatures.setDisabled(False)
+            col+=1
+    except KeyError as msg:
+        dbLoader.show_Qmsg(f'<b>{msg}</b> doesn\'t have any sub-features',msg_type=Qgis.Info)
+        return 0
 
-    dbLoader.dlg.gbxSubFeatures.setDisabled(False)
+    
 
 def delete_all_sufeatures_widgets(dbLoader):
     for w in reversed(range(dbLoader.dlg.gridLayout_2.count())):
         dbLoader.dlg.gridLayout_2.itemAt(w).widget().setParent(None)
 
 
-    
+def get_checked_subfeatures(dbLoader):
+    feature_name = dbLoader.dlg.qcbxFeature.currentText()
+    subfeatures = [dbLoader.dlg.gridLayout_2.itemAt(w).widget() for w in reversed(range(dbLoader.dlg.gridLayout_2.count()))]
+    checked_subfeatures=[]
+    for sub in subfeatures: 
+        if sub.isChecked():
+            checked_subfeatures.append(subfeature_names_to_tables[feature_name][sub.text()])
+    return checked_subfeatures
 
 
 def check_geometry(dbLoader):
@@ -222,27 +228,42 @@ def check_geometry(dbLoader):
     feature = dbLoader.dlg.qcbxFeature.currentData()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() 
 
+    checked_subfeature_tables = get_checked_subfeatures(dbLoader)
+    feature_all_lvls = [feature]+checked_subfeature_tables
+
+
     try:
 
+        object_counter={}    
+        for element in feature_all_lvls:
+            cur=dbLoader.conn.cursor()
+            #Get amount of thematic features inside the extents 
+            cur.execute(f"""SELECT count(*),'' 
+                            FROM {schema}.cityobject co
+                            JOIN {schema}.{element} bg 
+                            ON co.id = bg.id
+                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
+            count=cur.fetchone()
+            cur.close()
+            count,empty=count
+            object_counter[element]=count
 
-        cur=dbLoader.conn.cursor()
+        msg=''
+        for c,f in enumerate(object_counter): #First element is ALWAYS the feature and the rest are the sub-features
+            print(c,f)
+            if c==0: 
+                msg+=f"\u2116 of '{feature_tables_to_names[f]}' objects: {object_counter[f]}\n"
+            else: 
+                msg+=f"\t\u2116 of '{ subfeature_tables_to_names[feature][f]}' objects: {object_counter[f]}\n"
 
-        #Get amount of features inside the extents 
-        cur.execute(f"""SELECT count(*),'' 
-                        FROM {schema}.cityobject co
-                        JOIN {schema}.{feature} bg 
-                        ON co.id = bg.id
-                        WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
-        count=cur.fetchone()
-        cur.close()
-        count,empty=count
-
+        total_objects=sum([object_counter[f] for f in object_counter])
+        
         #Guard against importing many feutures
-        if count>3000:
-            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be imported ({count})!\n"
-                                                    "This could hinder perfomance and even cause frequent crashes.") #TODO: justify it better with storage size to 
+        if total_objects>20000:
+            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be imported ({total_objects})!\n"
+                                                        f"This could hinder perfomance and even cause frequent crashes.\n{msg}") #TODO: justify it better with storage size to 
         else:
-            QMessageBox.information(dbLoader.dlg,"Info", f"{count} '{feature}' features contained in current extent.")
+            QMessageBox.information(dbLoader.dlg,"Info", msg)
             if count == 0:
                 cur.close()
                 return 2
