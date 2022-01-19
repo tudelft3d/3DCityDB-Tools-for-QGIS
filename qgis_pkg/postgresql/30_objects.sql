@@ -8,6 +8,7 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
+/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table citymodel
 ----------------------------------------------------------------
@@ -27,7 +28,7 @@ CREATE TYPE         qgis_pkg.obj_citymodel AS (
  reason_for_update      varchar,
  lineage                varchar
 );
-COMMENT ON TYPE qgis_pkg.obj_citymodel IS 'This object (type) corresponds to table citymodel';
+COMMENT ON TYPE qgis_pkg.obj_citymodel IS 'This object (type) corresponds to table CITYMODEL';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table address
@@ -47,7 +48,7 @@ CREATE TYPE         qgis_pkg.obj_address AS (
  multi_point     geometry,
  xal_source      text
 );
-COMMENT ON TYPE qgis_pkg.obj_address IS 'This object (type) corresponds to table address';
+COMMENT ON TYPE qgis_pkg.obj_address IS 'This object (type) corresponds to table ADDRESS';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table appearance
@@ -64,7 +65,7 @@ CREATE TYPE         qgis_pkg.obj_appearance AS (
  citymodel_id    bigint,
  cityobject_id   bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_appearance IS 'This object (type) corresponds to table appearance';
+COMMENT ON TYPE qgis_pkg.obj_appearance IS 'This object (type) corresponds to table APPEARANCE';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table surface_data
@@ -78,10 +79,10 @@ CREATE TYPE         qgis_pkg.obj_surface_data AS (
  name_codespace        varchar,
  description           varchar,
  is_front              numeric,
- objectclass_id        int4,
- x3d_shininess         float8,
- x3d_transparency      float8,
- x3d_ambient_intensity float8,
+ objectclass_id        integer,
+ x3d_shininess         double precision,
+ x3d_transparency      double precision,
+ x3d_ambient_intensity double precision,
  x3d_specular_color    varchar,
  x3d_diffuse_color     varchar,
  x3d_emissive_color    varchar,
@@ -94,7 +95,8 @@ CREATE TYPE         qgis_pkg.obj_surface_data AS (
  gt_orientation        varchar,
  gt_reference_point    geometry
 );
-COMMENT ON TYPE qgis_pkg.obj_surface_data IS 'This object (type) corresponds to table surface_data';
+COMMENT ON TYPE qgis_pkg.obj_surface_data IS 'This object (type) corresponds to table SURFACE_DATA';
+
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table textureparam
@@ -107,7 +109,7 @@ CREATE TYPE         qgis_pkg.obj_textureparam AS (
  texture_coordinates        geometry,
  surface_data_id            bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_textureparam IS 'This object (type) corresponds to table textureparam';
+COMMENT ON TYPE qgis_pkg.obj_textureparam IS 'This object (type) corresponds to table TEXTUREPARAM';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table external_reference
@@ -120,7 +122,7 @@ CREATE TYPE         qgis_pkg.obj_external_reference AS (
  uri           varchar,
  cityobject_id bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_external_reference IS 'This object (type) corresponds to table external_reference';
+COMMENT ON TYPE qgis_pkg.obj_external_reference IS 'This object (type) corresponds to table EXTERNAL_REFERENCE';
 
 
 ----------------------------------------------------------------
@@ -132,10 +134,10 @@ CREATE TYPE         qgis_pkg.obj_cityobject_genericattrib AS (
  parent_genattrib_id    bigint,
  root_genattrib_id      bigint,
  attrname               varchar,
- datatype               int4,
+ datatype               integer,
  strval                 varchar,
- intval                 int4,
- realval                float8,
+ intval                 integer,
+ realval                double precision,
  urival                 varchar,
  dateval                timestamptz,
  unit                   varchar,
@@ -145,7 +147,9 @@ CREATE TYPE         qgis_pkg.obj_cityobject_genericattrib AS (
  surface_geometry_id    bigint,
  cityobject_id          bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_cityobject_genericattrib IS 'This object (type) corresponds to table cityobject_genericattrib';
+COMMENT ON TYPE qgis_pkg.obj_cityobject_genericattrib IS 'This object (type) corresponds to table CITYOBJECT_GENERICATTRIB';
+
+*/
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobject
@@ -153,7 +157,7 @@ COMMENT ON TYPE qgis_pkg.obj_cityobject_genericattrib IS 'This object (type) cor
 DROP TYPE IF EXISTS qgis_pkg.obj_cityobject CASCADE; 
 CREATE TYPE         qgis_pkg.obj_cityobject AS (
  id                     bigint,
- objectclass_id         int4,
+ objectclass_id         integer,
  gmlid                  varchar,
  gmlid_codespace        varchar,
  name                   varchar,
@@ -170,15 +174,16 @@ CREATE TYPE         qgis_pkg.obj_cityobject AS (
  lineage                varchar,
  xml_source             text
 );
-COMMENT ON TYPE qgis_pkg.obj_cityobject IS 'This object (type) corresponds to table cityobject';
+COMMENT ON TYPE qgis_pkg.obj_cityobject IS 'This object (type) corresponds to table CITYOBJECT';
 
+/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobjectgroup
 ----------------------------------------------------------------
 DROP TYPE IF EXISTS qgis_pkg.obj_cityobjectgroup CASCADE; 
 CREATE TYPE         qgis_pkg.obj_cityobjectgroup AS (
  id                   bigint,
- objectclass_id       int4,  
+ objectclass_id       integer,  
  class                varchar,
  class_codespace      varchar,
  function             varchar,
@@ -189,7 +194,8 @@ CREATE TYPE         qgis_pkg.obj_cityobjectgroup AS (
  other_geom           geometry,
  parent_cityobject_id bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_cityobjectgroup IS 'This object (type) corresponds to table cityobjectgroup';
+COMMENT ON TYPE qgis_pkg.obj_cityobjectgroup IS 'This object (type) corresponds to table CITYOBJECTGROUP';
+*/
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table building
@@ -197,7 +203,7 @@ COMMENT ON TYPE qgis_pkg.obj_cityobjectgroup IS 'This object (type) corresponds 
 DROP TYPE IF EXISTS qgis_pkg.obj_building CASCADE; 
 CREATE TYPE         qgis_pkg.obj_building AS (
  id                          bigint,
- objectclass_id              int4, 
+ objectclass_id              integer, 
  building_parent_id          bigint,
  building_root_id            bigint,
  class                       varchar,
@@ -210,7 +216,7 @@ CREATE TYPE         qgis_pkg.obj_building AS (
  year_of_demolition          date,
  roof_type                   varchar,
  roof_type_codespace         varchar,
- measured_height             float8,
+ measured_height             double precision,
  measured_height_unit        varchar,
  storeys_above_ground        numeric,
  storeys_below_ground        numeric,
@@ -236,7 +242,7 @@ CREATE TYPE         qgis_pkg.obj_building AS (
  lod3_solid_id               bigint,
  lod4_solid_id               bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_building IS 'This object (type) corresponds to table building';
+COMMENT ON TYPE qgis_pkg.obj_building IS 'This object (type) corresponds to table BUILDING';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table building_installation
@@ -244,7 +250,7 @@ COMMENT ON TYPE qgis_pkg.obj_building IS 'This object (type) corresponds to tabl
 DROP TYPE IF EXISTS qgis_pkg.obj_building_installation CASCADE; 
 CREATE TYPE         qgis_pkg.obj_building_installation AS (
  id                           bigint,
- objectclass_id               int4,
+ objectclass_id               integer,
  class                        varchar,
  class_codespace              varchar,
  function                     varchar,
@@ -269,7 +275,7 @@ CREATE TYPE         qgis_pkg.obj_building_installation AS (
  lod3_implicit_transformation varchar,
  lod4_implicit_transformation varchar
 );
-COMMENT ON TYPE qgis_pkg.obj_building_installation IS 'This object (type) corresponds to table building_installation';
+COMMENT ON TYPE qgis_pkg.obj_building_installation IS 'This object (type) corresponds to table BUILDING_INSTALLATION';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table thematic_surface
@@ -277,7 +283,7 @@ COMMENT ON TYPE qgis_pkg.obj_building_installation IS 'This object (type) corres
 DROP TYPE IF EXISTS qgis_pkg.obj_thematic_surface CASCADE; 
 CREATE TYPE         qgis_pkg.obj_thematic_surface AS (
  id                       bigint,
- objectclass_id           int4,
+ objectclass_id           integer,
  building_id              bigint,
  room_id                  bigint,
  building_installation_id bigint,
@@ -285,8 +291,9 @@ CREATE TYPE         qgis_pkg.obj_thematic_surface AS (
  lod3_multi_surface_id    bigint,
  lod4_multi_surface_id    bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_thematic_surface IS 'This object (type) corresponds to table thematic_surface';
+COMMENT ON TYPE qgis_pkg.obj_thematic_surface IS 'This object (type) corresponds to table THEMATIC_SURFACE';
 
+/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table address_to_building
 ----------------------------------------------------------------
@@ -295,7 +302,7 @@ CREATE TYPE         qgis_pkg.obj_address_to_building AS (
  building_id bigint,
  address_id  bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_address_to_building IS 'This object (type) corresponds to table address_to_building';
+COMMENT ON TYPE qgis_pkg.obj_address_to_building IS 'This object (type) corresponds to table ADDRESS_TO_BUILDING';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table appear_to_surface_data
@@ -305,7 +312,7 @@ CREATE TYPE         qgis_pkg.obj_appear_to_surface_data AS (
  surface_data_id bigint,
  appearance_id   bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_appear_to_surface_data IS 'This object (type) corresponds to table appear_to_surface_data';
+COMMENT ON TYPE qgis_pkg.obj_appear_to_surface_data IS 'This object (type) corresponds to table APPEAR_TO_SURFACE_DATA';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobject_member
@@ -315,7 +322,7 @@ CREATE TYPE         qgis_pkg.obj_cityobject_member AS (
  citymodel_id  bigint,
  cityobject_id bigint
 );
-COMMENT ON TYPE qgis_pkg.obj_cityobject_member IS 'This object (type) corresponds to table cityobject_member';
+COMMENT ON TYPE qgis_pkg.obj_cityobject_member IS 'This object (type) corresponds to table CITYOBJECT_MEMBER';
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table group_to_cityobject
@@ -326,7 +333,89 @@ CREATE TYPE         qgis_pkg.obj_group_to_cityobject AS (
  cityobjectgroup_id bigint,
  role               varchar
 );
-COMMENT ON TYPE qgis_pkg.obj_group_to_cityobject IS 'This object (type) corresponds to table group_to_cityobject';
+COMMENT ON TYPE qgis_pkg.obj_group_to_cityobject IS 'This object (type) corresponds to table GROUP_TO_CITYOBJECT';
+*/
+
+----------------------------------------------------------------
+-- CREATE OBJECT (TYPE) corresponding to table solitary_vegetat_object
+----------------------------------------------------------------
+--DROP TYPE IF EXISTS qgis_pkg.obj_solitary_vegetat_object CASCADE; 
+CREATE TYPE         qgis_pkg.obj_solitary_vegetat_object AS (
+ id                           bigint,
+ class                        varchar,
+ class_codespace              varchar,
+ function                     varchar,
+ function_codespace           varchar,
+ usage                        varchar,
+ usage_codespace              varchar,
+ species                      varchar,
+ species_codespace            varchar,
+ height                       double precision,
+ height_unit                  varchar,
+ trunk_diameter               double precision,
+ trunk_diameter_unit          varchar,
+ crown_diameter               double precision,
+ crown_diameter_unit          varchar,
+ lod1_brep_id                 bigint,
+ lod2_brep_id                 bigint,
+ lod3_brep_id                 bigint,
+ lod4_brep_id                 bigint,
+ lod1_other_geom              geometry,
+ lod2_other_geom              geometry,
+ lod3_other_geom              geometry,
+ lod4_other_geom              geometry,
+ lod1_implicit_rep_id         bigint,
+ lod2_implicit_rep_id         bigint,
+ lod3_implicit_rep_id         bigint,
+ lod4_implicit_rep_id         bigint,
+ lod1_implicit_ref_point      geometry,
+ lod2_implicit_ref_point      geometry,
+ lod3_implicit_ref_point      geometry,
+ lod4_implicit_ref_point      geometry,
+ lod1_implicit_transformation varchar,
+ lod2_implicit_transformation varchar,
+ lod3_implicit_transformation varchar,
+ lod4_implicit_transformation varchar
+);
+COMMENT ON TYPE qgis_pkg.obj_solitary_vegetat_object IS 'This object (type) corresponds to table SOLITARY_VEGETAT_OBJECT';
+
+
+----------------------------------------------------------------
+-- CREATE OBJECT (TYPE) corresponding to table relief_feature
+----------------------------------------------------------------
+--DROP TYPE IF EXISTS qgis_pkg.obj_relief_feature CASCADE; 
+CREATE TYPE         qgis_pkg.obj_relief_feature AS (
+ id  bigint,
+ lod numeric
+);
+COMMENT ON TYPE qgis_pkg.obj_relief_feature IS 'This object (type) corresponds to table RELIEF_FEATURE';
+
+----------------------------------------------------------------
+-- CREATE OBJECT (TYPE) corresponding to table relief_component
+----------------------------------------------------------------
+--DROP TYPE IF EXISTS qgis_pkg.obj_relief_component CASCADE; 
+CREATE TYPE         qgis_pkg.obj_relief_component AS (
+ id             bigint,
+ objectclass_id integer,
+ lod            numeric,
+ extent         geometry
+);
+COMMENT ON TYPE qgis_pkg.obj_relief_component IS 'This object (type) corresponds to table RELIEF_COMPONENT';
+
+----------------------------------------------------------------
+-- CREATE OBJECT (TYPE) corresponding to table tin_relief
+----------------------------------------------------------------
+--DROP TYPE IF EXISTS qgis_pkg.obj_tin_relief CASCADE; 
+CREATE TYPE         qgis_pkg.obj_tin_relief AS (
+ id                  bigint,
+ max_length          double precision,
+ max_length_unit     varchar,
+ stop_lines          geometry,
+ break_lines         geometry,
+ control_points      geometry,
+ surface_geometry_id bigint
+);
+COMMENT ON TYPE qgis_pkg.obj_tin_relief IS 'This object (type) corresponds to table TIN_RELIEF';
 
 
 -- ***********************************************************************

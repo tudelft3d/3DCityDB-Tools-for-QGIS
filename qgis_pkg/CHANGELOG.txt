@@ -1,0 +1,20 @@
+2021-12-29:
+
+Initial release.
+Materialized views for buildings, building installations geometries
+Updatable views for buildings, building installations
+
+2022-01-04:
+
+Added materialized views for relief feature, TIN relief and solitary vegetation object geometries
+Code restructured and cleaned up
+Added function refresh_materialized_view()
+
+2022-01-18:
+
+Added updatable views for relief feature, TIN relief and solitary vegetation object
+Restructured update functions for tables and views
+Made functions and trigger functions dynamic to be used with multiple citydb schemas
+Rewritten function refresh_materialized_view(), with schema_name and mat_view_name parameters
+Code clean-up and some bugs removed
+

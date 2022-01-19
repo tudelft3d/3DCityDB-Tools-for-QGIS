@@ -8,80 +8,104 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
-DROP TABLE IF EXISTS qgis_pkg.materialized_view_status CASCADE;
-CREATE TABLE         qgis_pkg.materialized_view_status (
-id            integer PRIMARY KEY,
+DROP TABLE IF EXISTS qgis_pkg.materialized_view CASCADE;
+CREATE TABLE         qgis_pkg.materialized_view (
+id            serial PRIMARY KEY,
 name          varchar,
 last_refresh  timestamptz(3),
 is_up_to_date boolean
 );
-COMMENT ON TABLE qgis_pkg.materialized_view_status IS 'List of materialized views in the qgis_pkg schema';
-CREATE INDEX mat_view_status_name_idx     ON qgis_pkg.materialized_view_status (name);
-CREATE INDEX mat_view_status_uptodate_idx ON qgis_pkg.materialized_view_status (is_up_to_date);
+COMMENT ON TABLE qgis_pkg.materialized_view IS 'List of materialized views in the qgis_pkg schema';
+CREATE INDEX mat_view_status_name_idx     ON qgis_pkg.materialized_view (name);
+CREATE INDEX mat_view_status_uptodate_idx ON qgis_pkg.materialized_view (is_up_to_date);
 
-INSERT INTO qgis_pkg.materialized_view_status (id, is_up_to_date, name) VALUES
-( 1, FALSE, '_geom_citydb_bdg_lod0_footprint'),
-( 2, FALSE, '_geom_citydb_bdg_part_lod0_footprint'),
-( 3, FALSE, '_geom_citydb_bdg_lod0_roofedge'),
-( 4, FALSE, '_geom_citydb_bdg_part_lod0_roofedge'),
-( 5, FALSE, '_geom_citydb_bdg_lod1_multisurf'),
-( 6, FALSE, '_geom_citydb_bdg_part_lod1_multisurf'),
-( 7, FALSE, '_geom_citydb_bdg_lod2_multisurf'),
-( 8, FALSE, '_geom_citydb_bdg_part_lod2_multisurf'),
-( 9, FALSE, '_geom_citydb_bdg_lod1_solid'),
-(10, FALSE, '_geom_citydb_bdg_part_lod1_solid'),
-(11, FALSE, '_geom_citydb_bdg_lod2_solid'),
-(12, FALSE, '_geom_citydb_bdg_part_lod2_solid'),
-(13, FALSE, '_geom_citydb_bdg_groundsurface_lod2_multisurf'),
-(14, FALSE, '_geom_citydb_bdg_wallsurface_lod2_multisurf'),
-(15, FALSE, '_geom_citydb_bdg_roofsurface_lod2_multisurf'),
-(16, FALSE, '_geom_citydb_bdg_closuresurface_lod2_multisurf'),
-(17, FALSE, '_geom_citydb_bdg_outerceilingsurface_lod2_multisurf'),
-(18, FALSE, '_geom_citydb_bdg_outerfloorsurface_lod2_multisurf'),
-(19, FALSE, '_geom_citydb_bdg_outerinstallation_lod2_multisurf');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MATERIALIZED_VIEW
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.refresh_materialized_view CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.refresh_materialized_view(varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.refresh_materialized_view(
-mview_name varchar DEFAULT NULL
+mview_schema varchar DEFAULT NULL,
+mview_name   varchar DEFAULT NULL
 )
 RETURNS integer AS $$
 DECLARE
+qgis_pkg_schema_name varchar := 'qgis_pkg';
 r RECORD;
 BEGIN
-IF mview_name IS NULL THEN 
-	FOR r IN 
-		SELECT * FROM qgis_pkg.materialized_view_status ORDER BY name
-	LOOP
-		RAISE NOTICE 'Refreshing materialized view %', r.name; 
-		EXECUTE format('REFRESH MATERIALIZED VIEW qgis_pkg.%I',r.name);
-		UPDATE qgis_pkg.materialized_view_status AS mv SET
-			is_up_to_date = TRUE,
-			last_refresh  = clock_timestamp()
-		WHERE mv.id=r.id;
-	END LOOP;
-	RAISE NOTICE '-- Done!'; 	
-	RETURN 1;
-ELSIF EXISTS (SELECT mv.id FROM qgis_pkg.materialized_view_status AS mv WHERE mv.name=mview_name) THEN
-	RAISE NOTICE 'Refreshing materialized view %', mview_name; 
-	EXECUTE format('REFRESH MATERIALIZED VIEW qgis_pkg.%I', mview_name);
-	UPDATE qgis_pkg.materialized_view_status AS mv SET
-		is_up_to_date = TRUE,
-		last_refresh  = clock_timestamp()
-	WHERE mv.name=mview_name;
-	RAISE NOTICE '-- Done!';	
-	RETURN 1;
-ELSE
-	RAISE NOTICE 'No materialized view found with name %', mview_name;
-	RETURN NULL;
-END IF;
+
+CASE 
+	WHEN mview_schema IS NULL AND mview_name IS NULL THEN -- refresh all existing materialized views
+		FOR r IN 
+			SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+			FROM pg_catalog.pg_class
+				INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+			WHERE pg_class.relkind = 'm' AND pg_namespace.nspname=qgis_pkg_schema_name
+			ORDER BY mview_name
+		LOOP
+			RAISE NOTICE 'Refreshing materialized view "%"', r.mview_name; 
+			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, r.mview_name);
+			UPDATE qgis_pkg.materialized_view AS mv SET
+				is_up_to_date = TRUE,
+				last_refresh  = clock_timestamp()
+			WHERE mv.name=r.mview_name;
+		END LOOP;
+		RAISE NOTICE 'All materialized views in schema "%" refreshed!', qgis_pkg_schema_name; 	
+		RETURN 1;
+
+	WHEN mview_schema IS NOT NULL THEN -- refresh all existing materialized views for that schema
+		IF EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE pg_namespace.nspname=mview_schema) THEN
+			FOR r IN 
+				SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+				FROM pg_catalog.pg_class
+					INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+				WHERE pg_class.relkind = 'm' AND pg_namespace.nspname=qgis_pkg_schema_name
+					AND pg_class.relname LIKE '_geom_'||mview_schema||'_%'
+				ORDER BY table_schema, mview_name
+			LOOP
+				RAISE NOTICE 'Refreshing materialized view "%"', r.mview_name; 
+				EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, r.mview_name);
+				UPDATE qgis_pkg.materialized_view AS mv SET
+					is_up_to_date = TRUE,
+					last_refresh  = clock_timestamp()
+				WHERE mv.name=r.mview_name;
+			END LOOP;
+			RAISE NOTICE 'All materialized views of schema "%" refreshed!', mview_schema; 	
+			RETURN 1;
+		ELSE
+			RAISE NOTICE 'No schema found with name "%"', mview_schema;
+			RETURN 0;			
+		END IF;
+
+	WHEN mview_name IS NOT NULL THEN -- refresh only a specific materialized views
+		IF EXISTS (SELECT 1 
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE pg_class.relkind = 'm' AND pg_namespace.nspname=qgis_pkg_schema_name
+						AND pg_class.relname = mview_name) THEN
+			RAISE NOTICE 'Refreshing materialized view "%"', mview_name; 
+			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, mview_name);
+			UPDATE qgis_pkg.materialized_view AS mv SET
+				is_up_to_date = TRUE,
+				last_refresh  = clock_timestamp()
+			WHERE mv.name=mview_name;
+			RAISE NOTICE 'Materialized view "%" refreshed!', mview_name;	
+			RETURN 1;
+		ELSE
+			RAISE NOTICE 'No materialized view found with name "%"', mview_name;
+			RETURN 0;			
+		END IF;
+
+	ELSE
+		RAISE NOTICE 'Nothing done';
+		RETURN 0;	
+END CASE;
+
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.refresh_materialized_view(): %', SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE '%.refresh_materialized_view(): %', qgis_pkg_schema_name, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.refresh_materialized_view IS 'Refresh materialized view(s) in schema qgis_pkg';
+COMMENT ON FUNCTION qgis_pkg.refresh_materialized_view(varchar, varchar) IS 'Refresh materialized view(s) in schema qgis_pkg';
 
 -- ****************************************************************************
 -- ****************************************************************************
