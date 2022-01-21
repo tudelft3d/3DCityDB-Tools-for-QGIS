@@ -328,6 +328,7 @@ class DBLoader:
 
             get_schemas(self)
             fill_schema_box(self)
+            create_constants(self)
             
             
             
@@ -350,6 +351,7 @@ class DBLoader:
         self.dlg.lblCityDbStatus.clear()
         self.dlg.btnCheckConn.setDisabled(False)
         self.dlg.btnCeckCityDB.setDisabled(True)
+        
 
 ###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################

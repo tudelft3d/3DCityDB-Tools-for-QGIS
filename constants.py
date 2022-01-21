@@ -1,3 +1,41 @@
+#Thematic features 3DCityDB tables
+cityObject_table= "cityobject"
+building_table= "building"
+dtm_table= "relief_feature"
+tunnel_table= "tunnel"
+bridge_table= "bridge"
+waterbody_table= "waterbody"
+vegetation_table= "solitary_vegetat_object"
+cityFurniture_table= "city_furniture"
+landUse_table= "land_use"
+
+#Subfeatures 3DCityDB tables
+buildingOuterInstallation_table= "building_installation"
+buildingFurniture_table= "building_furniture"
+buildingPart_table= "building"
+thematicSurfaces_table= "thematic_surface"
+reliefTIN_table= "tin_relief"
+reliefMassPoint_table= "masspoint_relief"
+reliefRaster_table= "raster_relief"
+reliefBreakLine_table= "breakline_relief"
+
+#subfeatures names in views
+buildingOuterInstallation_in_view= 'installation'
+thematicSurfaces_in_view= 'themsurf'
+buildingPart_in_view= 'part'
+reliefTIN_in_view= 'tin'
+
+buildingFurniture_in_view= "furni"
+reliefMassPoint_in_view= "asdasd"
+reliefRaster_in_view= "asdasd"
+reliefBreakLine_in_view= "asdasd"
+
+
+feature_tables=(cityObject_table,building_table,dtm_table,tunnel_table,bridge_table,waterbody_table,vegetation_table,cityFurniture_table,landUse_table)
+subfeature_tables=(buildingOuterInstallation_table,buildingFurniture_table,buildingPart_table,thematicSurfaces_table,reliefTIN_table,reliefMassPoint_table,reliefRaster_table,reliefBreakLine_table)
+subfeature_inView= (buildingOuterInstallation_in_view,buildingFurniture_in_view,buildingPart_in_view,thematicSurfaces_in_view,reliefTIN_in_view,reliefMassPoint_in_view,reliefRaster_in_view,reliefBreakLine_in_view)
+subfeature_tables_to_inView = dict(zip(subfeature_tables,subfeature_inView))
+subfeature_inView_to_tables = dict(zip(subfeature_inView,subfeature_tables))
 def table_to_name(table):
     if table=="building": return "Building"
     elif table=="cityobject":return "City Object"
@@ -12,6 +50,108 @@ def table_to_name(table):
     elif table=="building_installation":return "Building furniture"
     elif table=="building":return "Building Parts"
     elif table=="thematic_surface":return "Thematic Surfaces"
+def get_postgres_array(data):
+    array=''
+    for f in data:
+        array+=f
+        array+='|'
+
+    array=list(array)
+    array[-1]=")"
+    array.insert(0,"(")
+    array=''.join(array)
+    return array
+
+
+def get_schema_views(dbLoader,schema='qgis_pkg'):
+    cur=dbLoader.conn.cursor()
+    cur.execute(f"""SELECT table_name,'' 
+                    FROM information_schema.views
+                    WHERE table_schema ='{schema}';
+                    """)
+    views=cur.fetchall()
+    cur.close()
+    views,empty=zip(*views)
+    return views
+
+
+
+def get_feature_views(dbLoader,Feature,subFeatures,schema='qgis_pkg'):
+
+    array=get_postgres_array(subFeatures)
+
+    cur=dbLoader.conn.cursor()
+    cur.execute(f"""SELECT table_name,'' 
+                    FROM information_schema.views
+                    WHERE table_schema ='{schema}'
+                    AND table_name LIKE '%{Feature}%'
+                    AND table_name NOT SIMILAR TO '%{array}%';
+                    """)
+    views=cur.fetchall()
+    if views:
+        views,empty=zip(*views)
+    return views
+
+
+def get_subfeature_views_single(dbLoader,subFeature,schema='qgis_pkg'):
+
+
+    cur=dbLoader.conn.cursor()
+    cur.execute(f"""SELECT table_name,'' 
+                    FROM information_schema.views
+                    WHERE table_schema ='{schema}'
+                    AND table_name LIKE '%{subFeature}%';
+                    """)
+    views=cur.fetchall()
+    if views:
+        views,empty=zip(*views)
+    return views
+
+def get_features_subFeatures_views(dbLoader):
+    
+    subFeatures_views={}
+    featureSubFeature_views={}
+    for subFeature in subfeature_tables_to_inView:
+        subFeatures_views[subFeature]= get_subfeature_views_single(dbLoader,subFeature=subfeature_tables_to_inView[subFeature])
+    
+    feature_views={}
+    for feature in feature_tables:
+        feature_views[feature]= get_feature_views(dbLoader,Feature= feature,subFeatures=subfeature_inView)
+
+
+    for feature in feature_tables:
+        featureSubFeature_views[feature]= feature_views[feature],
+        for subFeature in subfeature_tables:
+            
+            featureName_isFoundIn_subFeatureName= any(item in feature.split('_') for item in subFeature.split('_'))
+            thematic_and_feature_isFound= all(thematicSurfaces_in_view in view and feature in view for view in subFeatures_views[subFeature])
+            views_exist= subFeatures_views[subFeature]
+
+            if featureName_isFoundIn_subFeatureName or thematic_and_feature_isFound and views_exist:
+                featureSubFeature_views[feature]= (*featureSubFeature_views[feature],{subFeature:subFeatures_views[subFeature]})
+    
+    return featureSubFeature_views
+
+def create_constants(dbLoader):
+    views_all = get_schema_views(dbLoader)
+    views_features_subFeatures = get_features_subFeatures_views(dbLoader)
+
+
+def print_view_hierarchy(views_features_subFeatures): #NOTE:TODO maybe show this thought the settings
+    for feature in views_features_subFeatures.keys():
+        print("Feature:\t",feature)
+        for j in views_features_subFeatures[feature]:
+            if type(j)==type(()):
+                for view in j:
+                    print("\t\tview:",view)
+            elif type(j)==type({}):
+                for sub in j.keys():
+                    print("\t\tSubfeature:\t",sub)
+                    for vieww in j[sub]:
+                        print("\t\t\t\tview:",vieww)
+        print("\n")
+
+
 
 #Qgis Layer Fields
 
