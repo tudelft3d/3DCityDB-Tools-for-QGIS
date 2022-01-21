@@ -322,7 +322,8 @@ def check_geometry(dbLoader):
             print(view)
             cur=dbLoader.conn.cursor()
             #Get geometry columns
-            cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view}""")
+            cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view}
+                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
             res=cur.fetchone()
             cur.close()
             #res,empty=zip(*res) #TODO: fix zip unpack
@@ -497,6 +498,8 @@ def create_relations(layer):
     QgsProject.instance().relationManager().addRelation(rel)
 
     relation_field = QgsAttributeEditorRelation(rel, layer_root_container)
+    relation_field.setLabel("Generic Attributes")
+    relation_field.setShowLabel(True)
     layer_root_container.addChildElement(relation_field)
 
     layer.setEditFormConfig(layer_configuration)
@@ -537,6 +540,27 @@ def import_lookups(dbLoader): #NOTE: make lookups as a CLASS ???? hmm
             QgsProject.instance().addMapLayer(layer,False)
 
     order_ToC(node_lookups)
+
+def import_generics(dbLoader):
+
+    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
+    selected_schema=dbLoader.dlg.cbxScema.currentText()
+    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
+    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+
+    root= QgsProject.instance().layerTreeRoot()
+    group_to_assign = root.findGroup(selected_db.database_name)
+
+
+    generics_layer_name = "cityobject_genericattrib"
+
+    if not group_has_layer(group_to_assign,generics_layer_name):
+        uri = QgsDataSourceUri()
+        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
+        uri.setDataSource(aSchema= f'{selected_schema}',aTable= f'{generics_layer_name}',aGeometryColumn= None,aKeyColumn= '')
+        layer = QgsVectorLayer(uri.uri(False), f"{generics_layer_name}", "postgres")
+        group_to_assign.addLayer(layer)
+        QgsProject.instance().addMapLayer(layer,False)
 
 
 def create_layers(dbLoader,view):
@@ -640,6 +664,7 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
         for view in query_view:
             import_lookups(dbLoader)
             vlayer = create_layers(dbLoader,view)
+            import_generics(dbLoader)
 
             if not vlayer or not vlayer.isValid():
                 dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
@@ -660,7 +685,7 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                 dbLoader.show_Qmsg('Success!!')
 
                 vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
-                #create_relations(vlayer)
+                create_relations(vlayer)
         #Its important to first order the ToC and then send it to the top. 
         order_ToC(node_database)     
         send_to_top_ToC(root,node_database)
