@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+from matplotlib import container
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
@@ -42,6 +43,8 @@ import os.path
 class DBLoader:
     """QGIS Plugin Implementation."""
 
+    
+
     def __init__(self, iface):
         """Constructor.
 
@@ -50,6 +53,7 @@ class DBLoader:
             application at run time.
         :type iface: QgsInterface
         """
+        self.container_obj=[]
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -213,6 +217,7 @@ class DBLoader:
         ## 'Import' tab ######################################################################################
             self.dlg.cbxScema.currentIndexChanged.connect(self.evt_cbxScema_changed)
             self.dlg.qcbxFeature.currentIndexChanged.connect(self.evt_qcbxFeature_changed)
+            
             #Get initial canvas extent
             canvas = self.iface.mapCanvas()
             crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
@@ -384,12 +389,34 @@ class DBLoader:
     def evt_qcbxFeature_changed(self):
         selected_schema=self.dlg.cbxScema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
+        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.cbxGeomteryType.clear()
+        self.dlg.grbGeometry.setDisabled(True)
+        self.dlg.cbxGeometryLvl.setDisabled(True)        
+        self.dlg.cbxGeomteryType.setDisabled(True) 
         self.dlg.btnImport.setText(f'Import {selected_feature} feature')
         self.dlg.btnImport.setDisabled(True)
         if not selected_schema and selected_feature: return #This is a guard
         delete_all_sufeatures_widgets(self)
         create_subfeatures_widgets(self)
     
+    def evt_checkBox_stateChanged(self):
+        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.cbxGeomteryType.clear()
+        res = check_geometry(self)
+        if res==2:
+            self.dlg.cbxGeometryLvl.clear()
+            self.dlg.cbxGeomteryType.clear()
+            self.dlg.grbGeometry.setDisabled(True)
+            self.dlg.cbxGeometryLvl.setDisabled(True)        
+            self.dlg.cbxGeomteryType.setDisabled(True) 
+            self.dlg.btnImport.setDisabled(True)
+        else:
+            self.dlg.grbGeometry.setDisabled(False)
+            self.dlg.cbxGeometryLvl.setDisabled(False)        
+            self.dlg.cbxGeomteryType.setDisabled(False)   
+
+
     def evt_canvas_extChanged(self):
         extent = self.iface.mapCanvas().extent()
         crs =self.iface.mapCanvas().mapSettings().destinationCrs().authid()
@@ -402,25 +429,18 @@ class DBLoader:
         if not selected_schema and selected_feature: return #This is a guard
 
         res = check_geometry(self)
-        if res == 3:
-            self.dlg.grbGeometry.setDisabled(False)
-            self.dlg.cbxGeometryLvl.setDisabled(False)        
-            self.dlg.cbxGeomteryType.setDisabled(False)
-        elif res==2:
+        if res==2:
             self.dlg.cbxGeometryLvl.clear()
             self.dlg.cbxGeomteryType.clear()
             self.dlg.grbGeometry.setDisabled(True)
             self.dlg.cbxGeometryLvl.setDisabled(True)        
             self.dlg.cbxGeomteryType.setDisabled(True) 
-            self.dlg.btnImport.setDisabled(True)   
-        elif res == 1:  
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.cbxGeomteryType.setDisabled(True)
-            self.dlg.btnImport.setDisabled(True)
-        elif res == 0:
-            self.dlg.cbxGeometryLvl.clear()
-            self.dlg.cbxGeometryLvl.setDisabled(True) 
-            self.dlg.btnImport.setDisabled(True)
+            self.dlg.btnImport.setDisabled(True)  
+        else:
+            self.dlg.grbGeometry.setDisabled(False)
+            self.dlg.cbxGeometryLvl.setDisabled(False)        
+            self.dlg.cbxGeomteryType.setDisabled(False) 
+
 
     def evt_cbxGeometryLvl_changed(self,idx):
         self.dlg.cbxGeomteryType.clear()

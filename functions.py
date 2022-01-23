@@ -9,7 +9,8 @@ from .connection import *
 from .installation import plugin_view_syntax,feature_subclasses
 from collections import OrderedDict
 from .constants import *
-
+import itertools
+from collections import Counter
 
 
 
@@ -133,6 +134,32 @@ def fill_schema_box(dbLoader):
     dbLoader.dlg.cbxScema.clear()
     dbLoader.dlg.cbxScema.addItems(sorted(dbLoader.schemas)) 
 
+def instantiate_objects(dbLoader,features):
+
+    
+    for feature, schema in features:
+
+        if feature == building_table:
+            feature_obj = Building()
+            for sub in feature_obj.subFeatures_table_name:
+                if sub == buildingOuterInstallation_table:
+                    subfeature_obj = BuildingInstallation()
+                elif sub == buildingPart_table:
+                    subfeature_obj = BuildingPart()
+                elif sub == thematicSurfaces_table:
+                    subfeature_obj = BuildingThematic()
+                else: continue
+                feature_obj.subFeatures_objects.append(subfeature_obj) 
+        elif feature == dtm_table:
+            feature_obj = Relief()
+            for sub in feature_obj.subFeatures_table_name:
+                if sub == reliefTIN_table:
+                    subfeature_obj = TINRelief()
+                feature_obj.subFeatures_objects.append(subfeature_obj) 
+        elif feature == vegetation_table:
+            feature_obj = Vegetation()
+        else: continue
+        dbLoader.container_obj.append(feature_obj)
 
 def check_schema(dbLoader):
     database = dbLoader.dlg.cbxConnToExist.currentData()
@@ -151,29 +178,16 @@ def check_schema(dbLoader):
         #Check if current schema has cityobject, building features.
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 
-                        AND table_name = ANY('{features_tables_array}')
+                        AND table_name SIMILAR TO '%{get_postgres_array(feature_tables)}%'
                         ORDER BY table_name ASC""")
-        feature_response= cur.fetchall()
+        feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
         cur.close()
-        features_names_status = list(map(list, zip(features_names,[False]*len(features_tables))))
-        features_dict = dict(zip(features_tables,features_names_status))
-        for t, s in feature_response:
-            if t in features_tables:
-                features_dict[t][1]=True
-        
-        dbLoader.dlg.qcbxFeature.clear()
-        features_to_display=[]
-        #NOTE:TODO: This for loop below seems redundunt check if its easier to just append the list to the above for loop
-        for f_table in features_dict:
-            if not features_dict[f_table][1]:
-                cur.close()
-                return 0
-            else:
-                #features_to_display.append((features_dict[f_table][0],f_table))
-                dbLoader.dlg.qcbxFeature.addItem(features_dict[f_table][0],f_table) 
-        
-        
-        
+
+        instantiate_objects(dbLoader,feature_response)
+
+
+        for feature in dbLoader.container_obj:
+            dbLoader.dlg.qcbxFeature.addItem(feature.alias,feature)  
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -192,15 +206,17 @@ def create_subfeatures_widgets(dbLoader):
     row=-1
     col=0
     try:
-        for c,subfeature in enumerate(subfeature_tables_to_names[feature]):
-            check_box= QCheckBox(subfeature_tables_to_names[feature][subfeature])
+        for c,subfeature in enumerate(feature.subFeatures_objects):
+            assert feature.subFeatures_objects #NOTE:22-01-2022 I want to catch features that don't have subfeatures and notify the user. BUT i don't think it works as intended
+            check_box= QCheckBox(subfeature.alias)
+            check_box.stateChanged.connect(dbLoader.evt_checkBox_stateChanged)
             if c%3==0:
                 row+=1
                 col=0
             dbLoader.dlg.gridLayout_2.addWidget(check_box,row,col)
             if c==0:dbLoader.dlg.gbxSubFeatures.setDisabled(False)
             col+=1
-    except KeyError as msg:
+    except AssertionError as msg:
         dbLoader.show_Qmsg(f'<b>{msg}</b> doesn\'t have any sub-features',msg_type=Qgis.Info)
         return 0
 
@@ -212,12 +228,14 @@ def delete_all_sufeatures_widgets(dbLoader):
 
 
 def get_checked_subfeatures(dbLoader):
-    feature_name = dbLoader.dlg.qcbxFeature.currentText()
+    selected_feature = dbLoader.dlg.qcbxFeature.currentData()
     subfeatures = [dbLoader.dlg.gridLayout_2.itemAt(w).widget() for w in reversed(range(dbLoader.dlg.gridLayout_2.count()))]
     checked_subfeatures=[]
     for sub in subfeatures: 
         if sub.isChecked():
-            checked_subfeatures.append(subfeature_names_to_tables[feature_name][sub.text()])
+
+            obj_inx=[subfeat.alias for subfeat in selected_feature.subFeatures_objects].index(sub.text())
+            checked_subfeatures.append(selected_feature.subFeatures_objects[obj_inx])
     return checked_subfeatures
 
 
@@ -234,180 +252,220 @@ def check_geometry(dbLoader):
 
     try:
 
-        object_counter={}    
+        total_count=0
+        
+        msg=''
         for element in feature_all_lvls:
             cur=dbLoader.conn.cursor()
-            #Get amount of thematic features inside the extents 
-            cur.execute(f"""SELECT count(*),'' 
+            #Get amount of thematic features and subfeatures inside the extents 
+            if element.view_name == 'part':
+                            cur.execute(f"""SELECT count(*),'' 
                             FROM {schema}.cityobject co
-                            JOIN {schema}.{element} bg 
+                            JOIN {schema}.{element.table_name} bg 
+                            ON co.id = bg.id
+                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)
+                            AND bg.objectclass_id = {element.class_id}""")
+            else:
+                cur.execute(f"""SELECT count(*),'' 
+                            FROM {schema}.cityobject co
+                            JOIN {schema}.{element.table_name} bg 
                             ON co.id = bg.id
                             WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
             count=cur.fetchone()
             cur.close()
             count,empty=count
-            object_counter[element]=count
+            element.count=count
+            total_count+=count
 
-        msg=''
-        for c,f in enumerate(object_counter): #First element is ALWAYS the feature and the rest are the sub-features
-            print(c,f)
-            if c==0: 
-                msg+=f"\u2116 of '{feature_tables_to_names[f]}' objects: {object_counter[f]}\n"
+            if element.is_feature: 
+                msg+=f"\u2116 of '{element.alias}' objects: {element.count}\n"
             else: 
-                msg+=f"\t\u2116 of '{ subfeature_tables_to_names[feature][f]}' objects: {object_counter[f]}\n"
+                msg+=f"   \u2116 of '{element.alias}' objects: {element.count}\n"
 
-        total_objects=sum([object_counter[f] for f in object_counter])
+
+            current_lod= None
+            add_lod=None
+            add_types=[]
+            add_geometries={}
+            for view in element.views:
+                
+                cur=dbLoader.conn.cursor()
+                #Get geometry columns
+                cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view.name}
+                                WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
+                count=cur.fetchone()
+                cur.close()
+ 
+                if count[0]: #NOT 0
+                    if  current_lod != view.lod:
+                        if current_lod and add_types: #check if they are NOT empty
+                            add_types=[]
+
+                        current_lod= view.lod
+                        add_types.append(view.type)
+                        add_geometries[current_lod]=add_types
+
+                    else:
+                        add_types.append(view.type)
+                        add_geometries[current_lod]=add_types
+
+            element.lods=add_geometries
+            
+            
         
+        lod_intersection=[]
+        for element in feature_all_lvls:
+            print(element.lods)
+            lod_intersection.append(set(element.lods.keys()))
+        res=sorted(set.intersection(*lod_intersection))
+        print(res,'\n')
+
+
+        types=[]
+        for element in feature_all_lvls:
+            for lod in res:
+                if type(element.lods[lod])==type([]):
+                    for i in element.lods[lod]:
+                        types.append(i)
+                else:
+                    types.append(element.lods[lod])
+        
+
+        counter=Counter(types)
+
+        types=[]
+        for key in counter.keys():
+            if counter[key] >= len(feature_all_lvls): #NOTE: this >= seems suspicius
+                types.append(key)
+        print(types)
+
+        for key,values in geometry_rep.items():
+            if key in res:
+                add_types=[]
+                for v in values:
+                    if v in types:
+                        add_types.append(table_to_alias(v,'type'))
+                dbLoader.dlg.cbxGeometryLvl.addItem(table_to_alias(key,'lod'),add_types)
+                       
+                    
+
         #Guard against importing many feutures
-        if total_objects>20000:
-            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be imported ({total_objects})!\n"
+        if total_count>20000:
+            QMessageBox.warning(dbLoader.dlg,"Warning", f"Too many features set to be imported ({total_count})!\n"
                                                         f"This could hinder perfomance and even cause frequent crashes.\n{msg}") #TODO: justify it better with storage size to 
         else:
             QMessageBox.information(dbLoader.dlg,"Info", msg)
             if count == 0:
                 cur.close()
                 return 2
-        # cur=dbLoader.conn.cursor()
-        # #Get geometry columns
-        # cur.execute(f"""SELECT column_name,'' 
-        #                 FROM information_schema.columns 
-        #                 WHERE table_name = '{feature}' 
-        #                 AND table_schema = '{schema}' 
-        #                 AND column_name 
-        #                 LIKE 'lod%%id'""")
 
-        # columns=cur.fetchall()
-        # cur.close()
-        # columns,empty=zip(*columns)
         
-        # cur=dbLoader.conn.cursor()
-        # cur.execute(f"SELECT * FROM {schema}.thematic_surface;")
-        # hasThematic = cur.fetchone()
-        # if hasThematic:
-
-        #     #Get amount of features inside the extents #TODO: select from a list of columns
-        #     cur.execute(f"""SELECT  bg.lod0_footprint_id, bg.lod0_roofprint_id, bg.lod1_multi_surface_id,bg.lod1_solid_id, bg.lod2_multi_surface_id,
-        #                             bg.lod2_solid_id,th.lod2_multi_surface_id
-        #                     FROM {schema}.cityobject co
-        #                     JOIN {schema}.{feature} bg ON co.id = bg.id
-        #                     JOIN {schema}.thematic_surface th ON th.building_id = bg.id;
-        #                 """)
-            
-        # else:
-        #     cur.execute(f"""SELECT  bg.lod0_footprint_id, bg.lod0_roofprint_id, bg.lod1_multi_surface_id,bg.lod1_solid_id, bg.lod2_multi_surface_id,
-        #                             bg.lod2_solid_id,NULL
-        #                     FROM {schema}.cityobject co
-        #                     JOIN {schema}.{feature} bg ON co.id = bg.id;""")
-        # attributes=cur.fetchall()
-        # cur.close()
 
 
 
+        # geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
+        #                 'LOD1':{'Multi-surface':False,"Solid":False,'Implicit':False},
+        #                 'LOD2':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False},
+        #                 'LOD3':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False}
+        #             }
 
-
-        geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
-                        'LOD1':{'Multi-surface':False,"Solid":False,'Implicit':False},
-                        'LOD2':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False},
-                        'LOD3':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False}
-                    }
-
-        dbLoader.dlg.cbxGeometryLvl.clear()
-        dbLoader.dlg.cbxGeomteryType.clear()
+        # dbLoader.dlg.cbxGeometryLvl.clear()
+        # dbLoader.dlg.cbxGeomteryType.clear()
         
-        lod0=[]
-        lod1=[]
-        lod2=[]
-        lod3=[]
-        for view in features_view[feature]:
-            print(view)
-            cur=dbLoader.conn.cursor()
-            #Get geometry columns
-            cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view}
-                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
-            res=cur.fetchone()
-            cur.close()
-            #res,empty=zip(*res) #TODO: fix zip unpack
-            print("fetch res: ",res[0],'\n')
+        # lod0=[]
+        # lod1=[]
+        # lod2=[]
+        # lod3=[]
+        # for view in features_view[feature]:
+        #     print(view)
+        #     cur=dbLoader.conn.cursor()
+        #     #Get geometry columns
+        #     cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view}
+        #                     WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
+        #     res=cur.fetchone()
+        #     cur.close()
+        #     #res,empty=zip(*res) #TODO: fix zip unpack
+        #     print("fetch res: ",res[0],'\n')
             
-            if res[0]:
-                if 'lod0' in view and 'foot' in view and feature in view:
-                    lod0.append('Footprint')
-                    geometry_lvls['LOD0']['Footprint']=True
-                elif 'lod0' in view and 'roof' in view and feature in view:
-                    lod0.append('Roofprint')
-                    geometry_lvls['LOD0']['Roofprint']=True
+        #     if res[0]:
+        #         if 'lod0' in view and 'foot' in view and feature in view:
+        #             lod0.append('Footprint')
+        #             geometry_lvls['LOD0']['Footprint']=True
+        #         elif 'lod0' in view and 'roof' in view and feature in view:
+        #             lod0.append('Roofprint')
+        #             geometry_lvls['LOD0']['Roofprint']=True
 
-                elif 'lod1' in view and 'mult' in view and feature in view:
-                    lod1.append('Multi-surface')
-                    geometry_lvls['LOD1']['Multi-surface']=True
-                elif 'lod1' in view and 'solid' in view and feature in view:
-                    lod1.append('Solid')
-                    geometry_lvls['LOD1']['Solid']=True
-                elif 'lod1' in view and 'implicit' in view and feature in view:
-                    lod1.append('Implicit')
-                    geometry_lvls['LOD1']['Implicit']=True
+        #         elif 'lod1' in view and 'mult' in view and feature in view:
+        #             lod1.append('Multi-surface')
+        #             geometry_lvls['LOD1']['Multi-surface']=True
+        #         elif 'lod1' in view and 'solid' in view and feature in view:
+        #             lod1.append('Solid')
+        #             geometry_lvls['LOD1']['Solid']=True
+        #         elif 'lod1' in view and 'implicit' in view and feature in view:
+        #             lod1.append('Implicit')
+        #             geometry_lvls['LOD1']['Implicit']=True
                 
-                elif 'lod2' in view and 'mult' in view and feature in view:
-                    lod2.append('Multi-surface')
-                    geometry_lvls['LOD2']['Multi-surface']=True
-                elif 'lod2' in view and 'solid' in view and feature in view:
-                    lod2.append('Solid')
-                    geometry_lvls['LOD2']['Solid']=True
-                elif 'lod2' in view and 'implicit' in view and feature in view:
-                    lod2.append('Implicit')
-                    geometry_lvls['LOD2']['Implicit']=True
-                elif'lod2' in view and 'mult' in view:
-                    lod2.append('Thematic surface')
-                    geometry_lvls['LOD2']['Thematic surface']=True
+        #         elif 'lod2' in view and 'mult' in view and feature in view:
+        #             lod2.append('Multi-surface')
+        #             geometry_lvls['LOD2']['Multi-surface']=True
+        #         elif 'lod2' in view and 'solid' in view and feature in view:
+        #             lod2.append('Solid')
+        #             geometry_lvls['LOD2']['Solid']=True
+        #         elif 'lod2' in view and 'implicit' in view and feature in view:
+        #             lod2.append('Implicit')
+        #             geometry_lvls['LOD2']['Implicit']=True
+        #         elif'lod2' in view and 'mult' in view:
+        #             lod2.append('Thematic surface')
+        #             geometry_lvls['LOD2']['Thematic surface']=True
                 
-                elif 'lod3' in view and 'mult' in view and feature in view:
-                    lod3.append('Multi-surface')
-                    geometry_lvls['LOD3']['Multi-surface']=True
-                elif 'lod3' in view and 'solid' in view and feature in view:
-                    lod3.append('Solid')
-                    geometry_lvls['LOD3']['Solid']=True
-                elif 'lod3' in view and 'implicit' in view and feature in view:
-                    lod3.append('Implicit')
-                    geometry_lvls['LOD3']['Implicit']=True
-                #TODO: CHECK IF thematic is relevant for lod3
+        #         elif 'lod3' in view and 'mult' in view and feature in view:
+        #             lod3.append('Multi-surface')
+        #             geometry_lvls['LOD3']['Multi-surface']=True
+        #         elif 'lod3' in view and 'solid' in view and feature in view:
+        #             lod3.append('Solid')
+        #             geometry_lvls['LOD3']['Solid']=True
+        #         elif 'lod3' in view and 'implicit' in view and feature in view:
+        #             lod3.append('Implicit')
+        #             geometry_lvls['LOD3']['Implicit']=True
+        #         #TODO: CHECK IF thematic is relevant for lod3
 
 
 
-            # if feature[2] is not None:
-            #     if not geometry_lvls['LOD1']['Multi-surface']:
-            #         lod1.append('Multi-surface')
-            #         geometry_lvls['LOD1']['Multi-surface']=True
-            #     else: continue
+        #     # if feature[2] is not None:
+        #     #     if not geometry_lvls['LOD1']['Multi-surface']:
+        #     #         lod1.append('Multi-surface')
+        #     #         geometry_lvls['LOD1']['Multi-surface']=True
+        #     #     else: continue
 
-            # if feature[3] is not None:
-            #     if not geometry_lvls['LOD1']['Solid']:
-            #         lod1.append('Solid')
-            #         geometry_lvls['LOD1']['Solid']=True
-            #     else: continue
+        #     # if feature[3] is not None:
+        #     #     if not geometry_lvls['LOD1']['Solid']:
+        #     #         lod1.append('Solid')
+        #     #         geometry_lvls['LOD1']['Solid']=True
+        #     #     else: continue
 
-            # if feature[4] is not None:
-            #     if not geometry_lvls['LOD2']['Multi-surface']:
-            #         lod2.append('Multi-surface')
-            #         geometry_lvls['LOD2']['Multi-surface']=True
-            #     else: continue
+        #     # if feature[4] is not None:
+        #     #     if not geometry_lvls['LOD2']['Multi-surface']:
+        #     #         lod2.append('Multi-surface')
+        #     #         geometry_lvls['LOD2']['Multi-surface']=True
+        #     #     else: continue
 
-            # if feature[5] is not None:
-            #     if not geometry_lvls['LOD2']['Solid']:
-            #         lod2.append('Solid')
-            #         geometry_lvls['LOD2']['Solid']=True
-            #     else: continue
+        #     # if feature[5] is not None:
+        #     #     if not geometry_lvls['LOD2']['Solid']:
+        #     #         lod2.append('Solid')
+        #     #         geometry_lvls['LOD2']['Solid']=True
+        #     #     else: continue
             
-            # if feature[6] is not None:
-            #     if not geometry_lvls['LOD2']['Thematic surface']:
-            #         lod2.append('Thematic surface')
-            #         geometry_lvls['LOD2']['Thematic surface']=True
-            #     else: continue
+        #     # if feature[6] is not None:
+        #     #     if not geometry_lvls['LOD2']['Thematic surface']:
+        #     #         lod2.append('Thematic surface')
+        #     #         geometry_lvls['LOD2']['Thematic surface']=True
+        #     #     else: continue
 
 
-        lvls = {'LoD0':sorted([*{*lod0}]),'LoD1':sorted([*{*lod1}]),'LoD2':sorted([*{*lod2}]), 'LoD3':sorted([*{*lod3}])}
-        for lvl,types in lvls.items():
-            if lvl:
-                dbLoader.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
+        # lvls = {'LoD0':sorted([*{*lod0}]),'LoD1':sorted([*{*lod1}]),'LoD2':sorted([*{*lod2}]), 'LoD3':sorted([*{*lod3}])}
+        # for lvl,types in lvls.items():
+        #     if lvl:
+        #         dbLoader.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
 
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -615,31 +673,19 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
     selected_schema=dbLoader.dlg.cbxScema.currentText() 
     selected_feature = dbLoader.dlg.qcbxFeature.currentData() #3dcitydb table name
     selected_feature_name=feature_tables_to_names[selected_feature]
+    selected_subFeatures= get_checked_subfeatures(dbLoader)
+    
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+    cons=Constants()
+    views_tree= cons.views_features_subFeatures
+
 
     conn = None
 
     try:
 
-        
-
-        if selected_geometryType == "Thematic surface": #NOTE:TODO: This is hardcoded for buildings! CHANGE It
-            query_view=[f'{selected_schema}_bdg_closuresurface_lod2_multisurf',
-                        f'{selected_schema}_bdg_groundsurface_lod2_multisurf',
-                        f'{selected_schema}_bdg_outerceilingsurface_lod2_multisurf',
-                        f'{selected_schema}_bdg_outerfloorsurface_lod2_multisurf',
-                        f'{selected_schema}_bdg_outerinstallation_lod2_multisurf',
-                        f'{selected_schema}_bdg_roofsurface_lod2_multisurf',
-                        f'{selected_schema}_bdg_wallsurface_lod2_multisurf']
-        else:
-            feature_view=f'{selected_schema}_{selected_feature}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}'
-            
-            #building_parts_view=f'{selected_schema}_{selected_feature}_part_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}'
-            query_view=[feature_view]#,building_parts_view]
-
-        layer_name= f'{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}'
         
         root = QgsProject.instance().layerTreeRoot()
         if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
@@ -651,17 +697,47 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
         if not node_schema.findGroup(selected_feature_name): node_feature = node_schema.addGroup(selected_feature_name)
         else: node_feature = node_schema.findGroup(selected_feature_name)
 
-        if not node_feature.findGroup(selected_geometryLvl): node_lod = node_feature.addGroup(selected_geometryLvl)
-        else: node_lod = node_feature.findGroup(selected_geometryLvl)
+        if not node_feature.findGroup(selected_geometryLvl): node_flod = node_feature.addGroup(selected_geometryLvl)
+        else: node_flod = node_feature.findGroup(selected_geometryLvl)
 
 
+
+
+        feature_view=[f'{selected_schema}_{selected_feature}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}']
+        if selected_subFeatures:
+            subFeatures_toImport=[]
+            for subFeature in selected_subFeatures:
+                if subFeature == thematicSurfaces_table:
+                    for sub in views_tree[selected_feature]:
+                        if type(sub)==type({}): 
+                            if 'thematic_surface' in sub.keys():
+                                for f in sub.values():
+                                    subFeature_view = list(f)
+                                    
+
+                else: subFeature_view=[f'{selected_schema}_{selected_feature}_{subfeature_tables_to_inView[subFeature]}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}']
+
+                if not node_feature.findGroup(subFeature): node_subFeature = node_feature.addGroup(subFeature)
+                else: node_subFeature = node_feature.findGroup(subFeature)
+
+                if not node_subFeature.findGroup(selected_geometryLvl): node_slod = node_subFeature.addGroup(selected_geometryLvl)
+                else: node_slod = node_subFeature.findGroup(selected_geometryLvl)
+
+                subFeatures_toImport.append(subFeature_view)
+            subFeatures_toImport=list(itertools.chain(*subFeatures_toImport))
+            feature_view.extend(subFeatures_toImport)
+ 
+        print("Q_VIES",feature_view)
+
+        layer_name= f'{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}'
+        
                 
 
         
         #if not node_feature.findGroup(selected_geometryLvl): node_lod = node_feature.addGroup(selected_geometryLvl)
 
             
-        for view in query_view:
+        for c,view in enumerate(feature_view):
             import_lookups(dbLoader)
             vlayer = create_layers(dbLoader,view)
             import_generics(dbLoader)
@@ -673,12 +749,14 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                     continue
                 dbLoader.iface.mainWindow().blockSignals(True)
                 QgsProject.instance().addMapLayer(vlayer,False)
-
-                if selected_geometryType == 'Thematic surface':
-                    if not node_feature.findGroup("ThematicSurfaces"): node_them = node_lod.addGroup("ThematicSurfaces")
-                    else: node_them = root.findGroup("ThematicSurfaces")
-                    node_them.addLayer(vlayer)
-                else: node_lod.addLayer(vlayer)
+                
+                if c==0: node_flod.addLayer(vlayer)
+                else:
+                    # if selected_geometryType == 'Thematic surface':
+                    #     if not node_feature.findGroup("ThematicSurfaces"): node_them = node_slod.addGroup("ThematicSurfaces")
+                    #     else: node_them = root.findGroup("ThematicSurfaces")
+                    #     node_them.addLayer(vlayer)
+                    node_slod.addLayer(vlayer)
                 
 
                 dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
