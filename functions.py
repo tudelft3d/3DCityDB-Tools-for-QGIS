@@ -315,10 +315,9 @@ def check_geometry(dbLoader):
         
         lod_intersection=[]
         for element in feature_all_lvls:
-            print(element.lods)
             lod_intersection.append(set(element.lods.keys()))
         res=sorted(set.intersection(*lod_intersection))
-        print(res,'\n')
+
 
 
         types=[]
@@ -337,7 +336,6 @@ def check_geometry(dbLoader):
         for key in counter.keys():
             if counter[key] >= len(feature_all_lvls): #NOTE: this >= seems suspicius
                 types.append(key)
-        print(types)
 
         for key,values in geometry_rep.items():
             if key in res:
@@ -345,8 +343,7 @@ def check_geometry(dbLoader):
                 for v in values:
                     if v in types:
                         add_types.append(table_to_alias(v,'type'))
-                dbLoader.dlg.cbxGeometryLvl.addItem(table_to_alias(key,'lod'),add_types)
-                       
+                dbLoader.dlg.cbxGeometryLvl.addItem(table_to_alias(key,'lod'),add_types)       
                     
 
         #Guard against importing many feutures
@@ -358,115 +355,6 @@ def check_geometry(dbLoader):
             if count == 0:
                 cur.close()
                 return 2
-
-        
-
-
-
-        # geometry_lvls={ 'LOD0':{'Footprint':False, 'Roofprint':False},
-        #                 'LOD1':{'Multi-surface':False,"Solid":False,'Implicit':False},
-        #                 'LOD2':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False},
-        #                 'LOD3':{'Multi-surface':False,"Solid":False,"Thematic surface":False,'Implicit':False}
-        #             }
-
-        # dbLoader.dlg.cbxGeometryLvl.clear()
-        # dbLoader.dlg.cbxGeomteryType.clear()
-        
-        # lod0=[]
-        # lod1=[]
-        # lod2=[]
-        # lod3=[]
-        # for view in features_view[feature]:
-        #     print(view)
-        #     cur=dbLoader.conn.cursor()
-        #     #Get geometry columns
-        #     cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view}
-        #                     WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
-        #     res=cur.fetchone()
-        #     cur.close()
-        #     #res,empty=zip(*res) #TODO: fix zip unpack
-        #     print("fetch res: ",res[0],'\n')
-            
-        #     if res[0]:
-        #         if 'lod0' in view and 'foot' in view and feature in view:
-        #             lod0.append('Footprint')
-        #             geometry_lvls['LOD0']['Footprint']=True
-        #         elif 'lod0' in view and 'roof' in view and feature in view:
-        #             lod0.append('Roofprint')
-        #             geometry_lvls['LOD0']['Roofprint']=True
-
-        #         elif 'lod1' in view and 'mult' in view and feature in view:
-        #             lod1.append('Multi-surface')
-        #             geometry_lvls['LOD1']['Multi-surface']=True
-        #         elif 'lod1' in view and 'solid' in view and feature in view:
-        #             lod1.append('Solid')
-        #             geometry_lvls['LOD1']['Solid']=True
-        #         elif 'lod1' in view and 'implicit' in view and feature in view:
-        #             lod1.append('Implicit')
-        #             geometry_lvls['LOD1']['Implicit']=True
-                
-        #         elif 'lod2' in view and 'mult' in view and feature in view:
-        #             lod2.append('Multi-surface')
-        #             geometry_lvls['LOD2']['Multi-surface']=True
-        #         elif 'lod2' in view and 'solid' in view and feature in view:
-        #             lod2.append('Solid')
-        #             geometry_lvls['LOD2']['Solid']=True
-        #         elif 'lod2' in view and 'implicit' in view and feature in view:
-        #             lod2.append('Implicit')
-        #             geometry_lvls['LOD2']['Implicit']=True
-        #         elif'lod2' in view and 'mult' in view:
-        #             lod2.append('Thematic surface')
-        #             geometry_lvls['LOD2']['Thematic surface']=True
-                
-        #         elif 'lod3' in view and 'mult' in view and feature in view:
-        #             lod3.append('Multi-surface')
-        #             geometry_lvls['LOD3']['Multi-surface']=True
-        #         elif 'lod3' in view and 'solid' in view and feature in view:
-        #             lod3.append('Solid')
-        #             geometry_lvls['LOD3']['Solid']=True
-        #         elif 'lod3' in view and 'implicit' in view and feature in view:
-        #             lod3.append('Implicit')
-        #             geometry_lvls['LOD3']['Implicit']=True
-        #         #TODO: CHECK IF thematic is relevant for lod3
-
-
-
-        #     # if feature[2] is not None:
-        #     #     if not geometry_lvls['LOD1']['Multi-surface']:
-        #     #         lod1.append('Multi-surface')
-        #     #         geometry_lvls['LOD1']['Multi-surface']=True
-        #     #     else: continue
-
-        #     # if feature[3] is not None:
-        #     #     if not geometry_lvls['LOD1']['Solid']:
-        #     #         lod1.append('Solid')
-        #     #         geometry_lvls['LOD1']['Solid']=True
-        #     #     else: continue
-
-        #     # if feature[4] is not None:
-        #     #     if not geometry_lvls['LOD2']['Multi-surface']:
-        #     #         lod2.append('Multi-surface')
-        #     #         geometry_lvls['LOD2']['Multi-surface']=True
-        #     #     else: continue
-
-        #     # if feature[5] is not None:
-        #     #     if not geometry_lvls['LOD2']['Solid']:
-        #     #         lod2.append('Solid')
-        #     #         geometry_lvls['LOD2']['Solid']=True
-        #     #     else: continue
-            
-        #     # if feature[6] is not None:
-        #     #     if not geometry_lvls['LOD2']['Thematic surface']:
-        #     #         lod2.append('Thematic surface')
-        #     #         geometry_lvls['LOD2']['Thematic surface']=True
-        #     #     else: continue
-
-
-        # lvls = {'LoD0':sorted([*{*lod0}]),'LoD1':sorted([*{*lod1}]),'LoD2':sorted([*{*lod2}]), 'LoD3':sorted([*{*lod3}])}
-        # for lvl,types in lvls.items():
-        #     if lvl:
-        #         dbLoader.dlg.cbxGeometryLvl.addItem(lvl,types) #TODO: Dont like this harcoding
-
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -672,12 +560,17 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
     selected_db=dbLoader.dlg.cbxConnToExist.currentData()
     selected_schema=dbLoader.dlg.cbxScema.currentText() 
     selected_feature = dbLoader.dlg.qcbxFeature.currentData() #3dcitydb table name
-    selected_feature_name=feature_tables_to_names[selected_feature]
+    print("Feature:",selected_feature)
+
     selected_subFeatures= get_checked_subfeatures(dbLoader)
+    print("Subfeature:",selected_subFeatures)
     
     selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
     selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
     extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+    print("LOD:",selected_geometryLvl)
+    print("Type:",selected_geometryType)
+
     cons=Constants()
     views_tree= cons.views_features_subFeatures
 
@@ -686,7 +579,6 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
 
     try:
 
-        
         root = QgsProject.instance().layerTreeRoot()
         if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
         else: node_database = root.findGroup(selected_db.database_name)
@@ -694,84 +586,67 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
         if not node_database.findGroup(selected_schema): node_schema = node_database.addGroup(selected_schema)
         else: node_schema = node_database.findGroup(selected_schema)
 
-        if not node_schema.findGroup(selected_feature_name): node_feature = node_schema.addGroup(selected_feature_name)
-        else: node_feature = node_schema.findGroup(selected_feature_name)
+        if not node_schema.findGroup(selected_feature.alias): node_feature = node_schema.addGroup(selected_feature.alias)
+        else: node_feature = node_schema.findGroup(selected_feature.alias)
 
         if not node_feature.findGroup(selected_geometryLvl): node_flod = node_feature.addGroup(selected_geometryLvl)
         else: node_flod = node_feature.findGroup(selected_geometryLvl)
 
+        for subFeatures in selected_subFeatures:
+            if not node_feature.findGroup(subFeatures.alias): node_subFeature = node_feature.addGroup(subFeatures.alias)
+            else: node_subFeature = node_feature.findGroup(subFeatures.alias)
 
+            if not node_subFeature.findGroup(selected_geometryLvl): node_slod = node_subFeature.addGroup(selected_geometryLvl)
+            else: node_slod = node_subFeature.findGroup(selected_geometryLvl)
 
+        feature_views={selected_feature: selected_feature.get_view(  schema=selected_schema,
+                                                    feature=selected_feature.view_name,
+                                                    subfeature=None,
+                                                    lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
+                                                    g_type=alias_to_viewSyntax(selected_geometryType,'type'))
+                        }
+        subfeature_views={subFeature:   subFeature.get_view( schema=selected_schema,
+                                                feature=selected_feature.view_name,
+                                                subfeature=subFeature.view_name,
+                                                lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
+                                                g_type=alias_to_viewSyntax(selected_geometryType,'type')) for subFeature in selected_subFeatures
+                            }
 
-        feature_view=[f'{selected_schema}_{selected_feature}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}']
-        if selected_subFeatures:
-            subFeatures_toImport=[]
-            for subFeature in selected_subFeatures:
-                if subFeature == thematicSurfaces_table:
-                    for sub in views_tree[selected_feature]:
-                        if type(sub)==type({}): 
-                            if 'thematic_surface' in sub.keys():
-                                for f in sub.values():
-                                    subFeature_view = list(f)
-                                    
-
-                else: subFeature_view=[f'{selected_schema}_{selected_feature}_{subfeature_tables_to_inView[subFeature]}_{plugin_view_syntax[selected_geometryLvl]}_{plugin_view_syntax[selected_geometryType]}']
-
-                if not node_feature.findGroup(subFeature): node_subFeature = node_feature.addGroup(subFeature)
-                else: node_subFeature = node_feature.findGroup(subFeature)
-
-                if not node_subFeature.findGroup(selected_geometryLvl): node_slod = node_subFeature.addGroup(selected_geometryLvl)
-                else: node_slod = node_subFeature.findGroup(selected_geometryLvl)
-
-                subFeatures_toImport.append(subFeature_view)
-            subFeatures_toImport=list(itertools.chain(*subFeatures_toImport))
-            feature_view.extend(subFeatures_toImport)
  
-        print("Q_VIES",feature_view)
+        feature_views.update(subfeature_views)
 
-        layer_name= f'{selected_schema}_{selected_feature}_{selected_geometryLvl}_{selected_geometryType}'
-        
-                
 
-        
-        #if not node_feature.findGroup(selected_geometryLvl): node_lod = node_feature.addGroup(selected_geometryLvl)
+        for element,views in feature_views.items():
+            for view in views:
+                import_lookups(dbLoader)
+                vlayer = create_layers(dbLoader,view.name)
+                import_generics(dbLoader)
 
-            
-        for c,view in enumerate(feature_view):
-            import_lookups(dbLoader)
-            vlayer = create_layers(dbLoader,view)
-            import_generics(dbLoader)
-
-            if not vlayer or not vlayer.isValid():
-                dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
-            else:
-                if vlayer.featureCount()==0:
-                    continue
-                dbLoader.iface.mainWindow().blockSignals(True)
-                QgsProject.instance().addMapLayer(vlayer,False)
-                
-                if c==0: node_flod.addLayer(vlayer)
+                if not vlayer or not vlayer.isValid():
+                    dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
                 else:
-                    # if selected_geometryType == 'Thematic surface':
-                    #     if not node_feature.findGroup("ThematicSurfaces"): node_them = node_slod.addGroup("ThematicSurfaces")
-                    #     else: node_them = root.findGroup("ThematicSurfaces")
-                    #     node_them.addLayer(vlayer)
-                    node_slod.addLayer(vlayer)
-                
+                    # if vlayer.featureCount()==0:
+                    #     continue
+                    #dbLoader.iface.mainWindow().blockSignals(True)
+                    QgsProject.instance().addMapLayer(vlayer,False)
+                    
+                    if element.is_feature: node_flod.addLayer(vlayer)
+                    else: 
+                        #if thematicSurfaces_in_view in view.subfeature:
 
-                dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
-                dbLoader.show_Qmsg('Success!!')
+                       
+                        node_subFeature= node_feature.findGroup(element.alias)
+                        node_lod = node_subFeature.findGroup(table_to_alias(view.lod,'lod'))
+                        node_lod.addLayer(vlayer)
 
-                vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
-                create_relations(vlayer)
+                    dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
+                    dbLoader.show_Qmsg('Success!!')
+
+                    vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
+                    create_relations(vlayer)
         #Its important to first order the ToC and then send it to the top. 
         order_ToC(node_database)     
         send_to_top_ToC(root,node_database)
-        
-
-
-
-
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)

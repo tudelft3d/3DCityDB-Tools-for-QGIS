@@ -33,7 +33,14 @@ class Building(): #NOTE: ALL calsses have hardcoded values from the installed vi
                     'lod2':('multisurf','solid')}
         self.count=0
         self.is_feature=True
-                
+
+    
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 
 
     
@@ -47,8 +54,12 @@ class BuildingInstallation(Building):
         self.lods={'lod2':('multisurf')}
         self.count=0
         self.is_feature=False
-
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 class BuildingPart(Building):
     def __init__(self):
         self.table_name='building'
@@ -66,7 +77,12 @@ class BuildingPart(Building):
     
     def __str__(self):
         return 'Building Part'
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 class BuildingFurniture(Building):
     def __init__(self):
         self.table_name='building_furniture'
@@ -76,7 +92,12 @@ class BuildingFurniture(Building):
         self.lods={}
         self.count=0
         self.is_feature=False
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 class BuildingThematic(Building):
     def __init__(self):
         self.table_name='thematic_surface'
@@ -88,7 +109,12 @@ class BuildingThematic(Building):
         self.lods={'lod2':('multisurf')}
         self.count=0
         self.is_feature=False
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 
 
 
@@ -105,19 +131,29 @@ class Relief():
                     'lod2':('polygon')}
         self.count=0
         self.is_feature=True
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 class TINRelief(Relief):
     def __init__(self):
         self.table_name='tin_relief'
         self.view_name='tin_relief'
         self.alias='TIN relief'
-        self.views=[View('citydb',self.view_name,None,'lod1','tin'),
-                    View('citydb',self.view_name,None,'lod2','tin')]
+        self.views=[View('citydb','relief_feature',self.view_name,'lod1','tin'),
+                    View('citydb','relief_feature',self.view_name,'lod2','tin')]
         self.lods={ 'lod1':('tin'),
                     'lod2':('tin')}
         self.count=0
         self.is_feature=False
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 class Vegetation():
     def __init__(self):
         self.table_name='solitary_vegetat_object'
@@ -132,7 +168,12 @@ class Vegetation():
                     'lod3':('implicitrep')}
         self.count=0
         self.is_feature=True
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        views=[]
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+                views.append(view)
+        return views
 
 
 class subFeatures:
@@ -143,7 +184,10 @@ class subFeatures:
         self.view_name=subfeature_tables_to_names[self.table_name]
         self.min_lod=0 
         self.max_lod=4
-
+    def get_view(self,schema,feature,subfeature,lod,g_type):
+        for view in self.views:
+            if view.schema==schema and view.feature==feature and view.subfeature==subfeature and view.lod==lod and view.type==g_type:
+                return view
 
 
 class ImportLayer:
@@ -321,6 +365,49 @@ def table_to_alias(table_name,table_type):
         elif table_name=='implicitrep':return "Implicit"
         elif table_name=='tin':return "TIN"
         elif table_name=='polygon':return 'Polygon'
+
+def alias_to_viewSyntax(alias_name,table_type):
+    if table_type=='feature':
+        if alias_name=="Building": return "building"
+        elif alias_name=="City Object":return "cityobject"
+        elif alias_name=="DTM":return "relief_feature"
+        elif alias_name=="Tunnel":return "tunnel"
+        elif alias_name=="Bridge":return "bridge"
+        elif alias_name=="Water Bodies":return "waterbody"
+        elif alias_name=="Vegetation":return "solitary_vegetat_object"
+        elif alias_name=="Land Use":return "land_use"
+    
+    elif table_type=='sub_feature':
+        
+        #Cityobject
+        if alias_name=="City furniture":return "city_furniture"
+
+        #Building
+        elif alias_name=="Building installation":return "building_installation"
+        elif alias_name=="Building furniture":return "building_furniture"
+        elif alias_name=="Building Part":return "building"
+
+        #Relief Feature
+        elif alias_name=="TIN relief":return "tin_relief"
+        
+        #Thematic Surface
+        elif alias_name=='Thematic surfaces':return 'thematic_surface'
+
+        #there is no lod table but still the format for the name might need to be changed
+    elif table_type=='lod': 
+        if alias_name=="LoD0":return "lod0"
+        if alias_name=="LoD1":return "lod1"
+        if alias_name=="LoD2":return "lod2"
+        if alias_name=="LoD3":return "lod3"
+
+    elif table_type=='type':
+        if alias_name=="Multi-surface":return "multisurf"
+        elif alias_name=="Footprint":return "footprint"
+        elif alias_name=="Roofedge":return "roofedge"
+        elif alias_name=="Solid":return "solid"
+        elif alias_name=='Implicit':return "implicitrep"
+        elif alias_name=='TIN':return "tin"
+        elif alias_name=='Polygon':return 'polygon'
 
 def view_syntax(table_name,table_type):
     if table_type=='feature':
