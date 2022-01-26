@@ -26,7 +26,7 @@ tags=python,3DCityDB,postgres
 
 homepage=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
 category=Database
-icon=icon.png
+icon=icons/plugin_icon.png
 # experimental flag
 experimental=True
 

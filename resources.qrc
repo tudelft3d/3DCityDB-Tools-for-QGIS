@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/plugins/citydb_loader" >
-        <file>icon.png</file>
+        <file>icons/plugin_icon.png</file>
+        <file>icons/qgis_icon.png</file>
+        <file>icons/postgres_elephant.svg</file>
+        <file>icons/cogs.svg</file>
+        <file>icons/info_icon.svg</file>
     </qresource>
 </RCC>
