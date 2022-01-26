@@ -50,7 +50,11 @@ UI_FILES = citydb_loader_dialog_base.ui
 
 EXTRAS = metadata.txt icon.png
 
-EXTRA_DIRS =
+EXTRA_DIRS = 
+	dialog \
+	forms \
+	icons \
+	main 
 
 COMPILED_RESOURCE_FILES = resources.py
 
@@ -65,7 +69,17 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
+UNAME := $(shell uname)
+ifeq ( $(UNAME), Linux)
+    QGISDIR = .local/share/QGIS/QGIS3/profiles/default/
+else ifeq ( $(UNAME), Darwin) 
+    QGISDIR = Library/Application Support/QGIS/QGIS3/profiles/default/
+else ifeq ( $(UNAME), Windows_NT) 
+    QGISDIR = AppData\Roaming\QGIS\QGIS3\profiles\default\
+else
+    QGISDIR = .local/share/QGIS/QGIS3/profiles/default/
+endif 
+
 
 #################################################
 # Normally you would not need to edit below here
@@ -128,7 +142,7 @@ deploy: compile doc transcompile
 	cp -vfr i18n $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vfr $(HELP) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help
 	# Copy extra directories if any
-	(foreach EXTRA_DIR,(EXTRA_DIRS), cp -R (EXTRA_DIR) (HOME)/(QGISDIR)/python/plugins/(PLUGINNAME)/;)
+	$(foreach EXTRA_DIR,$(EXTRA_DIRS), cp -R $(EXTRA_DIR) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"/;)
 
 
 # The dclean target removes compiled python files from plugin directory
