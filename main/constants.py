@@ -13,7 +13,7 @@ class View():
         else: return f'{self.schema}_{self.feature}_{self.lod}_{self.type}'
 
 
-class Features():
+class CityObject():
     def __init__(self):
         obj_container=[]
 

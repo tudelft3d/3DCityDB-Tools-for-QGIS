@@ -1,36 +1,6 @@
-import psycopg2
-import time
 from qgis.PyQt.QtWidgets import QProgressBar
-from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtCore import Qt
 from qgis.core import Qgis, QgsMessageLog
-
-global building_attr
-building_attr=  """
-                b.id, o.gmlid,
-                o.envelope,
-                b.class,
-                b.function, b.usage,
-                b.year_of_construction, b.year_of_demolition,
-                b.roof_type,
-                b.measured_height,measured_height_unit,
-                b.storeys_above_ground, b.storeys_below_ground,
-                b.storey_heights_above_ground, b.storey_heights_ag_unit,
-                b.storey_heights_below_ground, b.storey_heights_bg_unit
-                """
-global plugin_view_syntax
-plugin_view_syntax =    {'building':'building',
-                         'LoD0':'lod0',
-                         'LoD1':'lod1',
-                         'LoD2':'lod2',
-                         'LoD3':'lod3',
-                         'Footprint':'footprint',
-                         'Roofprint':'roofedge',
-                         'Multi-surface':'multisurf',
-                         'Solid':'solid',
-                         'Implicit':'implicitrep'}
-
-global feature_subclasses
-feature_subclasses = {'building': ('Building Part', 'Building installation')}
 
 def check_install(dbLoader):
     """

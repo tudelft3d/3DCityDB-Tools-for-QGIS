@@ -24,7 +24,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>icon.png</normaloff>icon.png</iconset>
+    <normaloff>../icons/plugin_icon.png</normaloff>../icons/plugin_icon.png</iconset>
   </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
@@ -70,8 +70,8 @@
        <bool>true</bool>
       </property>
       <attribute name="icon">
-       <iconset>
-        <normaloff>Postgresql_elephant.svg</normaloff>Postgresql_elephant.svg</iconset>
+       <iconset resource="../resources.qrc">
+        <normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Connection</string>
@@ -210,8 +210,8 @@
        <bool>false</bool>
       </property>
       <attribute name="icon">
-       <iconset>
-        <normaloff>icon.png</normaloff>icon.png</iconset>
+       <iconset resource="../resources.qrc">
+        <normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</iconset>
       </attribute>
       <attribute name="title">
        <string>Import</string>
@@ -377,8 +377,8 @@
        <bool>true</bool>
       </property>
       <attribute name="icon">
-       <iconset>
-        <normaloff>cogs.svg</normaloff>cogs.svg</iconset>
+       <iconset resource="../resources.qrc">
+        <normaloff>:/plugins/citydb_loader/icons/cogs.svg</normaloff>:/plugins/citydb_loader/icons/cogs.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Settings</string>
@@ -426,6 +426,10 @@
       </layout>
      </widget>
      <widget class="QWidget" name="tbAbout">
+      <attribute name="icon">
+       <iconset resource="../resources.qrc">
+        <normaloff>:/plugins/citydb_loader/icons/info_icon.svg</normaloff>:/plugins/citydb_loader/icons/info_icon.svg</iconset>
+      </attribute>
       <attribute name="title">
        <string>About</string>
       </attribute>
@@ -481,6 +485,5 @@ p, li { white-space: pre-wrap; }
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
  <connections/>
 </ui>

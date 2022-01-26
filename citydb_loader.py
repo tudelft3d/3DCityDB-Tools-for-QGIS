@@ -21,7 +21,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-from matplotlib import container
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
@@ -32,11 +31,11 @@ from qgis.core import QgsCoordinateReferenceSystem
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
-from .citydb_loader_dialog import DBLoaderDialog    #Main dialog
-from .connector import DlgConnector                 #New Connection dialog
-from .functions import *
-from .connection import *
-from .installation import *
+from .dialog.citydb_loader_dialog import *    #Main dialog
+#from .connector import DlgConnector                 #New Connection dialog
+from .main.functions import *
+from .main.connection import *
+from .main.installation import *
 
 import os.path
 
@@ -171,7 +170,7 @@ class DBLoader:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/citydb_loader/icon.png'
+        icon_path = ':/plugins/citydb_loader/icons/plugin_icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'&3DCityDB-Loader'),

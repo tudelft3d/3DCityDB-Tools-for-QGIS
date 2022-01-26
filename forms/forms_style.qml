@@ -418,17 +418,17 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField name="usage" showLabel="1" index="18"/>
     </attributeEditorContainer>
     <attributeEditorContainer name="Physical data" showLabel="1" columnCount="2" visibilityExpression="" groupBox="1" backgroundColor="#a4d477" visibilityExpressionEnabled="0">
-      <attributeEditorField name="roof_type" showLabel="1" index="22"/>
       <attributeEditorField name="measured_height" showLabel="1" index="24"/>
       <attributeEditorField name="measured_height_unit" showLabel="1" index="25"/>
       <attributeEditorField name="storey_heights_above_ground" showLabel="1" index="28"/>
       <attributeEditorField name="storey_heights_ag_unit" showLabel="1" index="29"/>
       <attributeEditorField name="storey_heights_below_ground" showLabel="1" index="30"/>
       <attributeEditorField name="storey_heights_bg_unit" showLabel="1" index="31"/>
-      <attributeEditorField name="year_of_construction" showLabel="1" index="20"/>
-      <attributeEditorField name="year_of_demolition" showLabel="1" index="21"/>
       <attributeEditorField name="storeys_above_ground" showLabel="1" index="26"/>
       <attributeEditorField name="storeys_below_ground" showLabel="1" index="27"/>
+      <attributeEditorField name="year_of_construction" showLabel="1" index="20"/>
+      <attributeEditorField name="year_of_demolition" showLabel="1" index="21"/>
+      <attributeEditorField name="roof_type" showLabel="1" index="22"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -542,6 +542,12 @@ def my_form_open(dialog, layer, feature):
       </config>
     </widget>
     <widget name="cityobject_cityobject_id_citydb_bui_id_1">
+      <config type="Map">
+        <Option name="force-suppress-popup" value="false" type="bool"/>
+        <Option name="nm-rel" type="invalid"/>
+      </config>
+    </widget>
+    <widget name="cityobject_genericattrib_30880a40_c0cb_4b81_a457_a9d3a4ef765e_cityobject_id_citydb_building_lod0_footprint_8479683d_ae6d_414e_afc0_d87f2fb4c028_id">
       <config type="Map">
         <Option name="force-suppress-popup" value="false" type="bool"/>
         <Option name="nm-rel" type="invalid"/>

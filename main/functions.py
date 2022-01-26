@@ -6,7 +6,7 @@ from qgis.core import *
 from qgis.gui import QgsLayerTreeView
 from qgis.PyQt.QtWidgets import QMessageBox,QCheckBox,QHBoxLayout
 from .connection import *
-from .installation import plugin_view_syntax,feature_subclasses
+
 from collections import OrderedDict
 from .constants import *
 import itertools
@@ -263,14 +263,14 @@ def check_geometry(dbLoader):
                             FROM {schema}.cityobject co
                             JOIN {schema}.{element.table_name} bg 
                             ON co.id = bg.id
-                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)
+                            WHERE ST_Intersects(ST_GeomFromText('{extents}',28992),envelope)
                             AND bg.objectclass_id = {element.class_id}""")
             else:
                 cur.execute(f"""SELECT count(*),'' 
                             FROM {schema}.cityobject co
                             JOIN {schema}.{element.table_name} bg 
                             ON co.id = bg.id
-                            WHERE ST_Contains(ST_GeomFromText('{extents}',28992),envelope)""")
+                            WHERE ST_Intersects(ST_GeomFromText('{extents}',28992),envelope)""")
             count=cur.fetchone()
             cur.close()
             count,empty=count
@@ -292,7 +292,7 @@ def check_geometry(dbLoader):
                 cur=dbLoader.conn.cursor()
                 #Get geometry columns
                 cur.execute(f"""SELECT count(*),'' FROM qgis_pkg.{view.name}
-                                WHERE ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
+                                WHERE ST_Intersects(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))""") #TODO: DONT HARDCODE SRID
                 count=cur.fetchone()
                 cur.close()
  
@@ -520,7 +520,7 @@ def create_layers(dbLoader,view):
     #SELECT UpdateGeometrySRID('roads','geom',4326);
     uri = QgsDataSourceUri()
     uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{view}',aGeometryColumn= 'geom',aSql=f"ST_Contains(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))",aKeyColumn= 'id')
+    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{view}',aGeometryColumn= 'geom',aSql=f"ST_Intersects(ST_GeomFromText('{extents}',28992),ST_Force2D(geom))",aKeyColumn= 'id')
     vlayer = QgsVectorLayer(uri.uri(False), f"{view}", "postgres")
 
     vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:28992'))#TODO: Dont hardcode it
@@ -642,7 +642,7 @@ def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
                     dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
                     dbLoader.show_Qmsg('Success!!')
 
-                    vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms_style.qml')
+                    vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
                     create_relations(vlayer)
         #Its important to first order the ToC and then send it to the top. 
         order_ToC(node_database)     
