@@ -15,7 +15,7 @@ class DlgConnector(QDialog, Ui_dlgConnector):
 
 
     def evt_btnConnect_clicked(self):
-        connectionInstance = connection()
+        connectionInstance = Connection()
 
         connectionInstance.connection_name = self.ledConnName.text()
         connectionInstance.host = self.ledHost.text()
@@ -50,7 +50,7 @@ class DlgConnector(QDialog, Ui_dlgConnector):
 
 
 
-class connection:
+class Connection:
     """Class to store connection information"""
     def __init__(self): 
         self.connection_name=None
@@ -89,7 +89,7 @@ def get_postgres_conn(dbLoader):
     """Function that reads the QGIS user settings to look for existing connections"""
 
     # Clear the contents of the comboBox from previous runs
-    dbLoader.dlg.cbxConnToExist.clear()
+    dbLoader.dlg.cbxExistingConnection.clear()
 
     qsettings = QgsSettings()
 
@@ -102,7 +102,7 @@ def get_postgres_conn(dbLoader):
     #Get database connection settings for every stored connection
     for c in connections:
 
-        connectionInstance = connection()
+        connectionInstance = Connection()
 
         qsettings.beginGroup(c)
 
@@ -113,7 +113,7 @@ def get_postgres_conn(dbLoader):
         connectionInstance.username = qsettings.value('username')
         connectionInstance.password = qsettings.value('password')
 
-        dbLoader.dlg.cbxConnToExist.addItem(f'{c}',connectionInstance)
+        dbLoader.dlg.cbxExistingConnection.addItem(f'{c}',connectionInstance)
         qsettings.endGroup()
 
     return None

@@ -34,6 +34,8 @@ from .resources import *
 from .dialog.citydb_loader_dialog import *    #Main dialog
 #from .connector import DlgConnector                 #New Connection dialog
 from .main.functions import *
+from .main.connection_tab import *
+from .main.import_tab import *
 from .main.connection import *
 from .main.installation import *
 
@@ -42,7 +44,7 @@ import os.path
 class DBLoader:
     """QGIS Plugin Implementation."""
 
-    
+    plugin_package = 'qgis_pkg'
 
     def __init__(self, iface):
         """Constructor.
@@ -52,7 +54,7 @@ class DBLoader:
             application at run time.
         :type iface: QgsInterface
         """
-        self.container_obj=[]
+        self.module_container=[]
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -207,14 +209,18 @@ class DBLoader:
             self.dlg = DBLoaderDialog()
 
         ## 'Connection' tab ######################################################################################
-            self.dlg.cbxConnToExist.currentIndexChanged.connect(self.evt_btnConnToExist_changed)
-            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked) #New Dialog TODO: leave this for later
-            self.dlg.btnCheckConn.clicked.connect(self.evt_btnCheckConn_clicked)
-            self.dlg.btnCeckCityDB.clicked.connect(self.evt_btnCeckCityDB_clicked)
+        #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
+            self.dlg.cbxExistingConnection.currentIndexChanged.connect(self.evt_cbxExistingConnection_changed)
+            self.dlg.btnNewConnection.clicked.connect(self.evt_btnNewConnection_clicked)
+
+        #/ 'Database' group box  //////////////////////////////////////////////////////////////////////////////#
+            self.dlg.btnConnectToDB.clicked.connect(self.evt_btnConnectToDB_clicked)
+            self.dlg.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
         ##----------------########################################################################################
 
+
+
         ## 'Import' tab ######################################################################################
-            self.dlg.cbxScema.currentIndexChanged.connect(self.evt_cbxScema_changed)
             self.dlg.qcbxFeature.currentIndexChanged.connect(self.evt_qcbxFeature_changed)
             
             #Get initial canvas extent
@@ -230,7 +236,7 @@ class DBLoader:
             self.dlg.qgrbExtent.extentChanged.connect(self.evt_qgrbExtent_extChanged)
 
             self.dlg.cbxGeometryLvl.currentIndexChanged.connect(self.evt_cbxGeometryLvl_changed)
-            self.dlg.cbxGeomteryType.currentTextChanged.connect(self.evt_cbxGeomteryType_changed)
+            #self.dlg.cbxGeomteryType.currentTextChanged.connect(self.evt_cbxGeomteryType_changed)
             self.dlg.btnImport.clicked.connect(self.evt_btnImport_clicked)
         ##----------------########################################################################################
 
@@ -269,151 +275,166 @@ class DBLoader:
 #----------#####################################################################
 
 
-### 'Connection' tab ###########################################################
-    def evt_btnNewConn_clicked(self):
+## 'Connection' tab ######################################################################################
+#/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
+    def evt_cbxExistingConnection_changed(self, idx):
+        selected_db=self.dlg.cbxExistingConnection.itemData(idx)
+        self.dlg.btnConnectToDB.setText(f"Connect to '{selected_db.database_name}'")
+        self.dlg.btnConnectToDB.setDisabled(False)
+        self.dlg.lblConnectToDB.setDisabled(False)
+
+
+    def evt_btnNewConnection_clicked(self):
         dlgConnector = DlgConnector()
         dlgConnector.show()
         res=dlgConnector.exec_()
         if dlgConnector.new_connection:
-            self.dlg.cbxConnToExist.addItem(f'{dlgConnector.new_connection.connection_name}',dlgConnector.new_connection)
+            self.dlg.cbxExistingConnection.addItem(f'{dlgConnector.new_connection.connection_name}',dlgConnector.new_connection)
         else: return None
 
-    def evt_btnCheckConn_clicked(self):
-        selected_db=self.dlg.cbxConnToExist.currentData()
+#/ 'Database' group box  //////////////////////////////////////////////////////////////////////////////#
+    def evt_btnConnectToDB_clicked(self):
+        selected_db=self.dlg.cbxExistingConnection.currentData()
+        
+        self.dlg.gbxConnectionStatus.setDisabled(False)
         if is_connected(self):
-            self.dlg.lblConnection.setText(f"Connected: {selected_db.database_name}\nServer version: {selected_db.s_version}")
-            self.dlg.lblConnection.setStyleSheet("color:green")     
-            self.dlg.btnCeckCityDB.setDisabled(False)
-
-        else:
-            QMessageBox.critical(self.dlg,"Connection Failure", f"Failed to connect to '{selected_db.database_name}'! ")
-            self.dlg.btnCeckCityDB.setDisabled(True)
-
-    def evt_btnCeckCityDB_clicked(self):
-        """event when 'Check 3DCityDB compatability of <database>' button is pressed  """
-
-        selected_db=self.dlg.cbxConnToExist.currentData()
-
-        res = is_3dcitydb(self)
-        if res == 1:
-
-            #Parially enable the 'Import' tab.
-            self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
-            self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
-
-            
-            get_schemas(self)
-
-            upd_conn_file(self)
-
-            if check_install(self): selected_db.has_installation = True
-
-
-            if not selected_db.has_installation:
-                res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires updatable views to be installed.\nDo you want to proceed?")
-                if res == 16384: #YES
-                    success = install(selected_db)
-                    if not success: 
-                        get_schemas(self) #NOTE:This wont work in the case that the installation fails at creating qgis_pkg schema at all
-                        self.dlg.btnClearDB.setDisabled(False)
-                        self.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
-                        self.dlg.wdgMain.setCurrentIndex(2)                      
-                        return None
-                else: return None
-           
-            self.dlg.tbImport.setDisabled(False)
-            self.dlg.btnClearDB.setDisabled(False)
-            self.dlg.btnClearDB.setText(f'Clear {selected_db.database_name} from plugin contents')
-            self.dlg.grbSchema.setDisabled(False)
-            self.dlg.grbFeature.setDisabled(True)
-            self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.grbExtent.setDisabled(True)
-            self.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
-
+            self.dlg.lblConnectedToDB_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
+                                                            <span style=" color:#00E400;">{selected_db.database_name}</span>
+                                                        </p></body></html>  """)
+            self.dlg.lblServerVersion_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
+                                                            <span style=" color:#00E400;">{selected_db.s_version}</span>
+                                                        </p></body></html>  """)    
+            self.dlg.cbxSchema.setDisabled(False)
+            self.dlg.lblSchema.setDisabled(False)
             get_schemas(self)
             fill_schema_box(self)
-            create_constants(self)
-            
-            
-            
-        else:
-            QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nRequirement '{res}' cannot be found")
-            #Disable 'Import' tab in case of connection fail
-            self.dlg.tbImport.setDisabled(True)
-            self.dlg.cbxScema.clear()
-            self.dlg.qcbxFeature.clear()
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.cbxGeometryLvl.clear()
+            if is_3dcitydb(self):
+                self.dlg.lbl3DCityDBVersion_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
+                                                            <span style=" color:#00E400;">{selected_db.c_version}</span>
+                                                        </p></body></html>  """)
+            else:
+                self.dlg.lbl3DCityDBVersion_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
+                                                            <span style=" color:#FF0000;">Database DOES NOT have a valid 3DCityDB installation</span>
+                                                        </p></body></html>  """)
 
-    
-    def evt_btnConnToExist_changed(self, idx):
-        selected_db=self.dlg.cbxConnToExist.itemData(idx)
-        self.dlg.btnCeckCityDB.setText(f"Check 3DCityDB compatability of '{selected_db.database_name}'")
-        self.dlg.btnCheckConn.setText(f"Connect to '{selected_db.database_name}'")
+
+        else:
+            self.dlg.lblConnectedToDB_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
+                                                            <span style=" color:#FF0000;">{selected_db.database_name}</span>
+                                                        </p></body></html>  """)
+            self.dlg.lblServerVersion_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
+                                                            <span style=" color:#FF0000;">{selected_db.s_version}</span>
+                                                        </p></body></html>  """)    
+            self.dlg.cbxSchema.setDisabled(True)
+            self.dlg.lblSchema.setDisabled(True)
+
+
+
+
+    def evt_cbxSchema_changed(self):
+        """event when 'Check 3DCityDB compatability of <database>' button is pressed  """
+
+        selected_db=self.dlg.cbxExistingConnection.currentData()
+        selected_schema=self.dlg.cbxSchema.currentText()
+        self.dlg.lblInstall.setText(f"Installation for {selected_schema}:")
+
+        if has_schema_privileges(self) and has_table_privileges(self):
+            self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
+                                                            <span style=" color:#00E400;"> Has necessary privileges</span>
+                                                        </p></body></html>  """)
+        else:
+            self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
+                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
+                                                            <span style=" color:#FF0000;"> No privileges</span>
+                                                        </p></body></html>  """)
+
         
-        self.dlg.lblConnection.clear()
-        self.dlg.lblCityDbStatus.clear()
-        self.dlg.btnCheckConn.setDisabled(False)
-        self.dlg.btnCeckCityDB.setDisabled(True)
+
+        
+        
+        # if is_3dcitydb(self):
+
+        #     #Parially enable the 'Import' tab.
+        #     self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
+        #     self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
+        #     get_schemas(self) #Stores DB schemas in DBLoader.schemas 
+
+        #     if selected_db.has_installation: successful_connection_tab(self)
+        #     else:
+        #         if has_qgis_pkg(self): 
+        #             successful_connection_tab(self)
+        #             selected_db.has_installation = True
+        #         else: 
+        #             res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires elements to be installed.\nDo you want to proceed?")
+        #             if res == 16384: #YES                
+        #                 upd_conn_file(self) #Prepares installation scripts with the connection parameters 
+        #                 success = install(self)
+                        
+        #                 if success: 
+        #                     selected_db.has_installation = True
+        #                     self.schemas.append(self.plugin_package)
+        #                     successful_connection_tab(self)
+
+        #                 else:    
+        #                     self.dlg.btnClearDB.setDisabled(False)
+        #                     self.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
+        #                     self.dlg.wdgMain.setCurrentIndex(2)                      
+        #             else: return None
+
+        #     fill_schema_box(self)
+        #     #create_constants(self)
+            
+        # else:
+        #     QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nor 3DCityDB installation is corrupted.")
+        #     #Disable 'Import' tab in case of connection fail
+        #     self.dlg.tbImport.setDisabled(True)
+        #     self.dlg.cbxSchema.clear()
+        #     self.dlg.qcbxFeature.clear()
+        #     self.dlg.cbxGeometryLvl.clear()
+
         
 
 ###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################
-    def evt_cbxScema_changed(self):
-        selected_schema=self.dlg.cbxScema.currentText()
-        if not selected_schema: return #This is a guard
 
-        #Check current schema for features
-        if check_schema(self):
-            self.dlg.grbFeature.setDisabled(False)
-            self.dlg.grbExtent.setDisabled(False)
-            self.dlg.qgrbExtent.setDisabled(False)
-            self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.btnImport.setDisabled(True)
 
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.cbxGeometryLvl.clear()
-
-        else:
-            self.dlg.qcbxFeature.clear()
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.cbxGeometryLvl.clear()
-            self.dlg.btnImport.setDisabled(True)
-            self.dlg.grbFeature.setDisabled(True)
-            self.dlg.grbExtent.setDisabled(True)
-            self.dlg.grbGeometry.setDisabled(True)
-
-            QMessageBox.critical(self.dlg,"Fail", f"Schema '{selected_schema}' does NOT contain any valid features!\nSelect different schema.")
-
+            
     def evt_qcbxFeature_changed(self):
-        selected_schema=self.dlg.cbxScema.currentText()
+        selected_schema=self.dlg.cbxSchema.currentText()
         selected_feature=self.dlg.qcbxFeature.currentText()
         self.dlg.cbxGeometryLvl.clear()
-        self.dlg.cbxGeomteryType.clear()
+        #self.dlg.cbxGeomteryType.clear()
         self.dlg.grbGeometry.setDisabled(True)
         self.dlg.cbxGeometryLvl.setDisabled(True)        
-        self.dlg.cbxGeomteryType.setDisabled(True) 
+        #self.dlg.cbxGeomteryType.setDisabled(True) 
         self.dlg.btnImport.setText(f'Import {selected_feature} feature')
         self.dlg.btnImport.setDisabled(True)
         if not selected_schema and selected_feature: return #This is a guard
-        delete_all_sufeatures_widgets(self)
-        create_subfeatures_widgets(self)
+        delete_all_features_widgets(self,self.dlg.gridLayout_2)
+        create_features_checkboxes(self)
     
     def evt_checkBox_stateChanged(self):
         self.dlg.cbxGeometryLvl.clear()
-        self.dlg.cbxGeomteryType.clear()
-        res = check_geometry(self)
-        if res==2:
-            self.dlg.cbxGeometryLvl.clear()
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.cbxGeometryLvl.setDisabled(True)        
-            self.dlg.cbxGeomteryType.setDisabled(True) 
-            self.dlg.btnImport.setDisabled(True)
-        else:
-            self.dlg.grbGeometry.setDisabled(False)
-            self.dlg.cbxGeometryLvl.setDisabled(False)        
-            self.dlg.cbxGeomteryType.setDisabled(False)   
+        extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
+        checked_features = get_checked_features(self,self.dlg.gridLayout_2)
+        count_objects_in_bbox(self,checked_features,extents)
+
+        
+        self.dlg.grbGeometry.setDisabled(False)
+        self.dlg.cbxGeometryLvl.setDisabled(False)        
+        fill_lod_box(self)  
+    
+    def evt_checkBoxTypes_stateChanged(self):
+        #checked_types = get_checked_types(self,self.dlg.gridLayout_4)
+        delete_all_features_widgets(self,self.dlg.formLayout)
+        set_counter_label(self)
 
 
     def evt_canvas_extChanged(self):
@@ -423,37 +444,38 @@ class DBLoader:
         self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
 
     def evt_qgrbExtent_extChanged(self):
-        selected_schema=self.dlg.cbxScema.currentText()
-        selected_feature=self.dlg.qcbxFeature.currentText()
-        if not selected_schema and selected_feature: return #This is a guard
 
-        res = check_geometry(self)
-        if res==2:
-            self.dlg.cbxGeometryLvl.clear()
-            self.dlg.cbxGeomteryType.clear()
-            self.dlg.grbGeometry.setDisabled(True)
-            self.dlg.cbxGeometryLvl.setDisabled(True)        
-            self.dlg.cbxGeomteryType.setDisabled(True) 
-            self.dlg.btnImport.setDisabled(True)  
-        else:
-            self.dlg.grbGeometry.setDisabled(False)
-            self.dlg.cbxGeometryLvl.setDisabled(False)        
-            self.dlg.cbxGeomteryType.setDisabled(False) 
-
+        self.dlg.qcbxFeature.clear()
+        self.dlg.grbFeature.setDisabled(False)
+        fill_module_box(self)
+        
+        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.grbGeometry.setDisabled(True)
+        
+        self.dlg.btnImport.setDisabled(True)
 
     def evt_cbxGeometryLvl_changed(self,idx):
-        self.dlg.cbxGeomteryType.clear()
+        #self.dlg.cbxGeomteryType.clear()
         types = self.dlg.cbxGeometryLvl.itemData(idx)
-        if types is not None:
-            self.dlg.cbxGeomteryType.addItems(types)
-            self.dlg.cbxGeomteryType.setDisabled(False)
+        print("t",types)
+        delete_all_features_widgets(self,self.dlg.gridLayout_4)
+        create_geometry_checkboxes(self,types)
+        
 
-    def evt_cbxGeomteryType_changed(self):
-        if self.dlg.cbxGeomteryType.currentText() == "":
-            self.dlg.btnImport.setDisabled(True)
-        else: self.dlg.btnImport.setDisabled(False)
+        delete_all_features_widgets(self,self.dlg.formLayout)
+        set_counter_label(self)
 
-    def evt_btnImport_clicked(self):
+
+        
+
+
+
+    #def evt_cbxGeomteryType_changed(self):
+        #if self.dlg.cbxGeomteryType.currentText() == "":
+           # self.dlg.btnImport.setDisabled(True)
+        #else: self.dlg.btnImport.setDisabled(False)
+    
+    def evt_btnImport_clicked(self):    
         import_layer(self)
         self.dlg.close()
         
@@ -467,14 +489,14 @@ class DBLoader:
         uninstall(self)
         self.conn.close()
         self.dlg.tbImport.setDisabled(True)
-        self.dlg.btnCeckCityDB.setDisabled(True)
+        self.dlg.btnConnectToDB.setDisabled(True)
         self.dlg.btnClearDB.setDisabled(True)
         self.dlg.btnClearDB.setText(f'Clear <Database> from plugin contents')
         self.dlg.lblCityDbStatus.clear()
         self.dlg.lblConnection.clear()
-        self.dlg.cbxScema.clear()
+        self.dlg.cbxSchema.clear()
         self.dlg.qcbxFeature.clear()
-        self.dlg.cbxGeomteryType.clear()
+        #self.dlg.cbxGeomteryType.clear()
         self.dlg.cbxGeometryLvl.clear()
         
         
