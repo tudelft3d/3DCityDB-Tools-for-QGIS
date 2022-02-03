@@ -1,4 +1,6 @@
 from .connection import connect
+from .constants import *
+from qgis.core import QgsMessageLog,Qgis
 import psycopg2
 
 def is_connected(dbLoader):
@@ -16,7 +18,7 @@ def is_connected(dbLoader):
         if dbLoader.conn is not None:
             cur.close()
 
-    return 1
+    return True
 
 def is_3dcitydb(dbLoader):
     """ Checks if current database has specific 3DCityDB requirements.\n
@@ -61,7 +63,26 @@ def get_schemas(dbLoader):
         dbLoader.conn.rollback()
         cur.close()
 
-def has_schema_privileges(dbLoader):
+def fill_schema_box(dbLoader):
+    dbLoader.dlg.cbxSchema.clear()
+
+    for schema in dbLoader.schemas: 
+        res = schema_has_features(dbLoader,schema,features_tables)
+        if res:
+            dbLoader.dlg.cbxSchema.addItem(schema,res)
+
+def schema_has_features(dbLoader,schema,features):
+    cur=dbLoader.conn.cursor()
+
+    cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
+                    WHERE table_schema = '{schema}' 
+                    AND table_name SIMILAR TO '{get_postgres_array(features)}'
+                    ORDER BY table_name ASC""")
+    feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
+    cur.close()
+    return feature_response
+
+def schema_privileges(dbLoader):
     selected_schema = dbLoader.dlg.cbxSchema.currentText()
     if not selected_schema: return
     try:
@@ -79,15 +100,19 @@ def has_schema_privileges(dbLoader):
         FROM "schemas"
         WHERE schema='{selected_schema}';""")
         privileges_bool = cur.fetchone()
-        cur.close()
-        if all(privileges_bool): return True
+        colnames = [desc[0] for desc in cur.description]
+        privileges_dict= dict(zip(colnames.upper(),privileges_bool))
+        
+        return privileges_dict
 
     except (Exception, psycopg2.DatabaseError) as error:
-        print("At 'has_schema_privileges':",error)
+        dbLoader.iface.messageBar().pushMessage(str(error), level=Qgis.Critical,duration=10)
+        QgsMessageLog.logMessage("At connection_tab.py>'schema_privileges':\nerror_message: "+str(error),tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
         dbLoader.conn.rollback()
         cur.close()
+        return None
     
-def has_table_privileges(dbLoader):
+def table_privileges(dbLoader):
     selected_schema = dbLoader.dlg.cbxSchema.currentText()
     try:
         cur = dbLoader.conn.cursor()
@@ -106,14 +131,24 @@ def has_table_privileges(dbLoader):
         pg_catalog.has_table_privilege(current_user, "table", 'INSERT') AS "insert"
         FROM "tables";""")
         privileges_bool = cur.fetchone()
+        colnames = [desc[0] for desc in cur.description]
+        privileges_dict= dict(zip([col.upper() for col in colnames],privileges_bool))
         
-        if all(privileges_bool): return True
+        return privileges_dict
 
     except (Exception, psycopg2.DatabaseError) as error:
-        print("At 'has_table_privileges':",error)
+        dbLoader.iface.messageBar().pushMessage(str(error), level=Qgis.Critical,duration=10)
+        QgsMessageLog.logMessage("At connection_tab.py>'table_privileges':\nerror_message: "+str(error),tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
         dbLoader.conn.rollback()
         cur.close()
+        return None
 
+def true_privileges(allpriv_dict):
+    true_privileges=[]
+    for key, value in allpriv_dict.items():
+        if value == True:
+            true_privileges.append(key)
+    return true_privileges
 
 
 
@@ -121,9 +156,17 @@ def successful_connection_tab(dbLoader):
 
     dbLoader.dlg.tbImport.setDisabled(False)
     dbLoader.dlg.btnClearDB.setDisabled(False)
-    dbLoader.dlg.btnClearDB.setText(f'Clear {dbLoader.dlg.cbxExistingConnection.currentData().database_name} from plugin contents')
+    text= dbLoader.dlg.btnClearDB.currentText()
+    dbLoader.dlg.btnClearDB.setText(text.format(DB="dbLoader.dlg.cbxExistingConnection.currentData().database_name"))
     dbLoader.dlg.grbSchema.setDisabled(False)
     dbLoader.dlg.grbFeature.setDisabled(True)
     dbLoader.dlg.grbGeometry.setDisabled(True)
     dbLoader.dlg.grbExtent.setDisabled(True)
     dbLoader.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
+
+
+def deselect_radiobtn_group(self):
+    if self.dlg.buttonGroup.checkedButton():
+        self.dlg.buttonGroup.setExclusive(False)
+        self.dlg.buttonGroup.checkedButton().setChecked(False)
+        self.dlg.buttonGroup.setExclusive(True)

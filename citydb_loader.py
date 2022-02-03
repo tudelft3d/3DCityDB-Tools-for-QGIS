@@ -38,6 +38,7 @@ from .main.connection_tab import *
 from .main.import_tab import *
 from .main.connection import *
 from .main.installation import *
+from .main.widget_setup import *
 
 import os.path
 
@@ -55,6 +56,7 @@ class DBLoader:
         :type iface: QgsInterface
         """
         self.module_container=[]
+        self.conn=None
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -207,6 +209,10 @@ class DBLoader:
 
 
             self.dlg = DBLoaderDialog()
+            self.dlg.btnInstallDB.init_text= "Install plugin contents to database {DB} for schema {SC}"
+            self.dlg.btnUnInstallDB.init_text= "Un-install plugin contents from database {DB} for schema {SC}"
+            self.dlg.btnClearDB.init_text= "Clear entire {DB} database from plugin contents"
+            self.dlg.btnRefreshViews.init_text= "Refresh views for schema {SC} in database {DB}"
 
         ## 'Connection' tab ######################################################################################
         #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
@@ -216,6 +222,11 @@ class DBLoader:
         #/ 'Database' group box  //////////////////////////////////////////////////////////////////////////////#
             self.dlg.btnConnectToDB.clicked.connect(self.evt_btnConnectToDB_clicked)
             self.dlg.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
+
+
+        #/ 'User Type' group box ///////////////////////////////////////////////////////////////////////
+            self.dlg.rdViewer.clicked.connect(self.evt_rdViewer_clicked)
+            self.dlg.rdEditor.clicked.connect(self.evt_rdEditor_clicked)
         ##----------------########################################################################################
 
 
@@ -242,7 +253,10 @@ class DBLoader:
 
         ## 'Settings' tab ######################################################################################
 
+            self.dlg.btnInstallDB.clicked.connect(self.evt_btnInstallDB_clicked)
             self.dlg.btnClearDB.clicked.connect(self.evt_btnClearDB_clicked)
+
+            
 
         ##----------------########################################################################################
 
@@ -277,12 +291,8 @@ class DBLoader:
 
 ## 'Connection' tab ######################################################################################
 #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
-    def evt_cbxExistingConnection_changed(self, idx):
-        selected_db=self.dlg.cbxExistingConnection.itemData(idx)
-        self.dlg.btnConnectToDB.setText(f"Connect to '{selected_db.database_name}'")
-        self.dlg.btnConnectToDB.setDisabled(False)
-        self.dlg.lblConnectToDB.setDisabled(False)
-
+    def evt_cbxExistingConnection_changed(self):
+        cbxExistingConnection_setup(self)
 
     def evt_btnNewConnection_clicked(self):
         dlgConnector = DlgConnector()
@@ -294,66 +304,61 @@ class DBLoader:
 
 #/ 'Database' group box  //////////////////////////////////////////////////////////////////////////////#
     def evt_btnConnectToDB_clicked(self):
-        selected_db=self.dlg.cbxExistingConnection.currentData()
-        
-        self.dlg.gbxConnectionStatus.setDisabled(False)
-        if is_connected(self):
-            self.dlg.lblConnectedToDB_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
-                                                            <span style=" color:#00E400;">{selected_db.database_name}</span>
-                                                        </p></body></html>  """)
-            self.dlg.lblServerVersion_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
-                                                            <span style=" color:#00E400;">{selected_db.s_version}</span>
-                                                        </p></body></html>  """)    
-            self.dlg.cbxSchema.setDisabled(False)
-            self.dlg.lblSchema.setDisabled(False)
-            get_schemas(self)
-            fill_schema_box(self)
-            if is_3dcitydb(self):
-                self.dlg.lbl3DCityDBVersion_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
-                                                            <span style=" color:#00E400;">{selected_db.c_version}</span>
-                                                        </p></body></html>  """)
-            else:
-                self.dlg.lbl3DCityDBVersion_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
-                                                            <span style=" color:#FF0000;">Database DOES NOT have a valid 3DCityDB installation</span>
-                                                        </p></body></html>  """)
-
-
-        else:
-            self.dlg.lblConnectedToDB_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
-                                                            <span style=" color:#FF0000;">{selected_db.database_name}</span>
-                                                        </p></body></html>  """)
-            self.dlg.lblServerVersion_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
-                                                            <span style=" color:#FF0000;">{selected_db.s_version}</span>
-                                                        </p></body></html>  """)    
-            self.dlg.cbxSchema.setDisabled(True)
-            self.dlg.lblSchema.setDisabled(True)
-
+        btnConnectToDB_setup(self)
 
 
 
     def evt_cbxSchema_changed(self):
         """event when 'Check 3DCityDB compatability of <database>' button is pressed  """
+        res=cbxSchema_setup(self)
+        if not res==True: 
+            reset_importTab(self)
+            reset_settingsTab(self)
 
-        selected_db=self.dlg.cbxExistingConnection.currentData()
-        selected_schema=self.dlg.cbxSchema.currentText()
-        self.dlg.lblInstall.setText(f"Installation for {selected_schema}:")
+        ## When connection status is green we can proceed
+        if all(value==True for value in self.connection_status.values()):
+            print('all is green')
+            self.dlg.gbxUserType.setDisabled(False)
 
-        if has_schema_privileges(self) and has_table_privileges(self):
-            self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
-                                                            <span style=" color:#00E400;"> Has necessary privileges</span>
-                                                        </p></body></html>  """)
-        else:
-            self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
-                                                        <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
-                                                            <span style=" color:#FF0000;"> No privileges</span>
-                                                        </p></body></html>  """)
+            ## Allow user type selection depending on privileges 
+            if all(p in self.availiable_privileges for p in priviledge_types):
+                self.dlg.rdEditor.setDisabled(False)
+                self.dlg.rdViewer.setDisabled(False)
+
+            elif any(p=='SELECT' for p in self.availiable_privileges):
+                self.dlg.rdEditor.setDisabled(True)
+                self.dlg.rdViewer.setDisabled(False)
+
+        else: 
+            deselect_radiobtn_group(self)
+            self.dlg.gbxUserType.setDisabled(True)
+
+
+    def evt_rdViewer_clicked(self):
+        gbxUserType_setup(self,user_type=self.dlg.rdViewer.text())
+
+
+    def evt_rdEditor_clicked(self):
+        gbxUserType_setup(self,user_type=self.dlg.rdEditor.text())
+
+        
+
+
+    
+        # selected_db=self.dlg.cbxExistingConnection.currentData()
+        # selected_schema=self.dlg.cbxSchema.currentText()
+        # self.dlg.lblInstall.setText(f"Installation for {selected_schema}:")
+
+        # if has_schema_privileges(self) and has_table_privileges(self):
+        #     self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
+        #                                                 <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
+        #                                                     <span style=" color:#00E400;"> Has necessary privileges</span>
+        #                                                 </p></body></html>  """)
+        # else:
+        #     self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
+        #                                                 <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
+        #                                                     <span style=" color:#FF0000;"> No privileges</span>
+        #                                                 </p></body></html>  """)
 
         
 
@@ -485,8 +490,13 @@ class DBLoader:
 ###--'Import' tab--###########################################################
 
 ###--'Settings' tab--###########################################################
+    def evt_btnInstallDB_clicked(self):
+        uninstall_views(self,schema= self.dlg.cbxSchema.currentText())
+
+
+    
     def evt_btnClearDB_clicked(self):
-        uninstall(self)
+        uninstall_pkg(self)
         self.conn.close()
         self.dlg.tbImport.setDisabled(True)
         self.dlg.btnConnectToDB.setDisabled(True)

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
-    <height>661</height>
+    <width>546</width>
+    <height>610</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -213,6 +213,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="gbxDatabase">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -276,7 +279,7 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
+              <width>65</width>
               <height>20</height>
              </size>
             </property>
@@ -285,7 +288,7 @@
           <item row="2" column="1">
            <spacer name="horizontalSpacer_2">
             <property name="enabled">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -295,7 +298,7 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
+              <width>65</width>
               <height>20</height>
              </size>
             </property>
@@ -317,6 +320,9 @@
          </property>
          <property name="focusPolicy">
           <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
          </property>
          <property name="title">
           <string>Connection Status</string>
@@ -389,6 +395,9 @@
             <property name="text">
              <string/>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -402,6 +411,15 @@
            <widget class="QLabel" name="lblUserPrivileges_out">
             <property name="text">
              <string/>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="indent">
+             <number>-1</number>
             </property>
            </widget>
           </item>
@@ -417,6 +435,41 @@
             <property name="text">
              <string/>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbxUserType">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="title">
+          <string>Proceed as User Type</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QRadioButton" name="rdViewer">
+            <property name="text">
+             <string>Viewer</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="rdEditor">
+            <property name="text">
+             <string>Editor</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup</string>
+            </attribute>
            </widget>
           </item>
          </layout>
@@ -449,47 +502,17 @@
        <string>Import</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_ImportTab">
-       <item row="0" column="0">
+       <item row="2" column="0">
         <layout class="QVBoxLayout" name="verticalLayout_12">
          <item>
-          <widget class="QGroupBox" name="grbSchema">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>326</width>
-             <height>71</height>
-            </size>
-           </property>
-           <property name="title">
-            <string>Schema</string>
-           </property>
-           <property name="flat">
+          <widget class="QLabel" name="lblDbSchema">
+           <property name="enabled">
             <bool>false</bool>
            </property>
-           <property name="checkable">
-            <bool>false</bool>
+           <property name="text">
+            <string>Database: &lt;Database&gt;
+Schema: &lt;Schema&gt;</string>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_7">
-            <item>
-             <layout class="QFormLayout" name="formLayout_9">
-              <item row="0" column="0">
-               <widget class="QLabel" name="lblScema">
-                <property name="text">
-                 <string>Select Schema:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="cbxScema"/>
-              </item>
-             </layout>
-            </item>
-           </layout>
           </widget>
          </item>
          <item>
@@ -497,64 +520,47 @@
            <property name="title">
             <string>Extent</string>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_9">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <layout class="QFormLayout" name="formLayout_17">
-              <item row="1" column="0">
-               <widget class="QLabel" name="lblExtent">
-                <property name="text">
-                 <string>Select extent:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QgsExtentGroupBox" name="qgrbExtent">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>480</width>
-                  <height>162</height>
-                 </size>
-                </property>
-                <property name="autoFillBackground">
-                 <bool>false</bool>
-                </property>
-                <property name="title">
-                 <string/>
-                </property>
-                <property name="flat">
-                 <bool>false</bool>
-                </property>
-                <property name="checkable">
-                 <bool>false</bool>
-                </property>
-                <property name="collapsed">
-                 <bool>false</bool>
-                </property>
-                <widget class="QPushButton" name="btnCItyExtents">
-                 <property name="geometry">
-                  <rect>
-                   <x>0</x>
-                   <y>20</y>
-                   <width>141</width>
-                   <height>25</height>
-                  </rect>
-                 </property>
-                 <property name="text">
-                  <string>City model extents</string>
-                 </property>
-                </widget>
-               </widget>
-              </item>
-             </layout>
+             <widget class="QPushButton" name="btnCityExtents">
+              <property name="text">
+               <string>Calculate from City model</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QgsExtentGroupBox" name="qgrbExtent">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>480</width>
+                <height>162</height>
+               </size>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
+              <property name="title">
+               <string/>
+              </property>
+              <property name="flat">
+               <bool>false</bool>
+              </property>
+              <property name="checkable">
+               <bool>false</bool>
+              </property>
+              <property name="collapsed">
+               <bool>false</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -594,66 +600,53 @@
              </widget>
             </item>
             <item>
-             <spacer name="verticalSpacer_5">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
+             <widget class="QGroupBox" name="grbGeometry">
+              <property name="title">
+               <string>Geometry</string>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
+              <layout class="QVBoxLayout" name="verticalLayout_8">
+               <item>
+                <layout class="QFormLayout" name="formLayout_6">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblGeometryLvl">
+                   <property name="text">
+                    <string>Select geometry level:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QComboBox" name="cbxGeometryLvl"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QgsCollapsibleGroupBox" name="gbxOptRepres">
+                 <property name="title">
+                  <string>Select representation</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_4"/>
+                </widget>
+               </item>
+               <item>
+                <layout class="QFormLayout" name="formLayout"/>
+               </item>
+              </layout>
+             </widget>
             </item>
            </layout>
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="grbGeometry">
-           <property name="title">
-            <string>Geometry</string>
+          <widget class="QPushButton" name="btnImport">
+           <property name="enabled">
+            <bool>false</bool>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
-            <item>
-             <layout class="QFormLayout" name="formLayout_6">
-              <item row="0" column="0">
-               <widget class="QLabel" name="lblGeometryLvl">
-                <property name="text">
-                 <string>Select geometry level:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="cbxGeometryLvl"/>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QgsCollapsibleGroupBox" name="gbxOptRepres">
-              <property name="title">
-               <string>Select representation</string>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_4"/>
-             </widget>
-            </item>
-            <item>
-             <layout class="QFormLayout" name="formLayout"/>
-            </item>
-           </layout>
+           <property name="text">
+            <string>Import &lt;feature&gt; feature</string>
+           </property>
           </widget>
          </item>
         </layout>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="btnImport">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Import &lt;feature&gt; feature</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -686,8 +679,11 @@
          <layout class="QVBoxLayout" name="verticalLayout_installation">
           <item>
            <widget class="QPushButton" name="btnInstallDB">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
-             <string>Install plugin contents to database &lt;DB&gt; for schema &lt;SC&gt;</string>
+             <string>Install plugin contents to database {DB} for schema {SC}</string>
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
@@ -709,12 +705,18 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnUnInstallDB">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
-             <string>Un-install plugin contents from database &lt;DB&gt; for schema &lt;SC&gt;</string>
+             <string>Un-install plugin contents from database {DB} for schema {SC}</string>
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
               <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
+            </property>
+            <property name="default">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -724,11 +726,14 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Clear entire &lt;Database&gt; from plugin contents</string>
+             <string>Clear entire {DB} database from plugin contents</string>
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
               <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
+            </property>
+            <property name="default">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -749,8 +754,11 @@
          <layout class="QVBoxLayout" name="verticalLayout_databaseSettings">
           <item>
            <widget class="QPushButton" name="btnRefreshViews">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
-             <string>Refresh views for schema &lt;SC&gt; in database &lt;DB&gt;</string>
+             <string>Refresh views for schema {SC} in database {DB}</string>
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
@@ -860,4 +868,7 @@ repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader</strin
   </customwidget>
  </customwidgets>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
 </ui>

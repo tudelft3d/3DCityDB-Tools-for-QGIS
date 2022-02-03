@@ -1,180 +1,179 @@
+#### messages ###############################################################
+msg=""" <html><head/><body><p> 
+                <img src="{image_rc}" style='vertical-align: bottom'/> 
+                <span style=" color:{color_hex};">{addtional_text}</span>
+                </p></body></html>"""
+success_html=msg.format(image_rc=':/plugins/citydb_loader/icons/success_icon.svg',color_hex='#00E400',addtional_text={})
+failure_html=msg.format(image_rc=':/plugins/citydb_loader/icons/failure_icon.svg',color_hex='#FF0000',addtional_text={})
+warning_html=msg.format(image_rc=':/plugins/citydb_loader/icons/warning_icon.svg',color_hex='#FFA701',addtional_text={})
+crit_warning_html=msg.format(image_rc=':/plugins/citydb_loader/icons/critical_warning_icon.svg',color_hex='#DA4453',addtional_text={})
+
+
+
+###############################################################################
+
+features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
+modules=["CityObject","Building","DTM","Tunnel","Bridge","Waterbody","Vegetation", "CityFurniture", "LandUse","Transportation"]  #Named after their main corresponding table name from the 3DCityDB.
+priviledge_types=["DELETE","INSERT","REFERENCES","SELECT","TRIGGER","TRUNCATE","UPDATE"]
+
+#################################### BUILDING (start)################################################################
+building={  
+    'table_name':'building',
+    'view_name':'building',
+    'alias':'Building',
+    'views':[   ('citydb','building','lod0',None),('citydb','building','lod0','footprint'),('citydb','building','lod0','roofedge'),
+                ('citydb','building','lod1',None),
+                ('citydb','building','lod2',None),
+                ('citydb','building','lod2','themsurf_groundsurface'),
+                ('citydb','building','lod2','themsurf_wallsurface'),
+                ('citydb','building','lod2','themsurf_roofsurface'),
+                ('citydb','building','lod2','themsurf_outerceilingsurface'),
+                ('citydb','building','lod2','themsurf_outerfloorsurface'),
+                ('citydb','building','lod2','themsurf_closuresurface')
+            ],
+    'is_feature':True,
+    'class_id':26
+}
+
+building_part={  
+    'table_name':'building',
+    'view_name':'part',
+    'alias':'Building Part',
+    'views':[   ('citydb','building_part','lod0',None),('citydb','building_part','lod0','footprint'),('citydb','building_part','lod0','roofedge'),
+                ('citydb','building_part','lod1',None),
+                ('citydb','building_part','lod2',None)
+            ],
+    'is_feature':True,
+    'class_id':25
+}
+
+building_installation={
+    'table_name':'building_installation',
+    'view_name':'installation',
+    'alias':'Building Installation',
+    'views':[   ('citydb','building_installation','lod2',None)
+            ],
+    'is_feature':True,
+    'class_id':27
+}
+
+building_furniture={
+    'table_name':'building_furniture',
+    'view_name':'furniture',
+    'alias':'Building Furniture',
+    'views':[   ()
+            ],
+    'is_feature':True,
+    'class_id':27
+}
+#################################### BUILDING (end)################################################################
+
+#################################### RELIEF (start) ################################################################
+# relief_feature={
+#     'table_name':'relief_feature',
+#     'view_name':'relief_feature',
+#     'alias':'DTM',
+#     'views':[   ('citydb','relief_feature',None,'lod1',),
+#                 ('citydb','relief_feature',None,'lod2')],
+#     'is_feature':True,
+#     'class_id':14
+# }
+
+# tin_relief={
+#     'table_name':'tin_relief',
+#     'view_name':'tin_relief',
+#     'alias':'TIN',
+#     'views':[   ('citydb','tin_relief',None,'lod1','tin'),
+#                 ('citydb','tin_relief',None,'lod2','tin')
+#             ],
+#     'is_feature':True,
+#     'class_id':16
+# }
+#################################### RELIEF (end) ################################################################
+
+
+#################################### VEGETATION (start) ################################################################
+vegetation={
+    'table_name':'solitary_vegetat_object',
+    'view_name':'solitary_vegetat_object',
+    'alias':'Vegetation',
+    'views':[   ('citydb','solitary_vegetat_object','lod1',None),('citydb','solitary_vegetat_object','lod1','implicitrep'),
+                ('citydb','solitary_vegetat_object','lod2',None),('citydb','solitary_vegetat_object','lod2','implicitrep')
+            ],
+    'is_feature':True,
+    'class_id':6
+}
+
 class View():
-    def __init__(self,schema,feature,subfeature,lod,g_type):
+    def __init__(self,schema,feature,lod,representation):
         self.schema = schema
         self.feature = feature
-        self.subfeature = subfeature
         self.lod = lod
-        self.type = g_type
+        self.representation = representation
+        self.count=0
         self.name = self.construct_name()
+        
 
     
     def construct_name(self):
-        if self.subfeature: return f'{self.schema}_{self.feature}_{self.subfeature}_{self.lod}_{self.type}'
-        else: return f'{self.schema}_{self.feature}_{self.lod}_{self.type}'
+        if self.representation: return f'{self.schema}_{self.feature}_{self.lod}_{self.representation}'
+        else: return f'{self.schema}_{self.feature}_{self.lod}'
+
 
 
 class CityObject():
-    def __init__(self):
-        obj_container=[]
-
-class Building(): #NOTE: ALL calsses have hardcoded values from the installed views. So every update them with changes to installation script (e.g. addeing new views or changing names)
-    def __init__(self):
-        self.table_name='building' #'building'
-        self.view_name='building'
-        self.alias='Building'
-        self.class_id=26
-        self.subFeatures_objects=[]
-        self.subFeatures_table_name=['building_installation','building','building_furniture','thematic_surface']
-        self.views=[View('citydb','building',None,'lod0','footprint'),View('citydb','building',None,'lod0','roofedge'),
-                    View('citydb','building',None,'lod1','multisurf'),View('citydb','building',None,'lod1','solid'),
-                    View('citydb','building',None,'lod2','multisurf'),View('citydb','building',None,'lod2','solid')]
-        self.lods={ 'lod0':('footprint','roofedge'),
-                    'lod1':('multisurf','solid'),
-                    'lod2':('multisurf','solid')}
-        self.count=0
-        self.is_feature=True
-
-    
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-
-
-    
-
-class BuildingInstallation(Building):
-    def __init__(self):
-        self.table_name='building_installation'
-        self.view_name='installation'
-        self.alias='Building installation'
-        self.views=[View('citydb','building','installation','lod2','multisurf')]
-        self.lods={'lod2':('multisurf')}
-        self.count=0
-        self.is_feature=False
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-class BuildingPart(Building):
-    def __init__(self):
-        self.table_name='building'
-        self.view_name='part'
-        self.alias='Building Part'
-        self.class_id=25
-        self.views=[View('citydb','building','part','lod0','footprint'),View('citydb','building','part','lod0','roofedge'),
-                    View('citydb','building','part','lod1','multisurf'),View('citydb','building','part','lod1','solid'),
-                    View('citydb','building','part','lod2','multisurf'),View('citydb','building','part','lod2','solid')]
-        self.lods={ 'lod0':('footprint','roofedge'),
-                    'lod1':('multisurf','solid'),
-                    'lod2':('multisurf','solid')}
-        self.count=0
-        self.is_feature=False
-    
-    def __str__(self):
-        return 'Building Part'
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-class BuildingFurniture(Building):
-    def __init__(self):
-        self.table_name='building_furniture'
-        self.view_name='furniture'
-        self.alias='Building furniture'
-        self.views=[]
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        self.table_name=table_name  #table name might be redundunt for this project. Its use could be replaced by class_id 
+        self.view_name=view_name
+        self.alias=alias
+        self.class_id=class_id
+        self.features=[]
+        self.views=[View(*view) for view in views if bool(view)]
         self.lods={}
         self.count=0
-        self.is_feature=False
-    def get_view(self,schema,feature,subfeature,lod,g_type):
+        self.is_feature=is_feature
+    
+    def get_views(self,schema,feature,lod,representation):
         views=[]
         for view in self.views:
-            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-class BuildingThematic(Building):
-    def __init__(self):
-        self.table_name='thematic_surface'
-        self.view_name='themsurf'
-        self.alias='Thematic surfaces'
-        self.views=[View('citydb','building','themsurf_groundsurface','lod2','multisurf'),View('citydb','building','themsurf_wallsurface','lod2','multisurf'),
-                    View('citydb','building','themsurf_roofsurface','lod2','multisurf'),View('citydb','building','themsurf_outerceilingsurface','lod2','multisurf'),
-                    View('citydb','building','themsurf_outerfloorsurface','lod2','multisurf'),View('citydb','building','themsurf_closuresurface','lod2','multisurf')]
-        self.lods={'lod2':('multisurf')}
-        self.count=0
-        self.is_feature=False
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
+            if view.schema==schema and view.feature==feature and view.lod==lod and view.representation==representation: #NOTE: x in y to handle thematic
                 views.append(view)
         return views
 
+class Module():
+    def __init__(self,alias):
+        self.features=[]
+        self.alias = alias 
+
+class Building(CityObject): #NOTE: ALL calsses have hardcoded values from the installed views. So every update them with changes to installation script (e.g. addeing new views or changing names)
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    
+
+class BuildingInstallation(CityObject):
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)  
 
 
-class Relief(): 
-    def __init__(self):
-        self.table_name='relief_feature' #'building'
-        self.view_name='relief_feature'
-        self.alias='DTM'
-        self.subFeatures_objects=[]
-        self.subFeatures_table_name=['tin_relief']
-        self.views=[View('citydb',self.view_name,None,'lod1','polygon'),
-                    View('citydb',self.view_name,None,'lod2','polygon')]
-        self.lods={ 'lod1':('polygon'),
-                    'lod2':('polygon')}
-        self.count=0
-        self.is_feature=True
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-class TINRelief(Relief):
-    def __init__(self):
-        self.table_name='tin_relief'
-        self.view_name='tin_relief'
-        self.alias='TIN relief'
-        self.views=[View('citydb','relief_feature',self.view_name,'lod1','tin'),
-                    View('citydb','relief_feature',self.view_name,'lod2','tin')]
-        self.lods={ 'lod1':('tin'),
-                    'lod2':('tin')}
-        self.count=0
-        self.is_feature=False
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and subfeature in view.subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
-class Vegetation():
-    def __init__(self):
-        self.table_name='solitary_vegetat_object'
-        self.view_name='solitary_vegetat_object'
-        self.alias='Vegetation'
-        self.subFeatures_objects=[]
-        self.views=[View('citydb',self.view_name,None,'lod1','implicitrep'),
-                    View('citydb',self.view_name,None,'lod2','implicitrep'),View('citydb',self.view_name,None,'lod2','multisurf'),
-                    View('citydb',self.view_name,None,'lod3','implicitrep')]
-        self.lods={ 'lod1':('implicitrep'),
-                    'lod2':('mutlisurf','implicitrep'),
-                    'lod3':('implicitrep')}
-        self.count=0
-        self.is_feature=True
-    def get_view(self,schema,feature,subfeature,lod,g_type):
-        views=[]
-        for view in self.views:
-            if view.schema==schema and view.feature==feature and view.subfeature == subfeature and view.lod==lod and view.type==g_type: #NOTE: x in y to handle thematic
-                views.append(view)
-        return views
+class BuildingPart(CityObject):
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
 
+class BuildingFurniture(CityObject):
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+
+class ReliefFeature(CityObject): 
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+
+class TINRelief(CityObject):
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+
+class Vegetation(CityObject):
+    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
+        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
 
 class subFeatures:
 
@@ -589,7 +588,6 @@ subfeatures_view={
 
 #Table names
 #Thematic features: NOTE: some are missing on purpose 
-features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
 subfeatures_tables={'building':("building_installation","building_furniture","building","thematic_surface")} #NOTE: ONLY buildings ATM
 features_tables_array='{"cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"}' #TODO:19/01/2022 FIND A BETTER WAY TO GET THIS. I WANT TO USE IT AS AN ARRAY
 
