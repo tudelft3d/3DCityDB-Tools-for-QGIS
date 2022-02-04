@@ -26,7 +26,9 @@ import os, configparser
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
-from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.PyQt.QtGui import QMovie
+from qgis.PyQt.QtCore import Qt,QRect,QSize
+from qgis.PyQt.QtWidgets import QProgressBar,QLabel,QWidget
 from qgis.gui import QgsMessageBar
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
@@ -48,5 +50,20 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.gbxInstall.bar = QgsMessageBar()
         self.verticalLayout_SettingsTab.addWidget(self.gbxInstall.bar, 0)
-                   
-        
+
+        self.lblInstallLoadingCon.setHidden(True)
+        self.lblLoadingClear.setHidden(True)
+        self.lblLoadingInstall.setHidden(True)
+        self.lblLoadingUninstall.setHidden(True)
+        self.lblLoadingRefresh.setHidden(True)
+
+        # self.lblLoading= QLabel()
+        # self.lblLoading.setGeometry(QRect(0, 0, 16, 16))
+        # self.lblLoading.setMinimumSize(QSize(16, 16))
+        # self.lblLoading.setMaximumSize(QSize(16, 16))
+        # self.lblLoading.setObjectName('label')
+
+        # self.verticalLayout_databaseSettings.addWidget(self.lblLoading)
+
+
+        self.movie = QMovie(':/plugins/citydb_loader/icons/loading.gif')

@@ -1,9 +1,12 @@
-from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox,QLabel
+from qgis.PyQt.QtCore import Qt,QRect
+from qgis.PyQt.QtGui import QMovie
+
 from qgis.core import Qgis, QgsMessageLog
 import os
 import subprocess
 from .constants import get_postgres_array
+from .threads import install_pkg_thread
 
 def has_qgis_pkg(dbLoader):
     """
@@ -73,7 +76,7 @@ def installation_query(dbLoader,message):
     res= QMessageBox.question(dbLoader.dlg,"Installation", message)
     if res == 16384: #YES                
         upd_conn_file(dbLoader) #Prepares installation scripts with the connection parameters 
-        success = install(dbLoader)
+        success = install(dbLoader,dbLoader.dlg.lblInstallLoadingCon)
         if success: 
             selected_db.has_installation = True
             dbLoader.connection_status['Install']=True
@@ -89,7 +92,9 @@ def installation_query(dbLoader,message):
         dbLoader.connection_status['Install']=False
     return False
 
-def install(dbLoader):
+def install(dbLoader,origin):
+    """Origin relates to the mode of installation automatically/manually.
+       But in practice it is the label object on which the loading anumation is going to play """
     #Get plugin directory
     selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
 
@@ -105,17 +110,21 @@ def install(dbLoader):
         os.chmod(path_installation_sh, 0o755)
 
         #Run installation script
-        p = subprocess.Popen(path_installation_sh,  stdin = subprocess.PIPE,
-                                                    stdout=subprocess.PIPE ,
-                                                    stderr=subprocess.PIPE ,
-                                                    universal_newlines=True)
 
-        output,e = p.communicate(f'{selected_db.password}\n')
-        if 'ERROR' in e:
-            QgsMessageLog.logMessage('Installation failed!',level= Qgis.Critical,notifyUser=True)
-            QgsMessageLog.logMessage(e[29:],level= Qgis.Info,notifyUser=True) #e[29:] skips manually 'Password for user postgres:', the stdin of the subprocess
-            return 0
-        else: QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
+        install_pkg_thread(dbLoader,path_installation_sh,origin) #TODO: Need to catch error in the worker thread for logging and user msgs
+
+
+        # p = subprocess.Popen(path_installation_sh,  stdin = subprocess.PIPE,
+        #                                             stdout=subprocess.PIPE ,
+        #                                             stderr=subprocess.PIPE ,
+        #                                             universal_newlines=True)
+
+        # output,e = p.communicate(f'{selected_db.password}\n')
+        # if 'ERROR' in e:
+        #     QgsMessageLog.logMessage('Installation failed!',level= Qgis.Critical,notifyUser=True)
+        #     QgsMessageLog.logMessage(e[29:],level= Qgis.Info,notifyUser=True) #e[29:] skips manually 'Password for user postgres:', the stdin of the subprocess
+        #     return 0
+        # else: QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
 
 
     else: #Windows TODO: Find how to translate the above into windows batch
@@ -167,3 +176,26 @@ def uninstall_views(dbLoader,schema):
                      
     else:
         QgsMessageLog.logMessage('This message should never be able to be printed. Check installation.py ',level= Qgis.Critical,notifyUser=True)
+
+
+# def refresh_schema_views(dbLoader):
+#     import time
+
+#     if 'qgis_pkg' in dbLoader.schemas:        
+#         cur = dbLoader.conn.cursor()
+        
+#         cur.callproc("qgis_pkg.refresh_materialized_view")
+        
+#         for notice in dbLoader.conn.notices: #NOTE: It may take notices from other procs
+#              QgsMessageLog.logMessage(notice,tag="3DCityDB-Loader",level= Qgis.Info)
+
+#         #dbLoader.conn.commit()
+
+#         msg = dbLoader.dlg.gbxInstall.bar.createMessage( u'Views have been succesfully updated' )
+#         dbLoader.dlg.gbxInstall.bar.clearWidgets()
+#         dbLoader.dlg.gbxInstall.bar.pushWidget(msg, Qgis.Success, duration=4)
+        
+                     
+#     else:
+#         QgsMessageLog.logMessage('This message should never be able to be printed. Check installation.py ',level= Qgis.Critical,notifyUser=True)
+

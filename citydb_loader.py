@@ -21,12 +21,12 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QObject,QThread,pyqtSignal
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
 from qgis.core import QgsApplication, QgsProject, Qgis
 from qgis.core import QgsCoordinateReferenceSystem
-
+import time
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -39,6 +39,7 @@ from .main.import_tab import *
 from .main.connection import *
 from .main.installation import *
 from .main.widget_setup import *
+from .main.threads import *
 
 import os.path
 
@@ -213,6 +214,7 @@ class DBLoader:
             self.dlg.btnUnInstallDB.init_text= "Un-install plugin contents from database {DB} for schema {SC}"
             self.dlg.btnClearDB.init_text= "Clear entire {DB} database from plugin contents"
             self.dlg.btnRefreshViews.init_text= "Refresh views for schema {SC} in database {DB}"
+            self.dlg.lblDbSchema.init_text="Database: {Database}\nSchema: {Schema}"
 
         ## 'Connection' tab ######################################################################################
         #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
@@ -254,8 +256,10 @@ class DBLoader:
         ## 'Settings' tab ######################################################################################
 
             self.dlg.btnInstallDB.clicked.connect(self.evt_btnInstallDB_clicked)
+            self.dlg.btnUnInstallDB.clicked.connect(self.evt_btnUnInstallDB_clicked)
             self.dlg.btnClearDB.clicked.connect(self.evt_btnClearDB_clicked)
 
+            self.dlg.btnRefreshViews.clicked.connect(self.evt_btnRefreshViews_clicked)
             
 
         ##----------------########################################################################################
@@ -491,6 +495,10 @@ class DBLoader:
 
 ###--'Settings' tab--###########################################################
     def evt_btnInstallDB_clicked(self):
+        InstallDB_setup(self)
+
+
+    def evt_btnUnInstallDB_clicked(self):
         uninstall_views(self,schema= self.dlg.cbxSchema.currentText())
 
 
@@ -510,6 +518,12 @@ class DBLoader:
         self.dlg.cbxGeometryLvl.clear()
         
         
+    #def evt_btnRefreshViews_clicked(self):
+        
+        #btnRefreshViews_setup(self)
+
+    def evt_btnRefreshViews_clicked(self):
+        refreshViews_setup(self)
 
 
 ###--'Settings' tab--###########################################################

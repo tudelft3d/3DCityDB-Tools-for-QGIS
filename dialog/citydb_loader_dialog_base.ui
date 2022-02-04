@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>546</width>
-    <height>610</height>
+    <height>641</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -106,7 +106,7 @@
        </size>
       </property>
       <attribute name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset>
         <normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</iconset>
       </attribute>
       <attribute name="title">
@@ -321,6 +321,9 @@
          <property name="focusPolicy">
           <enum>Qt::NoFocus</enum>
          </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
          <property name="autoFillBackground">
           <bool>false</bool>
          </property>
@@ -336,11 +339,40 @@
          <property name="checkable">
           <bool>false</bool>
          </property>
-         <layout class="QFormLayout" name="formLayout_2">
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="5" column="2">
+           <widget class="QLabel" name="lblInstall_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="lbl3DCityDBVersion_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="lblConnectedToDB">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+             <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -362,15 +394,14 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="lblServerVersion">
-            <property name="text">
-             <string>Server version:</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="lblUserPrivileges">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>User privilages:</string>
             </property>
@@ -378,37 +409,38 @@
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="lbl3DCityDBVersion">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>3DCityDB version:</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="lblInstall">
-            <property name="text">
-             <string>Installation for &lt;schema&gt;:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLabel" name="lblConnectedToDB_out">
-            <property name="text">
-             <string/>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
+          <item row="1" column="2">
            <widget class="QLabel" name="lblServerVersion_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="2" column="2">
            <widget class="QLabel" name="lblUserPrivileges_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -423,20 +455,58 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QLabel" name="lbl3DCityDBVersion_out">
+          <item row="5" column="0">
+           <widget class="QLabel" name="lblInstall">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
-             <string/>
+             <string>Installation for &lt;schema&gt;:</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QLabel" name="lblInstall_out">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblServerVersion">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Server version:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="lblConnectedToDB_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
-            <property name="wordWrap">
-             <bool>true</bool>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLabel" name="lblInstallLoadingCon">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string/>
             </property>
            </widget>
           </item>
@@ -495,7 +565,7 @@
        <bool>false</bool>
       </property>
       <attribute name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset>
         <normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</iconset>
       </attribute>
       <attribute name="title">
@@ -655,7 +725,7 @@ Schema: &lt;Schema&gt;</string>
        <bool>true</bool>
       </property>
       <attribute name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset>
         <normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</iconset>
       </attribute>
       <attribute name="title">
@@ -676,17 +746,69 @@ Schema: &lt;Schema&gt;</string>
          <property name="title">
           <string>Installation</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_installation">
-          <item>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="2" column="0">
+           <widget class="QPushButton" name="btnClearDB">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Clear entire {DB} database from plugin contents</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="btnUnInstallDB">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Un-install plugin contents from database {DB} for schema {SC}</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
            <widget class="QPushButton" name="btnInstallDB">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="text">
              <string>Install plugin contents to database {DB} for schema {SC}</string>
             </property>
             <property name="icon">
-             <iconset resource="../resources.qrc">
+             <iconset>
               <normaloff>:/plugins/citydb_loader/icons/install_icon.svg</normaloff>:/plugins/citydb_loader/icons/install_icon.svg</iconset>
             </property>
             <property name="checkable">
@@ -703,37 +825,30 @@ Schema: &lt;Schema&gt;</string>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="btnUnInstallDB">
-            <property name="enabled">
-             <bool>false</bool>
+          <item row="0" column="1">
+           <widget class="QLabel" name="lblLoadingInstall">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="text">
-             <string>Un-install plugin contents from database {DB} for schema {SC}</string>
-            </property>
-            <property name="icon">
-             <iconset resource="../resources.qrc">
-              <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
-            </property>
-            <property name="default">
-             <bool>false</bool>
+             <string/>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="btnClearDB">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
+          <item row="1" column="1">
+           <widget class="QLabel" name="lblLoadingUninstall">
             <property name="text">
-             <string>Clear entire {DB} database from plugin contents</string>
+             <string/>
             </property>
-            <property name="icon">
-             <iconset resource="../resources.qrc">
-              <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
-            </property>
-            <property name="default">
-             <bool>false</bool>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="lblLoadingClear">
+            <property name="text">
+             <string/>
             </property>
            </widget>
           </item>
@@ -748,21 +863,46 @@ Schema: &lt;Schema&gt;</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
          <property name="title">
           <string>Database</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_databaseSettings">
-          <item>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0">
            <widget class="QPushButton" name="btnRefreshViews">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="text">
              <string>Refresh views for schema {SC} in database {DB}</string>
             </property>
             <property name="icon">
-             <iconset resource="../resources.qrc">
+             <iconset>
               <normaloff>:/plugins/citydb_loader/icons/refresh_icon.svg</normaloff>:/plugins/citydb_loader/icons/refresh_icon.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="lblLoadingRefresh">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string/>
             </property>
            </widget>
           </item>
@@ -786,7 +926,7 @@ Schema: &lt;Schema&gt;</string>
      </widget>
      <widget class="QWidget" name="tabAbout">
       <attribute name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset>
         <normaloff>:/plugins/citydb_loader/icons/info_icon.svg</normaloff>:/plugins/citydb_loader/icons/info_icon.svg</iconset>
       </attribute>
       <attribute name="title">
@@ -867,6 +1007,7 @@ repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader</strin
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <resources/>
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup"/>

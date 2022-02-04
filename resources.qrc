@@ -13,5 +13,6 @@
         <file>icons/success_icon.svg</file>
         <file>icons/uninstall_icon.svg</file>
         <file>icons/settings_info.svg</file>
+        <file>icons/loading.gif</file>
     </qresource>
 </RCC>

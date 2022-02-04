@@ -1,8 +1,9 @@
 
-from .installation import has_qgis_pkg, has_schema_views, installation_query
+from .installation import *
 from .connection_tab import *
 from .functions import *
-
+from .threads import *
+from qgis.PyQt.QtCore import QThread
 
 
 
@@ -126,7 +127,7 @@ def cbxSchema_setup(dbLoader):
             dbLoader.dlg.lblInstall_out.setText(crit_warning_html.format(f'qgis_pkg is already installed but NOT for {selected_schema}!\n\tRequires installation!'))
             dbLoader.connection_status['Install']=False
             return installation_query(dbLoader,f"'qgis_pkg' needs to be enhanced with contents mapping '{selected_schema}' schema.\nDo you want to proceed?")
-    
+
     return True
 
 def gbxUserType_setup(dbLoader,user_type):
@@ -136,7 +137,7 @@ def gbxUserType_setup(dbLoader,user_type):
     reset_importTab(dbLoader)
     
     dbLoader.dlg.tabImport.setDisabled(False)
-    dbLoader.dlg.lblDbSchema.setText(f"Database: {selected_db.database_name}\nSchema: {selected_schema}")
+    dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text.format(Database=selected_db.database_name,Schema=selected_schema))
     dbLoader.dlg.lblDbSchema.setDisabled(False)
 
     settingsTab_setup(dbLoader,user_type)
@@ -157,13 +158,13 @@ def settingsTab_setup(dbLoader,user_type):
     elif user_type=='Editor':
         dbLoader.dlg.btnInstallDB.setText(dbLoader.dlg.btnInstallDB.init_text.format(DB=selected_db.database_name,SC=selected_schema))
         dbLoader.dlg.btnInstallDB.setDisabled(False)
-        text= dbLoader.dlg.btnUnInstallDB.text()
+
         dbLoader.dlg.btnUnInstallDB.setText(dbLoader.dlg.btnUnInstallDB.init_text.format(DB=selected_db.database_name,SC=selected_schema))
         dbLoader.dlg.btnUnInstallDB.setDisabled(False)
-        text= dbLoader.dlg.btnClearDB.text()
+
         dbLoader.dlg.btnClearDB.setText(dbLoader.dlg.btnClearDB.init_text.format(DB=selected_db.database_name))
         dbLoader.dlg.btnClearDB.setDisabled(False)
-        text= dbLoader.dlg.btnRefreshViews.text()
+   
         dbLoader.dlg.btnRefreshViews.setText(dbLoader.dlg.btnRefreshViews.init_text.format(DB=selected_db.database_name,SC=selected_schema))
         dbLoader.dlg.btnRefreshViews.setDisabled(False)
 
@@ -172,7 +173,7 @@ def reset_importTab(dbLoader):
     selected_schema=dbLoader.dlg.cbxSchema.currentText()
 
     dbLoader.dlg.tabImport.setDisabled(True)
-    dbLoader.dlg.lblDbSchema.setText(f"Database: <Database>\nSchema: <Schema>")
+    dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text)
 
 def reset_settingsTab(dbLoader):
 
@@ -188,3 +189,28 @@ def reset_settingsTab(dbLoader):
     #dbLoader.dlg.qgrbExtent.c
     
 
+def refreshViews_setup(dbLoader):
+    cur = dbLoader.conn.cursor()
+    message= "This is going to take a while! Do you want to proceed?"
+    res= QMessageBox.question(dbLoader.dlg,"Refreshing Views", message)
+    
+    if res == 16384: #YES   
+        refresh_views_thread(dbLoader,cursor=cur)
+
+        
+def InstallDB_setup(dbLoader):
+    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+    cur = dbLoader.conn.cursor()
+    upd_conn_file(dbLoader) #Prepares installation scripts with the connection parameters 
+    
+    success = install(dbLoader, origin=dbLoader.dlg.lblLoadingInstall)
+    if success: 
+        selected_db.has_installation = True
+        dbLoader.connection_status['Install']=True
+        if not dbLoader.plugin_package in dbLoader.schemas: dbLoader.schemas.append(dbLoader.plugin_package)
+    else:    
+        dbLoader.connection_status['Install']=False
+        dbLoader.dlg.btnClearDB.setDisabled(False)
+        dbLoader.dlg.btnClearDB.setDefault(True)
+        dbLoader.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
+        dbLoader.dlg.wdgMain.setCurrentIndex(2)            
