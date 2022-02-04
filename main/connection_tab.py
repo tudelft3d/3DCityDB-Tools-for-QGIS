@@ -161,7 +161,7 @@ def successful_connection_tab(dbLoader):
     dbLoader.dlg.grbSchema.setDisabled(False)
     dbLoader.dlg.grbFeature.setDisabled(True)
     dbLoader.dlg.grbGeometry.setDisabled(True)
-    dbLoader.dlg.grbExtent.setDisabled(True)
+    dbLoader.dlg.gbxExtent.setDisabled(True)
     dbLoader.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
 
 

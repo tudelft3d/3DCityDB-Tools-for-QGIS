@@ -1,9 +1,12 @@
 
+from torch import empty
 from .installation import *
 from .connection_tab import *
 from .functions import *
 from .threads import *
+from .import_tab import *
 from qgis.PyQt.QtCore import QThread
+from qgis.utils import iface
 
 
 
@@ -185,11 +188,11 @@ def reset_settingsTab(dbLoader):
     dbLoader.dlg.btnClearDB.setText(dbLoader.dlg.btnClearDB.init_text)
     dbLoader.dlg.btnRefreshViews.setDisabled(True)
     dbLoader.dlg.btnRefreshViews.setText(dbLoader.dlg.btnRefreshViews.init_text)
-    #dbLoader.dlg.grbExtent.setDisabled(True)
-    #dbLoader.dlg.qgrbExtent.c
+    #dbLoader.dlg.gbxExtent.setDisabled(True)
+    #dbLoader.dlg.qgbxExtent.c
     
 
-def refreshViews_setup(dbLoader):
+def btnRefreshViews_setup(dbLoader):
     cur = dbLoader.conn.cursor()
     message= "This is going to take a while! Do you want to proceed?"
     res= QMessageBox.question(dbLoader.dlg,"Refreshing Views", message)
@@ -198,9 +201,9 @@ def refreshViews_setup(dbLoader):
         refresh_views_thread(dbLoader,cursor=cur)
 
         
-def InstallDB_setup(dbLoader):
+def btnInstallDB_setup(dbLoader):
     selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    cur = dbLoader.conn.cursor()
+
     upd_conn_file(dbLoader) #Prepares installation scripts with the connection parameters 
     
     success = install(dbLoader, origin=dbLoader.dlg.lblLoadingInstall)
@@ -214,3 +217,44 @@ def InstallDB_setup(dbLoader):
         dbLoader.dlg.btnClearDB.setDefault(True)
         dbLoader.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
         dbLoader.dlg.wdgMain.setCurrentIndex(2)            
+
+def btnCityExtents_setup(dbLoader):
+    cur = dbLoader.conn.cursor()
+    cur.execute("""SELECT ST_AsText(ST_SetSRID(ST_Extent(envelope),28992)),'' FROM citydb.cityobject""")
+    extents,empty = cur.fetchone()
+    cur.close()
+    crs =dbLoader.iface.mapCanvas().mapSettings().destinationCrs().authid()
+    qgis_extent=QgsRectangle.fromWkt(extents)
+    dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(qgis_extent,QgsCoordinateReferenceSystem(crs))
+
+
+def qgbxExtent_setup(dbLoader):
+    dbLoader.dlg.cbxModule.clear()
+    dbLoader.dlg.gbxParameters.setDisabled(False)
+    fill_module_box(dbLoader)
+
+    #dbLoader.dlg.btnImport.setDisabled(True)
+
+
+def cbxModule_setup(dbLoader):
+    dbLoader.dlg.cbxLod.clear()
+    dbLoader.dlg.cbxLod.setDisabled(False)
+    fill_lod_box(dbLoader)
+
+def cbxLod_setup(dbLoader):
+    dbLoader.dlg.gbxFeatures.setDisabled(False)
+    dbLoader.dlg.ccbxFeatures.clear()
+    dbLoader.dlg.ccbxFeatures.setDefaultText("Select availiable features to import")
+    fill_features_box(dbLoader)
+    
+            
+def ccbxFeatures_setup(dbLoader):
+
+    checked_views= dbLoader.dlg.ccbxFeatures.checkedItems()
+
+    if checked_views:
+        dbLoader.dlg.btnImport.setDisabled(False)
+        dbLoader.dlg.btnImport.setText(dbLoader.dlg.btnImport.init_text.format(num=len(checked_views)))
+    else: 
+        dbLoader.dlg.btnImport.setText(dbLoader.dlg.btnImport.init_text)
+        dbLoader.dlg.btnImport.setDisabled(True)

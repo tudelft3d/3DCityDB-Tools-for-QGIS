@@ -15,6 +15,7 @@ crit_warning_html=msg.format(image_rc=':/plugins/citydb_loader/icons/critical_wa
 features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
 modules=["CityObject","Building","DTM","Tunnel","Bridge","Waterbody","Vegetation", "CityFurniture", "LandUse","Transportation"]  #Named after their main corresponding table name from the 3DCityDB.
 priviledge_types=["DELETE","INSERT","REFERENCES","SELECT","TRIGGER","TRUNCATE","UPDATE"]
+lods=['LoD0','LoD1','LoD2','LoD3','LoD4']
 
 #################################### BUILDING (start)################################################################
 building={  

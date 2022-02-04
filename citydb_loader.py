@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QObject,QThread,pyqtSignal
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QObject,QThread,pyqtSignal 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox, QGraphicsView
 from qgis.core import QgsApplication, QgsProject, Qgis
@@ -98,17 +98,8 @@ class DBLoader:
         return QCoreApplication.translate('DBLoader', message)
 
 
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+    def add_action(self,icon_path,text,callback,enabled_flag=True,add_to_menu=True,add_to_toolbar=True,
+                        status_tip=None,whats_this=None,parent=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -215,6 +206,7 @@ class DBLoader:
             self.dlg.btnClearDB.init_text= "Clear entire {DB} database from plugin contents"
             self.dlg.btnRefreshViews.init_text= "Refresh views for schema {SC} in database {DB}"
             self.dlg.lblDbSchema.init_text="Database: {Database}\nSchema: {Schema}"
+            self.dlg.btnImport.init_text="Import {num} feature layers"
 
         ## 'Connection' tab ######################################################################################
         #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
@@ -234,22 +226,33 @@ class DBLoader:
 
 
         ## 'Import' tab ######################################################################################
-            self.dlg.qcbxFeature.currentIndexChanged.connect(self.evt_qcbxFeature_changed)
-            
+        #/ 'Extent' groupbox ///////////////////////////////////////////////////////////////////////////////
+            self.dlg.btnCityExtents.clicked.connect(self.evt_btnCityExtents_clicked)
+
             #Get initial canvas extent
             canvas = self.iface.mapCanvas()
             crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
             extent = canvas.extent()
-            #self.dlg.qgrbExtent.setOriginalExtent(extent,canvas.mapSettings().destinationCrs())
-            self.dlg.qgrbExtent.setMapCanvas(canvas)
-            self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs)) #TODO: get crs from canvas or layer
-            self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
+            
+            self.dlg.qgbxExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs)) #TODO: get crs from canvas or layer
+            self.dlg.qgbxExtent.setOutputExtentFromCurrent()
+            self.dlg.qgbxExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
+            self.dlg.qgbxExtent.setMapCanvas(canvas)
             #Set extent change signal
-            self.iface.mapCanvas().extentsChanged.connect(self.evt_canvas_extChanged)
-            self.dlg.qgrbExtent.extentChanged.connect(self.evt_qgrbExtent_extChanged)
+            canvas.extentsChanged.connect(self.evt_canvas_extChanged)
+            self.dlg.qgbxExtent.extentChanged.connect(self.evt_qgbxExtent_extChanged)
 
-            self.dlg.cbxGeometryLvl.currentIndexChanged.connect(self.evt_cbxGeometryLvl_changed)
-            #self.dlg.cbxGeomteryType.currentTextChanged.connect(self.evt_cbxGeomteryType_changed)
+        #/ 'Parameters' groupbox /////////////////////////////////////////////////////////////////////////
+            self.dlg.cbxModule.currentIndexChanged.connect(self.evt_cbxModule_changed)
+            self.dlg.cbxLod.currentIndexChanged.connect(self.evt_cbxLod_changed)
+
+
+
+
+
+
+        #/ 'Features Import' groupbox /////////////////////////////////////////////////////////////////////
+            self.dlg.ccbxFeatures.checkedItemsChanged.connect(self.evt_ccbxFeatures_changed)
             self.dlg.btnImport.clicked.connect(self.evt_btnImport_clicked)
         ##----------------########################################################################################
 
@@ -347,132 +350,57 @@ class DBLoader:
 
         
 
-
-    
-        # selected_db=self.dlg.cbxExistingConnection.currentData()
-        # selected_schema=self.dlg.cbxSchema.currentText()
-        # self.dlg.lblInstall.setText(f"Installation for {selected_schema}:")
-
-        # if has_schema_privileges(self) and has_table_privileges(self):
-        #     self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
-        #                                                 <p> <img src=":/plugins/citydb_loader/icons/success_icon.svg"/> 
-        #                                                     <span style=" color:#00E400;"> Has necessary privileges</span>
-        #                                                 </p></body></html>  """)
-        # else:
-        #     self.dlg.lblUserPrivileges_out.setText(f"""  <html><head/><body>
-        #                                                 <p> <img src=":/plugins/citydb_loader/icons/failure_icon.svg"/> 
-        #                                                     <span style=" color:#FF0000;"> No privileges</span>
-        #                                                 </p></body></html>  """)
-
-        
-
-        
-        
-        # if is_3dcitydb(self):
-
-        #     #Parially enable the 'Import' tab.
-        #     self.dlg.lblCityDbStatus.setText(f"3DCityDB verison: {selected_db.c_version}")
-        #     self.dlg.lblCityDbStatus.setStyleSheet("color:green")  
-        #     get_schemas(self) #Stores DB schemas in DBLoader.schemas 
-
-        #     if selected_db.has_installation: successful_connection_tab(self)
-        #     else:
-        #         if has_qgis_pkg(self): 
-        #             successful_connection_tab(self)
-        #             selected_db.has_installation = True
-        #         else: 
-        #             res= QMessageBox.question(self.dlg,"Installation", f"Database '{selected_db.database_name}' requires elements to be installed.\nDo you want to proceed?")
-        #             if res == 16384: #YES                
-        #                 upd_conn_file(self) #Prepares installation scripts with the connection parameters 
-        #                 success = install(self)
-                        
-        #                 if success: 
-        #                     selected_db.has_installation = True
-        #                     self.schemas.append(self.plugin_package)
-        #                     successful_connection_tab(self)
-
-        #                 else:    
-        #                     self.dlg.btnClearDB.setDisabled(False)
-        #                     self.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
-        #                     self.dlg.wdgMain.setCurrentIndex(2)                      
-        #             else: return None
-
-        #     fill_schema_box(self)
-        #     #create_constants(self)
-            
-        # else:
-        #     QMessageBox.critical(self.dlg,"Fail", f"Database '{selected_db.database_name}' is NOT 3DCityDB! \nor 3DCityDB installation is corrupted.")
-        #     #Disable 'Import' tab in case of connection fail
-        #     self.dlg.tbImport.setDisabled(True)
-        #     self.dlg.cbxSchema.clear()
-        #     self.dlg.qcbxFeature.clear()
-        #     self.dlg.cbxGeometryLvl.clear()
-
-        
-
 ###--'Connection' tab--###########################################################
 ### 'Import' tab ###############################################################
 
-
-            
-    def evt_qcbxFeature_changed(self):
-        selected_schema=self.dlg.cbxSchema.currentText()
-        selected_feature=self.dlg.qcbxFeature.currentText()
-        self.dlg.cbxGeometryLvl.clear()
-        #self.dlg.cbxGeomteryType.clear()
-        self.dlg.grbGeometry.setDisabled(True)
-        self.dlg.cbxGeometryLvl.setDisabled(True)        
-        #self.dlg.cbxGeomteryType.setDisabled(True) 
-        self.dlg.btnImport.setText(f'Import {selected_feature} feature')
-        self.dlg.btnImport.setDisabled(True)
-        if not selected_schema and selected_feature: return #This is a guard
-        delete_all_features_widgets(self,self.dlg.gridLayout_2)
-        create_features_checkboxes(self)
-    
-    def evt_checkBox_stateChanged(self):
-        self.dlg.cbxGeometryLvl.clear()
-        extents=self.dlg.qgrbExtent.outputExtent().asWktPolygon() 
-        checked_features = get_checked_features(self,self.dlg.gridLayout_2)
-        count_objects_in_bbox(self,checked_features,extents)
-
-        
-        self.dlg.grbGeometry.setDisabled(False)
-        self.dlg.cbxGeometryLvl.setDisabled(False)        
-        fill_lod_box(self)  
-    
-    def evt_checkBoxTypes_stateChanged(self):
-        #checked_types = get_checked_types(self,self.dlg.gridLayout_4)
-        delete_all_features_widgets(self,self.dlg.formLayout)
-        set_counter_label(self)
-
+    def evt_btnCityExtents_clicked(self):
+        btnCityExtents_setup(self)
 
     def evt_canvas_extChanged(self):
         extent = self.iface.mapCanvas().extent()
         crs =self.iface.mapCanvas().mapSettings().destinationCrs().authid()
-        self.dlg.qgrbExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs))
-        self.dlg.qgrbExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
+        self.dlg.qgbxExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs))
+        self.dlg.qgbxExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
 
-    def evt_qgrbExtent_extChanged(self):
-
-        self.dlg.qcbxFeature.clear()
-        self.dlg.grbFeature.setDisabled(False)
-        fill_module_box(self)
+    def evt_qgbxExtent_extChanged(self):
+        qgbxExtent_setup(self)
         
-        self.dlg.cbxGeometryLvl.clear()
-        self.dlg.grbGeometry.setDisabled(True)
-        
-        self.dlg.btnImport.setDisabled(True)
+            
+    def evt_cbxModule_changed(self):
+        cbxModule_setup(self)
 
-    def evt_cbxGeometryLvl_changed(self,idx):
-        #self.dlg.cbxGeomteryType.clear()
-        types = self.dlg.cbxGeometryLvl.itemData(idx)
-        print("t",types)
-        delete_all_features_widgets(self,self.dlg.gridLayout_4)
-        create_geometry_checkboxes(self,types)
+    
+    # def evt_checkBox_stateChanged(self):
+    #     self.dlg.cbxLod.clear()
+    #     extents=self.dlg.qgbxExtent.outputExtent().asWktPolygon() 
+    #     checked_features = get_checked_features(self,self.dlg.gridLayout_2)
+    #     count_objects_in_bbox(self,checked_features,extents)
+
+        
+    #     self.dlg.cbxLod.setDisabled(False)        
+    #     fill_lod_box(self)  
+    
+    # def evt_checkBoxTypes_stateChanged(self):
+    #     #checked_types = get_checked_types(self,self.dlg.gridLayout_4)
+    #     delete_all_features_widgets(self,self.dlg.formLayout)
+    #     set_counter_label(self)
+
+
+
+
+    
+    def evt_cbxLod_changed(self):
+        cbxLod_setup(self)
+
+        # #self.dlg.cbxGeomteryType.clear()
+        # types = self.dlg.cbxLod.itemData(idx)
+        # print("t",types)
+        # delete_all_features_widgets(self,self.dlg.gridLayout_4)
+        # create_geometry_checkboxes(self,types)
         
 
-        delete_all_features_widgets(self,self.dlg.formLayout)
-        set_counter_label(self)
+        # delete_all_features_widgets(self,self.dlg.formLayout)
+        # set_counter_label(self)
 
 
         
@@ -484,6 +412,9 @@ class DBLoader:
            # self.dlg.btnImport.setDisabled(True)
         #else: self.dlg.btnImport.setDisabled(False)
     
+    def evt_ccbxFeatures_changed(self):
+        ccbxFeatures_setup(self)
+    
     def evt_btnImport_clicked(self):    
         import_layer(self)
         self.dlg.close()
@@ -491,11 +422,13 @@ class DBLoader:
 
 
 
+
+
 ###--'Import' tab--###########################################################
 
 ###--'Settings' tab--###########################################################
     def evt_btnInstallDB_clicked(self):
-        InstallDB_setup(self)
+        btnInstallDB_setup(self)
 
 
     def evt_btnUnInstallDB_clicked(self):
@@ -513,9 +446,9 @@ class DBLoader:
         self.dlg.lblCityDbStatus.clear()
         self.dlg.lblConnection.clear()
         self.dlg.cbxSchema.clear()
-        self.dlg.qcbxFeature.clear()
+        self.dlg.cbxModule.clear()
         #self.dlg.cbxGeomteryType.clear()
-        self.dlg.cbxGeometryLvl.clear()
+        self.dlg.cbxLod.clear()
         
         
     #def evt_btnRefreshViews_clicked(self):
@@ -523,7 +456,8 @@ class DBLoader:
         #btnRefreshViews_setup(self)
 
     def evt_btnRefreshViews_clicked(self):
-        refreshViews_setup(self)
+        btnRefreshViews_setup(self)
+        
 
 
 ###--'Settings' tab--###########################################################

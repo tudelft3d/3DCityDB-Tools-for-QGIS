@@ -14,155 +14,12 @@ from collections import Counter
 
 
 
-def is_connected(dbLoader):
-    database = dbLoader.dlg.cbxConnToExist.currentData()
-    conn = None
-    try:
-        dbLoader.conn = connect(database) #Open the connection
-        cur = dbLoader.conn.cursor()
-        cur.execute("SHOW server_version;")
-        version = cur.fetchone()
-        database.s_version= version[0]
-
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if dbLoader.conn is not None:
-            cur.close()
-
-    return 1
-
-def is_3dcitydb(dbLoader):
-    """ Checks if current database has specific 3DCityDB requirements.\n
-    Requiremnt list:
-        > Extentions: postgis, uuid-ossp, postgis_sfcgal
-        > Schemas: citydb_pkg
-        > Tables: cityobject, building, surface_geometry
-        
-
-    """ 
-    #Check conditions for a valid the 3DCityDB structure. 
-    # ALL MUST BE TRUE
-    # NOTE: this is an oversimplified test! there are countless conditions where the requirements are met but the structure is broken.
-    conditions_met = {  'postgis':False, 'postgis_sfcgal':False, 'uuid-ossp':False,             #Extentions
-                        'citydb_pkg':False,                                                     #Schemas
-                        'cityobject':False,'building':False,'surface_geometry':False}           #Tables
-
-                        
-
-    database = dbLoader.dlg.cbxConnToExist.currentData()
-		
-
-    cur = dbLoader.conn.cursor() 
-    # get all tables with theirs schemas    
-    cur.execute("""SELECT table_name
-                    FROM information_schema.tables
-                    WHERE table_schema != 'pg_catalog'
-                    AND table_schema != 'information_schema'
-                    AND table_type='BASE TABLE'
-                """)
-    tables = cur.fetchall()
-    cur.close()
-
-    cur = dbLoader.conn.cursor()
-    #Get all schemas
-    cur.execute("SELECT schema_name FROM information_schema.schemata")
-    schemas = cur.fetchall()
-    cur.close()
-
-    cur = dbLoader.conn.cursor() 
-    #Get all extentions
-    cur.execute("SELECT extname FROM pg_extension")
-    extentions = cur.fetchall()
-    cur.close()
-    
-    #extention check
-    for pair in extentions:
-        if 'postgis' in pair: conditions_met['postgis']=True
-        elif 'postgis_sfcgal' in pair: conditions_met['postgis_sfcgal']=True
-        elif 'uuid-ossp' in pair: conditions_met['uuid-ossp']=True
-        
-
-    #schema check
-    for pair in schemas:
-        if 'citydb_pkg' in pair:
-            conditions_met['citydb_pkg']=True
-
-    #table check
-    for pair in tables:
-        if 'cityobject' in pair: conditions_met['cityobject']=True
-        elif 'building' in pair: conditions_met['building']=True
-        elif 'citydb_pkg' in pair: conditions_met['citydb_pkg']=True
-        elif 'surface_geometry' in pair: conditions_met['surface_geometry']=True
 
 
-    for condition in conditions_met:
-        if not conditions_met[condition]:
-            return condition
-        
-    cur = dbLoader.conn.cursor()  
-    cur.execute("SELECT version FROM citydb_pkg.citydb_version();")
-    version= cur.fetchall()
-    cur.close()
-    database.c_version= version[0][0]
 
-    return 1
-
-def get_schemas(dbLoader):
-    database = dbLoader.dlg.cbxConnToExist.currentData()
-    conn = None
-    try:
-
-        # create a cursor
-        cur = dbLoader.conn.cursor()
-
-        #Get all schemas
-        cur.execute("SELECT schema_name,'' FROM information_schema.schemata WHERE schema_name != 'information_schema' AND NOT schema_name LIKE '%pg%' ORDER BY schema_name ASC")
-        schemas = cur.fetchall()
-
-        schemas,empty=zip(*schemas)
-        dbLoader.schemas = schemas
-
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if dbLoader.conn is not None:
-            # close the communication with the PostgreSQL
-            cur.close()
-
-def fill_schema_box(dbLoader):
-    dbLoader.dlg.cbxScema.clear()
-    dbLoader.dlg.cbxScema.addItems(sorted(dbLoader.schemas)) 
-
-def instantiate_objects(dbLoader,features):
-
-    
-    for feature, schema in features:
-
-        if feature == building_table:
-            feature_obj = Building()
-            for sub in feature_obj.subFeatures_table_name:
-                if sub == buildingOuterInstallation_table:
-                    subfeature_obj = BuildingInstallation()
-                elif sub == buildingPart_table:
-                    subfeature_obj = BuildingPart()
-                elif sub == thematicSurfaces_table:
-                    subfeature_obj = BuildingThematic()
-                else: continue
-                feature_obj.subFeatures_objects.append(subfeature_obj) 
-        elif feature == dtm_table:
-            feature_obj = Relief()
-            for sub in feature_obj.subFeatures_table_name:
-                if sub == reliefTIN_table:
-                    subfeature_obj = TINRelief()
-                feature_obj.subFeatures_objects.append(subfeature_obj) 
-        elif feature == vegetation_table:
-            feature_obj = Vegetation()
-        else: continue
-        dbLoader.container_obj.append(feature_obj)
 
 def check_schema(dbLoader):
-    database = dbLoader.dlg.cbxConnToExist.currentData()
+    database = dbLoader.dlg.cbxExistingConnection.currentData()
 
 
     #NOTE: the above list is currently (19/01/22) limited to what makes sense for now. Check citygml docs to see the complete list
@@ -183,11 +40,11 @@ def check_schema(dbLoader):
         feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
         cur.close()
 
-        instantiate_objects(dbLoader,feature_response)
+        #instantiate_objects(dbLoader,feature_response)
 
 
         for feature in dbLoader.container_obj:
-            dbLoader.dlg.qcbxFeature.addItem(feature.alias,feature)  
+            dbLoader.dlg.cbxModule.addItem(feature.alias,feature)  
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -200,15 +57,15 @@ def check_schema(dbLoader):
 
     return 1
 
-def create_subfeatures_widgets(dbLoader):
-    feature = dbLoader.dlg.qcbxFeature.currentData()
+def create_features_checkboxes(dbLoader):
+    module = dbLoader.dlg.cbxModule.currentData()
 
     row=-1
     col=0
     try:
-        for c,subfeature in enumerate(feature.subFeatures_objects):
-            assert feature.subFeatures_objects #NOTE:22-01-2022 I want to catch features that don't have subfeatures and notify the user. BUT i don't think it works as intended
-            check_box= QCheckBox(subfeature.alias)
+        for c,feature in enumerate(module.features):
+            #assert feature.subFeatures_objects #NOTE:22-01-2022 I want to catch features that don't have subfeatures and notify the user. BUT i don't think it works as intended
+            check_box= QCheckBox(feature.alias)
             check_box.stateChanged.connect(dbLoader.evt_checkBox_stateChanged)
             if c%3==0:
                 row+=1
@@ -222,31 +79,42 @@ def create_subfeatures_widgets(dbLoader):
 
     
 
-def delete_all_sufeatures_widgets(dbLoader):
-    for w in reversed(range(dbLoader.dlg.gridLayout_2.count())):
-        dbLoader.dlg.gridLayout_2.itemAt(w).widget().setParent(None)
+def delete_all_features_widgets(dbLoader,layout):
+    for w in reversed(range(layout.count())):
+        layout.itemAt(w).widget().setParent(None)
 
 
-def get_checked_subfeatures(dbLoader):
-    selected_feature = dbLoader.dlg.qcbxFeature.currentData()
-    subfeatures = [dbLoader.dlg.gridLayout_2.itemAt(w).widget() for w in reversed(range(dbLoader.dlg.gridLayout_2.count()))]
-    checked_subfeatures=[]
-    for sub in subfeatures: 
-        if sub.isChecked():
+def get_checked_features(dbLoader,layout):
+    selected_module = dbLoader.dlg.cbxModule.currentData()
+    check_boxes = [layout.itemAt(w).widget() for w in reversed(range(layout.count()))]
+    checked_features=[]
+    for feature in check_boxes: 
+        if feature.isChecked():
+            obj_inx=[feat.alias for feat in selected_module.features].index(feature.text())
+            checked_features.append(selected_module.features[obj_inx])
+    return checked_features
 
-            obj_inx=[subfeat.alias for subfeat in selected_feature.subFeatures_objects].index(sub.text())
-            checked_subfeatures.append(selected_feature.subFeatures_objects[obj_inx])
-    return checked_subfeatures
+def get_checked_types(dbLoader,layout):
+    check_boxes = [layout.itemAt(w).widget() for w in reversed(range(layout.count()))]
+    checked_types=[]
+    for representation in check_boxes: 
+        if representation.isChecked():
+            checked_types.append(representation)
+    return checked_types
+
+
+
+
 
 
 def check_geometry(dbLoader):
     conn = None
-    database = dbLoader.dlg.cbxConnToExist.currentData()
+    database = dbLoader.dlg.cbxExistingConnection.currentData()
     schema = dbLoader.dlg.cbxScema.currentText()
-    feature = dbLoader.dlg.qcbxFeature.currentData()
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() 
+    feature = dbLoader.dlg.cbxModule.currentData()
+    extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() 
 
-    checked_subfeature_tables = get_checked_subfeatures(dbLoader)
+    checked_subfeature_tables = get_checked_features(dbLoader)
     feature_all_lvls = [feature]+checked_subfeature_tables
 
 
@@ -343,7 +211,7 @@ def check_geometry(dbLoader):
                 for v in values:
                     if v in types:
                         add_types.append(table_to_alias(v,'type'))
-                dbLoader.dlg.cbxGeometryLvl.addItem(table_to_alias(key,'lod'),add_types)       
+                dbLoader.dlg.cbxLod.addItem(table_to_alias(key,'lod'),add_types)       
                     
 
         #Guard against importing many feutures
@@ -460,8 +328,7 @@ def import_lookups(dbLoader): #NOTE: make lookups as a CLASS ???? hmm
     lookup_group_name = "Look-up tables"
     
 
-    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
-    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
+    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
     cur=dbLoader.conn.cursor()
 
     root= QgsProject.instance().layerTreeRoot()
@@ -489,10 +356,10 @@ def import_lookups(dbLoader): #NOTE: make lookups as a CLASS ???? hmm
 
 def import_generics(dbLoader):
 
-    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
-    selected_schema=dbLoader.dlg.cbxScema.currentText()
-    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+    selected_schema=dbLoader.dlg.cbxSchema.currentText()
+
+    extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() #Readable for debugging
 
     root= QgsProject.instance().layerTreeRoot()
     group_to_assign = root.findGroup(selected_db.database_name)
@@ -510,12 +377,8 @@ def import_generics(dbLoader):
 
 
 def create_layers(dbLoader,view):
-    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
-    selected_schema=dbLoader.dlg.cbxScema.currentText()
-    selected_feature=dbLoader.dlg.qcbxFeature.currentText()
-    selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
-    selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
+    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+    extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() #Readable for debugging
 
     #SELECT UpdateGeometrySRID('roads','geom',4326);
     uri = QgsDataSourceUri()
@@ -556,106 +419,106 @@ def order_ToC(group):
 
 
 def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
+    checked_views= dbLoader.dlg.ccbxFeatures.checkedItemsData()
+    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+    selected_schema=dbLoader.dlg.cbxSchema.currentText() 
+    module = dbLoader.dlg.cbxModule.currentData() #3dcitydb table name
 
-    selected_db=dbLoader.dlg.cbxConnToExist.currentData()
-    selected_schema=dbLoader.dlg.cbxScema.currentText() 
-    selected_feature = dbLoader.dlg.qcbxFeature.currentData() #3dcitydb table name
-    print("Feature:",selected_feature)
 
-    selected_subFeatures= get_checked_subfeatures(dbLoader)
-    print("Subfeature:",selected_subFeatures)
+
+    #cons=Constants()
+    #views_tree= cons.views_features_subFeatures
     
-    selected_geometryLvl=dbLoader.dlg.cbxGeometryLvl.currentText()
-    selected_geometryType=dbLoader.dlg.cbxGeomteryType.currentText()
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon() #Readable for debugging
-    print("LOD:",selected_geometryLvl)
-    print("Type:",selected_geometryType)
+    for view_name in checked_views:
+        vlayer = create_layers(dbLoader,view_name)
+        if not vlayer or not vlayer.isValid():
+            dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
+        else:
+            print(vlayer)
+            QgsProject.instance().addMapLayer(vlayer,True)
+        #vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
 
-    cons=Constants()
-    views_tree= cons.views_features_subFeatures
+    # conn = None
 
+    # try:
 
-    conn = None
+    #     root = QgsProject.instance().layerTreeRoot()
+    #     if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
+    #     else: node_database = root.findGroup(selected_db.database_name)
 
-    try:
+    #     if not node_database.findGroup(selected_schema): node_schema = node_database.addGroup(selected_schema)
+    #     else: node_schema = node_database.findGroup(selected_schema)
 
-        root = QgsProject.instance().layerTreeRoot()
-        if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
-        else: node_database = root.findGroup(selected_db.database_name)
+    #     if not node_schema.findGroup(selected_feature.alias): node_feature = node_schema.addGroup(selected_feature.alias)
+    #     else: node_feature = node_schema.findGroup(selected_feature.alias)
 
-        if not node_database.findGroup(selected_schema): node_schema = node_database.addGroup(selected_schema)
-        else: node_schema = node_database.findGroup(selected_schema)
+    #     if not node_feature.findGroup(selected_geometryLvl): node_flod = node_feature.addGroup(selected_geometryLvl)
+    #     else: node_flod = node_feature.findGroup(selected_geometryLvl)
 
-        if not node_schema.findGroup(selected_feature.alias): node_feature = node_schema.addGroup(selected_feature.alias)
-        else: node_feature = node_schema.findGroup(selected_feature.alias)
+    #     for subFeatures in selected_subFeatures:
+    #         if not node_feature.findGroup(subFeatures.alias): node_subFeature = node_feature.addGroup(subFeatures.alias)
+    #         else: node_subFeature = node_feature.findGroup(subFeatures.alias)
 
-        if not node_feature.findGroup(selected_geometryLvl): node_flod = node_feature.addGroup(selected_geometryLvl)
-        else: node_flod = node_feature.findGroup(selected_geometryLvl)
+    #         if not node_subFeature.findGroup(selected_geometryLvl): node_slod = node_subFeature.addGroup(selected_geometryLvl)
+    #         else: node_slod = node_subFeature.findGroup(selected_geometryLvl)
 
-        for subFeatures in selected_subFeatures:
-            if not node_feature.findGroup(subFeatures.alias): node_subFeature = node_feature.addGroup(subFeatures.alias)
-            else: node_subFeature = node_feature.findGroup(subFeatures.alias)
-
-            if not node_subFeature.findGroup(selected_geometryLvl): node_slod = node_subFeature.addGroup(selected_geometryLvl)
-            else: node_slod = node_subFeature.findGroup(selected_geometryLvl)
-
-        feature_views={selected_feature: selected_feature.get_view(  schema=selected_schema,
-                                                    feature=selected_feature.view_name,
-                                                    subfeature=None,
-                                                    lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
-                                                    g_type=alias_to_viewSyntax(selected_geometryType,'type'))
-                        }
-        subfeature_views={subFeature:   subFeature.get_view( schema=selected_schema,
-                                                feature=selected_feature.view_name,
-                                                subfeature=subFeature.view_name,
-                                                lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
-                                                g_type=alias_to_viewSyntax(selected_geometryType,'type')) for subFeature in selected_subFeatures
-                            }
+    #     feature_views={selected_feature: selected_feature.get_view(  schema=selected_schema,
+    #                                                 feature=selected_feature.view_name,
+    #                                                 subfeature=None,
+    #                                                 lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
+    #                                                 g_type=alias_to_viewSyntax(selected_geometryType,'type'))
+    #                     }
+    #     subfeature_views={subFeature:   subFeature.get_view( schema=selected_schema,
+    #                                             feature=selected_feature.view_name,
+    #                                             subfeature=subFeature.view_name,
+    #                                             lod=alias_to_viewSyntax(selected_geometryLvl,'lod'),
+    #                                             g_type=alias_to_viewSyntax(selected_geometryType,'type')) for subFeature in selected_subFeatures
+    #                         }
 
  
-        feature_views.update(subfeature_views)
+    #     feature_views.update(subfeature_views)
 
 
-        for element,views in feature_views.items():
-            for view in views:
-                import_lookups(dbLoader)
-                vlayer = create_layers(dbLoader,view.name)
-                import_generics(dbLoader)
+    #     for element,views in feature_views.items():
+    #         for view in views:
+    #             import_lookups(dbLoader)
+    #             vlayer = create_layers(dbLoader,view.name)
+    #             import_generics(dbLoader)
 
-                if not vlayer or not vlayer.isValid():
-                    dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
-                else:
-                    # if vlayer.featureCount()==0:
-                    #     continue
-                    #dbLoader.iface.mainWindow().blockSignals(True)
-                    QgsProject.instance().addMapLayer(vlayer,False)
+    #             if not vlayer or not vlayer.isValid():
+    #                 dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
+    #             else:
+    #                 # if vlayer.featureCount()==0:
+    #                 #     continue
+    #                 #dbLoader.iface.mainWindow().blockSignals(True)
+    #                 QgsProject.instance().addMapLayer(vlayer,False)
                     
-                    if element.is_feature: node_flod.addLayer(vlayer)
-                    else: 
-                        #if thematicSurfaces_in_view in view.subfeature:
+    #                 if element.is_feature: node_flod.addLayer(vlayer)
+    #                 else: 
+    #                     #if thematicSurfaces_in_view in view.subfeature:
 
                        
-                        node_subFeature= node_feature.findGroup(element.alias)
-                        node_lod = node_subFeature.findGroup(table_to_alias(view.lod,'lod'))
-                        node_lod.addLayer(vlayer)
+    #                     node_subFeature= node_feature.findGroup(element.alias)
+    #                     node_lod = node_subFeature.findGroup(table_to_alias(view.lod,'lod'))
+    #                     node_lod.addLayer(vlayer)
 
-                    dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
-                    dbLoader.show_Qmsg('Success!!')
+    #                 dbLoader.iface.mainWindow().blockSignals(False) #NOTE: Temp solution to avoid undefined CRS pop up. IT IS DEFINED
+    #                 dbLoader.show_Qmsg('Success!!')
 
-                    vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
-                    create_relations(vlayer)
-        #Its important to first order the ToC and then send it to the top. 
-        order_ToC(node_database)     
-        send_to_top_ToC(root,node_database)
+    #                 vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
+    #                 create_relations(vlayer)
+    #     #Its important to first order the ToC and then send it to the top. 
+    #     order_ToC(node_database)     
+    #     send_to_top_ToC(root,node_database)
 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-        dbLoader.show_Qmsg('Import failed! Check Log Messages',msg_type=Qgis.Critical)
-    finally:
-        if dbLoader.conn is not None:
-            # close the communication with the PostgreSQL
-            #cur.close()
-            pass
+    # except (Exception, psycopg2.DatabaseError) as error:
+    #     print(error)
+    #     dbLoader.show_Qmsg('Import failed! Check Log Messages',msg_type=Qgis.Critical)
+    # finally:
+    #     if dbLoader.conn is not None:
+    #         # close the communication with the PostgreSQL
+    #         #cur.close()
+    #         pass
             
     
 

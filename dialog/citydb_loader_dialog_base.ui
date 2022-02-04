@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>546</width>
-    <height>641</height>
+    <width>506</width>
+    <height>564</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -45,7 +45,7 @@
       <bool>true</bool>
      </property>
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -313,7 +313,7 @@
           <bool>false</bool>
          </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -562,7 +562,7 @@
      </widget>
      <widget class="QWidget" name="tabImport">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <attribute name="icon">
        <iconset>
@@ -571,152 +571,197 @@
       <attribute name="title">
        <string>Import</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_ImportTab">
-       <item row="2" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_12">
-         <item>
-          <widget class="QLabel" name="lblDbSchema">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Database: &lt;Database&gt;
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="lblDbSchema">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Database: &lt;Database&gt;
 Schema: &lt;Schema&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="grbExtent">
-           <property name="title">
-            <string>Extent</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
-            <item>
-             <widget class="QPushButton" name="btnCityExtents">
-              <property name="text">
-               <string>Calculate from City model</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QgsExtentGroupBox" name="qgrbExtent">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>480</width>
-                <height>162</height>
-               </size>
-              </property>
-              <property name="autoFillBackground">
-               <bool>false</bool>
-              </property>
-              <property name="title">
-               <string/>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
-              </property>
-              <property name="checkable">
-               <bool>false</bool>
-              </property>
-              <property name="collapsed">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="grbFeature">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>CityObject Feature</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <item>
-             <layout class="QFormLayout" name="formLayout_10">
-              <item row="0" column="0">
-               <widget class="QLabel" name="lvlFeature">
-                <property name="text">
-                 <string>Select module:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="qcbxFeature"/>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QgsCollapsibleGroupBox" name="gbxSubFeatures">
-              <property name="title">
-               <string>Select features</string>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_2"/>
-             </widget>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="grbGeometry">
-              <property name="title">
-               <string>Geometry</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_8">
-               <item>
-                <layout class="QFormLayout" name="formLayout_6">
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="lblGeometryLvl">
-                   <property name="text">
-                    <string>Select geometry level:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QComboBox" name="cbxGeometryLvl"/>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QgsCollapsibleGroupBox" name="gbxOptRepres">
-                 <property name="title">
-                  <string>Select representation</string>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_4"/>
-                </widget>
-               </item>
-               <item>
-                <layout class="QFormLayout" name="formLayout"/>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btnImport">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Import &lt;feature&gt; feature</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbxExtent">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>411</width>
+           <height>237</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>Extent</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QPushButton" name="btnCityExtents">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Calculate from City model</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QgsExtentGroupBox" name="qgbxExtent">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::ClickFocus</enum>
+            </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::DefaultContextMenu</enum>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="title">
+             <string> (current: layer)</string>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <property name="collapsed">
+             <bool>false</bool>
+            </property>
+            <property name="saveCollapsedState">
+             <bool>true</bool>
+            </property>
+            <property name="titleBase">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbxParameters">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Parameters</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lvlFeature">
+            <property name="text">
+             <string>Select CityGML module:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="cbxModule"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lblGeometryLvl">
+            <property name="text">
+             <string>Select geometry level:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="cbxLod"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbxFeatures">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Features to import</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QgsCheckableComboBox" name="ccbxFeatures">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="currentText">
+             <string/>
+            </property>
+            <property name="maxVisibleItems">
+             <number>20</number>
+            </property>
+            <property name="insertPolicy">
+             <enum>QComboBox::InsertAtBottom</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnImport">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Import {num} features</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -753,7 +798,7 @@ Schema: &lt;Schema&gt;</string>
              <bool>false</bool>
             </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -776,7 +821,7 @@ Schema: &lt;Schema&gt;</string>
              <bool>false</bool>
             </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -799,7 +844,7 @@ Schema: &lt;Schema&gt;</string>
              <bool>false</bool>
             </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -840,6 +885,12 @@ Schema: &lt;Schema&gt;</string>
           </item>
           <item row="1" column="1">
            <widget class="QLabel" name="lblLoadingUninstall">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -847,6 +898,12 @@ Schema: &lt;Schema&gt;</string>
           </item>
           <item row="2" column="1">
            <widget class="QLabel" name="lblLoadingClear">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -936,32 +993,22 @@ Schema: &lt;Schema&gt;</string>
        <item>
         <widget class="QLabel" name="lblInfo">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::Panel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <property name="lineWidth">
-          <number>1</number>
+          <number>0</number>
          </property>
          <property name="text">
-          <string>name=3DCityDB-Loader
-qgisMinimumVersion=3.0
-description=This is an experimental plugin for 3DCityDB data visualization and manipulation.
-version=0.1
-author=Konstantinos Pantelios
-email=konstantinospantelios@yahoo.com
-
-about=Relational database are very good at storing and handling massive amount of data, however everyday users often find it hard to navigate, explore and work with data directly from the database. This plugin can be used to bring 3DCityDB data into the more widespread and straitforward world of QGIS.
-
-tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
-repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;name=3DCityDB-Loader&lt;/p&gt;&lt;p&gt;qgisMinimumVersion=3.0&lt;/p&gt;&lt;p&gt;description=This is an experimental plugin for 3DCityDB data visualization and manipulation.&lt;/p&gt;&lt;p&gt;version=0.1&lt;/p&gt;&lt;p&gt;author=Konstantinos Pantelios&lt;/p&gt;&lt;p&gt;email=konstantinospantelios@yahoo.com&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;about=Relational database are very good at storing and handling massive amount of data, however everyday users often find it hard to navigate, explore and work with data directly from the database. &lt;/p&gt;&lt;p&gt;This plugin can be used to bring 3DCityDB data into the more widespread and straitforward world of QGIS.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader&lt;/p&gt;&lt;p&gt;repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="textFormat">
           <enum>Qt::AutoText</enum>
@@ -974,19 +1021,6 @@ repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader</strin
          </property>
         </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -994,6 +1028,11 @@ repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader</strin
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QgsCheckableComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qgscheckablecombobox.h</header>
+  </customwidget>
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>

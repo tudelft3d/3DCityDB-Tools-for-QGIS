@@ -1,27 +1,12 @@
-from distutils.log import info
+
 from qgis.PyQt.QtWidgets import QLabel
 from .constants import *
 from .functions import *
 
-def fill_schema_box(dbLoader):
-    dbLoader.dlg.cbxSchema.clear()
 
-    for schema in dbLoader.schemas: 
-        res = schema_has_features(dbLoader,schema,features_tables)
-        if res:
-            dbLoader.dlg.cbxSchema.addItem(schema,res)
  
 
-def schema_has_features(dbLoader,schema,features):
-    cur=dbLoader.conn.cursor()
 
-    cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
-                    WHERE table_schema = '{schema}' 
-                    AND table_name SIMILAR TO '{get_postgres_array(features)}'
-                    ORDER BY table_name ASC""")
-    feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
-    cur.close()
-    return feature_response
 
 def count_objects(dbLoader,view_name):
     cur=dbLoader.conn.cursor()
@@ -32,7 +17,7 @@ def count_objects(dbLoader,view_name):
     return count
 
 def count_objects_in_bbox(dbLoader,checked_features,extents):
-    selected_module = dbLoader.dlg.qcbxFeature.currentData()
+    selected_module = dbLoader.dlg.cbxModule.currentData()
 
     for feature in checked_features:
         for view in feature.views:
@@ -48,117 +33,74 @@ def count_objects_in_bbox(dbLoader,checked_features,extents):
 
 def fill_module_box(dbLoader):
 
-    for module_name in modules:
-        module_obj = instantiate_objects(dbLoader,module_name)
-        if module_obj: 
-            for feature in module_obj.features:
-                for view in feature.views:
-                    print(view)
-                    if count_objects(dbLoader, view.name):
-                        dbLoader.dlg.qcbxFeature.addItem(module_obj.alias,module_obj) 
-                        break
-                else: 
-                    continue
-                break
+    modules=instantiate_objects(dbLoader)
+
+    for module_obj in modules:    
+
+        for feature in module_obj.features:
+            for view in feature.views:
+                if count_objects(dbLoader, view.name):
+                    dbLoader.dlg.cbxModule.addItem(module_obj.alias,module_obj)
+                    break
+            else: 
+                continue
+            break
 
         
 
-def instantiate_objects(dbLoader,module_name):
+def instantiate_objects(dbLoader):
+    dbLoader.module_container=[]
+    for module_name in modules:
+        
+        if module_name == "Building": #TODO: don't hardcode, at least not here
 
-    if module_name == "Building": #TODO: don't hardcode, at least not here
-
-        mod = Module(module_name)
-        mod.features=[
-                Building(*building.values()),
-                BuildingInstallation(*building_installation.values()),
-                BuildingPart(*building_part.values())
-            ]
+            mod = Module(module_name)
+            mod.features=[
+                    Building(*building.values()),
+                    BuildingInstallation(*building_installation.values()),
+                    BuildingPart(*building_part.values())
+                ]
 
 
-    elif module_name == 'Vegetation':
-        mod = Module(module_name)
-        mod.features = [
-            Vegetation(*vegetation.values())
-            ] 
-    #TODO: fill the rest of the features
-    else: return None
-    
-    dbLoader.module_container.append(mod)
-    return mod
+        elif module_name == 'Vegetation':
+            mod = Module(module_name)
+            mod.features = [
+                Vegetation(*vegetation.values())
+                ] 
+        #TODO: fill the rest of the features
+        else: continue
+        
+        dbLoader.module_container.append(mod)
+    return dbLoader.module_container
 
 
 def fill_lod_box(dbLoader):
-    checked_features = get_checked_features(dbLoader,dbLoader.dlg.gridLayout_2)
-    extents=dbLoader.dlg.qgrbExtent.outputExtent().asWktPolygon()
+    selected_module = dbLoader.dlg.cbxModule.currentData()
     
-    for feature in checked_features:
-        current_lod= None
-        add_types=[]
-        add_geometries={}
+    geom_set=set()
+    geom_set_=set()
+    for feature in selected_module.features:
         for view in feature.views:
-            if view.count:
-                if  current_lod != view.lod:
-                    if current_lod and add_types: #check if they are NOT empty
-                        add_types=[]
-
-                    current_lod= view.lod
-                    add_types.append(view.representation)
-                    add_geometries[current_lod]=add_types
-
-                else:
-                    add_types.append(view.representation)
-                    add_geometries[current_lod]=add_types
-
-            feature.lods=add_geometries
+            geom_set.add(view.lod)
+            geom_set_.add(table_to_alias(view.lod,'lod'))
             
-            
-        
-    lod_intersection=[]
-    for feature in checked_features:
-        lod_intersection.append(set(feature.lods.keys()))
-    res=sorted(set.intersection(*lod_intersection))
 
-    types=[]
-    for feature in checked_features:
-        for lod in res:
-            if type(feature.lods[lod])==type([]):
-                for i in feature.lods[lod]:
-                    types.append(i)
-            else:
-                types.append(feature.lods[lod])
+    avalibale_lods = dict(zip(sorted(list(geom_set_)),sorted(list(geom_set))))
+
+    for alias,lod in avalibale_lods.items():
+        dbLoader.dlg.cbxLod.addItem(alias,lod)
+
+
+
+def fill_features_box(dbLoader):
+    selected_lod = dbLoader.dlg.cbxLod.currentData()
+    selected_module = dbLoader.dlg.cbxModule.currentData()
     
-
-    counter=Counter(types)
-
-    types=[]
-    for key in counter.keys():
-        if counter[key] >= len(checked_features): #NOTE: this >= seems suspicius
-            types.append(key)
-
-    for key,values in geometry_rep.items():
-        if key in res:
-            add_types=[]
-            for v in values:
-                if v in types:
-                    add_types.append(table_to_alias(v,'type'))
-            dbLoader.dlg.cbxGeometryLvl.addItem(table_to_alias(key,'lod'),add_types)  
-
-
-def create_geometry_checkboxes(dbLoader,types):
-
-    row=-1
-    col=0
     try:
-        for c,representation in enumerate(types):
-            #assert feature.subFeatures_objects #NOTE:22-01-2022 I want to catch features that don't have subfeatures and notify the user. BUT i don't think it works as intended
-            check_box= QCheckBox(representation)
-            check_box.stateChanged.connect(dbLoader.evt_checkBoxTypes_stateChanged)
-            if c%3==0:
-                row+=1
-                col=0
-            dbLoader.dlg.gridLayout_4.addWidget(check_box,row,col)
-            if c==0:dbLoader.dlg.gbxSubFeatures.setDisabled(False)
-            col+=1
+        for c,feature in enumerate(selected_module.features):
+            for view in feature.views:
+                if view.lod == selected_lod:
+                    dbLoader.dlg.ccbxFeatures.addItemWithCheckState(view.name,0,view.name)
     except AssertionError as msg:
         dbLoader.show_Qmsg(f'<b>{msg}</b> doesn\'t have any sub-features',msg_type=Qgis.Info)
         return 0
@@ -167,7 +109,7 @@ def create_geometry_checkboxes(dbLoader,types):
 def set_counter_label(dbLoader):
     checked_types = get_checked_types(dbLoader,dbLoader.dlg.gridLayout_4)
     checked_features = get_checked_features(dbLoader,dbLoader.dlg.gridLayout_2)
-    selected_lod=dbLoader.dlg.cbxGeometryLvl.currentText()
+    selected_lod=dbLoader.dlg.cbxLod.currentText()
 
     msg=''
     total_count=0
