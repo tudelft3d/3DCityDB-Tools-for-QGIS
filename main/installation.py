@@ -1,12 +1,12 @@
-from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox,QLabel
-from qgis.PyQt.QtCore import Qt,QRect
-from qgis.PyQt.QtGui import QMovie
-
+from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox
+from qgis.PyQt.QtCore import Qt
+from .constants import *
 from qgis.core import Qgis, QgsMessageLog
 import os
 import subprocess
 from .constants import get_postgres_array
 from .threads import install_pkg_thread
+import psycopg2
 
 def has_qgis_pkg(dbLoader):
     """
@@ -19,16 +19,19 @@ def has_qgis_pkg(dbLoader):
 
 
 def has_schema_views(dbLoader,schema): #TODO: TRY except, or plpgsql it in package
-    cur = dbLoader.conn.cursor()
-    cur.execute(""" SELECT table_name,'' FROM information_schema.tables 
-	                WHERE table_schema = 'qgis_pkg' AND table_type = 'VIEW'""")
-    views= cur.fetchall()
-    views,empty = zip(*views)
-    dbLoader.cur_schema_views=views     
-    if any(schema in view for view in views):
-        return True
-    return False
-
+    try:
+        cur = dbLoader.conn.cursor()
+        cur.execute(""" SELECT table_name,'' FROM information_schema.tables 
+                        WHERE table_schema = 'qgis_pkg' AND table_type = 'VIEW'""")
+        views= cur.fetchall()
+        cur.close()
+        views,empty = zip(*views)
+        dbLoader.cur_schema_views=views     
+        if any(schema in view for view in views):
+            return True
+        return False
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("In 'installation.has_schema_views",error) 
         
 
 def upd_conn_file(dbLoader):
@@ -70,24 +73,14 @@ export PGBIN={psql_path}
         pass
     return 0
 
-def installation_query(dbLoader,message):
+def installation_query(dbLoader,message,origin):
     selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
 
     res= QMessageBox.question(dbLoader.dlg,"Installation", message)
     if res == 16384: #YES                
         upd_conn_file(dbLoader) #Prepares installation scripts with the connection parameters 
-        success = install(dbLoader,dbLoader.dlg.lblInstallLoadingCon)
-        if success: 
-            selected_db.has_installation = True
-            dbLoader.connection_status['Install']=True
-            dbLoader.schemas.append(dbLoader.plugin_package)
-            return True
-        else:    
-            dbLoader.connection_status['Install']=False
-            dbLoader.dlg.btnClearDB.setDisabled(False)
-            dbLoader.dlg.btnClearDB.setDefault(True)
-            dbLoader.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
-            dbLoader.dlg.wdgMain.setCurrentIndex(2)                      
+        success = install(dbLoader,origin)
+        if success: return True                   
     else: 
         dbLoader.connection_status['Install']=False
     return False
@@ -110,26 +103,11 @@ def install(dbLoader,origin):
         os.chmod(path_installation_sh, 0o755)
 
         #Run installation script
-
-        install_pkg_thread(dbLoader,path_installation_sh,origin) #TODO: Need to catch error in the worker thread for logging and user msgs
-
-
-        # p = subprocess.Popen(path_installation_sh,  stdin = subprocess.PIPE,
-        #                                             stdout=subprocess.PIPE ,
-        #                                             stderr=subprocess.PIPE ,
-        #                                             universal_newlines=True)
-
-        # output,e = p.communicate(f'{selected_db.password}\n')
-        # if 'ERROR' in e:
-        #     QgsMessageLog.logMessage('Installation failed!',level= Qgis.Critical,notifyUser=True)
-        #     QgsMessageLog.logMessage(e[29:],level= Qgis.Info,notifyUser=True) #e[29:] skips manually 'Password for user postgres:', the stdin of the subprocess
-        #     return 0
-        # else: QgsMessageLog.logMessage(output,level= Qgis.Success,notifyUser=True)
-
-
+        install_pkg_thread(dbLoader,path_installation_sh,selected_db.password,origin) #TODO: Need to catch error in the worker thread for logging and user msgs
+        return True
     else: #Windows TODO: Find how to translate the above into windows batch
         pass
-    return 1
+    return False
 
 def uninstall_pkg(dbLoader):
     progress = QProgressBar(dbLoader.dlg.gbxInstall.bar)
@@ -139,9 +117,11 @@ def uninstall_pkg(dbLoader):
 
     if 'qgis_pkg' in dbLoader.schemas:
         cur = dbLoader.conn.cursor()
-        cur.execute(f"""DROP SCHEMA qgis_pkg CASCADE""")
+        cur.execute(f"""DROP SCHEMA qgis_pkg CASCADE;""")
 
         dbLoader.conn.commit()
+        cur.close()
+        dbLoader.conn.close()  
 
         msg = dbLoader.dlg.gbxInstall.bar.createMessage( u'Database has been cleared' )
         dbLoader.dlg.gbxInstall.bar.clearWidgets()
@@ -162,11 +142,12 @@ def uninstall_views(dbLoader,schema):
 
     if 'qgis_pkg' in dbLoader.schemas:
         cur = dbLoader.conn.cursor()
-        cur.execute(f"""    SELECT '-- DROP VIEW ' || table_name || ' CASCADE;' 
+        cur.execute(f"""    SELECT 'DROP VIEW ' || table_name || ' CASCADE;' 
                             FROM information_schema.tables 
                             WHERE table_name SIMILAR TO '%{schema}%' and table_schema='qgis_pkg';""")
 
         dbLoader.conn.commit()
+        cur.close()
 
         msg = dbLoader.dlg.gbxInstall.bar.createMessage( u'Database has been cleared' )
         dbLoader.dlg.gbxInstall.bar.clearWidgets()
