@@ -106,33 +106,25 @@ vegetation={
 }
 
 class View():
-    def __init__(self,schema,feature,lod,representation):
-        self.schema = schema
-        self.feature = feature
-        self.lod = lod
-        self.representation = representation
-        self.count=0
-        self.name = self.construct_name()
-        
-
     
-    def construct_name(self):
-        if self.representation: return f'{self.schema}_{self.feature}_{self.lod}_{self.representation}'
-        else: return f'{self.schema}_{self.feature}_{self.lod}'
+    def __init__(self,id,module,root_feature,schema,lod,alias,layer_name,object_count):
+        self.id=id
+        self.module=module
+        self.schema = schema
+        self.root_feature = root_feature
+        self.lod = lod
+        self.alias= alias
+        self.view_name = layer_name
+        self.count=object_count
 
 
 
 class CityObject():
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        self.table_name=table_name  #table name might be redundunt for this project. Its use could be replaced by class_id 
-        self.view_name=view_name
+    def __init__(self,alias):
         self.alias=alias
-        self.class_id=class_id
         self.features=[]
-        self.views=[View(*view) for view in views if bool(view)]
-        self.lods={}
+        self.views=[]
         self.count=0
-        self.is_feature=is_feature
     
     def get_views(self,schema,feature,lod,representation):
         views=[]
@@ -142,39 +134,42 @@ class CityObject():
         return views
 
 class Module():
-    def __init__(self,alias):
-        self.features=[]
-        self.alias = alias 
+    def __init__(self,alias,features):
+        self.features=features
+        self.alias = alias
 
 class Building(CityObject): #NOTE: ALL calsses have hardcoded values from the installed views. So every update them with changes to installation script (e.g. addeing new views or changing names)
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
-    
+    def __init__(self,alias='Building'):
+        super().__init__(alias)
 
 class BuildingInstallation(CityObject):
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)  
+    def __init__(self,alias='BuildingInstallation'):
+        super().__init__(alias)  
 
 
 class BuildingPart(CityObject):
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    def __init__(self,alias='BuildingPart'):
+        super().__init__(alias)
 
 class BuildingFurniture(CityObject):
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    def __init__(self,alias='BuildingFurniture'):
+        super().__init__(alias)
 
 class ReliefFeature(CityObject): 
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    def __init__(self,alias='ReliefFeature'):
+        super().__init__(alias)
 
 class TINRelief(CityObject):
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    def __init__(self,alias='TINRelief'):
+        super().__init__(alias)
 
 class Vegetation(CityObject):
-    def __init__(self,table_name,view_name,alias,views,is_feature,class_id):
-        super().__init__(table_name,view_name,alias,views,is_feature,class_id)
+    def __init__(self,alias='Vegetation'):
+        super().__init__(alias)
+
+class PlantCover(CityObject):
+    def __init__(self,alias='PlantCover'):
+        super().__init__(alias)
 
 class subFeatures:
 
@@ -490,6 +485,7 @@ def get_feature_views(dbLoader,Feature,subFeatures,schema='qgis_pkg'):
                     AND table_name NOT SIMILAR TO '%{array}%';
                     """)
     views=cur.fetchall()
+    cur.close()
     if views:
         views,empty=zip(*views)
     return views
