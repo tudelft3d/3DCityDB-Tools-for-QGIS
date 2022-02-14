@@ -116,6 +116,7 @@ class View():
         self.alias= alias
         self.view_name = layer_name
         self.count=object_count
+        self.selected_count=0
 
 
 

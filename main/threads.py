@@ -1,5 +1,4 @@
 import psycopg2
-from pyrsistent import T
 from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal
 from qgis.core import Qgis
 from .constants import *
@@ -88,7 +87,7 @@ def install_pkg_thread(dbLoader,path,password,origin):
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
     dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(False))
     dbLoader.thread.finished.connect(lambda: install_success(dbLoader))
-    dbLoader.thread.fail.connect(lambda: install_fail(dbLoader))
+    dbLoader.worker.fail.connect(lambda: install_fail(dbLoader))
     
     dbLoader.thread.start()
     

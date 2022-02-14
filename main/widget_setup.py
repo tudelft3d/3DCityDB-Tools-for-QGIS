@@ -187,6 +187,37 @@ def ccbxFeatures_setup(dbLoader):
         dbLoader.dlg.btnImport.setText(dbLoader.dlg.btnImport.init_text)
         dbLoader.dlg.btnImport.setDisabled(True)
 
+def btnImport_setup(dbLoader):
+    checked_views = get_checkedItemsData(dbLoader.dlg.ccbxFeatures)
+    #checked_views = dbLoader.dlg.ccbxFeatures.checkedItemsData() NOTE: this builtin method works only for string types. Check https://qgis.org/api/qgscheckablecombobox_8cpp_source.html line 173
+    print(checked_views)
+
+    counter= 0
+    for view in checked_views:
+        view.selected_count+=counter
+    if counter>100:
+        res= QMessageBox.question(dbLoader.dlg,"Warning", f"Too many features set to be imported ({counter})!\n"
+                                                    f"This could hinder perfomance and even cause frequent crashes.\nDo you want to continue?") 
+        if res == 16384: # YES
+            success=import_layers(dbLoader,checked_views)   
+        else: return None #Import Cancelled
+    else: 
+        success=import_layers(dbLoader,checked_views)
+
+    if not success: 
+        QgsMessageLog.logMessage(message="Something went wrong!",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
+        return None
+    
+
+
+    group_node= get_node_database(dbLoader)        
+    order_ToC(group_node)     
+    send_to_top_ToC(group_node)        
+    
+    QgsMessageLog.logMessage(message="",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
+
+
+    
 ### Settings tab
 def tabSettings_setup(dbLoader,user_type):
     selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
