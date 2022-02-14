@@ -39,6 +39,7 @@ from .main.import_tab import *
 from .main.connection import *
 from .main.installation import *
 from .main.widget_setup import *
+from .main.widget_reset import *
 from .main.threads import *
 
 import os.path
@@ -56,7 +57,7 @@ class DBLoader:
             application at run time.
         :type iface: QgsInterface
         """
-        self.module_container=[]
+        self.module_container={}
         self.conn=None
         # Save reference to the QGIS interface
         self.iface = iface
@@ -207,6 +208,7 @@ class DBLoader:
             self.dlg.btnRefreshViews.init_text= "Refresh views for schema {SC} in database {DB}"
             self.dlg.lblDbSchema.init_text="Database: {Database}\nSchema: {Schema}"
             self.dlg.btnImport.init_text="Import {num} feature layers"
+            self.dlg.lblInstall.init_text="Installation for {schema}:"
 
         ## 'Connection' tab ######################################################################################
         #/ 'Connection' group box  //////////////////////////////////////////////////////////////////////////////#
@@ -216,6 +218,7 @@ class DBLoader:
         #/ 'Database' group box  //////////////////////////////////////////////////////////////////////////////#
             self.dlg.btnConnectToDB.clicked.connect(self.evt_btnConnectToDB_clicked)
             self.dlg.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
+
 
 
         #/ 'User Type' group box ///////////////////////////////////////////////////////////////////////
@@ -235,7 +238,7 @@ class DBLoader:
             extent = canvas.extent()
             
             self.dlg.qgbxExtent.setCurrentExtent(extent,QgsCoordinateReferenceSystem(crs)) #TODO: get crs from canvas or layer
-            self.dlg.qgbxExtent.setOutputExtentFromCurrent()
+            #self.dlg.qgbxExtent.setOutputExtentFromCurrent()
             self.dlg.qgbxExtent.setOutputCrs(QgsCoordinateReferenceSystem(crs))
             self.dlg.qgbxExtent.setMapCanvas(canvas)
             #Set extent change signal
@@ -317,13 +320,16 @@ class DBLoader:
 
     def evt_cbxSchema_changed(self):
         """event when 'Check 3DCityDB compatability of <database>' button is pressed  """
+
+        selected_db = self.dlg.cbxExistingConnection.currentData()
+        
         res=cbxSchema_setup(self)
         if not res==True: 
-            reset_importTab(self)
-            reset_settingsTab(self)
+            reset_tabImport(self)
+            reset_tabSettings(self)
 
         ## When connection status is green we can proceed
-        if all(value==True for value in self.connection_status.values()):
+        if selected_db.meets_requirements():
             print('all is green')
             self.dlg.gbxUserType.setDisabled(False)
 
@@ -337,7 +343,7 @@ class DBLoader:
                 self.dlg.rdViewer.setDisabled(False)
 
         else: 
-            deselect_radiobtn_group(self)
+            reset_gbxUserType(self)
             self.dlg.gbxUserType.setDisabled(True)
 
 
@@ -364,102 +370,40 @@ class DBLoader:
 
     def evt_qgbxExtent_extChanged(self):
         qgbxExtent_setup(self)
-        
             
     def evt_cbxModule_changed(self):
         cbxModule_setup(self)
-
-    
-    # def evt_checkBox_stateChanged(self):
-    #     self.dlg.cbxLod.clear()
-    #     extents=self.dlg.qgbxExtent.outputExtent().asWktPolygon() 
-    #     checked_features = get_checked_features(self,self.dlg.gridLayout_2)
-    #     count_objects_in_bbox(self,checked_features,extents)
-
-        
-    #     self.dlg.cbxLod.setDisabled(False)        
-    #     fill_lod_box(self)  
-    
-    # def evt_checkBoxTypes_stateChanged(self):
-    #     #checked_types = get_checked_types(self,self.dlg.gridLayout_4)
-    #     delete_all_features_widgets(self,self.dlg.formLayout)
-    #     set_counter_label(self)
-
-
-
-
     
     def evt_cbxLod_changed(self):
         cbxLod_setup(self)
-
-        # #self.dlg.cbxGeomteryType.clear()
-        # types = self.dlg.cbxLod.itemData(idx)
-        # print("t",types)
-        # delete_all_features_widgets(self,self.dlg.gridLayout_4)
-        # create_geometry_checkboxes(self,types)
-        
-
-        # delete_all_features_widgets(self,self.dlg.formLayout)
-        # set_counter_label(self)
-
-
-        
-
-
-
-    #def evt_cbxGeomteryType_changed(self):
-        #if self.dlg.cbxGeomteryType.currentText() == "":
-           # self.dlg.btnImport.setDisabled(True)
-        #else: self.dlg.btnImport.setDisabled(False)
     
     def evt_ccbxFeatures_changed(self):
         ccbxFeatures_setup(self)
     
     def evt_btnImport_clicked(self):    
         import_layer(self)
-        self.dlg.close()
+        # self.dlg.close()
         
-
-
-
-
-
 ###--'Import' tab--###########################################################
+
+
+
+
+
 
 ###--'Settings' tab--###########################################################
     def evt_btnInstallDB_clicked(self):
         btnInstallDB_setup(self)
 
-
     def evt_btnUnInstallDB_clicked(self):
         uninstall_views(self,schema= self.dlg.cbxSchema.currentText())
 
-
-    
     def evt_btnClearDB_clicked(self):
-        uninstall_pkg(self)
-        self.conn.close()
-        self.dlg.tbImport.setDisabled(True)
-        self.dlg.btnConnectToDB.setDisabled(True)
-        self.dlg.btnClearDB.setDisabled(True)
-        self.dlg.btnClearDB.setText(f'Clear <Database> from plugin contents')
-        self.dlg.lblCityDbStatus.clear()
-        self.dlg.lblConnection.clear()
-        self.dlg.cbxSchema.clear()
-        self.dlg.cbxModule.clear()
-        #self.dlg.cbxGeomteryType.clear()
-        self.dlg.cbxLod.clear()
-        
-        
-    #def evt_btnRefreshViews_clicked(self):
-        
-        #btnRefreshViews_setup(self)
+        btnClearDB_setup(self)
 
     def evt_btnRefreshViews_clicked(self):
         btnRefreshViews_setup(self)
         
-
-
 ###--'Settings' tab--###########################################################
 
 

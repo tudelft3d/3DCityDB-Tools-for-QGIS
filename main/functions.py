@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from distutils.command.config import config
 import os, configparser
+from gpg import Data
 import psycopg2
+from pyrsistent import b
 from qgis.core import *
 from qgis.gui import QgsLayerTreeView
 from qgis.PyQt.QtWidgets import QMessageBox,QCheckBox,QHBoxLayout
+from qgis.PyQt.QtGui import QStandardItemModel
 from .connection import *
-
+from qgis.PyQt.QtCore import *
 from collections import OrderedDict
 from .constants import *
 import itertools
@@ -18,44 +21,7 @@ from collections import Counter
 
 
 
-def check_schema(dbLoader):
-    database = dbLoader.dlg.cbxExistingConnection.currentData()
 
-
-    #NOTE: the above list is currently (19/01/22) limited to what makes sense for now. Check citygml docs to see the complete list
- 
-    conn = None
-    try:
-
-        #Get schema stored in 'schema combobox'
-        schema=dbLoader.dlg.cbxScema.currentText()
-    
-        cur=dbLoader.conn.cursor()
-
-        #Check if current schema has cityobject, building features.
-        cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
-                        WHERE table_schema = '{schema}' 
-                        AND table_name SIMILAR TO '%{get_postgres_array(feature_tables)}%'
-                        ORDER BY table_name ASC""")
-        feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
-        cur.close()
-
-        #instantiate_objects(dbLoader,feature_response)
-
-
-        for feature in dbLoader.container_obj:
-            dbLoader.dlg.cbxModule.addItem(feature.alias,feature)  
-
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if dbLoader.conn is not None:
-            # close the communication with the PostgreSQL
-            #cur.close()
-            pass
-    
-
-    return 1
 
 def create_features_checkboxes(dbLoader):
     module = dbLoader.dlg.cbxModule.currentData()
@@ -391,13 +357,19 @@ def create_layers(dbLoader,view):
 
     return vlayer
 
-def send_to_top_ToC(root,group):
+def send_to_top_ToC(group):
+    root = QgsProject.instance().layerTreeRoot()
     move_group =  group.clone()
     root.insertChildNode(0, move_group)
     root.removeChildNode(group)
 
+def get_node_database(dbLoader):
+    selected_db = dbLoader.dlg.cbxExistingConnection.currentData()
+    root = QgsProject.instance().layerTreeRoot()
+    return root.findGroup(selected_db.database_name)
 
 def order_ToC(group):
+
 
     #### Germán Carrillo: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree ########
     LayerNamesEnumDict=lambda listCh:{listCh[q[0]].name()+str(q[0]):q[1] for q in enumerate(listCh)}
@@ -417,25 +389,69 @@ def order_ToC(group):
             order_ToC(child)
         else: return None
 
+def build_ToC(dbLoader,view):
+    selected_db = dbLoader.dlg.cbxExistingConnection.currentData()
+
+    root = QgsProject.instance().layerTreeRoot()
+    if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
+    else: node_database = root.findGroup(selected_db.database_name)
+
+    if not node_database.findGroup(view.schema): node_schema = node_database.addGroup(view.schema)
+    else: node_schema = node_database.findGroup(view.schema)
+
+    if not node_schema.findGroup(view.module): node_module = node_schema.addGroup(view.module)
+    else: node_module = node_schema.findGroup(view.module)
+
+    if not node_module.findGroup(view.root_feature): node_feature = node_module.addGroup(view.root_feature)
+    else: node_feature = node_module.findGroup(view.root_feature)
+
+    if not node_feature.findGroup(view.lod): node_lod = node_feature.addGroup(view.lod)
+    else: node_lod = node_feature.findGroup(view.lod)
+
+    return node_lod
+
+
+def get_checkedItemsData(ccbx):
+    checked_items = []
+    for idx in range(ccbx.count()):
+        if ccbx.itemCheckState(idx) == 2: #is Checked
+            checked_items.append(ccbx.itemData(idx))
+    return checked_items
 
 def import_layer(dbLoader): #NOTE: ONLY BUILDINGS
-    checked_views= dbLoader.dlg.ccbxFeatures.checkedItemsData()
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    selected_schema=dbLoader.dlg.cbxSchema.currentText() 
-    module = dbLoader.dlg.cbxModule.currentData() #3dcitydb table name
+    checked_views = get_checkedItemsData(dbLoader.dlg.ccbxFeatures)
+    #checked_views = dbLoader.dlg.ccbxFeatures.checkedItemsData() NOTE: this builtin method works only for string types. Check https://qgis.org/api/qgscheckablecombobox_8cpp_source.html line 173
+    print(checked_views)
 
-
-
-    #cons=Constants()
-    #views_tree= cons.views_features_subFeatures
-    
-    for view_name in checked_views:
-        vlayer = create_layers(dbLoader,view_name)
+    counter= 0
+    layers_to_import=[]
+    for view in checked_views:
+        node= build_ToC(dbLoader,view)
+        vlayer = create_layers(dbLoader,view.view_name)
+        counter+=vlayer.featureCount()
         if not vlayer or not vlayer.isValid():
             dbLoader.show_Qmsg('Layer failed to load properly',msg_type=Qgis.Critical)
-        else:
-            print(vlayer)
-            QgsProject.instance().addMapLayer(vlayer,True)
+            return None
+        layers_to_import.append(vlayer)
+        node.addLayer(vlayer)
+
+
+    if counter>100:
+        res= QMessageBox.question(dbLoader.dlg,"Warning", f"Too many features set to be imported ({counter})!\n"
+                                                    f"This could hinder perfomance and even cause frequent crashes.\nDo you want to continue?") 
+        if res == 16384:                                           
+            for layer in layers_to_import:
+                QgsProject.instance().addMapLayer(layer,False)
+                dbLoader.show_Qmsg('Success!!')
+        else: return None
+    else: 
+        for layer in layers_to_import:
+            QgsProject.instance().addMapLayer(layer,False)
+            dbLoader.show_Qmsg('Success!!')
+
+    group_node= get_node_database(dbLoader)        
+    order_ToC(group_node)     
+    send_to_top_ToC(group_node)        
         #vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
 
     # conn = None
