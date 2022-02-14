@@ -46,6 +46,7 @@ def is_3dcitydb(dbLoader):
     
 
 def get_schemas(dbLoader):
+    """Gets all schemas that exist in database"""
 
     try:
         cur = dbLoader.conn.cursor()
@@ -64,6 +65,7 @@ def get_schemas(dbLoader):
         cur.close()
 
 def fill_schema_box(dbLoader):
+    """Fils schema combo box with ONLY those schemas that contain the feature tables (citydb: YES, public: NO)"""
     dbLoader.dlg.cbxSchema.clear()
 
     for schema in dbLoader.schemas: 
@@ -73,14 +75,18 @@ def fill_schema_box(dbLoader):
 
 def schema_has_features(dbLoader,schema,features):
     cur=dbLoader.conn.cursor()
+    try:
+        cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
+                        WHERE table_schema = '{schema}' 
+                        AND table_name SIMILAR TO '{get_postgres_array(features)}'
+                        ORDER BY table_name ASC""")
+        feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
+        cur.close()
+        return feature_response
 
-    cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
-                    WHERE table_schema = '{schema}' 
-                    AND table_name SIMILAR TO '{get_postgres_array(features)}'
-                    ORDER BY table_name ASC""")
-    feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
-    cur.close()
-    return feature_response
+    except (Exception, psycopg2.DatabaseError) as error:
+        print('In connection_tab.schema_has_box',error)
+        cur.close()
 
 def schema_privileges(dbLoader):
     selected_schema = dbLoader.dlg.cbxSchema.currentText()
@@ -165,8 +171,3 @@ def successful_connection_tab(dbLoader):
     dbLoader.dlg.wdgMain.setCurrentIndex(1) #Auto-Move to Import tab
 
 
-def deselect_radiobtn_group(self):
-    if self.dlg.buttonGroup.checkedButton():
-        self.dlg.buttonGroup.setExclusive(False)
-        self.dlg.buttonGroup.checkedButton().setChecked(False)
-        self.dlg.buttonGroup.setExclusive(True)
