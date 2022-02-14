@@ -1,22 +1,26 @@
+import psycopg2
+from pyrsistent import T
 from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal
 from qgis.core import Qgis
-import time
+from .constants import *
+import time,subprocess
 
 #TODO: catch errors in Workers to display 
 
 class RefreshMatViewsWorker(QObject):
     finished = pyqtSignal()
-    progress = pyqtSignal(int)
+    fail = pyqtSignal()
     def __init__(self,cursor):
         super().__init__()
         self.cur=cursor
 
     def refresh_all_mat_views(self):
         """Long-running task."""
-        for i in range(5):
-            time.sleep(1)
-
-        #self.cur.callproc("qgis_pkg.refresh_materialized_view")
+        try:
+            self.cur.callproc("qgis_pkg.refresh_materialized_view")
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("At 'refresh_all_mat_views' in threads.py: ",error)
+            self.fail.emit()
         self.finished.emit()
 
 def refresh_views_thread(dbLoader,cursor):
@@ -37,28 +41,35 @@ def refresh_views_thread(dbLoader,cursor):
     dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(False))
 
     dbLoader.thread.start()
+    
 
 class PkgInstallationWorker(QObject):
     finished = pyqtSignal()
-    progress = pyqtSignal(int)
-    def __init__(self,path):
+    fail = pyqtSignal()
+    def __init__(self,path,password):
         super().__init__()
         self.path=path
+        self.password=password
 
     def install_dbSettings_thread(self):
         """Long-running task."""
-        for i in range(2):
-            time.sleep(1)
 
-        # subprocess.Popen(self.path, stdin = subprocess.PIPE,
-        #                             stdout=subprocess.PIPE ,
-        #                             stderr=subprocess.PIPE ,
-        #                             universal_newlines=True)
+        #time.sleep(3)
+        try:
+            p = subprocess.Popen(self.path, stdin = subprocess.PIPE,
+                                        stdout=subprocess.PIPE ,
+                                        stderr=subprocess.PIPE ,
+                                        universal_newlines=True)
+            output,e = p.communicate(f'{self.password}\n')                            
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("At 'install_dbSettings_thread' in threads.py: ",error)
+            self.fail.emit()
+
         self.finished.emit()
 
-def install_pkg_thread(dbLoader,cursor,origin):
+def install_pkg_thread(dbLoader,path,password,origin):
     dbLoader.thread = QThread()
-    dbLoader.worker = PkgInstallationWorker(cursor)
+    dbLoader.worker = PkgInstallationWorker(path,password)
     dbLoader.worker.moveToThread(dbLoader.thread)
 
     dbLoader.thread.started.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(True))
@@ -76,12 +87,25 @@ def install_pkg_thread(dbLoader,cursor,origin):
     dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
     dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(False))
-    #dbLoader.thread.finished.connect(lambda: succ(dbLoader))
+    dbLoader.thread.finished.connect(lambda: install_success(dbLoader))
+    dbLoader.thread.fail.connect(lambda: install_fail(dbLoader))
     
     dbLoader.thread.start()
+    
 
 
-
+def install_success(dbLoader):
+    dbLoader.dlg.gbxUserType.setDisabled(False)
+    dbLoader.dlg.lblInstall_out.setText(success_html.format('qgis_pkg is already installed!'))
+    dbLoader.dlg.cbxExistingConnection.currentData().has_installation = True
+    dbLoader.connection_status['Install']=True
+    dbLoader.schemas.append(dbLoader.plugin_package)
+    return True
+def install_fail(dbLoader):
+    dbLoader.connection_status['Install']=False
+    dbLoader.dlg.btnClearDB.setDisabled(False)
+    dbLoader.dlg.btnClearDB.setText(f'Clear corrupted installation!')  
+    dbLoader.dlg.wdgMain.setCurrentIndex(2) 
 
 
 def start_LoadingAnimation(dbLoader,label):
