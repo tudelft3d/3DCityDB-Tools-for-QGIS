@@ -63,9 +63,14 @@ class Connection:
         self.is_active=None
         self.s_version=None
         self.c_version=None
-        self.has_installation=False
         self.id=id(self)
         self.hex_location=hex(self.id)
+
+        self.green_connection=False
+        self.green_s_version=False
+        self.green_c_verison=False
+        self.green_privileges=False
+        self.green_installation=False
         
 
     def __str__(self):
@@ -82,6 +87,13 @@ class Connection:
         print(f"to store:{self.store_creds}")
         return('\n')
     
+    def meets_requirements(self):
+        if all((self.green_connection,
+                self.green_s_version,
+                self.green_c_verison,
+                self.green_privileges,
+                self.green_installation)): return True
+        return False
     # def add_to_collection(self,db_collection):
     #     db_collection.append(self)
 
