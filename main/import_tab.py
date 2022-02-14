@@ -1,5 +1,8 @@
 
+from tkinter.ttk import Separator
+from pandas import isnull
 from qgis.PyQt.QtWidgets import QLabel
+from qgis.PyQt import QtCore
 from .constants import *
 from .functions import *
 
@@ -9,12 +12,17 @@ from .functions import *
 
 
 def count_objects(dbLoader,view_name):
-    cur=dbLoader.conn.cursor()
-    cur.execute(f"""SELECT count(*),'' from qgis_pkg.{view_name}""")
-    count=cur.fetchone()
-    cur.close()
-    count,empty=count
-    return count
+
+    try:
+        cur=dbLoader.conn.cursor()
+        cur.execute(f"""SELECT count(*),'' from qgis_pkg.{view_name}""")
+        count=cur.fetchone()
+        cur.close()
+        count,empty=count
+        return count
+    except (Exception, psycopg2.DatabaseError) as error:
+        print('In import_tab.count_objects:',error)
+        cur.close()
 
 def count_objects_in_bbox(dbLoader,checked_features,extents):
     selected_module = dbLoader.dlg.cbxModule.currentData()
@@ -35,11 +43,11 @@ def fill_module_box(dbLoader):
 
     modules=instantiate_objects(dbLoader)
 
-    for module_obj in modules:    
+    for module_obj in modules.values():    
 
-        for feature in module_obj.features:
+        for feature in module_obj.features.values():
             for view in feature.views:
-                if count_objects(dbLoader, view.name):
+                if view.count>0:
                     dbLoader.dlg.cbxModule.addItem(module_obj.alias,module_obj)
                     break
             else: 
@@ -49,43 +57,43 @@ def fill_module_box(dbLoader):
         
 
 def instantiate_objects(dbLoader):
-    dbLoader.module_container=[]
-    for module_name in modules:
+    cur=dbLoader.conn.cursor()
+    cur.execute(f"""SELECT * FROM qgis_pkg.metadata""")
+    metadata=cur.fetchall()
+    colnames = [desc[0] for desc in cur.description]
+    cur.close()
+    metadata_dict_list= [dict(zip(colnames,f)) for f in metadata]
+    
+    dbLoader.module_container=   { "Building": Module(alias='Building',features={  "Building": Building(),
+                                                                                "BuildingPart": BuildingPart(),
+                                                                                "BuildingInstallation": BuildingInstallation(),
+                                                                                "BuildingFurniture": BuildingFurniture()}),
+                                "Vegetation": Module(alias='Vegetation', features= {"Vegetation": Vegetation(),
+                                                                                    "PlantCover": PlantCover()})}
+
+    dbLoader.module_container
+    for metadata_dict in metadata_dict_list:
         
-        if module_name == "Building": #TODO: don't hardcode, at least not here
+        #keys: id,module,root_feature,schema,lod,alias,layer_name,object_count
+        if metadata_dict['object_count']==0:continue
+        curr_module_obj=dbLoader.module_container[metadata_dict['module']]
+        curr_feature = curr_module_obj.features[metadata_dict['root_feature']]
+        curr_feature.views.append(View(*metadata_dict.values()))
 
-            mod = Module(module_name)
-            mod.features=[
-                    Building(*building.values()),
-                    BuildingInstallation(*building_installation.values()),
-                    BuildingPart(*building_part.values())
-                ]
-
-
-        elif module_name == 'Vegetation':
-            mod = Module(module_name)
-            mod.features = [
-                Vegetation(*vegetation.values())
-                ] 
-        #TODO: fill the rest of the features
-        else: continue
-        
-        dbLoader.module_container.append(mod)
     return dbLoader.module_container
 
 
 def fill_lod_box(dbLoader):
     selected_module = dbLoader.dlg.cbxModule.currentData()
-    
+    if not selected_module: return None
     geom_set=set()
     geom_set_=set()
-    for feature in selected_module.features:
+    for feature in selected_module.features.values():
         for view in feature.views:
             geom_set.add(view.lod)
-            geom_set_.add(table_to_alias(view.lod,'lod'))
+            geom_set_.add(alias_to_viewSyntax(view.lod,'lod'))
             
-
-    avalibale_lods = dict(zip(sorted(list(geom_set_)),sorted(list(geom_set))))
+    avalibale_lods = dict(zip(sorted(list(geom_set)),sorted(list(geom_set_))))
 
     for alias,lod in avalibale_lods.items():
         dbLoader.dlg.cbxLod.addItem(alias,lod)
@@ -93,17 +101,34 @@ def fill_lod_box(dbLoader):
 
 
 def fill_features_box(dbLoader):
-    selected_lod = dbLoader.dlg.cbxLod.currentData()
+    selected_lod = dbLoader.dlg.cbxLod.currentText()
     selected_module = dbLoader.dlg.cbxModule.currentData()
     
+    if not selected_module: return None
+
     try:
-        for c,feature in enumerate(selected_module.features):
+        c=0
+        for c,feature in enumerate(selected_module.features.values()):
             for view in feature.views:
-                if view.lod == selected_lod:
-                    dbLoader.dlg.ccbxFeatures.addItemWithCheckState(view.name,0,view.name)
+                if view.lod == selected_lod:  
+                    count=get_view_obj_amount(dbLoader,view.view_name)
+                    if count > 0: 
+                        dbLoader.dlg.ccbxFeatures.setCurrentIndex(c)
+                        dbLoader.dlg.ccbxFeatures.addItemWithCheckState(f'{view.alias} ({count})',0, userData=view)#{view.view_name:(view.module,view.schema,view.lod,view.root_feature)})
+
+#TODO: 05-02-2021 Add separator between different features NOTE:REMEMBER: don't use method 'setSeparator', it adds a custom separtor to join string of selected items
+
     except AssertionError as msg:
         dbLoader.show_Qmsg(f'<b>{msg}</b> doesn\'t have any sub-features',msg_type=Qgis.Info)
         return 0
+
+def get_view_obj_amount(dbLoader,view):
+    extents = dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon()
+    cur=dbLoader.conn.cursor()
+    cur.callproc('qgis_pkg.view_counter',(view,extents))
+    count=cur.fetchone()[0]
+    cur.close()
+    return count
 
 
 def set_counter_label(dbLoader):
@@ -115,7 +140,6 @@ def set_counter_label(dbLoader):
     total_count=0
     for feature in checked_features:
         for view in feature.views:
-            print(view.lod,view.representation,checked_types)
             if view.lod==alias_to_viewSyntax(selected_lod,'lod'):
                 if view.representation in checked_types:
                     total_count+=view.count
