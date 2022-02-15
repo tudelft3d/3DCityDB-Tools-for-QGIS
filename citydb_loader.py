@@ -280,18 +280,13 @@ class DBLoader:
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
-        # See if OK was pressed
+        # See if OK was pressed but NOTE> there is not OK option in the dialog so
         
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            
-            
-
-            msg= "all is good for now"
-            #filename = self.dlg.lineEdit.text()
-            self.show_Qmsg(msg)
-
+            msg= "Ok was pressed but there is no OK"
+            self.show_Qmsg(msg,msg_type=Qgis.Critical)
+        else: 
+            print("Plugin closed but not terminated")
 
 
 #----------#####################################################################
@@ -381,7 +376,7 @@ class DBLoader:
         ccbxFeatures_setup(self)
     
     def evt_btnImport_clicked(self):    
-        import_layer(self)
+        btnImport_setup(self)
         # self.dlg.close()
         
 ###--'Import' tab--###########################################################
@@ -414,14 +409,9 @@ class DBLoader:
 
 
 
-#TODO: Find if psycog2 cursor is client or server-sided and adjust for better practice.
-# https://medium.com/dev-bits/understanding-postgresql-cursors-with-python-ebc3da591fe7            
-
-#TODO:NOTE: DRAW ON CANVAS exibits wierd behaviour
-#2. After clicking the button it seems that the drawing tools remains open at all times 
 
 #TODO:NOTE: extent groupbox doesnt work for manual user input
-#for every value change in any of the 4 inputs the extent signal is fired
+#for every value change in any of the 4 inputs the extent signal is emited
 
     
             
