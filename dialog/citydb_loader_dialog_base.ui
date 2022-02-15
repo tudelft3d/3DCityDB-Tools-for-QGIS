@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
+    <width>567</width>
     <height>564</height>
    </rect>
   </property>
@@ -45,7 +45,7 @@
       <bool>true</bool>
      </property>
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -464,7 +464,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Installation for &lt;schema&gt;:</string>
+             <string>Installation for {schema}:</string>
             </property>
            </widget>
           </item>
@@ -545,19 +545,6 @@
          </layout>
         </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tabImport">
@@ -584,8 +571,8 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Database: &lt;Database&gt;
-Schema: &lt;Schema&gt;</string>
+          <string>Database: {Database}
+Schema: {Schema}</string>
          </property>
         </widget>
        </item>
@@ -602,7 +589,7 @@ Schema: &lt;Schema&gt;</string>
          </property>
          <property name="minimumSize">
           <size>
-           <width>411</width>
+           <width>427</width>
            <height>237</height>
           </size>
          </property>
@@ -989,39 +976,7 @@ Schema: &lt;Schema&gt;</string>
       <attribute name="title">
        <string>About</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="lblInfo">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
-         </property>
-         <property name="lineWidth">
-          <number>0</number>
-         </property>
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;name=3DCityDB-Loader&lt;/p&gt;&lt;p&gt;qgisMinimumVersion=3.0&lt;/p&gt;&lt;p&gt;description=This is an experimental plugin for 3DCityDB data visualization and manipulation.&lt;/p&gt;&lt;p&gt;version=0.1&lt;/p&gt;&lt;p&gt;author=Konstantinos Pantelios&lt;/p&gt;&lt;p&gt;email=konstantinospantelios@yahoo.com&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;about=Relational database are very good at storing and handling massive amount of data, however everyday users often find it hard to navigate, explore and work with data directly from the database. &lt;/p&gt;&lt;p&gt;This plugin can be used to bring 3DCityDB data into the more widespread and straitforward world of QGIS.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader&lt;/p&gt;&lt;p&gt;repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="textFormat">
-          <enum>Qt::AutoText</enum>
-         </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
      </widget>
     </widget>
    </item>
