@@ -1,8 +1,5 @@
 
-from tkinter.ttk import Separator
-from pandas import isnull
 from qgis.PyQt.QtWidgets import QLabel
-from qgis.PyQt import QtCore
 from .constants import *
 from .functions import *
 
@@ -176,6 +173,27 @@ def set_counter_label(dbLoader): #NOTE: obsolete? delete it
         label.setText(html.format(icon_path = info_icon,message= msg))
     dbLoader.dlg.formLayout.addWidget(label)
 
+def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
+                    Layer= '', Key= '', Value= '',
+                    NofColumns= 1, OrderByValue= False, UseCompleter= False):
+
+    config =   {'AllowMulti': AllowMulti,
+                'AllowNull': AllowNull,
+                'FilterExpression':FilterExpression,
+                'Layer': Layer,
+                'Key': Key,
+                'Value': Value,
+                'NofColumns': NofColumns,
+                'OrderByValue': OrderByValue,
+                'UseCompleter': UseCompleter}
+    return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
+
+def get_attForm_child(container, child_name):
+    for child in container.children():
+        if child.name()== child_name:
+            return child
+
+
 def create_lookup_relations(layer):
     for field in layer.fields():
         field_name = field.name()
@@ -228,10 +246,13 @@ def create_relations(layer):
         QgsMessageLog.logMessage(message=f"Invalid relation: {rel.name()}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
 
 
-    relation_field = QgsAttributeEditorRelation(rel, layer_root_container)
+    container_GA = get_attForm_child(container=layer_root_container, child_name='Generic Attributes')
+    container_GA.clear()
+
+    relation_field = QgsAttributeEditorRelation(relation= rel, parent= container_GA)
     relation_field.setLabel("Generic Attributes")
-    relation_field.setShowLabel(True)
-    layer_root_container.addChildElement(relation_field)
+    relation_field.setShowLabel(False)
+    container_GA.addChildElement(relation_field)
 
     layer.setEditFormConfig(layer_configuration)
     create_lookup_relations(layer)
@@ -296,6 +317,7 @@ def import_generics(dbLoader):
         uri.setDataSource(aSchema= f'{selected_schema}',aTable= f'{generics_layer_name}',aGeometryColumn= None,aKeyColumn= '')
         layer = QgsVectorLayer(uri.uri(False), f"{generics_layer_name}", "postgres")
         if layer or layer.isValid():
+            layer.setEditorWidgetSetup(15,QgsEditorWidgetSetup('TextEdit',{})) #Force to Text Edit (instead of automatic relation widget) NOTE: harcoded index (15: cityobject_id)
             group_to_assign.addLayer(layer)
             QgsProject.instance().addMapLayer(layer,False)
             QgsMessageLog.logMessage(message=f"Layer import: {generics_layer_name}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
@@ -398,6 +420,6 @@ def import_layers(dbLoader,checked_views):
         node.addLayer(vlayer)
         QgsProject.instance().addMapLayer(vlayer,False)
         
-        vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/forms_style.qml') #TODO: this needs to be platform independent
+        vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/building_form.qml') #TODO: this needs to be platform independent
         create_relations(vlayer)
     return True
