@@ -48,13 +48,14 @@ PY_FILES = \
 
 UI_FILES = citydb_loader_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png
+EXTRAS = metadata.txt
 
-EXTRA_DIRS = 
+EXTRA_DIRS = \
 	dialog \
 	forms \
 	icons \
-	main 
+	main \
+	qgis_pkg
 
 COMPILED_RESOURCE_FILES = resources.py
 
@@ -71,13 +72,13 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 
 UNAME := $(shell uname)
 ifeq ( $(UNAME), Linux)
-    QGISDIR = .local/share/QGIS/QGIS3/profiles/default/
-else ifeq ( $(UNAME), Darwin) 
-    QGISDIR = Library/Application Support/QGIS/QGIS3/profiles/default/
+    QGISDIR = .local/share/QGIS/QGIS3/profiles/default
 else ifeq ( $(UNAME), Windows_NT) 
-    QGISDIR = AppData\Roaming\QGIS\QGIS3\profiles\default\
+    QGISDIR = AppData\Roaming\QGIS\QGIS3\profiles\default
+else ifeq ( $(UNAME), Darwin) 
+    QGISDIR = Library/Application Support/QGIS/QGIS3/profiles/default
 else
-    QGISDIR = .local/share/QGIS/QGIS3/profiles/default/
+    QGISDIR = .local/share/QGIS/QGIS3/profiles/default
 endif 
 
 
@@ -129,7 +130,7 @@ test: compile transcompile
 deploy: compile doc transcompile
 	@echo
 	@echo "------------------------------------------"
-	@echo "Deploying plugin to your .qgis2 directory."
+	@echo "Deploying plugin to your .qgis directory."
 	@echo "------------------------------------------"
 	# The deploy  target only works on unix like operating system where
 	# the Python plugin directory is located at:
