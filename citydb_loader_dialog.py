@@ -34,7 +34,7 @@ from qgis.gui import QgsMessageBar
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'citydb_loader_dialog_base.ui'))
+    os.path.dirname(__file__), "ui","citydb_loader_dialog_base.ui"))
 
 
 class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):

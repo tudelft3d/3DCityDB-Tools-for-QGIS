@@ -7,8 +7,8 @@
 # WARNING! All changes made in this file will be lost!
 
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from qgis.gui import QgsMessageBar
+from PyQt5 import QtCore, QtWidgets
+from qgis.gui import QgsMessageBar,QgsPasswordLineEdit
 from qgis.PyQt.QtWidgets import *
 
 class Ui_dlgConnector(object):
@@ -70,7 +70,7 @@ class Ui_dlgConnector(object):
         self.lblPassw = QtWidgets.QLabel(self.gbxConnDet)
         self.lblPassw.setObjectName("lblPassw")
         self.verticalLayout_2.addWidget(self.lblPassw)
-        self.qledPassw = gui.QgsPasswordLineEdit(self.gbxConnDet)
+        self.qledPassw = QgsPasswordLineEdit(self.gbxConnDet)
         self.qledPassw.setObjectName("qledPassw")
         self.verticalLayout_2.addWidget(self.qledPassw)
         self.checkBox = QtWidgets.QCheckBox(self.gbxConnDet)
@@ -104,4 +104,3 @@ class Ui_dlgConnector(object):
         self.lblPassw.setText(_translate("dlgConnector", "Password:"))
         self.checkBox.setText(_translate("dlgConnector", "Save credentials"))
         self.btnConnect.setText(_translate("dlgConnector", "Connect"))
-from qgis import gui
