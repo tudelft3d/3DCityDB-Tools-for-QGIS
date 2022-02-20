@@ -8,6 +8,10 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
+DO $MAINBODY$
+DECLARE
+BEGIN
+
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING
 ----------------------------------------------------------------
@@ -57,7 +61,7 @@ obj_co.gmlid_codespace        := NEW.gmlid_codespace;
 obj_co.name                   := NEW.name;
 obj_co.name_codespace         := NEW.name_codespace;
 obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
+
 obj_co.creation_date          := NEW.creation_date;
 obj_co.termination_date       := NEW.termination_date;
 obj_co.relative_to_terrain    := NEW.relative_to_terrain;
@@ -95,6 +99,77 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_building IS 'Update record in view *_building_*';
+
+--**************************************************************
+--**************************************************************
+----------------------------------------------------------------
+-- Create trigger FUNCTION QGIS_PKG.TR_UPD_BDG_THEMATIC_SURFACE
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_building_thematic_surface CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_building_thematic_surface()
+RETURNS trigger AS $$
+DECLARE
+  obj_co      qgis_pkg.obj_cityobject;
+  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
+BEGIN
+obj_co.id                     := OLD.id;
+obj_co.gmlid                  := NEW.gmlid;
+obj_co.gmlid_codespace        := NEW.gmlid_codespace;
+obj_co.name                   := NEW.name;
+obj_co.name_codespace         := NEW.name_codespace;
+obj_co.description            := NEW.description;
+--obj_co.envelope               := NEW.envelope;
+obj_co.creation_date          := NEW.creation_date;
+obj_co.termination_date       := NEW.termination_date;
+obj_co.relative_to_terrain    := NEW.relative_to_terrain;
+obj_co.relative_to_water      := NEW.relative_to_water;
+obj_co.last_modification_date := NEW.last_modification_date;
+obj_co.updating_person        := NEW.updating_person;
+obj_co.reason_for_update      := NEW.reason_for_update;
+obj_co.lineage                := NEW.lineage;
+
+PERFORM qgis_pkg.upd_building_thematic_surface_atts(obj_co, schema_name);
+
+RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_building_thematic_surface(id: %): %', OLD.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.tr_upd_building_thematic_surface IS 'Update record in view *_building_themsurf_*';
+
+----------------------------------------------------------------
+-- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING_THEMATIC_SURFACE
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_building_thematic_surface CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_building_thematic_surface()
+RETURNS trigger AS $$
+DECLARE
+BEGIN
+RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
+RETURN NULL;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_building_thematic_surface(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.tr_ins_building_thematic_surface IS '(Block) insert record in view *_building_themsurf_*';
+
+----------------------------------------------------------------
+-- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING_THEMATIC_SURFACE
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_building_thematic_surface CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_building_thematic_surface()
+RETURNS trigger AS $$
+DECLARE
+  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
+BEGIN
+EXECUTE format('PERFORM %I.del_thematic_surface(%L)', schema_name, OLD.id);
+RETURN OLD;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_building_thematic_surface(id: %): %', OLD.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.tr_del_building_thematic_surface IS 'Delete record in view *_building_themsurf_*';
+
 
 
 --**************************************************************
@@ -177,75 +252,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_del_building_installation IS 'Delete record in view *_building_installation_*';
 
 
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_BDG_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_bdg_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_bdg_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
-BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
 
-PERFORM qgis_pkg.upd_thematic_surface_atts(obj_co, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_bdg_thematic_surface(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_bdg_thematic_surface IS 'Update record in view *_thematic_surface_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_BDG_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_bdg_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_bdg_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_bdg_thematic_surface(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_bdg_thematic_surface IS '(Block) insert record in view *_thematic_surface_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_BDG_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_bdg_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_bdg_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
-BEGIN
-EXECUTE format('PERFORM %I.del_thematic_surface(%L)', schema_name, OLD.id);
-RETURN OLD;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_bdg_thematic_surface(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_bdg_thematic_surface IS 'Delete record in view *_thematic_surface_*';
 
 
 --**************************************************************
@@ -491,9 +498,9 @@ COMMENT ON FUNCTION qgis_pkg.tr_del_tin_relief IS 'Delete record in view *_tin_r
 
 
 
+
+
 --**************************
-DO $$
-BEGIN
-RAISE NOTICE 'Done';
-END $$;
+RAISE NOTICE E'\n\nDone\n\n';
+END $MAINBODY$;
 --**************************

@@ -82,7 +82,7 @@ IF EXISTS(
 		SELECT table_name from information_schema.tables
 		WHERE table_name = view_name) 
 THEN
-	EXECUTE FORMAT('SELECT count(*) FROM qgis_pkg._geom_%I t
+	EXECUTE FORMAT('SELECT count(t.geom) FROM qgis_pkg._geom_%I t
 	WHERE ST_GeomFromText(%L,28992) && ST_Envelope(t.geom)',view_name,extents)
 	INTO counter;
 END IF;
@@ -103,7 +103,7 @@ IF EXISTS(
 		SELECT table_name from information_schema.tables
 		WHERE table_name = view_name) 
 THEN
-	EXECUTE FORMAT('SELECT count(*) FROM qgis_pkg._geom_%I',view_name)
+	EXECUTE FORMAT('SELECT count(geom) FROM qgis_pkg._geom_%I',view_name)
 	INTO counter;
 END IF;
 

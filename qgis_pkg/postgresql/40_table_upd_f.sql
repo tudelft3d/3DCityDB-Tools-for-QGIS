@@ -8,13 +8,17 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
+DO $MAINBODY$
+DECLARE
+BEGIN
+
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG_DEV.UPD_T_CITYOBJECT
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_cityobject(qgis_pkg.obj_cityobject, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_cityobject(
 obj         qgis_pkg.obj_cityobject,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -35,7 +39,6 @@ END IF;
 IF obj.updating_person IS NULL THEN 
   obj.updating_person := current_user;
 END IF;
-
 
 EXECUTE format('
 UPDATE %I.cityobject AS t SET
@@ -67,7 +70,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_cityobject(qgis_pkg.obj_cityobject, varchar) 
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_building(qgis_pkg.obj_building, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_building(
 obj         qgis_pkg.obj_building,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -113,7 +116,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_building(qgis_pkg.obj_building, varchar) IS '
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_building_installation(qgis_pkg.obj_building_installation, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_building_installation(
 obj         qgis_pkg.obj_building_installation,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -144,7 +147,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_building_installation(qgis_pkg.obj_building_i
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_solitary_vegetat_object(qgis_pkg.obj_solitary_vegetat_object, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_solitary_vegetat_object(
 obj         qgis_pkg.obj_solitary_vegetat_object,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -183,7 +186,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_solitary_vegetat_object(qgis_pkg.obj_solitary
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_relief_feature(qgis_pkg.obj_relief_feature, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_relief_feature(
 obj         qgis_pkg.obj_relief_feature,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -213,7 +216,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_relief_feature(qgis_pkg.obj_relief_feature, v
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_relief_component(qgis_pkg.obj_relief_component, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_relief_component(
 obj         qgis_pkg.obj_relief_component,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -243,7 +246,7 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_relief_component(qgis_pkg.obj_relief_componen
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_tin_relief(qgis_pkg.obj_tin_relief, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_tin_relief(
 obj         qgis_pkg.obj_tin_relief,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+schema_name varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -268,9 +271,9 @@ COMMENT ON FUNCTION qgis_pkg.upd_t_tin_relief(qgis_pkg.obj_tin_relief, varchar) 
 -- ***********************************************************************
 
 
+
+
 --**************************
-DO $$
-BEGIN
-RAISE NOTICE 'Done';
-END $$;
+RAISE NOTICE E'\n\nDone\n\n';
+END $MAINBODY$;
 --**************************

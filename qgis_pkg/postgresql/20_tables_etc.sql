@@ -11,13 +11,20 @@
 DROP TABLE IF EXISTS qgis_pkg.materialized_view CASCADE;
 CREATE TABLE         qgis_pkg.materialized_view (
 id            serial PRIMARY KEY,
-name          varchar,
+--parent_id     integer,
+hierarchy     integer,
+schema_name   varchar,
+view_name     varchar,
 last_refresh  timestamptz(3),
 is_up_to_date boolean
 );
 COMMENT ON TABLE qgis_pkg.materialized_view IS 'List of materialized views in the qgis_pkg schema';
-CREATE INDEX mat_view_status_name_idx     ON qgis_pkg.materialized_view (name);
-CREATE INDEX mat_view_status_uptodate_idx ON qgis_pkg.materialized_view (is_up_to_date);
+
+--CREATE INDEX mat_view_status_parent_id_idx ON qgis_pkg.materialized_view (parent_id);
+CREATE INDEX mat_view_status_hierarchy_id_idx ON qgis_pkg.materialized_view (hierarchy);
+CREATE INDEX mat_view_status_schema_name_idx  ON qgis_pkg.materialized_view (schema_name);
+CREATE INDEX mat_view_status_view_name_idx    ON qgis_pkg.materialized_view (view_name);
+CREATE INDEX mat_view_status_uptodate_idx     ON qgis_pkg.materialized_view (is_up_to_date);
 
 
 ----------------------------------------------------------------
@@ -31,6 +38,8 @@ mview_name   varchar DEFAULT NULL
 RETURNS integer AS $$
 DECLARE
 qgis_pkg_schema_name varchar := 'qgis_pkg';
+start_timestamp timestamptz(3);
+stop_timestamp timestamptz(3);
 r RECORD;
 BEGIN
 
@@ -43,12 +52,16 @@ CASE
 			WHERE pg_class.relkind = 'm' AND pg_namespace.nspname=qgis_pkg_schema_name
 			ORDER BY mview_name
 		LOOP
-			RAISE NOTICE 'Refreshing materialized view "%"', r.mview_name; 
+			start_timestamp := clock_timestamp();
 			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, r.mview_name);
+			stop_timestamp := clock_timestamp();
 			UPDATE qgis_pkg.materialized_view AS mv SET
 				is_up_to_date = TRUE,
-				last_refresh  = clock_timestamp()
-			WHERE mv.name=r.mview_name;
+				last_refresh  = stop_timestamp
+			WHERE mv.view_name=r.mview_name;
+				RAISE NOTICE 'Refreshed materialized view "%.%" in %', qgis_pkg_schema_name, r.mview_name, stop_timestamp-start_timestamp; 
+			--PERFORM pg_notify('ref',FORMAT('Refreshed materialized view "%s.%s" in %s', qgis_pkg_schema_name, r.mview_name, stop_timestamp-start_timestamp));
+					
 		END LOOP;
 		RAISE NOTICE 'All materialized views in schema "%" refreshed!', qgis_pkg_schema_name; 	
 		RETURN 1;
@@ -63,12 +76,14 @@ CASE
 					AND pg_class.relname LIKE '_geom_'||mview_schema||'_%'
 				ORDER BY table_schema, mview_name
 			LOOP
-				RAISE NOTICE 'Refreshing materialized view "%"', r.mview_name; 
+				start_timestamp := clock_timestamp();
 				EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, r.mview_name);
+				stop_timestamp := clock_timestamp();
 				UPDATE qgis_pkg.materialized_view AS mv SET
 					is_up_to_date = TRUE,
-					last_refresh  = clock_timestamp()
-				WHERE mv.name=r.mview_name;
+					last_refresh  = stop_timestamp
+				WHERE mv.view_name=r.mview_name;
+				RAISE NOTICE 'Refreshed materialized view "%.%" in %', qgis_pkg_schema_name, r.mview_name, stop_timestamp-start_timestamp; 
 			END LOOP;
 			RAISE NOTICE 'All materialized views of schema "%" refreshed!', mview_schema; 	
 			RETURN 1;
@@ -83,13 +98,14 @@ CASE
 						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
 					WHERE pg_class.relkind = 'm' AND pg_namespace.nspname=qgis_pkg_schema_name
 						AND pg_class.relname = mview_name) THEN
-			RAISE NOTICE 'Refreshing materialized view "%"', mview_name; 
-			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, mview_name);
+			start_timestamp := clock_timestamp();
+			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, r.mview_name);
+			stop_timestamp := clock_timestamp();
 			UPDATE qgis_pkg.materialized_view AS mv SET
 				is_up_to_date = TRUE,
-				last_refresh  = clock_timestamp()
-			WHERE mv.name=mview_name;
-			RAISE NOTICE 'Materialized view "%" refreshed!', mview_name;	
+				last_refresh  = stop_timestamp
+			WHERE mv.view_name=r.mview_name;
+			RAISE NOTICE 'Refreshed materialized view "%.%" in %', qgis_pkg_schema_name, r.mview_name, stop_timestamp-start_timestamp; 
 			RETURN 1;
 		ELSE
 			RAISE NOTICE 'No materialized view found with name "%"', mview_name;

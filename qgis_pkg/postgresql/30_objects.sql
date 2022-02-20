@@ -8,6 +8,12 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
+--**************************
+DO $MAINBODY$
+DECLARE
+
+BEGIN
+
 /*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table citymodel
@@ -293,53 +299,20 @@ CREATE TYPE         qgis_pkg.obj_thematic_surface AS (
 );
 COMMENT ON TYPE qgis_pkg.obj_thematic_surface IS 'This object (type) corresponds to table THEMATIC_SURFACE';
 
-/*
-----------------------------------------------------------------
--- CREATE OBJECT (TYPE) corresponding to table address_to_building
-----------------------------------------------------------------
-DROP TYPE IF EXISTS qgis_pkg.obj_address_to_building CASCADE; 
-CREATE TYPE         qgis_pkg.obj_address_to_building AS (
- building_id bigint,
- address_id  bigint
-);
-COMMENT ON TYPE qgis_pkg.obj_address_to_building IS 'This object (type) corresponds to table ADDRESS_TO_BUILDING';
 
-----------------------------------------------------------------
--- CREATE OBJECT (TYPE) corresponding to table appear_to_surface_data
-----------------------------------------------------------------
-DROP TYPE IF EXISTS qgis_pkg.obj_appear_to_surface_data CASCADE; 
-CREATE TYPE         qgis_pkg.obj_appear_to_surface_data AS (
- surface_data_id bigint,
- appearance_id   bigint
-);
-COMMENT ON TYPE qgis_pkg.obj_appear_to_surface_data IS 'This object (type) corresponds to table APPEAR_TO_SURFACE_DATA';
 
-----------------------------------------------------------------
--- CREATE OBJECT (TYPE) corresponding to table cityobject_member
-----------------------------------------------------------------
-DROP TYPE IF EXISTS qgis_pkg.obj_cityobject_member CASCADE; 
-CREATE TYPE         qgis_pkg.obj_cityobject_member AS (
- citymodel_id  bigint,
- cityobject_id bigint
-);
-COMMENT ON TYPE qgis_pkg.obj_cityobject_member IS 'This object (type) corresponds to table CITYOBJECT_MEMBER';
 
-----------------------------------------------------------------
--- CREATE OBJECT (TYPE) corresponding to table group_to_cityobject
-----------------------------------------------------------------
-DROP TYPE IF EXISTS qgis_pkg.obj_group_to_cityobject CASCADE; 
-CREATE TYPE         qgis_pkg.obj_group_to_cityobject AS (
- cityobject_id      bigint,
- cityobjectgroup_id bigint,
- role               varchar
-);
-COMMENT ON TYPE qgis_pkg.obj_group_to_cityobject IS 'This object (type) corresponds to table GROUP_TO_CITYOBJECT';
-*/
+
+
+
+
+
+
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table solitary_vegetat_object
 ----------------------------------------------------------------
---DROP TYPE IF EXISTS qgis_pkg.obj_solitary_vegetat_object CASCADE; 
+DROP TYPE IF EXISTS qgis_pkg.obj_solitary_vegetat_object CASCADE; 
 CREATE TYPE         qgis_pkg.obj_solitary_vegetat_object AS (
  id                           bigint,
  class                        varchar,
@@ -381,9 +354,20 @@ COMMENT ON TYPE qgis_pkg.obj_solitary_vegetat_object IS 'This object (type) corr
 
 
 ----------------------------------------------------------------
+-- CREATE OBJECT (TYPE) corresponding to table plant_cover
+----------------------------------------------------------------
+
+
+
+
+
+
+
+
+----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table relief_feature
 ----------------------------------------------------------------
---DROP TYPE IF EXISTS qgis_pkg.obj_relief_feature CASCADE; 
+DROP TYPE IF EXISTS qgis_pkg.obj_relief_feature CASCADE; 
 CREATE TYPE         qgis_pkg.obj_relief_feature AS (
  id  bigint,
  lod numeric
@@ -393,7 +377,7 @@ COMMENT ON TYPE qgis_pkg.obj_relief_feature IS 'This object (type) corresponds t
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table relief_component
 ----------------------------------------------------------------
---DROP TYPE IF EXISTS qgis_pkg.obj_relief_component CASCADE; 
+DROP TYPE IF EXISTS qgis_pkg.obj_relief_component CASCADE; 
 CREATE TYPE         qgis_pkg.obj_relief_component AS (
  id             bigint,
  objectclass_id integer,
@@ -405,7 +389,7 @@ COMMENT ON TYPE qgis_pkg.obj_relief_component IS 'This object (type) corresponds
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table tin_relief
 ----------------------------------------------------------------
---DROP TYPE IF EXISTS qgis_pkg.obj_tin_relief CASCADE; 
+DROP TYPE IF EXISTS qgis_pkg.obj_tin_relief CASCADE; 
 CREATE TYPE         qgis_pkg.obj_tin_relief AS (
  id                  bigint,
  max_length          double precision,
@@ -423,8 +407,6 @@ COMMENT ON TYPE qgis_pkg.obj_tin_relief IS 'This object (type) corresponds to ta
 
 
 --**************************
-DO $$
-BEGIN
-RAISE NOTICE 'Done';
-END $$;
+RAISE NOTICE E'\n\nDone\n\n';
+END $MAINBODY$;
 --**************************

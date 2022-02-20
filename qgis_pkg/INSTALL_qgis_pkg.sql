@@ -8,8 +8,12 @@ SET client_min_messages TO WARNING;
 \i postgresql/10_setup.sql
 
 \echo
-\echo 'Installing the tables'
-\i postgresql/20_tables_etc.sql
+\echo 'Installing the main functions'
+\i postgresql/20_functions.sql
+
+\echo
+\echo 'Installing other functions'
+\i postgresql/25_functions_k.sql
 
 \echo
 \echo 'Installing the objects (types)'
@@ -33,15 +37,7 @@ SET client_min_messages TO WARNING;
 
 \echo
 \echo 'Installing the views'
-\i postgresql/80_views.sql
-
-\echo
-\echo 'Installing the triggers'
-\i postgresql/90_triggers.sql
-
-\echo
-\echo 'Refreshing the materialized views for the first time. PATIENCE! It may take a bit of time...'
-\i postgresql/100_refresh_mat_views.sql
+\i postgresql/80_views_and_triggers.sql
 
 \echo
 \echo '**********************************************************'

@@ -8,745 +8,1826 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_LOD0_FOOTPRINT
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod0_footprint CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod0_footprint AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod0_footprint_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod0_footprint IS 'Materialised view of Building LoD0 footprint geometries (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod0_fp_id_idx   ON qgis_pkg._geom_citydb_bdg_lod0_footprint (co_id);
-CREATE INDEX _g_citydb_bdg_lod0_fp_geom_spx ON qgis_pkg._geom_citydb_bdg_lod0_footprint USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod0_footprint');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD0_FOOTPRINT
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod0_footprint CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod0_footprint AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod0_footprint_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod0_footprint IS 'Materialised view of BuildingPart LoD0 footprint geometries (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod0_fp_id_idx   ON qgis_pkg._geom_citydb_bdg_lod0_footprint (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod0_fp_geom_spx ON qgis_pkg._geom_citydb_bdg_lod0_footprint USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod0_footprint');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_LOD0_ROOFEDGE
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod0_roofedge CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod0_roofedge AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod0_roofprint_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod0_roofedge IS 'Materialised view of Building LoD0 roofedge geometries (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod0_re_id_idx   ON qgis_pkg._geom_citydb_bdg_lod0_roofedge (co_id);
-CREATE INDEX _g_citydb_bdg_lod0_re_geom_spx ON qgis_pkg._geom_citydb_bdg_lod0_roofedge USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod0_roofedge');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD0_ROOFEDGE
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod0_roofedge CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod0_roofedge AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod0_roofprint_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod0_roofedge IS 'Materialised view of BuildingPart LoD0 roofedge geometries (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod0_re_id_idx   ON qgis_pkg._geom_citydb_bdg_lod0_roofedge (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod0_re_geom_spx ON qgis_pkg._geom_citydb_bdg_lod0_roofedge USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod0_roofedge');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_LOD1_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod1_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod1_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_multi_surface_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod1_multisurf IS 'Materialised view of Building, as LoD1 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod1_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_lod1_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_lod1_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_lod1_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod1_multisurf');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD1_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod1_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod1_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_multi_surface_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod1_multisurf IS 'Materialised view of BuildingPart, as LoD1 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod1_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_part_lod1_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod1_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_part_lod1_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod1_multisurf');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod2_multi_surface_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod2_multisurf IS 'Materialised view of Building, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod2_multisurf');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod2_multi_surface_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod2_multisurf IS 'Materialised view of BuildingPart, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_part_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_part_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod2_multisurf');
-
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BUILDING_LOD1_SOLID
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod1_solid CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod1_solid AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_solid_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod1_solid IS 'Materialised view of Building, as LoD1 solid (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod1_s_id_idx   ON qgis_pkg._geom_citydb_bdg_lod1_solid (co_id);
-CREATE INDEX _g_citydb_bdg_lod1_s_geom_spx ON qgis_pkg._geom_citydb_bdg_lod1_solid USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod1_solid');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD1_SOLID
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod1_solid CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod1_solid AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_solid_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod1_solid IS 'Materialised view of BuildingPart, as LoD1 solid (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod1_s_id_idx   ON qgis_pkg._geom_citydb_bdg_part_lod1_solid (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod1_s_geom_spx ON qgis_pkg._geom_citydb_bdg_part_lod1_solid USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod1_solid');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BUILDING_LOD2_SOLID
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod2_solid CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod2_solid AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod2_solid_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod2_solid IS 'Materialised view of Building, as LoD2 solid (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_lod2_s_id_idx   ON qgis_pkg._geom_citydb_bdg_lod2_solid (co_id);
-CREATE INDEX _g_citydb_bdg_lod2_s_geom_spx ON qgis_pkg._geom_citydb_bdg_lod2_solid USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_lod2_solid');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD2_SOLID
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod2_solid CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod2_solid AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod2_solid_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod2_solid IS 'Materialised view of BuildingPart, as LoD2 solid (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_part_lod2_s_id_idx   ON qgis_pkg._geom_citydb_bdg_part_lod2_solid (co_id);
-CREATE INDEX _g_citydb_bdg_part_lod2_s_geom_spx ON qgis_pkg._geom_citydb_bdg_part_lod2_solid USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_part_lod2_solid');
-
-/*
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BUILDING_LOD1_POLYHEDRALSURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_lod1_polyhedralsurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_lod1_polyhedralsurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		sg.solid_geometry AS geom  		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_solid_id AND b.objectclass_id = 26)
-	WHERE 
-		sg.solid_geometry IS NOT NULL;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_lod1_polyhedralsurf IS 'View of Building, as LoD1 solid (polyhedralsurface in QGIS)';
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD1_POLYHEDRALSURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_part_lod1_polyhedralsurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_part_lod1_polyhedralsurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		sg.solid_geometry AS geom  		
-	FROM 
-		citydb.building AS b
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = b.lod1_solid_id AND b.objectclass_id = 25)
-	WHERE 
-		sg.solid_geometry IS NOT NULL;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_part_lod1_polyhedralsurf IS 'View of BuildingPart, as LoD1 solid (polyhedralsurface in QGIS)';
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BUILDING_LOD2_POLYHEDRALSURF
----------------------------------------------------------------
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG._GEOM_CITYDB_BDG_PART_LOD1_POLYHEDRALSURF
----------------------------------------------------------------
-
-*/
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_GROUNDSURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_groundsurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_groundsurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 35)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_groundsurface_lod2_multisurf IS 'Materialized view of (Building) GroundSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_groundsurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_groundsurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_groundsurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_groundsurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_groundsurface_lod2_multisurf');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_WALLSURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_wallsurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_wallsurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 34)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_wallsurface_lod2_multisurf IS 'Materialized view of (Building) WallSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_wallsurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_wallsurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_wallsurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_wallsurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_wallsurface_lod2_multisurf');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_ROOFSURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_roofsurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_roofsurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 33)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_roofsurface_lod2_multisurf IS 'Materialized view of (Building) RoofSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_roofsurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_roofsurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_roofsurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_roofsurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_roofsurface_lod2_multisurf');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_CLOSURESURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_closuresurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_closuresurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 36)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_closuresurface_lod2_multisurf IS 'Materialized view of (Building) ClosureSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_closuresurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_closuresurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_closuresurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_closuresurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_closuresurface_lod2_multisurf');
-
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_OUTERCEILINGSURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_outerceilingsurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_outerceilingsurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 60)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_outerceilingsurface_lod2_multisurf IS 'Materialized view of (Building) OuterCeilingSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_outerceilingsurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_outerceilingsurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_outerceilingsurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_outerceilingsurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_outerceilingsurface_lod2_multisurf');
-
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_OUTERFLOORSURFACE_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_outerfloorsurface_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_outerfloorsurface_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.thematic_surface AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_multi_surface_id AND o.objectclass_id = 61)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_outerfloorsurface_lod2_multisurf IS 'Materialized view of (Building) OuterFloorSurface, as LoD2 multisurface (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_outerfloorsurf_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_outerfloorsurface_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_outerfloorsurf_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_outerfloorsurface_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_outerfloorsurface_lod2_multisurf');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_BDG_OUTERINSTALLATION_LOD2_MULTISURF
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_bdg_outerinstallation_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_bdg_outerinstallation_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.building_installation AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_brep_id AND o.objectclass_id = 27)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_bdg_outerinstallation_lod2_multisurf IS 'Materialized view of (Building) OuterInstallation, as LoD2 geometry (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_bdg_outerinstallation_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_bdg_outerinstallation_lod2_multisurf (co_id);
-CREATE INDEX _g_citydb_bdg_outerinstallation_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_bdg_outerinstallation_lod2_multisurf USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_bdg_outerinstallation_lod2_multisurf');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_RELIEF_FEATURE_LOD1_POLYGON
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_relief_feature_lod1_polygon CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_relief_feature_lod1_polygon AS
-	SELECT
-		o.id::bigint AS co_id,
-		co.envelope::geometry(PolygonZ) AS geom 
-	FROM 
-		citydb.relief_feature AS o
-		INNER JOIN citydb.cityobject AS co ON (co.id = o.id AND o.objectclass_id = 14)
-	WHERE 
-		lod = 1
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_relief_feature_lod1_polygon IS 'Materialized view of Relief Feature (extents), as LoD1 geometry (polygon in QGIS)';
-CREATE INDEX _g_citydb_relief_feature_lod1_p_id_idx   ON qgis_pkg._geom_citydb_relief_feature_lod1_polygon (co_id);
-CREATE INDEX _g_citydb_relief_feature_lod1_p_geom_spx ON qgis_pkg._geom_citydb_relief_feature_lod1_polygon USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_relief_feature_lod1_polygon');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_RELIEF_FEATURE_LOD2_POLYGON
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_relief_feature_lod2_polygon CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_relief_feature_lod2_polygon AS
-	SELECT
-		o.id::bigint AS co_id,
-		co.envelope::geometry(PolygonZ) AS geom 
-	FROM 
-		citydb.relief_feature AS o
-		INNER JOIN citydb.cityobject AS co ON (co.id = o.id AND o.objectclass_id = 14)
-	WHERE 
-		lod = 2
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_relief_feature_lod2_polygon IS 'Materialized view of Relief Feature (extents), as LoD2 geometry (polygon in QGIS)';
-CREATE INDEX _g_citydb_relief_feature_lod2_p_id_idx   ON qgis_pkg._geom_citydb_relief_feature_lod2_polygon (co_id);
-CREATE INDEX _g_citydb_relief_feature_lod2_p_geom_spx ON qgis_pkg._geom_citydb_relief_feature_lod2_polygon USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_relief_feature_lod2_polygon');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_TIN_RELIEF_LOD1_TIN
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_tin_relief_lod1_tin CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_tin_relief_lod1_tin AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.tin_relief AS o
-		INNER JOIN citydb.relief_component AS o2 ON (o2.id = o.id AND o.objectclass_id = 16 AND o2.lod=1)
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.surface_geometry_id AND o.objectclass_id = 16)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_tin_relief_lod1_tin IS 'Materialized view of TINRelief, as LoD1 TIN (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_tin_relief_lod1_tin_id_idx   ON qgis_pkg._geom_citydb_tin_relief_lod1_tin (co_id);
-CREATE INDEX _g_citydb_tin_relief_lod1_tin_geom_spx ON qgis_pkg._geom_citydb_tin_relief_lod1_tin USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_tin_relief_lod1_tin');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_TIN_RELIEF_LOD2_TIN
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_tin_relief_lod2_tin CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_tin_relief_lod2_tin AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.tin_relief AS o
-		INNER JOIN citydb.relief_component AS o2 ON (o2.id = o.id AND o.objectclass_id = 16 AND o2.lod=2)
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.surface_geometry_id AND o.objectclass_id = 16)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_tin_relief_lod2_tin IS 'Materialized view of TINRelief, as LoD2 TIN (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_tin_relief_lod2_tin_id_idx   ON qgis_pkg._geom_citydb_tin_relief_lod2_tin (co_id);
-CREATE INDEX _g_citydb_tin_relief_lod2_tin_geom_spx ON qgis_pkg._geom_citydb_tin_relief_lod2_tin USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_tin_relief_lod2_tin');
-
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_SOLITARY_VEGETAT_OBJECT_LOD2_multisurf
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_multisurf CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_multisurf AS
-	SELECT
-		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(sg.geometry)::geometry(MultiPolygonZ) AS geom 		
-	FROM 
-		citydb.solitary_vegetat_object AS o
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = o.lod2_brep_id AND o.objectclass_id = 7)
-	WHERE 
-		sg.geometry IS NOT NULL
-	GROUP BY sg.cityobject_id
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_multisurf IS 'Materialized view of Solitary Vegetation Object, as LoD2 geometry (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_sol_veg_obj_lod2_ms_id_idx   ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_multisurf  (co_id);
-CREATE INDEX _g_citydb_sol_veg_obj_lod2_ms_geom_spx ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_multisurf  USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_solitary_vegetat_object_lod2_multisurf');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_SOLITARY_VEGETAT_OBJECT_LOD1_IMPLICITREP
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_solitary_vegetat_object_lod1_implicitrep CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_solitary_vegetat_object_lod1_implicitrep AS
-	SELECT
-		o.id::bigint AS co_id,
-		ST_SetSRID(
-			ST_Affine(ST_Collect(sg.implicit_geometry),
-				   split_part(lod1_implicit_transformation, ' ', 1)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod1_implicit_transformation, ' ', 6)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod1_implicit_transformation, ' ', 11)::numeric,
-				   ST_X(o.lod1_implicit_ref_point),
-				   ST_Y(o.lod1_implicit_ref_point),
-				   ST_Z(o.lod1_implicit_ref_point)
-				   ),
-			srs.srid)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.solitary_vegetat_object AS o
-		INNER JOIN citydb.implicit_geometry AS ig ON (ig.id = o.lod1_implicit_rep_id AND o.objectclass_id = 7)
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id),
-		citydb.database_srs AS srs
-	WHERE 
-		sg.implicit_geometry IS NOT NULL
-	GROUP BY o.id,srs.srid
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_solitary_vegetat_object_lod1_implicitrep IS 'Materialized view of Solitary Vegetation Object, as LoD2 implicit (brep) geometry (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_sol_veg_obj_lod1_ig_id_idx   ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod1_implicitrep (co_id);
-CREATE INDEX _g_citydb_sol_veg_obj_lod1_ig_geom_spx ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod1_implicitrep USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_solitary_vegetat_object_lod1_implicitrep');
-
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_SOLITARY_VEGETAT_OBJECT_LOD2_IMPLICITREP
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_implicitrep CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_implicitrep AS
-	SELECT
-		o.id::bigint AS co_id,
-		ST_SetSRID(
-			ST_Affine(ST_Collect(sg.implicit_geometry),
-				   split_part(lod2_implicit_transformation, ' ', 1)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod2_implicit_transformation, ' ', 6)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod2_implicit_transformation, ' ', 11)::numeric,
-				   ST_X(o.lod2_implicit_ref_point),
-				   ST_Y(o.lod2_implicit_ref_point),
-				   ST_Z(o.lod2_implicit_ref_point)
-				   ),
-			srs.srid)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.solitary_vegetat_object AS o
-		INNER JOIN citydb.implicit_geometry AS ig ON (ig.id = o.lod2_implicit_rep_id AND o.objectclass_id = 7)
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id),
-		citydb.database_srs AS srs
-	WHERE 
-		sg.implicit_geometry IS NOT NULL
-	GROUP BY o.id,srs.srid
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_implicitrep IS 'Materialized view of Solitary Vegetation Object, as LoD2 implicit (brep) geometry (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_sol_veg_obj_lod2_ig_id_idx   ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_implicitrep (co_id);
-CREATE INDEX _g_citydb_sol_veg_obj_lod2_ig_geom_spx ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod2_implicitrep USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_solitary_vegetat_object_lod2_implicitrep');
-
---*************************************************************
---*************************************************************
----------------------------------------------------------------
--- Create MATERIALIZED VIEW QGIS_PKG.CITYDB_SOLITARY_VEGETAT_OBJECT_LOD3_IMPLICITREP
----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS qgis_pkg._geom_citydb_solitary_vegetat_object_lod3_implicitrep CASCADE;
-CREATE MATERIALIZED VIEW         qgis_pkg._geom_citydb_solitary_vegetat_object_lod3_implicitrep AS
-	SELECT
-		o.id::bigint AS co_id,
-		ST_SetSRID(
-			ST_Affine(ST_Collect(sg.implicit_geometry),
-				   split_part(lod3_implicit_transformation, ' ', 1)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod3_implicit_transformation, ' ', 6)::numeric,
-				   0,
-				   0,
-				   0,
-				   split_part(lod3_implicit_transformation, ' ', 11)::numeric,
-				   ST_X(o.lod3_implicit_ref_point),
-				   ST_Y(o.lod3_implicit_ref_point),
-				   ST_Z(o.lod3_implicit_ref_point)
-				   ),
-			srs.srid)::geometry(MultiPolygonZ) AS geom		
-	FROM 
-		citydb.solitary_vegetat_object AS o
-		INNER JOIN citydb.implicit_geometry AS ig ON (ig.id = o.lod3_implicit_rep_id AND o.objectclass_id = 7)
-		INNER JOIN citydb.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id),
-		citydb.database_srs AS srs
-	WHERE 
-		sg.implicit_geometry IS NOT NULL
-	GROUP BY o.id,srs.srid
-WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW qgis_pkg._geom_citydb_solitary_vegetat_object_lod3_implicitrep IS 'Materialized view of Solitary Vegetation Object, as LoD3 implicit (brep) geometry (multipolygon in QGIS)';
-CREATE INDEX _g_citydb_sol_veg_obj_lod3_ig_id_idx   ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod3_implicitrep (co_id);
-CREATE INDEX _g_citydb_sol_veg_obj_lod3_ig_geom_spx ON qgis_pkg._geom_citydb_solitary_vegetat_object_lod3_implicitrep USING gist (geom);
-
-INSERT INTO qgis_pkg.materialized_view (is_up_to_date, name) VALUES
-(FALSE, '_geom_citydb_solitary_vegetat_object_lod3_implicitrep');
-
-
-
---**************************
-DO $$
+DO $MAINBODY$
+DECLARE
 BEGIN
-RAISE NOTICE 'Done';
-END $$;
---**************************
 
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.CREATE_MVIEWS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.create_mviews(varchar, integer, integer, numeric, geometry) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.create_mviews(
+citydb_schema 		varchar DEFAULT 'citydb',
+perform_snapping 	integer DEFAULT 0,
+digits 				integer	DEFAULT 3,
+area_poly_min 		numeric DEFAULT 0.0001,
+mview_bbox			geometry DEFAULT NULL
+) 
+RETURNS integer AS $$
+
+DECLARE
+srid_id integer; 
+mview_bbox_srid integer := ST_SRID(mview_bbox);
+mview_bbox_xmin numeric;
+mview_bbox_ymin numeric;
+mview_bbox_xmax numeric;
+mview_bbox_ymax numeric;
+r 				RECORD;
+s 				RECORD;
+t 				RECORD;
+u 				RECORD;
+l_name 			varchar;
+view_name 		varchar;
+mview_name 		varchar;
+mview_idx_name 	varchar;
+mview_spx_name 	varchar;
+sql_statement 	varchar;
+sql_where 		varchar;
+feature_type 	varchar;
+qml_file_name 	varchar;
+citydb_envelope geometry(Polygon);
+
+BEGIN
+RAISE NOTICE 'Creating materialized views';
+EXECUTE format('SELECT srid FROM citydb.database_srs LIMIT 1') INTO srid_id;
+--RAISE NOTICE 'Srid is: %', srid_id;
+
+-- Delete all existing materialized views for the selected citydb schema
+--sql_statement := concat('
+--DELETE FROM qgis_pkg.layer_metadata WHERE schema_name = ''',citydb_schema,''';');
+--EXECUTE sql_statement;
+EXECUTE format('DELETE FROM qgis_pkg.layer_metadata WHERE schema_name = %L',citydb_schema);
+
+IF mview_bbox_srid IS NULL OR mview_bbox_srid <> srid_id THEN
+	mview_bbox := NULL;
+ELSE
+	mview_bbox_xmin := floor(ST_XMin(mview_bbox));
+	mview_bbox_ymin := floor(ST_YMin(mview_bbox));
+	mview_bbox_xmax := ceil(ST_XMax(mview_bbox));
+	mview_bbox_ymax := ceil(ST_YMax(mview_bbox));
+	mview_bbox := ST_MakeEnvelope(mview_bbox_xmin, mview_bbox_ymin, mview_bbox_xmax, mview_bbox_ymax, srid_id);
+END IF;
+
+-- ***********************
+-- BUILDING MODULE
+-- ***********************
+feature_type     := 'Building';
+
+FOR r IN 
+	SELECT * FROM (VALUES
+	('Building'::varchar, 26::integer, 'bdg'::varchar),
+	('BuildingPart'     , 25         , 'bdg_part')		   
+	) AS t(class_name, class_id, class_label)
+LOOP
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING(PART)_LOD0
+---------------------------------------------------------------
+l_name         := format(      '%I_lod0',           				r.class_label);
+view_name      := format(   '%I_%I_lod0',           citydb_schema, r.class_label);		
+mview_name     := format('_g_%I_%I_lod0', 			citydb_schema, r.class_label);
+mview_idx_name := format('_g_%I_%I_lod0_id_idx',    citydb_schema, r.class_label);
+mview_spx_name := format('_g_%I_%I_lod0_geom_spx',  citydb_schema, r.class_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			b1.lod0_footprint_id AS sg_id
+		FROM
+			',citydb_schema,'.building AS b1
+			INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = b1.id AND b1.objectclass_id = ',r.class_id,' ',sql_where,')
+		UNION
+		SELECT
+			b2.lod0_roofprint_id AS sg_id
+		FROM
+			',citydb_schema,'.building AS b2
+			INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = b2.id AND b2.objectclass_id = ',r.class_id,' ',sql_where,')
+		) AS b
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = b.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' LoD0 in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''lod0'',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING(PART)_LOD0_FOOTPRINT/ROOFEDGE
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('footprint'::varchar, 'footprint'::varchar),
+		('roofedge'          , 'roofprint')		   
+		) AS t(themsurf_name, themsurf_label)
+	LOOP
+
+l_name         := format(      '%I_lod0_%I',							r.class_label, s.themsurf_name);
+view_name      := format(   '%I_%I_lod0_%I',			citydb_schema, r.class_label, s.themsurf_name);
+mview_name     := format('_g_%I_%I_lod0_%I',			citydb_schema, r.class_label, s.themsurf_name);
+mview_idx_name := format('_g_%I_%I_lod0_%I_id_idx',		citydb_schema, r.class_label, s.themsurf_name);
+mview_spx_name := format('_g_%I_%I_lod0_%I_geom_spx',	citydb_schema, r.class_label, s.themsurf_name);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.building AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,') 
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.lod0_',s.themsurf_label,'_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' LoD0 ',s.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''lod0'',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- bdg lod0 foot/roofprint
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING(PART)_LOD1
+---------------------------------------------------------------
+l_name         := format(      '%I_lod1',							r.class_label);
+view_name      := format(   '%I_%I_lod1',			citydb_schema, r.class_label);
+mview_name     := format('_g_%I_%I_lod1',			citydb_schema, r.class_label);
+mview_idx_name := format('_g_%I_%I_lod1_id_idx',	citydb_schema, r.class_label);
+mview_spx_name := format('_g_%I_%I_lod1_geom_spx',	citydb_schema, r.class_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			o.id AS co_id, 	
+			CASE
+				WHEN o.lod1_solid_id IS NOT NULL THEN o.lod1_solid_id
+				ELSE o.lod1_multi_surface_id
+			END	AS sg_id 
+		FROM 
+			',citydb_schema,'.building AS o
+			INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id=co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,') 
+		WHERE			
+			NOT(o.lod1_solid_id IS NULL AND o.lod1_multi_surface_id IS NULL)
+		) AS foo
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' LoD1 in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''lod1'',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING(PART)_LOD2-4
+---------------------------------------------------------------
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD2'::varchar, 'lod2'::varchar),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I', 			citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',  	citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		foo2.co_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			foo.co_id,
+			unnest(foo.sg_id_array) AS sg_id
+		FROM (
+			SELECT
+				-- coalesce(o.id, ts_t.co_id) as co_id,
+				o.id AS co_id,
+				CASE 
+					WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
+					WHEN o.',t.lodx_label,'_solid_id IS NOT NULL THEN ARRAY[o.',t.lodx_label,'_solid_id]
+					ELSE ARRAY[o.',t.lodx_label,'_multi_surface_id]
+				END AS sg_id_array 
+			FROM 
+				',citydb_schema,'.building AS o
+				INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id= ',r.class_id,' ',sql_where,')
+				-- FULL OUTER JOIN
+				INNER JOIN (
+					SELECT ts.building_id AS co_id, array_agg(ts.',t.lodx_label,'_multi_surface_id) AS sg_id_array 
+					FROM 
+						',citydb_schema,'.thematic_surface AS ts
+						INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = ts.id ',sql_where,')
+						INNER JOIN ',citydb_schema,'.building AS b1 ON (ts.building_id = b1.id AND b1.objectclass_id = ',r.class_id,')	
+					GROUP BY ts.building_id
+					) AS ts_t ON (ts_t.co_id = o.id)
+			WHERE 
+				sg_id_array IS NOT NULL
+			) AS foo
+		) AS foo2
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY foo2.co_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING(PART)_LOD2-4_THEMATIC_SURFACES
+---------------------------------------------------------------
+		FOR u IN 
+			SELECT * FROM (VALUES
+			('RoofSurface'::varchar , 33::integer, 'roofsurf'::varchar),
+			('WallSurface'			, 34		 , 'wallsurf'),
+			('GroundSurface'		, 35		 , 'groundsurf'),
+			('ClosureSurface'		, 36		 , 'closuresurf'),
+			('OuterCeilingSurface'	, 60		 , 'outerceilingsurf'),
+			('OuterFloorSurface'	, 61		 , 'outerfloorsurf')
+			) AS t(themsurf_name, class_id, themsurf_label)
+		LOOP
+
+l_name         := format(      '%I_%I_%I',							r.class_label, t.lodx_label, u.themsurf_label);
+view_name      := format(   '%I_%I_%I_%I',			citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_name     := format('_g_%I_%I_%I_%I', 			citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_id_idx',   citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+qml_file_name  := concat(r.class_label,'_them_surf_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.thematic_surface AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,')		
+		INNER JOIN ',citydb_schema,'.building AS b ON (o.building_id = b.id AND b.objectclass_id = ',r.class_id,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+		END LOOP; -- bdg thematic surface
+	END LOOP; -- bdg lod2-4
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_BUILDINGINSTALLATION_**_LOD2-4
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('BuildingInstallation'::varchar, 27::integer, 'out_inst'::varchar)
+		) AS t(class_name, class_id, class_label)
+	LOOP
+		FOR t IN 
+			SELECT * FROM (VALUES
+			('LoD2'::varchar, 'lod2'::varchar),
+			('LoD3'			, 'lod3'),
+			('LoD4'			, 'lod4')		
+			) AS t(lodx_name, lodx_label)
+		LOOP
+l_name         := format(      '%I_%I_%I',							r.class_label, s.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_id_idx',	citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, s.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT 
+		foo2.co_id AS co_id,
+		st_collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM ( 
+			SELECT 
+				foo.co_id,
+				unnest(foo.sg_id_array) AS sg_id
+			FROM ( 
+					SELECT
+						o.id AS co_id,
+						CASE
+							WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
+							ELSE ARRAY[o.',t.lodx_label,'_brep_id]
+						END AS sg_id_array
+					FROM 
+						',citydb_schema,'.building_installation AS o
+						INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+						INNER JOIN (
+							SELECT
+								o.building_installation_id AS co_id,
+								array_agg(o.',t.lodx_label,'_multi_surface_id) AS sg_id_array
+							FROM 
+								',citydb_schema,'.thematic_surface AS o
+								INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = o.id ',sql_where,')
+								INNER JOIN ',citydb_schema,'.building AS b ON (o.building_id = b.id AND b.objectclass_id = ',r.class_id,')
+							WHERE 
+								o.building_installation_id IS NOT NULL
+							GROUP BY o.building_installation_id
+						) AS ts_t ON (ts_t.co_id = o.id)
+					WHERE
+						o.',t.lodx_label,'_implicit_rep_id IS NULL
+				) AS foo
+	   ) AS foo2
+	INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY foo2.co_id
+	UNION');
+-- the need to split is due to max 100 arguments allowed in the concat function.
+sql_statement := concat(sql_statement,'	
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.building_installation AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,')
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_label,'_implicit_rep_id)
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',s.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_BUILDING_INSTALLATION_LOD2-4_THEMATIC_SURFACES
+---------------------------------------------------------------
+			FOR u IN 
+				SELECT * FROM (VALUES
+				('RoofSurface'::varchar , 33::integer, 'roofsurf'::varchar),
+				('WallSurface'			, 34		 , 'wallsurf'),
+				('GroundSurface'		, 35		 , 'groundsurf'),
+				('ClosureSurface'		, 36		 , 'closuresurf'),
+				('OuterCeilingSurface'	, 60		 , 'outerceilingsurf'),
+				('OuterFloorSurface'	, 61		 , 'outerfloorsurf')
+				) AS t(themsurf_name, class_id, themsurf_label)
+			LOOP
+
+l_name         := format(      '%I_%I_%I_%I',							r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+view_name      := format(   '%I_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_name     := format('_g_%I_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_%I_id_idx',	citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_them_surf_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.thematic_surface AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
+		INNER JOIN ',citydb_schema,'.building_installation AS bi ON (o.building_installation_id = bi.id AND bi.objectclass_id = ',s.class_id,')
+		INNER JOIN ',citydb_schema,'.building AS b ON (o.building_id = b.id AND b.objectclass_id = ',r.class_id,')		
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',s.class_name,' ',t.lodx_name,' ',u.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+			END LOOP; -- outer bgd out install thematic surfaces loop
+		END LOOP; -- outer bgd out install lod loop
+	END LOOP; -- outer bgd install loop
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_INT_BUILDING_INSTALLATION_**_LOD4
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('IntBuildingInstallation'::varchar, 28::integer, 'int_inst'::varchar)
+		) AS t(class_name, class_id, class_label)
+	LOOP
+		FOR t IN 
+			SELECT * FROM (VALUES
+			('LoD4'::varchar, 'lod4'::varchar)
+			) AS t(lodx_name, lodx_label)
+		LOOP
+l_name         := format(      '%I_%I_%I',							r.class_label, s.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_id_idx',	citydb_schema, r.class_label, s.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, s.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT 
+		foo2.co_id AS co_id,
+		st_collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM ( 
+			SELECT 
+				foo.co_id,
+				unnest(foo.sg_id_array) AS sg_id
+			FROM ( 
+					SELECT
+						o.id AS co_id,
+						CASE
+							WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
+							ELSE ARRAY[o.',t.lodx_label,'_brep_id]
+						END AS sg_id_array
+					FROM 
+						',citydb_schema,'.building_installation AS o
+						INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+						INNER JOIN (
+							SELECT
+								o.building_installation_id AS co_id,
+								array_agg(o.',t.lodx_label,'_multi_surface_id) AS sg_id_array
+							FROM 
+								',citydb_schema,'.thematic_surface AS o
+								INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = o.id ',sql_where,')
+								INNER JOIN ',citydb_schema,'.building AS b ON (o.building_id = b.id AND b.objectclass_id = ',r.class_id,')
+							WHERE 
+								o.building_installation_id IS NOT NULL
+							GROUP BY o.building_installation_id
+						) AS ts_t ON (ts_t.co_id = o.id)
+					WHERE
+						o.',t.lodx_label,'_implicit_rep_id IS NULL
+				) AS foo
+	   ) AS foo2
+	INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY foo2.co_id
+	UNION');
+-- the need to split is due to max 100 arguments allowed in the concat function.
+sql_statement := concat(sql_statement,'	
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.building_installation AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,')
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_label,'_implicit_rep_id)
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',s.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_INT_BUILDING_INSTALLATION_**_LOD4_THEMATIC_SURF
+---------------------------------------------------------------
+			FOR u IN 
+				SELECT * FROM (VALUES
+				('RoofSurface'::varchar , 33::integer, 'roofsurf'::varchar),
+				('WallSurface'			, 34		 , 'wallsurf'),
+				('GroundSurface'		, 35		 , 'groundsurf'),
+				('ClosureSurface'		, 36		 , 'closuresurf'),
+				('OuterCeilingSurface'	, 60		 , 'outerceilingsurf'),
+				('OuterFloorSurface'	, 61		 , 'outerfloorsurf')
+				) AS t(themsurf_name, class_id, themsurf_label)
+			LOOP
+
+l_name         := format(      '%I_%I_%I_%I',							r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+view_name      := format(   '%I_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_name     := format('_g_%I_%I_%I_%I_%I',			citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_%I_id_idx',	citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, s.class_label, t.lodx_label, u.themsurf_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_them_surf_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.thematic_surface AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
+		INNER JOIN ',citydb_schema,'.building_installation AS bi ON (o.building_installation_id = bi.id AND bi.objectclass_id = ',s.class_id,')
+		INNER JOIN ',citydb_schema,'.building AS b ON (o.building_id = b.id AND b.objectclass_id = ',r.class_id,')		
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',s.class_name,' ',t.lodx_name,' ',u.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+			END LOOP; -- interior bgd install thematic surfaces lod loop
+
+		END LOOP; -- interior bgd install lod loop
+	END LOOP; -- interior bgd install loop
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_ROOM_LOD4
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('Room'::varchar, 41::integer, 'room'::varchar)
+		) AS t(class_name, class_id, class_label)
+	LOOP
+
+l_name         := format(      '%I_%I_lod4',							r.class_label, s.class_label);
+view_name      := format(   '%I_%I_%I_lod4',			citydb_schema, r.class_label, s.class_label);
+mview_name     := format('_g_%I_%I_%I_lod4', 			citydb_schema, r.class_label, s.class_label);
+mview_idx_name := format('_g_%I_%I_%I_lod4_id_idx', 	citydb_schema, r.class_label, s.class_label);
+mview_spx_name := format('_g_%I_%I_%I_lod4_geom_spx',	citydb_schema, r.class_label, s.class_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+
+	SELECT
+		foo2.co_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			foo.co_id,
+			unnest(foo.sg_id_array) AS sg_id
+		FROM (
+			SELECT
+				-- coalesce(o.id, ts_t.co_id) as co_id,
+				o.id AS co_id,
+				CASE 
+					WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
+					WHEN o.',t.lodx_label,'_solid_id IS NOT NULL THEN ARRAY[o.',t.lodx_label,'_solid_id]
+					ELSE ARRAY[o.',t.lodx_label,'_multi_surface_id]
+				END AS sg_id_array 
+			FROM 
+				',citydb_schema,'.room AS o
+				INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+				INNER JOIN ',citydb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,')
+				-- FULL OUTER JOIN
+				INNER JOIN (
+					SELECT ts.building_id AS co_id, array_agg(ts.',t.lodx_label,'_multi_surface_id) AS sg_id_array 
+					FROM 
+						',citydb_schema,'.thematic_surface AS ts
+						INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = ts.id ',sql_where,')
+						INNER JOIN ',citydb_schema,'.room AS r ON (ts.building_id = r.id AND r.objectclass_id = ',s.class_id,' ',sql_where,')
+						INNER JOIN ',citydb_schema,'.building AS b1 ON (b1.id = r.building_id AND b1.objectclass_id = ',r.class_id,')						
+					GROUP BY ts.building_id
+					) AS ts_t ON (ts_t.co_id = o.id)
+			WHERE 
+				sg_id_array IS NOT NULL
+			) AS foo
+		) AS foo2
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY foo2.co_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_ROOM_LOD4_THEMATIC_SURFACES
+---------------------------------------------------------------
+			FOR u IN 
+				SELECT * FROM (VALUES
+				('CeilingSurface'::varchar , 30::integer, 'ceilingsurf'::varchar),
+				('InteriorWall'			   , 31		 	, 'intwallsurf'),
+				('FloorSurface'			   , 32		    , 'floorsurf')
+				) AS t(themsurf_name, class_id, themsurf_label)
+			LOOP
+
+l_name         := format(      '%I_%I_lod4_%I',								r.class_label, s.class_label, u.themsurf_label);
+view_name      := format(   '%I_%I_%I_lod4_%I',				citydb_schema, r.class_label, s.class_label, u.themsurf_label);
+mview_name     := format('_g_%I_%I_%I_lod4_%I',				citydb_schema, r.class_label, s.class_label, u.themsurf_label);
+mview_idx_name := format('_g_%I_%I_%I_lod4_%I_id_idx',		citydb_schema, r.class_label, s.class_label, u.themsurf_label);
+mview_spx_name := format('_g_%I_%I_%I_lod4_%I_geom_spx',	citydb_schema, r.class_label, s.class_label, u.themsurf_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_them_surf_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.thematic_surface AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
+		INNER JOIN ',citydb_schema,'.room AS r ON (o.room_id = r.id AND r.objectclass_id = ',s.class_id,')
+		INNER JOIN ',citydb_schema,'.building AS b ON (r.building_id = b.id AND b.objectclass_id = ',r.class_id,')		
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+		END LOOP; -- room thematic surfaces loop
+	END LOOP; -- room loop
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_WINDOW/DOOR_LOD3-4
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('Window'::varchar, 38::integer, 'window'::varchar),
+		('Door'           , 39         , 'door')		
+		) AS t(class_name, class_id, class_label)
+	LOOP
+		FOR t IN 
+			SELECT * FROM (VALUES
+			('LoD3'::varchar, 'lod3'::varchar),
+			('LoD4'			, 'lod4')		
+			) AS t(lodx_name, lodx_label)
+		LOOP
+
+-- The concat is here necessary because "window" is a reserved word and using format would add a " to the name.
+l_name         := concat(						  r.class_label,'_',s.class_label,'_',t.lodx_label);
+view_name      := concat(	   citydb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+mview_name     := concat('_g_',citydb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+mview_idx_name := concat('_g_',citydb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_id_idx');
+mview_spx_name := concat('_g_',citydb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_geom_spx');
+qml_file_name  := concat(r.class_label,'_opening_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.opening AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.opening_to_them_surface AS ots ON (ots.opening_id = o.id)
+		INNER JOIN ',citydb_schema,'.thematic_surface AS ts ON (ts.id = ots.thematic_surface_id)
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = ts.building_id AND b.objectclass_id = ',r.class_id,')
+		INNER JOIN ',citydb_schema,'.surface_geometry sg ON sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL
+	WHERE
+		o.',t.lodx_name,'_implicit_rep_id IS NULL
+	GROUP BY sg.cityobject_id
+	UNION');
+
+sql_statement := concat(sql_statement,'
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.opening AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')		
+		INNER JOIN ',citydb_schema,'.opening_to_them_surface AS ots ON (ots.opening_id = o.id)
+		INNER JOIN ',citydb_schema,'.thematic_surface AS ts ON (ts.id = ots.thematic_surface_id)
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = ts.building_id AND b.objectclass_id = ',r.class_id,')	
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_name,'_implicit_rep_id) 
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_name,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+		END LOOP; -- bgd window/door lod
+	END LOOP; -- bgd window/door
+
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_BUILDINGFURNITURE_LOD4
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('BuildingFurniture'::varchar, 40::integer, 'furniture'::varchar)		
+		) AS t(class_name, class_id, class_label)
+	LOOP
+
+l_name         := format(      '%I_%I_lod4',							r.class_label, s.class_label);
+view_name      := format(   '%I_%I_%I_lod4',			citydb_schema, r.class_label, s.class_label);
+mview_name     := format('_g_%I_%I_%I_lod4',			citydb_schema, r.class_label, s.class_label);
+mview_idx_name := format('_g_%I_%I_%I_lod4_id_idx',		citydb_schema, r.class_label, s.class_label);
+mview_spx_name := format('_g_%I_%I_%I_lod4_geom_spx',	citydb_schema, r.class_label, s.class_label);
+qml_file_name  := concat(r.class_label,'_',s.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.building_furniture AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.room AS r ON (r.id = o.room_id)
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = r.building_id AND b.objectclass_id = ',r.class_id,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.lod4_brep_id AND sg.geometry IS NOT NULL)
+	WHERE
+		o.lod4_implicit_rep_id IS NULL
+	GROUP BY sg.cityobject_id
+	UNION');
+
+sql_statement := concat(sql_statement,'
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(o.lod4_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(o.lod4_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(o.lod4_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.lod4_implicit_ref_point),
+				   ST_Y(o.lod4_implicit_ref_point),
+				   ST_Z(o.lod4_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.building_furniture AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')		
+		INNER JOIN ',citydb_schema,'.room AS r ON (r.id = o.room_id)
+		INNER JOIN ',citydb_schema,'.building AS b ON (b.id = r.building_id AND b.objectclass_id = ',r.class_id,')	
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.lod4_implicit_rep_id) 
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.lod4_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',s.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- building furniture
+
+END LOOP; -- building(part) loop
+
+-- ***********************
+-- VEGETATION MODULE
+-- ***********************
+feature_type     := 'Vegetation';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_SOLITARY_VEGETAT_OBJECT_LOD1-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('SolitaryVegetationObject'::varchar, 7::integer, 'sol_veg_obj'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD1'::varchar, 'lod1'::varchar),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.solitary_vegetat_object AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_brep_id AND sg.geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NULL AND o.',t.lodx_label,'_brep_id IS NOT NULL 
+	GROUP BY sg.cityobject_id
+
+	UNION
+
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(o.',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.solitary_vegetat_object AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id=co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_label,'_implicit_rep_id)
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- solitary_vegetat_object lod
+END LOOP; -- solitary_vegetat_object
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_PLANT_COVER_LOD1-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('PlantCover'::varchar, 8::integer, 'plant_cover'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD1'::varchar, 'lod1'::varchar),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM (
+		SELECT
+			o.id AS co_id, 	
+			CASE
+				WHEN o.',t.lodx_label,'_multi_solid_id IS NOT NULL THEN o.',t.lodx_label,'_multi_solid_id
+				ELSE o.',t.lodx_label,'_multi_surface_id
+			END	AS sg_id 
+		FROM 
+			',citydb_schema,'.plant_cover AS o
+			INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,') 
+		WHERE 
+			o.objectclass_id = ',r.class_id,'
+			AND NOT(o.',t.lodx_label,'_multi_solid_id IS NULL AND o.',t.lodx_label,'_multi_surface_id IS NULL)
+		) AS foo
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- plat cover lod
+END LOOP; -- plant cover
+
+
+-- ***********************
+-- LANDUSE MODULE
+-- ***********************
+feature_type     := 'LandUse';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_LAND_USE_LOD0-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('LandUse'::varchar, 4::integer, 'land_use'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar),
+		('LoD1'			, 'lod1'),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.land_use AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_multi_surface_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- land use lod
+END LOOP;  -- land use
+
+
+-- ***********************
+-- GENERIC CITYOBJECT MODULE
+-- ***********************
+feature_type     := 'Generics';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_GENERIC_CITYOBJECT_LOD0-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('GenericCityObject'::varchar, 5::integer, 'gen_cityobject'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar),
+		('LoD1'			, 'lod1'),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.generic_cityobject AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_brep_id AND sg.geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_brep_id IS NOT NULL AND o.',t.lodx_label,'_implicit_rep_id IS NULL
+	GROUP BY sg.cityobject_id
+	UNION
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.generic_cityobject AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id=co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_label,'_implicit_rep_id)
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- generic city object lod
+END LOOP; -- generic city object
+
+
+-- ***********************
+-- GENERIC CITYOBJECT MODULE
+-- ***********************
+feature_type     := 'CityFurniture';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_CITY_FURNITURE_LOD1-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('CityFurniture'::varchar, 21::integer, 'city_furniture'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD1'::varchar, 'lod1'::varchar),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.city_furniture AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_brep_id AND sg.geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_brep_id IS NOT NULL AND o.',t.lodx_label,'_implicit_rep_id IS NULL 
+	GROUP BY sg.cityobject_id
+	UNION
+	SELECT
+		o.id::bigint AS co_id,
+		ST_SetSRID(
+			ST_Affine(ST_Collect(sg.implicit_geometry),
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 1)::double precision,
+				   0,0,0,
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 6)::double precision,
+				   0,0,0,
+				   split_part(',t.lodx_label,'_implicit_transformation, '' '', 11)::double precision,
+				   ST_X(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Y(o.',t.lodx_label,'_implicit_ref_point),
+				   ST_Z(o.',t.lodx_label,'_implicit_ref_point)
+				   ),
+			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.city_furniture AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id=co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
+		INNER JOIN ',citydb_schema,'.implicit_geometry AS ig ON (ig.id = o.',t.lodx_label,'_implicit_rep_id)
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
+	WHERE
+		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
+	GROUP BY o.id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- city furniture lod
+END LOOP; -- city furniture 
+
+-- ***********************
+-- RELIEF MODULE
+-- ***********************
+feature_type     := 'Relief';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_RELIEF_FEATURE_LOD0-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('ReliefFeature'::varchar, 14::integer, 'relief_feature'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar, 0::integer),
+		('LoD1'			, 'lod1'		 , 1),
+		('LoD2'			, 'lod2'		 , 2),
+		('LoD3'			, 'lod3'		 , 3),
+		('LoD4'			, 'lod4'		 , 4)			
+		) AS t(lodx_name, lodx_label, lodx_integer)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		o.id::bigint AS co_id,
+		co.envelope::geometry(PolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.relief_feature AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	WHERE
+		lod = ',t.lodx_integer,' 
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- relief feature lod
+END LOOP; -- relief feature
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_**_TIN_RELIEF_LOD0-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('TINRelief'::varchar, 16::integer, 'tin_relief'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar, 0::integer),
+		('LoD1'			, 'lod1'		 , 1),
+		('LoD2'			, 'lod2'		 , 2),
+		('LoD3'			, 'lod3'		 , 3),
+		('LoD4'			, 'lod4'		 , 4)			
+		) AS t(lodx_name, lodx_label, lodx_integer)
+	LOOP
+
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM
+		',citydb_schema,'.tin_relief AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',t.lodx_integer,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.surface_geometry_id AND sg.geometry IS NOT NULL) 
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- tin relief lod
+END LOOP;  -- tin relief
+
+-- ***********************
+-- BRIDGE MODULE
+-- ***********************
+feature_type     := 'Bridge';
+
+
+
+-- ***********************
+-- TRANSPORTATION MODULE
+-- ***********************
+feature_type     := 'Transportation';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_TRANSPORTATION_COMPLEX_LOD1
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('TransportationComplex'::varchar,	42::integer, 	'tran_complex'::varchar),
+	('Track',							43,				'track'),
+	('Railway',							44,				'railway'),
+	('Road',							45,				'road'),
+	('Square',							46,				'square')		   
+	) AS t(class_name, class_id, class_label)
+LOOP
+
+l_name         := format(      '%I_lod1',						   r.class_label);
+view_name      := format(   '%I_%I_lod1',			citydb_schema, r.class_label);
+mview_name     := format('_g_%I_%I_lod1',			citydb_schema, r.class_label);
+mview_idx_name := format('_g_%I_%I_lod1_id_idx',	citydb_schema, r.class_label);
+mview_spx_name := format('_g_%I_%I_lod1_geom_spx',	citydb_schema, r.class_label);
+qml_file_name  := concat('transportation_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+
+
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' LoD1 in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''lod1'',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+--EXECUTE sql_statement;
+
+
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_TRANSPORTATION_COMPLEX_LOD2-4
+---------------------------------------------------------------
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD2'::varchar, 'lod2'::varchar),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')			
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',							   r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat('transportation_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+
+
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+--EXECUTE sql_statement;
+
+	END LOOP; -- end loop transportaton lod 2-4
+
+END LOOP;  -- end loop transportaton (lod1)
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_(AUXILIARY)TRAFFIC_AREA_LOD2-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('TrafficArea'::varchar,	47::integer, 	'traffic_area'::varchar),
+	('AuxiliaryTrafficArea',	48,				'aux_traffic_area')
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD2'::varchar, 'lod2'::varchar),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')			
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',				 		   r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',			citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',			citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',  citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat('traffic_area_form.qml');
+
+-- To be checked whether the (aux)traffic area objects are to be considered as "thematic surfaces"
+-- in this case, move this loop into the transportation complex one.
+
+	END LOOP; -- end loop aux_traffic_area lod 2-4
+END LOOP;  -- end loop aux_traffic_area
+
+
+-- ***********************
+-- TUNNEL MODULE
+-- ***********************
+feature_type     := 'Tunnel';
+
+
+
+
+-- ***********************
+-- WATERBODY MODULE
+-- ***********************
+feature_type     := 'WaterBody';
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_WATERBODY_LOD0-4
+---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('WaterBody'::varchar, 9::integer, 'waterbody'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar)
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',							   r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM 
+		',citydb_schema,'.waterbody AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_multi_surface_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- waterbody lod2-4
+
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD1'::varchar, 'lod1'::varchar)
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+l_name         := format(      '%I_%I',							   r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			o.id AS co_id, 	
+			CASE
+				WHEN o.',t.lodx_label,'_solid_id IS NOT NULL THEN o.',t.lodx_label,'_solid_id
+				ELSE o.',t.lodx_label,'_multi_surface_id
+			END	AS sg_id 
+		FROM 
+			',citydb_schema,'.waterbody AS o
+			INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id=co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,') 
+		WHERE			
+			NOT(o.',t.lodx_label,'_solid_id IS NULL AND o.',t.lodx_label,'_multi_surface_id IS NULL)
+		) AS foo
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+	END LOOP; -- waterbody lod1
+
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD2'::varchar, 'lod2'::varchar),
+		('LoD3'			, 'lod3'),	
+		('LoD4'			, 'lod4')		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+	
+l_name         := format(      '%I_%I',								r.class_label, t.lodx_label);
+view_name      := format(   '%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_name     := format('_g_%I_%I_%I',				citydb_schema, r.class_label, t.lodx_label);
+mview_idx_name := format('_g_%I_%I_%I_id_idx',		citydb_schema, r.class_label, t.lodx_label);
+mview_spx_name := format('_g_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label);
+qml_file_name  := concat(r.class_label,'_form.qml');
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		foo2.co_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+	FROM (
+		SELECT
+			foo.co_id,
+			unnest(foo.sg_id_array) AS sg_id
+		FROM (
+			SELECT
+				-- coalesce
+				o.id AS co_id,
+				CASE 
+					WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
+					ELSE ARRAY[o.',t.lodx_label,'_solid_id]
+				END AS sg_id_array 
+			FROM 
+				',citydb_schema,'.waterbody AS o
+				INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id= ',r.class_id,' ',sql_where,')
+				--FULL OUTER JOIN
+				INNER JOIN (
+					SELECT wtw.waterbody_id AS co_id, array_agg(ts.',t.lodx_label,'_surface_id) AS sg_id_array 
+					FROM 
+						',citydb_schema,'.waterboundary_surface AS ts
+						INNER JOIN ',citydb_schema,'.cityobject AS co ON (co.id = ts.id ',sql_where,')
+						INNER JOIN ',citydb_schema,'.waterbod_to_waterbnd_srf AS wtw ON (wtw.waterboundary_surface_id = ts.id)	
+					GROUP BY wtw.waterbody_id
+					) AS ts_t ON (ts_t.co_id = o.id)
+			WHERE 
+				sg_id_array IS NOT NULL
+			) AS foo
+		) AS foo2
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
+	GROUP BY foo2.co_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+
+---------------------------------------------------------------
+-- Create MATERIALIZED VIEW QGIS_PKG._G_*_WATERBODY_LOD0-4_THEMATIC_SURFACES
+---------------------------------------------------------------
+		FOR u IN 
+			SELECT * FROM (VALUES
+			('WaterSurface'::varchar,	11::integer,'watersurf'::varchar),
+			('WaterGroundSurface',		12,			'watergroundsurf'),
+			('WaterClosureSurface',		13,			'waterclosuresurf')
+			) AS t(themsurf_name, class_id, themsurf_label)
+		LOOP
+
+l_name         := format(      '%I_%I_%I',						   r.class_label, t.lodx_label, u.themsurf_label);
+view_name      := format(   '%I_%I_%I_%I',			citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_name     := format('_g_%I_%I_%I_%I', 			citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_idx_name := format('_g_%I_%I_%I_%I_id_idx',   citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+mview_spx_name := format('_g_%I_%I_%I_%I_geom_spx',	citydb_schema, r.class_label, t.lodx_label, u.themsurf_label);
+IF u.themsurf_name = 'WaterSurface' THEN
+	qml_file_name  := concat(r.class_label,'_water_surf_form.qml');
+ELSE
+	qml_file_name  := concat(r.class_label,'_water_bound_surf_form.qml');
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+	SELECT
+		sg.cityobject_id::bigint AS co_id,
+		ST_Collect(qgis_pkg.snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+	FROM
+		',citydb_schema,'.waterboundary_surface AS o
+		INNER JOIN ',citydb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,')		
+		INNER JOIN ',citydb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_surface_id AND sg.geometry IS NOT NULL)
+	GROUP BY sg.cityobject_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.themsurf_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+EXECUTE sql_statement;
+		
+		END LOOP; -- waterbody lod2-4 thematic surfaces
+
+	END LOOP; -- waterbody lod2-4
+
+END LOOP;  -- waterbody
+
+
+
+
+
+
+
+
+-- Upsert table qgis_pkg.extents with m_view bbox
+IF mview_bbox IS NULL THEN
+	EXECUTE format('SELECT e.envelope FROM qgis_pkg.extents AS e WHERE schema_name = %L AND bbox_type = ''db_schema''', citydb_schema) INTO citydb_envelope;
+	IF citydb_envelope IS NULL THEN
+		citydb_envelope := (SELECT ST_MakeEnvelope(f.x_min, f.y_min, f.x_max, f.y_min, f.srid_id) FROM qgis_pkg.compute_schema_extents(citydb_schema) AS f);
+	END IF;
+	mview_bbox := citydb_envelope;
+END IF;
+
+RAISE NOTICE 'Upserting the mview bbox in table qgis_pkg.extents'; 
+PERFORM qgis_pkg.upsert_extents(
+	citydb_schema 		:= citydb_schema,
+	citydb_bbox_type 	:= 'm_view',
+	citydb_envelope 	:= mview_bbox
+	);
+
+
+-- **************************
+RETURN 1;
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.create_mviews(): Error QUERY_CANCELED';
+	WHEN OTHERS THEN
+		RAISE EXCEPTION 'qgis_pkg.create_mviews(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.create_mviews(varchar, integer, integer, numeric, geometry) IS 'Installs the materialized views for the selected citydb schema';
+
+-- Installs the materlialised views for the citydb default schema.
+PERFORM qgis_pkg.create_mviews();
+--PERFORM qgis_pkg.refresh_mview(citydb_schema := 'citydb');
+
+-- **************************
+RAISE NOTICE E'\n\nDone\n\n';
+END $MAINBODY$
