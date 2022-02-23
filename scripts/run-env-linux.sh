@@ -9,9 +9,9 @@ echo ${QGIS_PREFIX_PATH}
 
 
 export QGIS_PREFIX_PATH=${QGIS_PREFIX_PATH}
-export QGIS_PATH=/usr/bin/qgis #${QGIS_PREFIX_PATH}
-export LD_LIBRARY_PATH=/usr/lib/qgis
-export PYTHONPATH=~/.local/lib/python3.8:${QGIS_PREFIX_PATH}~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/:${PYTHONPATH}
+export QGIS_PATH=${QGIS_PREFIX_PATH}
+export LD_LIBRARY_PATH=${ls}/lib
+export PYTHONPATH=${QGIS_PREFIX_PATH}/share/qgis/python:${QGIS_PREFIX_PATH}/share/qgis/python/plugins:${PYTHONPATH}
 
 echo "QGIS PATH: $QGIS_PREFIX_PATH"
 export QGIS_DEBUG=0

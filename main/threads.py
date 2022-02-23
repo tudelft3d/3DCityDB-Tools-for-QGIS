@@ -1,3 +1,5 @@
+"""threads docsting"""
+
 import psycopg2
 from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal
 from qgis.core import Qgis
@@ -9,22 +11,24 @@ import time,subprocess
 class RefreshMatViewsWorker(QObject):
     finished = pyqtSignal()
     fail = pyqtSignal()
-    def __init__(self,cursor):
+    def __init__(self,dbLoader):
         super().__init__()
-        self.cur=cursor
+        self.conn = dbLoader.conn
 
     def refresh_all_mat_views(self):
         """Long-running task."""
         try:
-            self.cur.callproc("qgis_pkg.refresh_materialized_view")
+            with self.conn.cursor() as cur:
+                cur.callproc("qgis_pkg.refresh_mview")
+
         except (Exception, psycopg2.DatabaseError) as error:
             print("At 'refresh_all_mat_views' in threads.py: ",error)
             self.fail.emit()
         self.finished.emit()
 
-def refresh_views_thread(dbLoader,cursor):
+def refresh_views_thread(dbLoader):
     dbLoader.thread = QThread()
-    dbLoader.worker = RefreshMatViewsWorker(cursor)
+    dbLoader.worker = RefreshMatViewsWorker(dbLoader)
     dbLoader.worker.moveToThread(dbLoader.thread)
 
     dbLoader.thread.started.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(True))

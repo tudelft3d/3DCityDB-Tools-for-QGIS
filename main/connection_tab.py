@@ -1,22 +1,51 @@
+"""Connection tab docsting"""
+
 from .connection import connect
-from .constants import *
+from . import constants
 from qgis.core import QgsMessageLog,Qgis
 import psycopg2
 
-def is_connected(dbLoader):
-    database = dbLoader.dlg.cbxExistingConnection.currentData()
-    try:
-        dbLoader.conn = connect(database) #Open the connection
-        cur = dbLoader.conn.cursor()
-        cur.execute("SHOW server_version;")
-        version = cur.fetchone()
-        database.s_version= version[0]
+def open_connection(dbLoader) -> bool:
+    """Opens a connection using the parameters stored in DBLoader.DB
+    and retrieves the server's verison
 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if dbLoader.conn is not None:
-            cur.close()
+    *   :returns: connection attempt results
+
+        :rtype: bool
+    """
+
+
+    try:
+        # Open the connection.
+        dbLoader.conn = connect(dbLoader.DB)
+
+        # Create cursor.
+        with dbLoader.conn.cursor() as cur:
+            # Get server to fetch its version
+            cur.execute(query="SHOW server_version;")
+            version = cur.fetchone()[0] # Tuple has trailing comma.
+            dbLoader.conn.commit()
+
+        # Store verison into the connection object.
+        dbLoader.DB.s_version = version
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happenes
+        FUNCTION_NAME = open_connection.__name__
+        FILE_LOCATION = constants.get_file_location(file=__file__)
+        LOCATION = ">".join([FILE_LOCATION,FUNCTION_NAME])
+
+        # Specify in the header the type of error and where it happend.
+        header = constants.log_errors.format(type="Connection", loc=LOCATION)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return False
 
     return True
 
@@ -69,7 +98,7 @@ def fill_schema_box(dbLoader):
     dbLoader.dlg.cbxSchema.clear()
 
     for schema in dbLoader.schemas: 
-        res = schema_has_features(dbLoader,schema,features_tables)
+        res = schema_has_features(dbLoader,schema,constants.features_tables)
         if res:
             dbLoader.dlg.cbxSchema.addItem(schema,res)
 
@@ -78,7 +107,7 @@ def schema_has_features(dbLoader,schema,features):
     try:
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 
-                        AND table_name SIMILAR TO '{get_postgres_array(features)}'
+                        AND table_name SIMILAR TO '{constants.get_postgres_array(features)}'
                         ORDER BY table_name ASC""")
         feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
         cur.close()

@@ -1,3 +1,9 @@
+"""
+DOc string
+asdasd
+asdasd
+"""
+
 from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox
 from qgis.PyQt.QtCore import Qt
 from .constants import *

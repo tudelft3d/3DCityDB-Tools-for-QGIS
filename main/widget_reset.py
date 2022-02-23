@@ -1,3 +1,5 @@
+"""reset  docsting"""
+
 #### Connection tab ##############################################
 def reset_tabConnection(dbLoader):
     reset_gbxUserType(dbLoader)
@@ -7,14 +9,15 @@ def reset_tabConnection(dbLoader):
 def reset_gbxDatabase(dbLoader):
     dbLoader.dlg.cbxSchema.clear()
     dbLoader.dlg.cbxSchema.setDisabled(True)
+    dbLoader.dlg.lblSchema.setDisabled(True)
 
 def reset_gbxConnectionStatus(dbLoader):
     dbLoader.dlg.gbxConnectionStatus.setDisabled(True)
-    dbLoader.dlg.lblInstall.setText(dbLoader.dlg.lblInstall.init_text)
     dbLoader.dlg.lblConnectedToDB_out.clear()
     dbLoader.dlg.lblServerVersion_out.clear()
     dbLoader.dlg.lblUserPrivileges_out.clear()
     dbLoader.dlg.lbl3DCityDBVersion_out.clear()
+    dbLoader.dlg.lblInstall.setText(dbLoader.dlg.lblInstall.init_text)
     dbLoader.dlg.lblInstall_out.clear()
 
 def reset_gbxUserType(dbLoader):
@@ -37,17 +40,13 @@ def reset_lblDbSchema(dbLoader):
     dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text)
     dbLoader.dlg.lblDbSchema.setDisabled(True)
 
-def reset_lblDbSchema(dbLoader):
-    dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text)
-    dbLoader.dlg.lblDbSchema.setDisabled(True)
-
 def reset_gbxExtent(dbLoader):
     dbLoader.dlg.gbxExtent.setDisabled(True)
    
 
 def reset_gbxParameters(dbLoader):
     dbLoader.dlg.gbxParameters.setDisabled(True)
-    dbLoader.dlg.cbxModule.clear()
+    dbLoader.dlg.cbxFeatureType.clear()
     dbLoader.dlg.cbxLod.clear()
 
 def reset_gbxFeatures(dbLoader):

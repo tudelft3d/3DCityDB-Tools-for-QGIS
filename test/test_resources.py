@@ -17,7 +17,6 @@ import unittest
 from qgis.PyQt.QtGui import QIcon
 
 
-
 class DBLoaderDialogTest(unittest.TestCase):
     """Test rerources work."""
 

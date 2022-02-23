@@ -1,3 +1,14 @@
+"""Constants docsting"""
+import os.path
+
+
+def get_file_location(file) -> str:
+
+    dir_name = os.path.split(os.path.dirname(__file__))[1]
+    file_name = os.path.split(__file__)[1]
+    file_location = os.path.join(dir_name,file_name)
+    return file_location
+
 #### messages ###############################################################
 msg=""" <html><head/><body><p> 
                 <img src="{image_rc}" style='vertical-align: bottom'/> 
@@ -8,12 +19,39 @@ failure_html=msg.format(image_rc=':/plugins/citydb_loader/icons/failure_icon.svg
 warning_html=msg.format(image_rc=':/plugins/citydb_loader/icons/warning_icon.svg',color_hex='#FFA701',addtional_text={})
 crit_warning_html=msg.format(image_rc=':/plugins/citydb_loader/icons/critical_warning_icon.svg',color_hex='#DA4453',addtional_text={})
 
+log_errors = "{type} ERROR at {loc}\n ERROR: "
 
 
 ###############################################################################
 
+menu_html = msg.format(image_rc=':/plugins/citydb_loader/icons/plugin_icon.png',color_hex='#000000',addtional_text={})
+btnInstallDB_text= "Install plugin contents to database {DB} for schema {SC}"
+btnUnInstallDB_text= "Un-install plugin contents from database {DB} for schema {SC}"
+btnClearDB_text= "Clear entire {DB} database from plugin contents"
+btnRefreshViews_text= "Refresh views for schema {SC} in database {DB}"
+lblDbSchema_text="Database: {Database}\nSchema: {Schema}"
+btnImport_text="Import {num} feature layers"
+lblInstall_text="Installation for {schema}:"
+
+DIR_NAME = os.path.split(os.path.dirname(__file__))[1]
+PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
+
+QML_FROMS_DIR = "forms"
+QML_FROMS_PATH = os.path.join(PLUGIN_PATH,QML_FROMS_DIR)
+SCHEMA_EXT_TYPE = "db_schema"
+MAT_VIEW_EXT_TYPE = "m_view"
+QGIS_EXT_TYPE = "qgis"
+
+bbox_types = {
+    "schema": SCHEMA_EXT_TYPE,
+    "mat_view": MAT_VIEW_EXT_TYPE,
+    "qgis":QGIS_EXT_TYPE
+    }
+
+GOOGLE_URI = "crs=EPSG:3857&format&type=xyz&url=http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=22&zmin=0"
+
 features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
-modules=["CityObject","Building","DTM","Tunnel","Bridge","Waterbody","Vegetation", "CityFurniture", "LandUse","Transportation"]  #Named after their main corresponding table name from the 3DCityDB.
+FeatureTypes=["CityObject","Building","DTM","Tunnel","Bridge","Waterbody","Vegetation", "CityFurniture", "LandUse","Transportation"]  #Named after their main corresponding table name from the 3DCityDB.
 priviledge_types=["DELETE","INSERT","REFERENCES","SELECT","TRIGGER","TRUNCATE","UPDATE"]
 lods=['LoD0','LoD1','LoD2','LoD3','LoD4']
 
@@ -105,18 +143,37 @@ vegetation={
     'class_id':6
 }
 
+
 class View():
     
-    def __init__(self,id,module,root_feature,schema,lod,alias,layer_name,object_count):
+    def __init__(self,
+            id: int,
+            schema_name: str,
+            feature_type: str,
+            lod: str,
+            root_class: str,
+            layer_name: str,
+            n_features: int,
+            mv_name: str,
+            v_name: str,
+            qml_file: str,
+            creation_data: str,
+            refresh_date: str):
         self.id=id
-        self.module=module
-        self.schema = schema
-        self.root_feature = root_feature
+        self.schema_name=schema_name
+        self.feature_type = feature_type
         self.lod = lod
-        self.alias= alias
-        self.view_name = layer_name
-        self.count=object_count
-        self.selected_count=0
+        self.root_class= root_class
+        self.layer_name = layer_name
+        self.n_features=n_features
+        self.n_selected=0
+        self.mv_name=mv_name
+        self.v_name= v_name
+        self.v_name = v_name
+        self.qml_file=qml_file
+        self.qml_path=os.path.join(QML_FROMS_PATH,qml_file)
+        self.creation_data=creation_data
+        self.refresh_date=refresh_date
 
 
 
@@ -134,10 +191,10 @@ class CityObject():
                 views.append(view)
         return views
 
-class Module():
-    def __init__(self,alias,features):
-        self.features=features
+class FeatureType():
+    def __init__(self,alias: str):
         self.alias = alias
+        self.views = []
 
 class Building(CityObject): #NOTE: ALL calsses have hardcoded values from the installed views. So every update them with changes to installation script (e.g. addeing new views or changing names)
     def __init__(self,alias='Building'):

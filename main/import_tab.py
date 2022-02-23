@@ -1,7 +1,9 @@
-
+"""Import tab docstring"""
+from importlib_metadata import metadata
 from qgis.PyQt.QtWidgets import QLabel
 from .constants import *
 from .functions import *
+from . import sql
 
 
  
@@ -21,102 +23,87 @@ def count_objects(dbLoader,view_name):
         print('In import_tab.count_objects:',error)
         cur.close()
 
-def count_objects_in_bbox(dbLoader,checked_features,extents): #NOTE: obsolete? delete it
-    selected_module = dbLoader.dlg.cbxModule.currentData()
 
-    for feature in checked_features:
-        for view in feature.views:
-            cur=dbLoader.conn.cursor()
-            cur.execute(f"""SELECT count(*),'' from qgis_pkg.{view.name} t
-                        WHERE ST_Intersects(ST_GeomFromText('{extents}',28992), t.geom)""")
-            count=cur.fetchone()
-            cur.close()
-            count,empty=count
-            view.count = count  
+def has_matviews(dbLoader) -> bool:
+    mat_views = sql.fetch_mat_views(dbLoader)
 
-def fill_module_box(dbLoader):
+    # Check if qgis_pkg has materialised views.
+    if mat_views:
+        return True
+    return False
+    
+        
 
-    modules=instantiate_objects(dbLoader)
-    if not modules: return None
+def fill_FeatureType_box(dbLoader):
 
-    for module_obj in modules.values():    
+    instantiate_objects(dbLoader)
 
-        for feature in module_obj.features.values():
-            for view in feature.views:
-                if view.count>0:
-                    dbLoader.dlg.cbxModule.addItem(module_obj.alias,module_obj)
-                    break
-            else: 
-                continue
+
+    for FeatureType_obj in dbLoader.FeatureType_container.values():
+
+        for view in FeatureType_obj.views:
+            if view.n_selected>0:
+                dbLoader.dlg.cbxFeatureType.addItem(FeatureType_obj.alias,FeatureType_obj)
             break   
 
 def instantiate_objects(dbLoader):
-    try:
-        cur=dbLoader.conn.cursor()
-        cur.execute(f"""SELECT * FROM qgis_pkg.metadata""")
-        metadata=cur.fetchall()
-        colnames = [desc[0] for desc in cur.description]
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        QgsMessageLog.logMessage("At import_tab.py>'instantiate_objects':\nERROR_MESSAGE: "+str(error),tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
-        dbLoader.conn.rollback()
-        cur.close()
-        return None
 
-    metadata_dict_list= [dict(zip(colnames,f)) for f in metadata]
+    colnames,metadata = sql.fetch_layer_metadata(dbLoader)
+    metadata_dict_list= [dict(zip(colnames,values)) for values in metadata]
+
     
-    dbLoader.module_container=   { "Building": Module(alias='Building',features={  "Building": Building(),
-                                                                                "BuildingPart": BuildingPart(),
-                                                                                "BuildingInstallation": BuildingInstallation(),
-                                                                                "BuildingFurniture": BuildingFurniture()}),
-                                "Vegetation": Module(alias='Vegetation', features= {"Vegetation": Vegetation(),
-                                                                                    "PlantCover": PlantCover()})}
+    dbLoader.FeatureType_container = {
+        "Building": FeatureType(alias='Building'),
+        "Relief": FeatureType(alias="Relief"),
+        "CityFurniture": FeatureType(alias="CityFurniture"),
+        "LandUse": FeatureType(alias="LandUse"),
+        "WaterBody": FeatureType(alias="WaterBody"),
+        "Vegetation": FeatureType(alias='Vegetation'),
+        "Generics": FeatureType(alias='Generics')
+        }
 
-    dbLoader.module_container
+
     for metadata_dict in metadata_dict_list:
         
-        #keys: id,module,root_feature,schema,lod,alias,layer_name,object_count
-        if metadata_dict['object_count']==0:continue
-        curr_module_obj=dbLoader.module_container[metadata_dict['module']]
-        curr_feature = curr_module_obj.features[metadata_dict['root_feature']]
-        curr_feature.views.append(View(*metadata_dict.values()))
-
-    return dbLoader.module_container
+        #keys:  id,schema_name,feature_type,lod,root_class,layer_name,n_features,
+        #       mv_name, v_name,qml_file,creation_data,refresh_date
+        if metadata_dict["n_features"]==0: continue
+        if metadata_dict["refresh_date"] is None: continue
+        curr_FeatureType_obj=dbLoader.FeatureType_container[metadata_dict['feature_type']]
+        view = View(*metadata_dict.values())
+        curr_FeatureType_obj.views.append(view)
+        sql.exec_view_counter(dbLoader,view)
+        
 
 def fill_lod_box(dbLoader):
-    selected_module = dbLoader.dlg.cbxModule.currentData()
-    if not selected_module: return None
+    selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
+    if not selected_FeatureType: return None
     geom_set=set()
-    geom_set_=set()
-    for feature in selected_module.features.values():
-        for view in feature.views:
-            geom_set.add(view.lod)
-            geom_set_.add(alias_to_viewSyntax(view.lod,'lod'))
-            
-    avalibale_lods = dict(zip(sorted(list(geom_set)),sorted(list(geom_set_))))
 
-    for alias,lod in avalibale_lods.items():
-        dbLoader.dlg.cbxLod.addItem(alias,lod)
+    for view in selected_FeatureType.views:
+        geom_set.add(view.lod)
+            
+
+    for lod in sorted(list(geom_set)):
+        dbLoader.dlg.cbxLod.addItem(lod,lod)
 
 def fill_features_box(dbLoader):
     selected_lod = dbLoader.dlg.cbxLod.currentText()
-    selected_module = dbLoader.dlg.cbxModule.currentData()
+    selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
     
-    if not selected_module: return None
+    if not selected_FeatureType: return None
 
     try:
-        c=0
-        for c,feature in enumerate(selected_module.features.values()):
-            for view in feature.views:
-                if view.lod == selected_lod:  
-                    count=get_view_obj_amount(dbLoader,view)
-                    if count > 0:
-                        dbLoader.dlg.ccbxFeatures.addItemWithCheckState(f'{view.alias} ({count})',0, userData=view)#{view.view_name:(view.module,view.schema,view.lod,view.root_feature)})
+        for view in selected_FeatureType.views:
+            if view.lod == selected_lod:
+                if view.n_selected > 0:
+                    dbLoader.dlg.ccbxFeatures.addItemWithCheckState(f'{view.layer_name} ({view.n_selected})',0, userData=view)#{view.view_name:(view.FeatureType,view.schema,view.lod,view.root_feature)})
 
 #TODO: 05-02-2021 Add separator between different features NOTE:REMEMBER: don't use method 'setSeparator', it adds a custom separtor to join string of selected items
 
     except AssertionError as msg:
-        dbLoader.show_Qmsg(f'<b>{msg}</b> doesn\'t have any sub-features',msg_type=Qgis.Info)
+        err = f"<b>{msg}</b> doesn\'t have any sub-features"
+        QgsMessageLog.logMessage("At import_tab.py>'fill_features_box':\nERROR_MESSAGE: " + err, tag="3DCityDB-Loader",level=Qgis.Info,notifyUser=True)
         return 0
 
 def get_view_obj_amount(dbLoader,view):
@@ -134,44 +121,6 @@ def get_view_obj_amount(dbLoader,view):
         dbLoader.conn.rollback()
         cur.close()
         return None
-
-def set_counter_label(dbLoader): #NOTE: obsolete? delete it
-
-    checked_types = get_checked_types(dbLoader,dbLoader.dlg.gridLayout_4)
-    checked_features = get_checked_features(dbLoader,dbLoader.dlg.gridLayout_2)
-    selected_lod=dbLoader.dlg.cbxLod.currentText()
-
-    msg=''
-    total_count=0
-    for feature in checked_features:
-        for view in feature.views:
-            if view.lod==alias_to_viewSyntax(selected_lod,'lod'):
-                if view.representation in checked_types:
-                    total_count+=view.count
-                    msg+=f"    \u2116 of '{feature.alias}' objects represented as {view.representation}: {view.count}\n"
-                else:
-                    total_count+=view.count
-                    msg+=f"\u2116 of '{feature.alias}' objects: {view.count}\n"
-    label= QLabel()
-    warning_icon=":/plugins/citydb_loader/icons/warning_icon.svg"
-    info_icon=":/plugins/citydb_loader/icons/info_icon.svg"
-    
-    html="""
-    <html>
-    <head/>
-        <body>
-            <p>
-            <img src="{icon_path}" width="20" height="20"/>
-            <br/>{message}
-            </p>
-        </body>
-    </html>"""
-
-    if total_count>20000:
-        label.setText(html.format(icon_path = warning_icon,message= msg))
-    else:
-        label.setText(html.format(icon_path = info_icon,message= msg))
-    dbLoader.dlg.formLayout.addWidget(label)
 
 def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
                     Layer= '', Key= '', Value= '',
@@ -326,15 +275,15 @@ def import_generics(dbLoader):
  
 
 
-def create_layers(dbLoader,view):
+def create_layers(dbLoader,v_view):
     selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
     extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() #Readable for debugging
 
     #SELECT UpdateGeometrySRID('roads','geom',4326);
     uri = QgsDataSourceUri()
     uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{view}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && ST_Envelope(geom)",aKeyColumn= 'id')
-    vlayer = QgsVectorLayer(uri.uri(False), f"{view}", "postgres")
+    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_view}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && ST_Envelope(geom)",aKeyColumn= 'id')
+    vlayer = QgsVectorLayer(uri.uri(False), f"{v_view}", "postgres")
 
     vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:28992'))#TODO: Dont hardcode it
     #fieldVisibility(vlayer,'geom') 
@@ -380,14 +329,14 @@ def build_ToC(dbLoader,view):
     if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
     else: node_database = root.findGroup(selected_db.database_name)
 
-    if not node_database.findGroup(view.schema): node_schema = node_database.addGroup(view.schema)
-    else: node_schema = node_database.findGroup(view.schema)
+    if not node_database.findGroup(view.schema_name): node_schema = node_database.addGroup(view.schema_name)
+    else: node_schema = node_database.findGroup(view.schema_name)
 
-    if not node_schema.findGroup(f'Module: {view.module}'): node_module = node_schema.addGroup(f'Module: {view.module}')
-    else: node_module = node_schema.findGroup(f'Module: {view.module}')
+    if not node_schema.findGroup(f'FeatureType: {view.feature_type}'): node_FeatureType = node_schema.addGroup(f'FeatureType: {view.feature_type}')
+    else: node_FeatureType = node_schema.findGroup(f'FeatureType: {view.feature_type}')
 
-    if not node_module.findGroup(view.root_feature): node_feature = node_module.addGroup(view.root_feature)
-    else: node_feature = node_module.findGroup(view.root_feature)
+    if not node_FeatureType.findGroup(view.root_class): node_feature = node_FeatureType.addGroup(view.root_class)
+    else: node_feature = node_FeatureType.findGroup(view.root_class)
 
     if not node_feature.findGroup(view.lod): node_lod = node_feature.addGroup(view.lod)
     else: node_lod = node_feature.findGroup(view.lod)
@@ -406,20 +355,20 @@ def import_layers(dbLoader,checked_views):
         #Building the Table of Contents Tree
         node= build_ToC(dbLoader,view)
         import_lookups(dbLoader)
-        vlayer = create_layers(dbLoader,view.view_name)
+        vlayer = create_layers(dbLoader,view.v_name)
         import_generics(dbLoader)
 
 
         if vlayer or vlayer.isValid():
-            QgsMessageLog.logMessage(message=f"Layer import: {view.view_name}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
+            QgsMessageLog.logMessage(message=f"Layer import: {view.v_name}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
         else:
-            QgsMessageLog.logMessage(message=f"Layer failed to properly load: {view.view_name}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
+            QgsMessageLog.logMessage(message=f"Layer failed to properly load: {view.v_name}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
             return False
 
 
         node.addLayer(vlayer)
         QgsProject.instance().addMapLayer(vlayer,False)
         
-        vlayer.loadNamedStyle('/home/konstantinos/.local/share/QGIS/QGIS3/profiles/default/python/plugins/citydb_loader/forms/building_form.qml') #TODO: this needs to be platform independent
+        vlayer.loadNamedStyle(view.qml_path)
         create_relations(vlayer)
     return True

@@ -24,12 +24,13 @@
 import os.path
 import typing
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
-from qgis.gui import QgisInterface, QgsMapCanvas
+from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsExtentGroupBox, QgsExtentWidget
 import psycopg2
+from sqlalchemy import false
 
 from .resources import qInitResources
 from .citydb_loader_dialog import DBLoaderDialog     #Main dialog
@@ -41,8 +42,8 @@ from .main import constants
 
 class DBLoader:
     """QGIS Plugin Implementation. Main class."""
-
-    plugin_package = 'qgis_pkg'
+    QAction
+    plugin_package = "qgis_pkg"
 
     def __init__(self, iface: QgisInterface) -> None:
         """DBLoader class Constructor.
@@ -58,6 +59,27 @@ class DBLoader:
 
         # Variable to store the main dialog of the plugin.
         self.dlg: DBLoaderDialog = None
+
+        # Variable to store the existing connection object.
+        self.DB: connection.Connection = None
+
+        # Variable to store the existing schema name.
+        self.SCHEMA: str = None
+
+        # Variable to store the selected extents.
+        self.EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+
+        # Variable to store the selected crs.
+        self.CRS: QgsCoordinateReferenceSystem
+        self.CRS = iface.mapCanvas().mapSettings().destinationCrs()
+
+        # Variable to store a rubberband formed by the current extents.
+        self.RUBBER_EXTS: QgsRubberBand = None
+
+        # Variable to store an additional canvas (to show the extents).
+        self.CANVAS: QgsMapCanvas = QgsMapCanvas()
+        self.CANVAS.enableAntiAliasing(True)
+    
 
         # Variable to store all availiable FeatureTypes.
         # The availiability is defined by the existance of at least one feature.
@@ -77,11 +99,11 @@ class DBLoader:
         # initialize plugin directory.
         self.plugin_dir: str = os.path.dirname(__file__)
         # initialize locale.
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
-            'i18n',
-            'DBLoader_{}.qm'.format(locale))
+            "i18n",
+            "DBLoader_{}.qm".format(locale))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -90,7 +112,6 @@ class DBLoader:
 
         # Declare instance attributes.
         self.actions: list = []
-        self.menu: str = self.tr(u'&3DCityDB-Loader')
 
         # Check if plugin was started the first time in current QGIS session.
         # Must be set in initGui() to survive plugin reloads.
@@ -109,7 +130,7 @@ class DBLoader:
 
             :rtype: str
         """
-        return QCoreApplication.translate('DBLoader', message)
+        return QCoreApplication.translate("DBLoader", message)
 
     def add_action(self,
             icon_path: str,
@@ -124,7 +145,7 @@ class DBLoader:
         """Add a toolbar icon to the toolbar.
 
         *   :param icon_path: Path to the icon for this action. Can be a
-                resource path (e.g. ':/plugins/foo/bar.png') or a normal
+                resource path (e.g. ":/plugins/foo/bar.png") or a normal
                 file system path.
 
             :type icon_path: str
@@ -178,28 +199,50 @@ class DBLoader:
         icon = QIcon(icon_path)
 
         # Create action object
-        action = QAction(icon, txt, parent)
+        action = QAction(icon=icon, text=txt, parent=parent)
 
         # Signal to run plugin when clicked (execute main method: run())
         action.triggered.connect(callback)
 
+        # Set the name of the action
+        action.setObjectName(txt)
+
+        # Set the action as enabled (not grayed out)
         action.setEnabled(enabled_flag)
 
         if status_tip is not None:
-            action.setStatusTip(status_tip)
+            action.setStatusTip(statusTip=status_tip)
 
         if whats_this is not None:
-            action.setWhatsThis(whats_this)
+            action.setWhatsThis(what=whats_this)
 
         # Adds plugin to "Database" toolbar.
         if add_to_toolbar:
-            self.iface.addDatabaseToolBarIcon(action)
+            self.iface.addDatabaseToolBarIcon(qAction=action)
 
         # Adds plugin to "Database" menu.
         if add_to_menu:
-            self.iface.addPluginToDatabaseMenu(
-                self.menu,
-                action)
+            # In order to add the plugin into the database menu we
+            # follow the 'hacky' approach below to bypass possibly a bug:
+            #
+            # The bug: Using the method addPluginToDatabaseMenu causes
+            # the plugin to be inserted in a submenu of itself
+            # 3DCityDB-Loader > 3DCityDB-Loader which we don't want.
+            # However using the addAction method to insert the plugin directly,
+            # causes the database menu to 'pop out' of the menu ribbon in a
+            # hidden state. Note that this method works for all the menus,
+            # except the database menu for some bizarre reason.
+            # Using the addPluginToDatabaseMenu method BEFORE the addAction
+            # method seems to bypass this issue. Needs further investigation.
+
+            # Add the action to the database menu (bug countermeasure)
+            self.iface.addPluginToDatabaseMenu(name=txt, action=action)
+
+            # Add the action to the database menu
+            self.iface.databaseMenu().addAction(action)
+
+            #Now that we made sure that the bug didn't occure, remove it.
+            self.iface.removePluginDatabaseMenu(name=txt,action=action)
 
         self.actions.append(action)
 
@@ -209,10 +252,10 @@ class DBLoader:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         # The icon path is set from the compiled resources file (in main dir).
-        icon_path = ':/plugins/citydb_loader/icons/plugin_icon.png'
+        icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
         self.add_action(
-            icon_path,
-            txt=self.tr(u'&3DCityDB-Loader'),
+            icon_path=icon_path,
+            txt=self.tr("3DCityDB-Loader"),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -223,11 +266,8 @@ class DBLoader:
         """Removes the plugin menu item and icon from QGIS GUI."""
 
         for action in self.actions:
-            self.iface.removePluginDatabaseMenu(
-                self.tr(u'&3DCityDB-Loader'),
-                action
-                )
-            self.iface.removeDatabaseToolBarIcon(action)
+            self.iface.removeDatabaseToolBarIcon(qAction=action)
+            self.iface.databaseMenu().removeAction(action)
 
     def run(self) -> None:
         """Run main method that performs all the real work.
@@ -277,24 +317,24 @@ class DBLoader:
             self.dlg.rdViewer.clicked.connect(self.evt_rdViewer_clicked)
             self.dlg.rdEditor.clicked.connect(self.evt_rdEditor_clicked)
 
+            
+            # Link the addition canvas to the extents qgroupbox and
+            # enable "MapCanvasExtent" options (Byproduct).
+            self.dlg.qgbxExtent.setMapCanvas(canvas=self.CANVAS,
+                drawOnCanvasOption = False)
+            # Draw on Canvas tool is disabled. Check Note on widget_setup.py 
 
-            # Get initial canvas
-            canvas: QgsMapCanvas = self.iface.mapCanvas()
+            # self.dlg.qgbxExtent.setOriginalExtent(originalExtent=self.EXTENTS,
+            #     originalCrs=self.CRS)
+            # self.dlg.qgbxExtent.setCurrentExtent(currentExtent=self.EXTENTS,
+            #     currentCrs=self.CRS)
+            self.dlg.qgbxExtent.setOutputCrs(outputCrs=self.CRS)
 
-            # Get initial CRS
-            crs: QgsCoordinateReferenceSystem
-            crs = canvas.mapSettings().destinationCrs()
-
-            # Enable "MapCanvasExtent" and "DrawonCanvas" options (Byproduct).
-            self.dlg.qgbxExtent.setMapCanvas(canvas=canvas)
-
-            # Zero-fill N-E-S-W lineEdits (Byproduct)
-            self.dlg.qgbxExtent.setOutputCrs(outputCrs=crs)
 
             # 'Extent' groupbox signals (in 'Import' tab)
             self.dlg.btnCityExtents.clicked.connect(
                 self.evt_btnCityExtents_clicked)
-            canvas.extentsChanged.connect(self.evt_canvas_extChanged)
+            self.CANVAS.extentsChanged.connect(self.evt_canvas_extChanged)
             self.dlg.qgbxExtent.extentChanged.connect(
                 self.evt_qgbxExtent_extChanged)
 
@@ -348,6 +388,8 @@ class DBLoader:
         comboBox (cbxExistingConnection) current index chages.
         """
 
+        # Set the current database connection object variable
+        self.DB = self.dlg.cbxExistingConnection.currentData()
         widget_setup.cbxExistingConnection_setup(self)
 
     def evt_btnNewConnection_clicked(self) -> None:
@@ -377,14 +419,14 @@ class DBLoader:
         widget_setup.btnConnectToDB_setup(self)
 
     def evt_cbxSchema_changed(self) -> None:
-        """Event that is called when the 'schemas'comboBox (cbxSchema)
+        """Event that is called when the 'schemas' comboBox (cbxSchema)
         current index chages.
 
         Checks if the connection + schema meet the necessary requirements.
         """
-
-        # Variable that stores the currect connection (custom Class)
-        selected_db = self.dlg.cbxExistingConnection.currentData()
+        
+        # Set the current schema variable
+        self.SCHEMA = self.dlg.cbxSchema.currentText()
 
         res = widget_setup.cbxSchema_setup(self)
         if not res:
@@ -392,7 +434,7 @@ class DBLoader:
             widget_reset.reset_tabSettings(self)
 
         # We can proceed ONLY if the necessary requirements are met.
-        if selected_db.meets_requirements():
+        if self.DB.meets_requirements():
             self.dlg.gbxUserType.setDisabled(False)
 
             # Allow user type selection depending on privileges.
@@ -402,12 +444,13 @@ class DBLoader:
             for priv in constants.priviledge_types):
                 self.dlg.rdEditor.setDisabled(False)
                 self.dlg.rdViewer.setDisabled(False)
-            elif any(p == 'SELECT' for p in self.availiable_privileges):
+            elif any(p == "SELECT" for p in self.availiable_privileges):
                 self.dlg.rdEditor.setDisabled(True)
                 self.dlg.rdViewer.setDisabled(False)
         else:
             widget_reset.reset_gbxUserType(self)
             self.dlg.gbxUserType.setDisabled(True)
+
 
     # 'User Type' group box events (in 'Connection' tab)
     def evt_rdViewer_clicked(self) -> None:
@@ -437,6 +480,7 @@ class DBLoader:
         """
 
         widget_setup.btnCityExtents_setup(self)
+        
 
     def evt_canvas_extChanged(self) -> None:
         """Event that is called when the current canvas extents (pan over map)
@@ -446,21 +490,15 @@ class DBLoader:
         (QgsExtentGroupBox) widget.
         """
 
-        # Get map canvas object
-        canvas: QgsMapCanvas = self.iface.mapCanvas()
 
         # Get canvas's current extent
-        extent: QgsRectangle = canvas.extent()
-
-        # Get canvas's CRS
-        crs: QgsCoordinateReferenceSystem
-        crs = canvas.mapSettings().destinationCrs()
+        extent: QgsRectangle = self.CANVAS.extent()
 
         # Set the current extent to show in the 'extent' widget.
         self.dlg.qgbxExtent.setCurrentExtent(
             currentExtent=extent,
-            currentCrs=crs)
-        self.dlg.qgbxExtent.setOutputCrs(outputCrs=crs)
+            currentCrs=self.CRS)
+        self.dlg.qgbxExtent.setOutputCrs(outputCrs=self.CRS)
 
     def evt_qgbxExtent_extChanged(self) -> None:
         """Event that is called when the 'Extents' groubBox (qgbxExtent)

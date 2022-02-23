@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Functions docsting"""
+
 from distutils.command.config import config
 import os, configparser
 from gpg import Data
@@ -24,12 +26,12 @@ from collections import Counter
 
 
 def create_features_checkboxes(dbLoader):
-    module = dbLoader.dlg.cbxModule.currentData()
+    FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
 
     row=-1
     col=0
     try:
-        for c,feature in enumerate(module.features):
+        for c,feature in enumerate(FeatureType.features):
             #assert feature.subFeatures_objects #NOTE:22-01-2022 I want to catch features that don't have subfeatures and notify the user. BUT i don't think it works as intended
             check_box= QCheckBox(feature.alias)
             check_box.stateChanged.connect(dbLoader.evt_checkBox_stateChanged)
@@ -51,13 +53,13 @@ def delete_all_features_widgets(dbLoader,layout):
 
 
 def get_checked_features(dbLoader,layout):
-    selected_module = dbLoader.dlg.cbxModule.currentData()
+    selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
     check_boxes = [layout.itemAt(w).widget() for w in reversed(range(layout.count()))]
     checked_features=[]
     for feature in check_boxes: 
         if feature.isChecked():
-            obj_inx=[feat.alias for feat in selected_module.features].index(feature.text())
-            checked_features.append(selected_module.features[obj_inx])
+            obj_inx=[feat.alias for feat in selected_FeatureType.features].index(feature.text())
+            checked_features.append(selected_FeatureType.features[obj_inx])
     return checked_features
 
 def get_checked_types(dbLoader,layout):
@@ -77,7 +79,7 @@ def check_geometry(dbLoader):
     conn = None
     database = dbLoader.dlg.cbxExistingConnection.currentData()
     schema = dbLoader.dlg.cbxScema.currentText()
-    feature = dbLoader.dlg.cbxModule.currentData()
+    feature = dbLoader.dlg.cbxFeatureType.currentData()
     extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() 
 
     checked_subfeature_tables = get_checked_features(dbLoader)
@@ -211,20 +213,7 @@ def fieldVisibility (layer,fname):
         else:
             continue
 
-def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
-                    Layer= '', Key= '', Value= '',
-                    NofColumns= 1, OrderByValue= False, UseCompleter= False):
 
-    config =   {'AllowMulti': AllowMulti,
-                'AllowNull': AllowNull,
-                'FilterExpression':FilterExpression,
-                'Layer': Layer,
-                'Key': Key,
-                'Value': Value,
-                'NofColumns': NofColumns,
-                'OrderByValue': OrderByValue,
-                'UseCompleter': UseCompleter}
-    return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
 
 
 

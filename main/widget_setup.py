@@ -1,180 +1,417 @@
+"""Widget setup docsting"""
 
-from torch import empty
-from .installation import *
-from .connection_tab import *
-from .functions import *
-from .threads import *
-from .import_tab import *
-from .widget_reset import *
+import time
+from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem, QgsProject
+from qgis.core import QgsMessageLog, Qgis, QgsGeometry, QgsRasterLayer, QgsWkbTypes
+from qgis.gui import QgsRubberBand, QgsMapCanvas
+from qgis.PyQt.QtWidgets import QMessageBox, QSizePolicy
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import Qt
+import psycopg2
+
+from . import installation
+from . import connection_tab
+from . import constants
+from . import threads
+from . import import_tab
+from . import widget_reset
+from . import sql
 
 
-### Connection tab
-def cbxExistingConnection_setup(dbLoader):
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+# Connection tab
+def cbxExistingConnection_setup(dbLoader) -> None:
+    """Function to setup the entire gui after a change signal is emitted from
+    the cbxExistingConnection comboBox.
 
-    ### Database groupbox
-    dbLoader.dlg.gbxDatabase.setDisabled(False)
-    dbLoader.dlg.btnConnectToDB.setText(f"Connect to '{selected_db.database_name}'")
-    dbLoader.dlg.lblConnectToDB.setDisabled(False)
-    dbLoader.dlg.btnConnectToDB.setDisabled(False)
+    This function runs every time the current selection of 'Existing Connection'
+    changes.
+    """
 
-    dbLoader.dlg.lblSchema.setDisabled(True)
-    dbLoader.dlg.cbxSchema.clear()
-    dbLoader.dlg.cbxSchema.setDisabled(True)
+    # Variable to store the plugin's main dialog
+    dialog = dbLoader.dlg
+
+    # Database groupbox.
+    dialog.gbxDatabase.setDisabled(False)
+
+    # TODO: create and set to init_text for btnConnectToDB (btnInstallDB). 
+    dialog.btnConnectToDB.setText(f"Connect to '{dbLoader.DB.database_name}'")
+    dialog.btnConnectToDB.setDisabled(False)
+    dialog.lblConnectToDB.setDisabled(False)
+
+    widget_reset.reset_gbxDatabase(dbLoader=dbLoader)
+
+    # Connection Status groupbox
+    widget_reset.reset_gbxConnectionStatus(dbLoader=dbLoader)
+
+    # User Type groupbox
+    widget_reset.reset_gbxUserType(dbLoader=dbLoader)
+
+    # Close the current open connection.
+    if dbLoader.conn is not None:
+        dbLoader.conn.close()
+
+    # Import tab
+    widget_reset.reset_tabImport(dbLoader)
+
+    # Settings tab
+    widget_reset.reset_tabSettings(dbLoader)
+
+def btnConnectToDB_setup(dbLoader) -> None:
+    """Function to setup the entire gui after a click signal is emitted from
+    the btnConnectToDB pushButton.
+
+    This function runs every time the 'Connect to {DB}' button is pressed.
+    """
+
+    # Variable to store the plugin's main dialog
+    dialog = dbLoader.dlg
 
     ### Connection Status groupbox
-    dbLoader.dlg.gbxConnectionStatus.setDisabled(True)
-    dbLoader.dlg.lblConnectedToDB_out.clear()
-    dbLoader.dlg.lblServerVersion_out.clear()
-    dbLoader.dlg.lblUserPrivileges_out.clear()
-    dbLoader.dlg.lbl3DCityDBVersion_out.clear()
-    dbLoader.dlg.lblInstall.setText("Installation for <schema>:")
-    dbLoader.dlg.lblInstall_out.clear()
+    dialog.gbxConnectionStatus.setDisabled(False)
 
-    ### User Type groupbox
-    reset_gbxUserType(dbLoader)
-    dbLoader.dlg.gbxUserType.setDisabled(True)
 
-    if dbLoader.conn: dbLoader.conn.close()
-
-    reset_tabImport(dbLoader)
-    reset_tabSettings(dbLoader)
-
-    dbLoader.connection_status={'ConnectedToDB':False,'ServerVersion':False,'UserPrivileges':False,'3DCityDBVersion':False,'Install':False}
-
-def btnConnectToDB_setup(dbLoader):
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-
-    ### Connection Status groupbox
-    dbLoader.dlg.gbxConnectionStatus.setDisabled(False)
-
-    successful_connection = is_connected(dbLoader)
+    successful_connection = connection_tab.open_connection(dbLoader)
+    
     if successful_connection:
         
         ##Show successful database name connection and server version
-        dbLoader.dlg.lblConnectedToDB_out.setText(success_html.format(selected_db.database_name))
-        selected_db.green_connection=True
-        dbLoader.dlg.lblServerVersion_out.setText(success_html.format(selected_db.s_version))
-        selected_db.green_s_version=True
+        dialog.lblConnectedToDB_out.setText(constants.success_html.format(dbLoader.DB.database_name))
+        dbLoader.DB.green_connection=True
+        dialog.lblServerVersion_out.setText(constants.success_html.format(dbLoader.DB.s_version))
+        dbLoader.DB.green_s_version=True
 
-        if is_3dcitydb(dbLoader):
-            selected_db.green_c_verison=True
-            dbLoader.dlg.lbl3DCityDBVersion_out.setText(success_html.format(selected_db.c_version))
+        if connection_tab.is_3dcitydb(dbLoader):
+            dbLoader.DB.green_c_verison=True
+            dialog.lbl3DCityDBVersion_out.setText(constants.success_html.format(dbLoader.DB.c_version))
         else: 
-            selected_db.green_c_verison=False
-            dbLoader.dlg.lbl3DCityDBVersion_out.setText(failure_html.format(selected_db.database_name+' DOES NOT have 3DCityDB installed.'))
+            dbLoader.DB.green_c_verison=False
+            dialog.lbl3DCityDBVersion_out.setText(constants.failure_html.format(dbLoader.DB.database_name+' DOES NOT have 3DCityDB installed.'))
 
-
+        
         ##Enalbe and fill schema comboBox
-        dbLoader.dlg.cbxSchema.setDisabled(False)
-        dbLoader.dlg.lblSchema.setDisabled(False)
-        get_schemas(dbLoader)           #Stored in dbLoader.schemas
-        fill_schema_box(dbLoader)       #Stored in dbLoader.dlg.cbxSchema
+        dialog.cbxSchema.setDisabled(False)
+        dialog.lblSchema.setDisabled(False)
+        connection_tab.get_schemas(dbLoader)           #Stored in dbLoader.schemas
+        connection_tab.fill_schema_box(dbLoader)       #Stored in dbLoader.dlg.cbxSchema
         #At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event. 
         #So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
     else: 
-        dbLoader.dlg.lblConnectedToDB_out.setText(failure_html.format('Unsucessful connection'))
-        selected_db.green_connection=False
-        dbLoader.dlg.lblServerVersion_out.setText(failure_html.format('')) 
-        selected_db.green_s_version=False     
-        dbLoader.dlg.cbxSchema.setDisabled(True)
-        dbLoader.dlg.lblSchema.setDisabled(True)
+        dialog.lblConnectedToDB_out.setText(constants.failure_html.format('Unsucessful connection'))
+        dbLoader.DB.green_connection=False
+        dialog.lblServerVersion_out.setText(constants.failure_html.format('')) 
+        dbLoader.DB.green_s_version=False     
+        dialog.cbxSchema.setDisabled(True)
+        dialog.lblSchema.setDisabled(True)
 
 def cbxSchema_setup(dbLoader):
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    selected_schema=dbLoader.dlg.cbxSchema.currentText()
 
-    if not selected_schema: return None
+
+
+    if not dbLoader.SCHEMA: return None
 
     ### Connection Status groupbox
-    dbLoader.dlg.lblInstall.setText(f"Installation for {selected_schema}:")
+    dbLoader.dlg.lblInstall.setText(f"Installation for {dbLoader.SCHEMA}:")
     dbLoader.dlg.lblUserPrivileges_out.clear()
 
    
     
     #Catch and show errors
-    privileges_dict=table_privileges(dbLoader)
+    privileges_dict=connection_tab.table_privileges(dbLoader)
     if not privileges_dict: 
         dbLoader.dlg.lblInstall_out.clear()
-        selected_db.green_privileges=False
-        return dbLoader.dlg.lblUserPrivileges_out.setText(failure_html.format('An error occured assesing privileges. See log'))
+        dbLoader.DB.green_privileges=False
+        return dbLoader.dlg.lblUserPrivileges_out.setText(constants.failure_html.format('An error occured assesing privileges. See log'))
 
     #Show user privilages
-    dbLoader.availiable_privileges = true_privileges(privileges_dict)
+    dbLoader.availiable_privileges = connection_tab.true_privileges(privileges_dict)
     if len(privileges_dict)==len(privileges_dict):
-        dbLoader.dlg.lblUserPrivileges_out.setText(success_html.format(dbLoader.availiable_privileges))
-        selected_db.green_privileges=True
+        dbLoader.dlg.lblUserPrivileges_out.setText(constants.success_html.format(dbLoader.availiable_privileges))
+        dbLoader.DB.green_privileges=True
     elif len(privileges_dict)==0:
-        dbLoader.dlg.lblUserPrivileges_out.setText(failure_html.format(dbLoader.availiable_privileges))
-        selected_db.green_privileges=False
-    else: dbLoader.dlg.lblUserPrivileges_out.setText(crit_warning_html.format(dbLoader.availiable_privileges))
+        dbLoader.dlg.lblUserPrivileges_out.setText(constants.failure_html.format(dbLoader.availiable_privileges))
+        dbLoader.DB.green_privileges=False
+    else: dbLoader.dlg.lblUserPrivileges_out.setText(constants.crit_warning_html.format(dbLoader.availiable_privileges))
     
      #Check for schema installation
     dbLoader.dlg.lblInstall_out.clear()
-    has_qgispkg= has_qgis_pkg(dbLoader)
+    has_qgispkg= installation.has_qgis_pkg(dbLoader)
     if not has_qgispkg:
-        dbLoader.dlg.lblInstall_out.setText(crit_warning_html.format('qgis_pkg is not installed!\n\tRequires installation!'))
-        selected_db.green_installation=False
-        return installation_query(dbLoader,f"Database '{selected_db.database_name}' requires 'qgis_pkg' to be installed with contents mapping '{selected_schema}' schema.\nDo you want to proceed?",origin=dbLoader.dlg.lblInstallLoadingCon)
+        dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format('qgis_pkg is not installed!\n\tRequires installation!'))
+        dbLoader.DB.green_installation=False
+        return installation.installation_query(dbLoader,f"Database '{dbLoader.DB.database_name}' requires 'qgis_pkg' to be installed with contents mapping '{dbLoader.SCHEMA}' schema.\nDo you want to proceed?",origin=dbLoader.dlg.lblInstallLoadingCon)
     else:
-        selected_db.has_installation = True
-        qgispkg_has_views= has_schema_views(dbLoader,selected_schema)
+        dbLoader.DB.has_installation = True
+        qgispkg_has_views= installation.has_schema_views(dbLoader,dbLoader.SCHEMA)
     #NOTE: TODO need to check also for materialised views, functions and triggers are OK
 
         if qgispkg_has_views:
-            dbLoader.dlg.lblInstall_out.setText(success_html.format('qgis_pkg is already installed!'))
-            selected_db.green_installation=True
+            dbLoader.dlg.lblInstall_out.setText(constants.success_html.format('qgis_pkg is already installed!'))
+            dbLoader.DB.green_installation=True
         elif has_qgispkg and not qgispkg_has_views: 
-            dbLoader.dlg.lblInstall_out.setText(crit_warning_html.format(f'qgis_pkg is already installed but NOT for {selected_schema}!\n\tRequires installation!'))
-            selected_db.green_installation=False
+            dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format(f'qgis_pkg is already installed but NOT for {dbLoader.SCHEMA}!\n\tRequires installation!'))
+            dbLoader.DB.green_installation=False
             return False#installation_query(dbLoader,f"'qgis_pkg' needs to be enhanced with contents mapping '{selected_schema}' schema.\nDo you want to proceed?")
 
-    
-    return True
+
 
 def gbxUserType_setup(dbLoader,user_type):
     print(f'I am {user_type}')
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+    
+    #dbLoader.CANVAS.scene().removeItem(dbLoader.RUBBER_EXTS)
+
     selected_schema=dbLoader.dlg.cbxSchema.currentText()
-    reset_tabImport(dbLoader)
+    widget_reset.reset_tabImport(dbLoader)
     
     dbLoader.dlg.tabImport.setDisabled(False)
-    dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text.format(Database=selected_db.database_name,Schema=selected_schema))
+    dbLoader.dlg.lblDbSchema.setText(dbLoader.dlg.lblDbSchema.init_text.format(Database=dbLoader.DB.database_name,Schema=selected_schema))
     dbLoader.dlg.lblDbSchema.setDisabled(False)
     
     dbLoader.dlg.tabSettings.setDisabled(False)
     tabSettings_setup(dbLoader,user_type)
     
+    gbxBasemap_setup(dbLoader)    
+    dbLoader.dlg.gbxBasemap.setCollapsed(False)
+
+
+    # Check qgis_pkg for materialised views
+    if import_tab.has_matviews(dbLoader) == False:
+        res = QMessageBox.question(dbLoader.dlg,"Warning",
+        f"Views need to be created in qgis_pkg!\n"
+        f"Do you want to proceed?") 
+        if res == 16384: # YES
+            # Install mat views
+            sql.exec_create_mview(dbLoader)
+            # Install updatable views
+            sql.exec_create_updatable_views(dbLoader)
+        else: 
+            return None
+
+    # Prompt user to refreash the materilised views.
+    res = QMessageBox.question(dbLoader.dlg,
+        "Notice", 
+        f"Do you want to refresh the materilised views?!\n"
+                f"Note that this process takes a lot of time!") 
+    if res == 16384: # YES
+        # Refreash views. Initiates worker thread for loading animation.
+        threads.refresh_views_thread(dbLoader)
 
 
     dbLoader.dlg.wdgMain.setCurrentIndex(1)
+    
+    
+    
+    
+
+    
 
 ### Import tab
-def btnCityExtents_setup(dbLoader):
-    cur = dbLoader.conn.cursor()
-    cur.execute("""SELECT ST_AsText(ST_SetSRID(ST_Extent(envelope),28992)),'' FROM citydb.cityobject""")
-    extents,empty = cur.fetchone()
-    cur.close()
-    crs =dbLoader.iface.mapCanvas().mapSettings().destinationCrs().authid()
-    qgis_extent=QgsRectangle.fromWkt(extents)
-    dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(qgis_extent,QgsCoordinateReferenceSystem(crs))
-    
-def qgbxExtent_setup(dbLoader):
-    dbLoader.dlg.cbxModule.clear()
-    dbLoader.dlg.gbxParameters.setDisabled(False)
-    fill_module_box(dbLoader)
+def gbxBasemap_setup(dbLoader, extents: QgsRectangle = None) ->  None:
 
-def cbxModule_setup(dbLoader):
+    try:
+        extents_exist = False
+        while not extents_exist:
+
+            # Get the extents stored in server.
+            extents = sql.fetch_extents(dbLoader,
+                type=constants.bbox_types["schema"])
+
+            # Extents might be None (not computed yet).
+            if extents:
+                extents_exist = True
+
+                crs = sql.fetch_crs(dbLoader)
+                
+                # Format CRS variable as QGIS epsg code.
+                crs = ":".join(["EPSG",str(crs)]) # e.g. EPSG:28992
+                dbLoader.CRS = QgsCoordinateReferenceSystem(crs)
+
+                # Convert extents format to QgsRectangle object.
+                extents = QgsRectangle.fromWkt(extents)
+                # Store extents into plugin variable.
+                dbLoader.EXTENTS = extents
+
+                # Move canvas widget in the layout containing the extents.
+                dbLoader.dlg.verticalLayout_5.addWidget(dbLoader.CANVAS)
+                #dbLoader.CANVAS.show()
+
+                # Setting up CRS, extents, basemap for the canvas.
+                CANVAS_setup(dbLoader, extents=extents)
+
+                # Put extents coordinates into the widget.
+                dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(dbLoader.EXTENTS,dbLoader.CRS)
+                
+                # Zoom to these extents.
+                dbLoader.CANVAS.zoomToFeatureExtent(extents)
+            # Compute the extents.
+            else:
+                sql.exec_compute_schema_extents(dbLoader)
+
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happenes
+        FUNCTION_NAME = cbxSchema_setup.__name__
+        FILE_LOCATION = constants.get_file_location(file=__file__)
+        LOCATION = ">".join([FILE_LOCATION,FUNCTION_NAME])
+
+        # Specify in the header the type of error and where it happend.
+        header = constants.log_errors.format(type="Fetching extents", loc=LOCATION)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        
+        dbLoader.conn.rollback()
+        return False
+
+def CANVAS_setup(dbLoader,
+        extents: QgsRectangle) -> None:
+    """Function to set up the additional map canvas that shows the extents.
+
+    For the base map it uses a google maps WMS layer
+    
+    NOTE: CRS is set from the dbLoader.CRS variable. So DON'T use this function
+    until dbLoader.CRS is properly set.
+
+    *   :param dbLoader: Main plugin class
+
+        :type dbLoader: DBLoader
+
+    *   :param extents: Extents to focus the canvas on.
+
+        :type extents: QgsRectangle
+    """
+
+    # Set CRS and extents of the canvas
+    dbLoader.CANVAS.setDestinationCrs(dbLoader.CRS)
+    dbLoader.CANVAS.setExtent(extents,True)
+
+    # Create WMS "sudo-layer" to set as the basemap of tje canvas
+    vlayer = QgsRasterLayer(constants.GOOGLE_URI,
+        baseName="Google Maps Basemap",
+        providerType="wms")
+    
+    # Make sure that the layer can load properly
+    assert vlayer.isValid()
+
+    # add layer to the registry
+    QgsProject.instance().addMapLayer(vlayer,addToLegend=False)
+
+    # Set the map canvas layer set
+    dbLoader.CANVAS.setLayers([vlayer])   
+
+    # Draw the extents in the canvas
+    # Create polygon rubber band corespoding to the extents
+    rb = QgsRubberBand(dbLoader.CANVAS, QgsWkbTypes.PolygonGeometry)
+    extents_geometry = QgsGeometry.fromRect(extents)
+    rb.setToGeometry(extents_geometry,dbLoader.CRS)
+    rb.setColor(QColor(Qt.blue))
+    rb.setWidth(3)
+    rb.setFillColor(Qt.transparent)
+
+def insert_rubber_band(dbLoader,
+        extents: QgsRectangle,
+        color: Qt.GlobalColor = Qt.red) -> None:
+    """Function that insert a rubber band correspoding to an extent.
+    
+    The rubber band is inserted into the additional map canvas created
+    to show the extents.
+
+    Use different color to represent differnt extent types
+    e.g.    
+    +   Qt.blue = pre-computed extents
+    +   Qt.red = User defined extents, pressing the buttons
+
+        or from qgis_pkg.extents
+    +   Qt.blue = db_schema extents
+    +   Qt.red = m_view extents
+    +   Qt.green = qgis extents
+
+
+    *   :param extents: Extents to focus the canvas on.
+
+        :type extents: QgsRectangle
+
+    *   :param color: Color to paint the extents.
+
+        :type color: GlobalColor
+    """
+
+    # Remove previous rubber band extents before creating new ones. 
+    if dbLoader.RUBBER_EXTS:
+        dbLoader.CANVAS.scene().removeItem(dbLoader.RUBBER_EXTS)
+
+    # Create polygon rubber band corespoding to the extents
+    dbLoader.RUBBER_EXTS = QgsRubberBand(dbLoader.CANVAS, QgsWkbTypes.PolygonGeometry)
+    extents_geometry = QgsGeometry.fromRect(extents)
+    dbLoader.RUBBER_EXTS.setToGeometry(extents_geometry,dbLoader.CRS)
+    dbLoader.RUBBER_EXTS.setColor(QColor(color))
+    dbLoader.RUBBER_EXTS.setWidth(2)
+    dbLoader.RUBBER_EXTS.setFillColor(Qt.transparent)
+
+    # Zoom to these rubber band.
+    dbLoader.CANVAS.zoomToFeatureExtent(dbLoader.EXTENTS)
+
+def btnCityExtents_setup(dbLoader):
+    
+    
+    # Get the extents stored in server (already computed at this point).
+    extents = sql.fetch_extents(dbLoader, type=constants.bbox_types["schema"])
+
+    assert extents, "Extents don't exist but should have been aleady computed!"
+
+    # Convert extents format to QgsRectangle object.
+    extents = QgsRectangle.fromWkt(extents)
+    # Update extents in plugin variable.
+    dbLoader.EXTENTS = extents
+
+
+    # Put extents coordinates into the widget.
+    dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(dbLoader.EXTENTS,dbLoader.CRS)
+
+
+
+def qgbxExtent_setup(dbLoader):
+    dbLoader.dlg.cbxFeatureType.clear()
+    dbLoader.dlg.gbxParameters.setDisabled(False)
+
+    # NOTE: Draw on Canvas has an undesired effect.
+    # There is a hardcoded True value that causes the parent dialog to 
+    # toggle its visibility to let the user draw. But in our case
+    # the parent dialog contains the canvas that we need to draw on.
+    # Re-opening the plugin allows us to draw in the canvas but with the
+    # caveat that the drawing tool never closes (also cause some qgis crashes).
+    # https://github.com/qgis/QGIS/blob/master/src/gui/qgsextentgroupbox.cpp
+    # https://github.com/qgis/QGIS/blob/master/src/gui/qgsextentwidget.h
+    # line 251 extentDrawn function
+    # https://qgis.org/pyqgis/3.16/gui/QgsExtentGroupBox.html
+    # https://qgis.org/pyqgis/3.16/gui/QgsExtentWidget.html
+ 
+    # Update extents variable with recalculated ones.
+    dbLoader.EXTENTS = dbLoader.dlg.qgbxExtent.outputExtent()
+
+    # Draw the extents in the canvas
+    insert_rubber_band(dbLoader, extents=dbLoader.EXTENTS, color=Qt.red)
+
+    t0 = time.time()
+    # Operations cascade to a lot of functions from here!
+    import_tab.fill_FeatureType_box(dbLoader)
+    t1 = time.time()
+
+    print("time to excectute events from signals emited by \na change of extents: ",t1-t0)
+
+def cbxFeatureType_setup(dbLoader):
     dbLoader.dlg.cbxLod.clear()
     dbLoader.dlg.cbxLod.setDisabled(False)
-    fill_lod_box(dbLoader)
+    import_tab.fill_lod_box(dbLoader)
 
 def cbxLod_setup(dbLoader):
     dbLoader.dlg.gbxFeatures.setDisabled(False)
     dbLoader.dlg.ccbxFeatures.clear()
     dbLoader.dlg.ccbxFeatures.setDefaultText("Select availiable features to import")
-    fill_features_box(dbLoader)
+    import_tab.fill_features_box(dbLoader)
              
 def ccbxFeatures_setup(dbLoader):
 
@@ -188,21 +425,20 @@ def ccbxFeatures_setup(dbLoader):
         dbLoader.dlg.btnImport.setDisabled(True)
 
 def btnImport_setup(dbLoader):
-    checked_views = get_checkedItemsData(dbLoader.dlg.ccbxFeatures)
+    checked_views = import_tab.get_checkedItemsData(dbLoader.dlg.ccbxFeatures)
     #checked_views = dbLoader.dlg.ccbxFeatures.checkedItemsData() NOTE: this builtin method works only for string types. Check https://qgis.org/api/qgscheckablecombobox_8cpp_source.html line 173
-    print(checked_views)
 
     counter= 0
     for view in checked_views:
-        view.selected_count+=counter
+        view.n_selected+=counter
     if counter>100:
         res= QMessageBox.question(dbLoader.dlg,"Warning", f"Too many features set to be imported ({counter})!\n"
                                                     f"This could hinder perfomance and even cause frequent crashes.\nDo you want to continue?") 
         if res == 16384: # YES
-            success=import_layers(dbLoader,checked_views)   
+            success=import_tab.import_layers(dbLoader,checked_views)   
         else: return None #Import Cancelled
     else: 
-        success=import_layers(dbLoader,checked_views)
+        success=import_tab.import_layers(dbLoader,checked_views)
 
     if not success: 
         QgsMessageLog.logMessage(message="Something went wrong!",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
@@ -210,9 +446,9 @@ def btnImport_setup(dbLoader):
     
 
 
-    group_node= get_node_database(dbLoader)        
-    order_ToC(group_node)     
-    send_to_top_ToC(group_node)        
+    group_node= import_tab.get_node_database(dbLoader)        
+    import_tab.order_ToC(group_node)     
+    import_tab.send_to_top_ToC(group_node)        
     
     QgsMessageLog.logMessage(message="",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
 
@@ -220,25 +456,25 @@ def btnImport_setup(dbLoader):
     
 ### Settings tab
 def tabSettings_setup(dbLoader,user_type):
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
+
     selected_schema=dbLoader.dlg.cbxSchema.currentText()
 
 
 
     if user_type=='Viewer':        
-        reset_tabSettings(dbLoader)
+        widget_reset.reset_tabSettings(dbLoader)
 
     elif user_type=='Editor':
-        dbLoader.dlg.btnInstallDB.setText(dbLoader.dlg.btnInstallDB.init_text.format(DB=selected_db.database_name,SC=selected_schema))
+        dbLoader.dlg.btnInstallDB.setText(dbLoader.dlg.btnInstallDB.init_text.format(DB=dbLoader.DB.database_name,SC=selected_schema))
         dbLoader.dlg.btnInstallDB.setDisabled(False)
 
-        dbLoader.dlg.btnUnInstallDB.setText(dbLoader.dlg.btnUnInstallDB.init_text.format(DB=selected_db.database_name,SC=selected_schema))
+        dbLoader.dlg.btnUnInstallDB.setText(dbLoader.dlg.btnUnInstallDB.init_text.format(DB=dbLoader.DB.database_name,SC=selected_schema))
         dbLoader.dlg.btnUnInstallDB.setDisabled(False)
 
-        dbLoader.dlg.btnClearDB.setText(dbLoader.dlg.btnClearDB.init_text.format(DB=selected_db.database_name))
+        dbLoader.dlg.btnClearDB.setText(dbLoader.dlg.btnClearDB.init_text.format(DB=dbLoader.DB.database_name))
         dbLoader.dlg.btnClearDB.setDisabled(False)
    
-        dbLoader.dlg.btnRefreshViews.setText(dbLoader.dlg.btnRefreshViews.init_text.format(DB=selected_db.database_name,SC=selected_schema))
+        dbLoader.dlg.btnRefreshViews.setText(dbLoader.dlg.btnRefreshViews.init_text.format(DB=dbLoader.DB.database_name,SC=selected_schema))
         dbLoader.dlg.btnRefreshViews.setDisabled(False)
 
     dbLoader.dlg.gbxExtent.setDisabled(False)
@@ -249,14 +485,14 @@ def btnRefreshViews_setup(dbLoader):
     res= QMessageBox.question(dbLoader.dlg,"Refreshing Views", message)
     
     if res == 16384: #YES   
-        refresh_views_thread(dbLoader,cursor=cur)
+        threads.refresh_views_thread(dbLoader)
         
 def btnInstallDB_setup(dbLoader):
-    installation_query(dbLoader, "This is going to take a while! Do you want to proceed?",origin=dbLoader.dlg.lblLoadingInstall)
+    installation.installation_query(dbLoader, "This is going to take a while! Do you want to proceed?",origin=dbLoader.dlg.lblLoadingInstall)
 
 def btnClearDB_setup(dbLoader):
-    uninstall_pkg(dbLoader)
-    reset_tabImport(dbLoader)
-    reset_tabConnection(dbLoader)
+    installation.uninstall_pkg(dbLoader)
+    widget_reset.reset_tabImport(dbLoader)
+    widget_reset.reset_tabConnection(dbLoader)
     dbLoader.dlg.btnClearDB.setDisabled(True)
     dbLoader.dlg.btnClearDB.setText(dbLoader.dlg.btnClearDB.init_text)

@@ -1,5 +1,7 @@
+"""Connections docsting"""
+
 from qgis.core import QgsSettings
-from ..dialog.connector_dialog import Ui_dlgConnector
+from ..connector_dialog import Ui_dlgConnector
 from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QDialog
 import psycopg2

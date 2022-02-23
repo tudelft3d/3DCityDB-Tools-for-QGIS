@@ -13,12 +13,11 @@ __date__ = '2021-09-30'
 __copyright__ = 'Copyright 2021, Konstantinos Pantelios'
 
 import unittest
+from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
 
-from qgis.PyQt.QtGui import QDialogButtonBox, QDialog
+from ..citydb_loader_dialog import DBLoaderDialog
 
-from citydb_loader_dialog import DBLoaderDialog
-
-from utilities import get_qgis_app
+from .utilities import get_qgis_app
 QGIS_APP = get_qgis_app()
 
 
