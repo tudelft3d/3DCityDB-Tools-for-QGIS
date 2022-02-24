@@ -1,51 +1,56 @@
-2021-12-29
+2022-xx-xx TO DO
 ----------
-Initial release
-Materialized views for buildings, building installations geometries
-Updatable views for buildings, building installations
+Updating install script to be more similar to the one of 3DCityDB v. 4.x
+Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
-2022-01-04:
+2022-02-24
 ----------
-Added materialized views for relief feature, TIN relief and solitary vegetation object geometries
-Code restructured and cleaned up
-Added function [qgis_pkg.refresh_materialized_view()]
+Added script 15 (Look-up tables revised):
+	Created tables [gis_pkg.codelist,gis_pkg.codelist_value,gis_pkg.enumeration, gis_pkg.enumeration_value]
+	Created views [gis_pkg.v_codelist_value, gis_pkg.v_enumeration_value]
+	Work in progress to reduce the number of look-up tables, lu_tables are still loaded in parallel
+Script 20: Merged and harmonises Kostantinos' functions.
 
-2022-01-18:
+2022-02-22
 ----------
-Added updatable views for relief feature, TIN relief and solitary vegetation object
-Restructured update functions for tables and views
-T- and V- and trigger functions made dynamic to be used with multiple citydb schemas
-Rewritten function [qgis_pkg.refresh_materialized_view()] to work with schema_name and mat_view_name parameters
-Code clean-up and some bugs removed
+Script 30: Added remaining types. Now COMPLETE. Some unnecessary commented out.
+Script 40: Added remaining upd_t-functions. Now COMPLETE, some unnecessary left out.
+Script 50:
+	DDL generation is now dynamic.
+	Added remaining upd_v-functions. Now COMPLETE, some unnecessary left out.
+Script 60:
+	DDL generation is now dynamic.
+	Added remaining trigger functions. Now COMPLETE, some unnecessary left out.
+Script 80: Added more triggers
 
-2022-01-19:
+2022-02-18
 ----------
-Renamed views for thematic surfaces adding "themsurf" to the name
-Corrected some errors in triggers
-Extended table qgis_pkg.materialized_views with columns "hierarchy" and "schema_name" 
-TEMPORARY WORKAROUND: added hard-coded SRID to geometry columns of materialized views and views (any difference?)
-
-2022-01-31
-----------
-Started restructuring materialized views (and views) according to new hierarchy after discussion with VCS
-Renamed all names with *_bdg_* to *_building_*
-Added ST_SnapToGrid function (and precision of 0.001) to geometries in materialised views.
-	Details: https://postgis.net/docs/ST_SnapToGrid.html
-WARNING: the actual queries for geometries in the materialized views need further updates
-Slightly improved [qgis_pkg.refresh_materialized_view()] to show time needed to update materialized view(s)
+Script 10: Added table [qgis_pkg.extents]
+Script 20: 
+	Added function [qgis_pkg.compute_schema_extents()]
+		Computes the extents of the whole city model in the chosed citydb schema
+	Added function [qgis_pkg.upsert_extents()]
+		Perform upsert operation on table [qgis_pkg.extents] to store the envelope values
+	Added functions [qgis_pkg.create_mviews()] and [qgis_pkg.create_updatable_views()]
+Script 70:
+	Added mviews for WaterBody module
+	Added code stubs for Transportation module (currently deactivated)
+Script 80:
+	Added views for WaterBody module
+Script 90: Reworked and added more examples to install (m)views dynamically
 
 2022-02-17
 ----------
 Restructured file contents:
-	01: Create schema qgis_pkg, create tables and look-up tables
-	02: Create functions to be stored in schema qgis_pkg
-	03: Create types corresponding to the 3DCityDB tables
-	04: Update t(able) functions
-	05: Update v(view) functions
-	06: Trigger functions (insert, update, delete)
-	07: DDL generation for materialized views
-	08: DDL generation for views and triggers
-	09: Miscellaneous (e.g. run function to refresh materialised views)
+	10: Create schema qgis_pkg, create tables and look-up tables
+	20: Create functions to be stored in schema qgis_pkg
+	30: Create types corresponding to the 3DCityDB tables
+	40: Update t(able) functions
+	50: Update v(view) functions
+	60: Trigger functions (insert, update, delete)
+	70: DDL generation for materialized views
+	80: DDL generation for views and triggers
+	90: Miscellaneous (e.g. run function to refresh materialised views)
 Reworked and improved metadata table for materialised views [qgis_pkg.layer_metadata]
 Renamed and improved function [qgis_pkg.refresh_mview()]
 	Improvements to better show partial and total elapsed time to refresh materialised views
@@ -75,28 +80,40 @@ Upgraded scripts in 08: Major rework of the whole script structure
 	Currently generating 156 views
 		Not all are already updatable
 
-2022-02-19
+2022-01-31
 ----------
-Script 01: Added table [qgis_pkg.extents]
-Script 02: 
-	Added function [qgis_pkg.compute_schema_extents()]
-		Computes the extents of the whole city model in the chosed citydb schema
-	Added function [qgis_pkg.upsert_extents()]
-		Perform upsert operation on table [qgis_pkg.extents] to store the envelope values
-	Added functions [qgis_pkg.create_mviews()] and [qgis_pkg.create_updatable_views()]
-Script 07:
-	Added mviews for WaterBody module
-	Added code stubs for Transportation module (currently deactivated)
-Script 08:
-	Added views for WaterBody module
-Script 09: Reworked and added more examples to install (m)views dynamically
+Started restructuring materialized views (and views) according to new hierarchy after discussion with VCS
+Renamed all names with *_bdg_* to *_building_*
+Added ST_SnapToGrid function (and precision of 0.001) to geometries in materialised views.
+	Details: https://postgis.net/docs/ST_SnapToGrid.html
+WARNING: the actual queries for geometries in the materialized views need further updates
+Slightly improved [qgis_pkg.refresh_materialized_view()] to show time needed to update materialized view(s)
 
-
-
-
-
-
-2022-xx-xx
+2022-01-19:
 ----------
-Updating install script to be more similar to the one of 3DCityDB v. 4.x
-Test whether it makes sense to add "hard-coded" bbox filter also to views.
+Renamed views for thematic surfaces adding "themsurf" to the name
+Corrected some errors in triggers
+Extended table qgis_pkg.materialized_views with columns "hierarchy" and "schema_name" 
+TEMPORARY WORKAROUND: added hard-coded SRID to geometry columns of materialized views and views (any difference?)
+
+2022-01-18:
+----------
+Added updatable views for relief feature, TIN relief and solitary vegetation object
+Restructured update functions for tables and views
+T- and V- and trigger functions made dynamic to be used with multiple citydb schemas
+Rewritten function [qgis_pkg.refresh_materialized_view()] to work with schema_name and mat_view_name parameters
+Code clean-up and some bugs removed
+
+2022-01-04:
+----------
+Added materialized views for relief feature, TIN relief and solitary vegetation object geometries
+Code restructured and cleaned up
+Added function [qgis_pkg.refresh_materialized_view()]
+
+2021-12-29
+----------
+Initial release
+Materialized views for buildings, building installations geometries
+Updatable views for buildings, building installations
+
+-- END OF DOCUMENT --

@@ -8,12 +8,12 @@ SET client_min_messages TO WARNING;
 \i postgresql/10_setup.sql
 
 \echo
-\echo 'Installing the main functions'
-\i postgresql/20_functions.sql
+\echo 'Installing the objects (types)'
+\i postgresql/15_enums_codelists.sql
 
 \echo
-\echo 'Installing other functions'
-\i postgresql/25_functions_k.sql
+\echo 'Installing the tables'
+\i postgresql/20_functions.sql
 
 \echo
 \echo 'Installing the objects (types)'

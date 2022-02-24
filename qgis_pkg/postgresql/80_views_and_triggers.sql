@@ -189,7 +189,7 @@ EXECUTE sql_statement;
 			) AS t(tr_short, tr_small, tr_cap)
 		LOOP
 
-trigger_f := concat('tr_',tr.tr_short,'_building_thematic_surface()');
+trigger_f := concat('tr_',tr.tr_short,'_thematic_surface()');
 
 sql_statement := concat('
 DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
@@ -308,7 +308,7 @@ EXECUTE sql_statement;
 			) AS t(tr_short, tr_small, tr_cap)
 		LOOP
 
-trigger_f := concat('tr_',tr.tr_short,'_building_thematic_surface()');
+trigger_f := concat('tr_',tr.tr_short,'_thematic_surface()');
 
 sql_statement := concat('
 DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
@@ -321,7 +321,6 @@ COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS
 EXECUTE sql_statement;
 		END LOOP; -- end loop trigger operation list
 -- ********* END TRIGGERS
-
 
 			END LOOP; -- bdg outer installation thematic surface
 
@@ -429,7 +428,7 @@ EXECUTE sql_statement;
 			) AS t(tr_short, tr_small, tr_cap)
 		LOOP
 
-trigger_f := concat('tr_',tr.tr_short,'_building_thematic_surface()');
+trigger_f := concat('tr_',tr.tr_short,'_thematic_surface()');
 
 sql_statement := concat('
 DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
@@ -480,6 +479,30 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of (',r.class_name,') ',s.class
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_building()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
+
 ---------------------------------------------------------------
 -- Create VIEW for ROOM_THEMATIC_SURFACES
 ---------------------------------------------------------------
@@ -517,7 +540,7 @@ EXECUTE sql_statement;
 			) AS t(tr_short, tr_small, tr_cap)
 		LOOP
 
-trigger_f := concat('tr_',tr.tr_short,'_building_thematic_surface()');
+trigger_f := concat('tr_',tr.tr_short,'_thematic_surface()');
 
 sql_statement := concat('
 DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
@@ -567,6 +590,29 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of (',r.class_name,') ',s.class
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_opening()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
 		END LOOP; -- bgd window/door lod
 	END LOOP; -- bgd window/door
 
@@ -601,6 +647,29 @@ FROM
 COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of (',r.class_name,') ',s.class_name,' LoD4'';
 ');
 EXECUTE sql_statement;
+
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_building_furniture()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
 
 	END LOOP; -- building furniture
 
@@ -720,6 +789,29 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_na
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_plant_cover()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
 	END LOOP; -- plant_cover lod
 END LOOP; -- plant_cover
 
@@ -762,6 +854,29 @@ FROM
 COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_name,''';
 ');
 EXECUTE sql_statement;
+
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_land_use()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
 
 	END LOOP; -- land use lod
 END LOOP;  -- land use
@@ -806,6 +921,29 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_na
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_generic_cityobject()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
 	END LOOP; -- generic cityobject lod
 END LOOP;  -- generic cityobject
 
@@ -849,9 +987,31 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_na
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_city_furniture()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
 	END LOOP; -- city furniture lod
 END LOOP;  -- city furniture
-
 
 
 ---------------------------------------------------------------
@@ -880,7 +1040,7 @@ DROP VIEW IF EXISTS    qgis_pkg.',view_name,' CASCADE;
 CREATE OR REPLACE VIEW qgis_pkg.',view_name,' AS
 SELECT',sql_co_atts,'
   o.lod,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(PolygonZ,',srid_id,')
 FROM
 	qgis_pkg.',mview_name,' AS g 
 	INNER JOIN ',citydb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
@@ -1027,6 +1187,29 @@ COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_na
 ');
 EXECUTE sql_statement;
 
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+trigger_f := concat('tr_',tr.tr_short,'_waterbody()');
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
+
 	END LOOP; -- waterbody lod
 
 	FOR s IN 
@@ -1068,6 +1251,34 @@ FROM
 COMMENT ON VIEW qgis_pkg.',view_name,' IS ''View of ',r.class_name,' ',s.lodx_label,' ',u.themsurf_name,''';
 ');
 EXECUTE sql_statement;
+
+
+-- ********* BEGIN TRIGGERS
+		FOR tr IN 
+			SELECT * FROM (VALUES
+			('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
+			('upd',				'update',			'UPDATE'),
+			('del',				'delete',			'DELETE')	
+			) AS t(tr_short, tr_small, tr_cap)
+		LOOP
+
+IF u.themsurf_name = 'WaterSurface' THEN
+	trigger_f := concat('tr_',tr.tr_short,'_waterboundary_surface_watersurface()');
+ELSE 
+	trigger_f := concat('tr_',tr.tr_short,'_waterboundary_surface()');
+END IF;
+
+sql_statement := concat('
+DROP TRIGGER IF EXISTS tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,';
+CREATE TRIGGER         tr_',tr.tr_short,'_',view_name,'
+	INSTEAD OF ',tr.tr_cap,' ON qgis_pkg.',view_name,'
+	FOR EACH ROW
+	EXECUTE PROCEDURE qgis_pkg.',trigger_f,';
+COMMENT ON TRIGGER tr_',tr.tr_short,'_',view_name,' ON qgis_pkg.',view_name,' IS ''Fired upon ',tr.tr_small,' into view qgis_pkg.',view_name,''';
+');
+EXECUTE sql_statement;
+		END LOOP; -- end loop trigger operation list
+-- ********* END TRIGGERS
 
 		END LOOP; -- waterbody thematic surface
 	END LOOP; -- waterbody thematic surface lod

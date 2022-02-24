@@ -10,494 +10,546 @@
 
 DO $MAINBODY$
 DECLARE
+r RECORD;
+sql_statement varchar;
+sql_statement_head varchar;
+sql_statement_body varchar;
+sql_statement_tail varchar;
+sql_statement_co_fields varchar;
+sql_statement_cfu_fields varchar;
+
 BEGIN
 
+-- Generate all trigger functions for insert (to block insert operations) and delete functions
+FOR r IN
+	SELECT * FROM (VALUES
+	('address'::text					,'del_address'					),
+	('appearance'						,'del_appearance'				),
+	('breakline_relief'					,'del_breakline_relief'			),	
+	('bridge'							,'del_bridge'					),
+	('bridge_constr_element'			,'del_bridge_constr_element'	),	
+	('bridge_furniture'					,'del_bridge_furniture'			),
+	('bridge_installation'				,'del_bridge_installation'		),
+	('bridge_opening'					,'del_bridge_opening'			),
+	('bridge_room'						,'del_bridge_room'				),
+	('bridge_thematic_surface'			,'del_bridge_thematic_surface'	),
+	('building'							,'del_building'					),
+	('building_furniture'				,'del_building_furniture'		),
+	('building_installation'			,'del_building_installation'	),
+	('city_furniture'					,'del_city_furniture'			),
+	('cityobject_genericattrib'			,'del_cityobject_genericattrib'	),
+	('cityobjectgroup'					,'del_cityobjectgroup'			),
+	('external_reference'				,'del_external_reference'		),
+	('generic_cityobject'				,'del_generic_cityobject'		),
+--	('grid_coverage'					,'del_grid_coverage'			),
+--	('implicit_geometry'				,'del_implicit_geometry'		),		
+	('land_use'							,'del_land_use'					),
+	('masspoint_relief'					,'del_masspoint_relief'			),		
+	('opening'							,'del_opening'					),
+	('plant_cover'						,'del_plant_cover'				),
+	('raster_relief'					,'del_raster_relief'			),
+--	('relief_component'					,'del_relief_component'			),	
+	('relief_feature'					,'del_relief_feature'			),
+	('room'								,'del_room'						),
+	('solitary_vegetat_object'			,'del_solitary_vegetat_object'	),
+	('surface_data'						,'del_surface_data'				),
+--	('surface_geometry'					,'del_surface_geometry'			),
+	('thematic_surface'					,'del_thematic_surface'			),
+	('tin_relief'						,'del_tin_relief'				),	
+	('traffic_area'						,'del_traffic_area'				),
+	('transportation_complex'			,'del_transportation_complex'	),
+	('tunnel'							,'del_tunnel'					),
+	('tunnel_furniture'					,'del_tunnel_furniture'			),
+	('tunnel_hollow_space'				,'del_tunnel_hollow_space'		),
+	('tunnel_installation'				,'del_tunnel_installation'		),
+	('tunnel_opening'					,'del_tunnel_opening'			),
+	('tunnel_thematic_surface'			,'del_tunnel_thematic_surface'	),
+	('waterbody'						,'del_waterbody'				),
+	('waterboundary_surface'			,'del_waterboundary_surface'	)
+	) AS t(table_name, del_function)
+LOOP
+
+
+
 ----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING
+-- Create trigger FUNCTION QGIS_PKG.TR_INS_*
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_building CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_building()
+sql_statement := concat('
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_',r.table_name,' CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_',r.table_name,'()
 RETURNS trigger AS $$
 DECLARE
 BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_building(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_building IS '(Block) insert record in view *_building_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_building CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_building()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
-BEGIN
-EXECUTE format('PERFORM %I.del_building(%L)', schema_name, OLD.id);
+RAISE EXCEPTION ''You are not allowed to insert new records using the QGIS plugin'';
 RETURN OLD;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_building(id: %): %', OLD.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.tr_ins_',r.table_name,'(): %'', SQLERRM;
 END;
+
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_building IS 'Delete record in view *_building_*';
+COMMENT ON FUNCTION qgis_pkg.tr_ins_',r.table_name,' IS ''(Blocks) inserting record in table ',upper(r.table_name),''';
+');
+EXECUTE sql_statement;
 
 ----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_BUILDING
+-- Create trigger FUNCTION QGIS_PKG.TR_DEL_*
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_building CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_building()
+sql_statement := concat('
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_',r.table_name,' CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_',r.table_name,'()
 RETURNS trigger AS $$
 DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  obj_b       qgis_pkg.obj_building;
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
+  schema_name varchar := split_part(TG_TABLE_NAME, ''_'', 1); 
 BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
-
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
-
-obj_b.id                          := OLD.id;
-obj_b.class                       := NEW.class;
-obj_b.class_codespace             := NEW.class_codespace;
-obj_b.function                    := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function) AS t(x)), '--/\--');
-obj_b.function_codespace          := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function_codespace) AS t(x)), '--/\--');
-obj_b.usage                       := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage) AS t(x)), '--/\--');
-obj_b.usage_codespace             := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage_codespace) AS t(x)), '--/\--');
-obj_b.year_of_construction        := NEW.year_of_construction;
-obj_b.year_of_demolition          := NEW.year_of_demolition;
-obj_b.roof_type                   := NEW.roof_type;
-obj_b.roof_type_codespace         := NEW.roof_type_codespace;
-obj_b.measured_height             := NEW.measured_height;
-obj_b.measured_height_unit        := NEW.measured_height_unit;
-obj_b.storeys_above_ground        := NEW.storeys_above_ground;
-obj_b.storeys_below_ground        := NEW.storeys_below_ground;
-obj_b.storey_heights_above_ground := NEW.storey_heights_above_ground;
-obj_b.storey_heights_ag_unit      := NEW.storey_heights_ag_unit;
-obj_b.storey_heights_below_ground := NEW.storey_heights_below_ground;
-obj_b.storey_heights_bg_unit      := NEW.storey_heights_bg_unit;
-
-PERFORM qgis_pkg.upd_building_atts(obj_co, obj_b, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_building(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_building IS 'Update record in view *_building_*';
-
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_BDG_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_building_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_building_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
-BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
-
-PERFORM qgis_pkg.upd_building_thematic_surface_atts(obj_co, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_building_thematic_surface(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_building_thematic_surface IS 'Update record in view *_building_themsurf_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_building_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_building_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_building_thematic_surface(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_building_thematic_surface IS '(Block) insert record in view *_building_themsurf_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING_THEMATIC_SURFACE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_building_thematic_surface CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_building_thematic_surface()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
-BEGIN
-EXECUTE format('PERFORM %I.del_thematic_surface(%L)', schema_name, OLD.id);
+EXECUTE format(''PERFORM %I.del_',r.table_name,'(ARRAY[%L])'', schema_name, OLD.id);
 RETURN OLD;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_building_thematic_surface(id: %): %', OLD.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.tr_del_',r.table_name,'(): %'', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_building_thematic_surface IS 'Delete record in view *_building_themsurf_*';
+COMMENT ON FUNCTION qgis_pkg.tr_ins_',r.table_name,' IS ''Deletes record in table ',upper(r.table_name),''';
+');
+EXECUTE sql_statement;
 
+END LOOP; -- loop insert tr_ins e tr_del_functions
 
-
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_BUILDING_INSTALLATION
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_building_installation CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_building_installation()
-RETURNS trigger AS $$
-DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  obj_bi      qgis_pkg.obj_building_installation;
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);  
-BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
-
-obj_bi.id                 := OLD.id;
-obj_bi.class              := NEW.class;
-obj_bi.class_codespace    := NEW.class_codespace;
-obj_bi.function           := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function) AS t(x)), '--/\--');
-obj_bi.function_codespace := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function_codespace) AS t(x)), '--/\--');
-obj_bi.usage              := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage) AS t(x)), '--/\--');
-obj_bi.usage_codespace    := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage_codespace) AS t(x)), '--/\--');
-
-PERFORM qgis_pkg.upd_building_installation_atts(obj_co, obj_bi, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_building_installation(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_building_installation IS 'Update record in view *_building_installation_*';
 
 ----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING_INSTALLATION
+-- Create trigger FUNCTION QGIS_PKG.TR_INS/DEL_WATERBOUNDARY_SURFACE_WATERSURFACE
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_building_installation CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_building_installation()
+sql_statement := concat('
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_waterboundary_surface_watersurface CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface()
 RETURNS trigger AS $$
 DECLARE
 BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_building_installation(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_building_installation IS '(Block) insert record in view *_building_installation_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING_INSTALLATION
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_building_installation CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_building_installation()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
-BEGIN
-EXECUTE format('PERFORM %I.del_building_installation(%L)', schema_name, OLD.id);
+RAISE EXCEPTION ''You are not allowed to insert new records using the QGIS plugin'';
 RETURN OLD;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_building_installation(id: %): %', OLD.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.tr_ins_waterboundary_surface_watersurface(): %'', SQLERRM;
 END;
+
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_building_installation IS 'Delete record in view *_building_installation_*';
+COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface IS ''(Blocks) inserting record in table WATERBOUNDARY_SURFACE'';
+');
+EXECUTE sql_statement;
 
-
-
-
-
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_SOLITARY_VEGETAT_OBJECT
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_solitary_vegetat_object CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_solitary_vegetat_object()
+sql_statement := concat('
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_waterboundary_surface_watersurface CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_waterboundary_surface_watersurface()
 RETURNS trigger AS $$
 DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  obj_svo     qgis_pkg.obj_solitary_vegetat_object; 
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
+  schema_name varchar := split_part(TG_TABLE_NAME, ''_'', 1); 
 BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
-
-obj_svo.id                  := OLD.id;
-obj_svo.class               := NEW.class; 
-obj_svo.class_codespace     := NEW.class_codespace; 
-obj_svo.function            := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function) AS t(x)), '--/\--');
-obj_svo.function_codespace  := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function_codespace) AS t(x)), '--/\--');
-obj_svo.usage               := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage) AS t(x)), '--/\--');
-obj_svo.usage_codespace     := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage_codespace) AS t(x)), '--/\--');
-obj_svo.species             := NEW.species; 
-obj_svo.species_codespace   := NEW.species_codespace; 
-obj_svo.height              := NEW.height; 
-obj_svo.height_unit         := NEW.height_unit; 
-obj_svo.trunk_diameter      := NEW.trunk_diameter; 
-obj_svo.trunk_diameter_unit := NEW.trunk_diameter_unit; 
-obj_svo.crown_diameter      := NEW.crown_diameter; 
-obj_svo.crown_diameter_unit := NEW.crown_diameter_unit;
-
-PERFORM qgis_pkg.upd_solitary_vegetat_object_atts(obj_co, obj_svo, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_solitary_vegetat_object(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_solitary_vegetat_object IS 'Update record in view *_solitary_vegetat_object_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_SOLITARY_VEGETAT_OBJECT
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_solitary_vegetat_object CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_solitary_vegetat_object()
-RETURNS trigger AS $$
-DECLARE
-BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_solitary_vegetat_object(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_solitary_vegetat_object IS '(Block) insert record in view *_solitary_vegetat_object_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_SOLITARY_VEGETAT_OBJECT
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_solitary_vegetat_object CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_solitary_vegetat_object()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
-BEGIN
-EXECUTE format('PERFORM %I.del_solitary_vegetat_object(%L)', schema_name, OLD.id);
+EXECUTE format(''PERFORM %I.del_waterboundary_surface(ARRAY[[%L])'', schema_name, OLD.id);
 RETURN OLD;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_solitary_vegetat_object(id: %): %', OLD.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.tr_del_waterboundary_surface_watersurface(): %'', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_solitary_vegetat_object IS 'Delete record in view *_solitary_vegetat_object_*';
+COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface IS ''Deletes record in table WATERBOUNDARY_SURFACE'';
+');
+EXECUTE sql_statement;
 
 
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_RELIEF_FEATURE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_relief_feature CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_relief_feature()
+
+FOR r IN
+	SELECT * FROM (VALUES
+	('address'::text			),
+	('appearance'				),
+	('breakline_relief'			),	
+	('bridge'					),
+	('bridge_constr_element'	),	
+	('bridge_furniture'			),
+	('bridge_installation'		),
+	('bridge_opening'			),
+	('bridge_room'				),
+	('bridge_thematic_surface'	),
+	('building'					),
+	('building_furniture'		),
+	('building_installation'	),
+	('city_furniture'			),
+	('cityobject_genericattrib'	),
+	('cityobjectgroup'			),
+	('external_reference'		),
+	('generic_cityobject'		),
+--	('grid_coverage'			),
+--	('implicit_geometry'		),		
+	('land_use'					),
+	('masspoint_relief'			),		
+	('opening'					),
+	('plant_cover'				),
+	('raster_relief'			),
+--	('relief_component'			),	
+	('relief_feature'			),
+	('room'						),
+	('solitary_vegetat_object'	),
+	('surface_data'				),
+--	('surface_geometry'			),
+	('thematic_surface'			),
+	('tin_relief'				),	
+	('traffic_area'				),
+	('transportation_complex'	),
+	('tunnel'					),
+	('tunnel_furniture'			),
+	('tunnel_hollow_space'		),
+	('tunnel_installation'		),
+	('tunnel_opening'			),
+	('tunnel_thematic_surface'	),
+	('waterbody'				),
+	('waterboundary_surface'	),
+	('waterboundary_surface_watersurface')	
+	) AS t(table_name)
+LOOP
+
+sql_statement_co_fields := concat('
+obj.id                     := OLD.id;
+obj.gmlid                  := NEW.gmlid;
+obj.gmlid_codespace        := NEW.gmlid_codespace;
+obj.name                   := NEW.name;
+obj.name_codespace         := NEW.name_codespace;
+obj.description            := NEW.description;
+obj.creation_date          := NEW.creation_date;
+obj.termination_date       := NEW.termination_date;
+obj.relative_to_terrain    := NEW.relative_to_terrain;
+obj.relative_to_water      := NEW.relative_to_water;
+obj.last_modification_date := NEW.last_modification_date;
+obj.updating_person        := NEW.updating_person;
+obj.reason_for_update      := NEW.reason_for_update;
+obj.lineage                := NEW.lineage;
+');
+--RAISE NOTICE 'co_fields %:',sql_statement_co_fields;
+
+sql_statement_cfu_fields := concat('
+obj_1.class                       := NEW.class;
+obj_1.class_codespace             := NEW.class_codespace;
+obj_1.function                    := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function) AS t(x)), ''--/\--'');
+obj_1.function_codespace          := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.function_codespace) AS t(x)), ''--/\--'');
+obj_1.usage                       := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage) AS t(x)), ''--/\--'');
+obj_1.usage_codespace             := array_to_string((SELECT array_agg(DISTINCT x) FROM unnest(NEW.usage_codespace) AS t(x)), ''--/\--'');');
+--RAISE NOTICE 'co_fields %:',sql_statement_cfu_fields;
+
+sql_statement_head := concat('
+DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_',r.table_name,' CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_',r.table_name,'()
 RETURNS trigger AS $$
 DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  obj_rf      qgis_pkg.obj_relief_feature; 
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
+  schema_name varchar := split_part(TG_TABLE_NAME, ''_'', 1);');
+--RAISE NOTICE 'head %:',sql_statement_head;
+
+
+CASE
+	WHEN r.table_name IN
+	   ('bridge_opening',
+		'bridge_thematic_surface',
+		'opening',
+		'thematic_surface',
+		'tunnel_opening',
+		'tunnel_thematic_surface',
+		'waterboundary_surface')					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+BEGIN',
+sql_statement_co_fields,'
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);	
+');
+	WHEN r.table_name IN
+	   ('bridge_constr_element',
+		'bridge_furniture'     ,
+		'bridge_installation'  ,
+		'bridge_room'          ,
+		'building_furniture'   ,
+		'building_installation',
+		'city_furniture'       ,
+		'cityobjectgroup'      ,
+		'generic_cityobject'   ,
+		'room'                 ,
+		'tunnel_furniture'     ,
+		'tunnel_hollow_space'  ,
+		'tunnel_installation'  ,
+		'waterbody')					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id                          := OLD.id;',
+sql_statement_cfu_fields,'
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+	WHEN r.table_name IN
+	   ('traffic_area',
+		'transportation_complex')					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.surface_material            = NEW.surface_material;
+obj_1.surface_material_codespace  = NEW.surface_material_codespace;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+	WHEN r.table_name = 'address'                  THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_',r.table_name,';
 BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
+obj.id              := OLD.id;
+obj.gmlid           := NEW.gmlid;
+obj.gmlid_codespace := NEW.gmlid_codespace;
+obj.street          := NEW.street;
+obj.house_number    := NEW.house_number;
+obj.po_box          := NEW.po_box;
+obj.zip_code        := NEW.zip_code;
+obj.city            := NEW.city;
+obj.state           := NEW.state;
+obj.country         := NEW.country;
 
-obj_rf.id  := OLD.id;
-obj_rf.lod := NEW.lod; 
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);
+');
+	WHEN r.table_name = 'appearance'				THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_',r.table_name,';
+BEGIN
+obj.gmlid           := NEW.gmlid;
+obj.gmlid_codespace := NEW.gmlid_codespace;
+obj.name            := NEW.name;
+obj.name_codespace  := NEW.name_codespace;
+obj.description     := NEW.description;
+obj.theme           := NEW.theme;
 
-PERFORM qgis_pkg.upd_relief_feature_atts(obj_co, obj_rf, schema_name);
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);
+');
 
+	WHEN r.table_name IN
+	   ('breakline_relief',
+		'masspoint_relief')					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_relief_component;  
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;
+obj_1.lod  := NEW.lod;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'bridge'					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id                          := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.year_of_construction        = NEW.year_of_construction;
+obj_1.year_of_demolition          = NEW.year_of_demolition;
+obj_1.is_movable                  = NEW.is_movable;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'building'					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id                          := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.year_of_construction        := NEW.year_of_construction;
+obj_1.year_of_demolition          := NEW.year_of_demolition;
+obj_1.roof_type                   := NEW.roof_type;
+obj_1.roof_type_codespace         := NEW.roof_type_codespace;
+obj_1.measured_height             := NEW.measured_height;
+obj_1.measured_height_unit        := NEW.measured_height_unit;
+obj_1.storeys_above_ground        := NEW.storeys_above_ground;
+obj_1.storeys_below_ground        := NEW.storeys_below_ground;
+obj_1.storey_heights_above_ground := NEW.storey_heights_above_ground;
+obj_1.storey_heights_ag_unit      := NEW.storey_heights_ag_unit;
+obj_1.storey_heights_below_ground := NEW.storey_heights_below_ground;
+obj_1.storey_heights_bg_unit      := NEW.storey_heights_bg_unit;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'cityobject_genericattrib'	THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_',r.table_name,';
+BEGIN
+obj.id                     := OLD.id;
+obj.attrname               := NEW.attrname;
+obj.strval                 := NEW.strval;
+obj.intval                 := NEW.intval;
+obj.realval                := NEW.realval;
+obj.urival                 := NEW.urival;
+obj.dateval                := NEW.dateval;
+obj.unit                   := NEW.unit;
+obj.genattribset_codespace := NEW.genattribset_codespace;
+obj.blobval                := NEW.blobval;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);
+');
+
+	WHEN r.table_name = 'external_reference'		THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_',r.table_name,';
+BEGIN
+obj.id            := OLD.id;
+obj.infosys       := NEW.infosys;
+obj.name          := NEW.name;
+obj.uri           := NEW.uri;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);
+');
+
+
+	WHEN r.table_name = 'land_use'					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id                          := OLD.id;',
+sql_statement_cfu_fields,'
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'plant_cover'				THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.height              = NEW.average_height; 
+obj_1.height_unit         = NEW.average_height_unit;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'raster_relief'			THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_relief_component;  
+  obj_2  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;
+obj_1.lod := NEW_lod;
+obj_2.raster_uri  = NEW.raster_uri;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'relief_feature'			THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_relief_feature;  
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;
+obj_1.lod  := NEW.lod;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'solitary_vegetat_object'	THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.species             = NEW.species; 
+obj_1.species_codespace   = NEW.species_codespace; 
+obj_1.height              = NEW.height; 
+obj_1.height_unit         = NEW.height_unit; 
+obj_1.trunk_diameter      = NEW.trunk_diameter; 
+obj_1.trunk_diameter_unit = NEW.trunk_diameter_unit; 
+obj_1.crown_diameter      = NEW.crown_diameter; 
+obj_1.crown_diameter_unit = NEW.crown_diameter_unit;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'surface_data'				THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_',r.table_name,';
+BEGIN
+obj.id                    := OLD.id;
+obj.gmlid                 := NEW.gmlid;
+obj.gmlid_codespace       := NEW.gmlid_codespace;
+obj.name                  := NEW.name;
+obj.name_codespace        := NEW.name_codespace;
+obj.description           := NEW.description;
+obj.is_front              := NEW.is_front;
+obj.x3d_shininess         := NEW.x3d_shininess;
+obj.x3d_transparency      := NEW.x3d_transparency;
+obj.x3d_ambient_intensity := NEW.x3d_ambient_intensity;
+obj.x3d_specular_color    := NEW.x3d_specular_color;
+obj.x3d_diffuse_color     := NEW.x3d_diffuse_color;
+obj.x3d_emissive_color    := NEW.x3d_emissive_color;
+obj.x3d_is_smooth         := NEW.x3d_is_smooth;
+obj.tex_texture_type      := NEW.tex_texture_type;
+obj.tex_wrap_mode         := NEW.tex_wrap_mode;
+obj.tex_border_color      := NEW.tex_border_color;
+obj.gt_prefer_worldfile   := NEW.gt_prefer_worldfile;
+obj.gt_orientation        := NEW.gt_orientation;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, schema_name);
+');
+
+	WHEN r.table_name = 'tin_relief'				THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_relief_component;
+  obj_2  qgis_pkg.obj_',r.table_name,';  
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id  := OLD.id;
+obj_1.lod := NEW.lod;
+obj_2.id              := OLD.id;
+obj_2.max_length      := NEW.max_length;
+obj_2.max_length_unit := NEW.max_length_unit; 
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'tunnel'					THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_',r.table_name,';
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;',
+sql_statement_cfu_fields,'
+obj_1.year_of_construction        = NEW.year_of_construction;
+obj_1.year_of_demolition          = NEW.year_of_demolition;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+
+	WHEN r.table_name = 'waterboundary_surface_watersurface'	THEN sql_statement_body := concat('
+  obj    qgis_pkg.obj_cityobject;
+  obj_1  qgis_pkg.obj_waterboundary_surface;
+BEGIN',
+sql_statement_co_fields,'
+obj_1.id := OLD.id;
+obj_1.water_level           := NEW.water_level;
+obj_1.water_level_codespace := NEW.water_level_codespace;
+
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+');
+	ELSE
+
+RAISE NOTICE 'Manca %', r.table_name;
+
+END CASE;
+
+sql_statement_tail := concat('
 RETURN NEW;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_relief_feature(id: %): %', OLD.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.tr_upd_',r.table_name,'(id: %): %'', OLD.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_relief_feature IS 'Update record in view *_relief_feature_*';
+COMMENT ON FUNCTION qgis_pkg.tr_upd_',r.table_name,' IS ''Updates record in table ',upper(r.table_name),''';
+');
 
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_RELIEF_FEATURE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_relief_feature CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_relief_feature()
-RETURNS trigger AS $$
-DECLARE
-BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_relief_feature(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_relief_feature IS '(Block) insert record in view *_relief_feature_*';
+IF sql_statement_body IS NOT NULL THEN
+	EXECUTE concat(sql_statement_head, sql_statement_body, sql_statement_tail);
+END IF;
 
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_RELIEF_FEATURE
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_relief_feature CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_relief_feature()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
-BEGIN
-EXECUTE format('PERFORM %I.del_relief_feature(%L)', schema_name, OLD.id);
-RETURN OLD;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_relief_feature(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_relief_feature IS 'Delete record in view *_relief_feature_*';
+sql_statement_body := NULL;
 
---**************************************************************
---**************************************************************
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_UPD_TIN_RELIEF
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_tin_relief CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_tin_relief()
-RETURNS trigger AS $$
-DECLARE
-  obj_co      qgis_pkg.obj_cityobject;
-  obj_rc      qgis_pkg.obj_relief_component; 
-  obj_tr      qgis_pkg.obj_tin_relief; 
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1); 
-BEGIN
-obj_co.id                     := OLD.id;
-obj_co.gmlid                  := NEW.gmlid;
-obj_co.gmlid_codespace        := NEW.gmlid_codespace;
-obj_co.name                   := NEW.name;
-obj_co.name_codespace         := NEW.name_codespace;
-obj_co.description            := NEW.description;
---obj_co.envelope               := NEW.envelope;
-obj_co.creation_date          := NEW.creation_date;
-obj_co.termination_date       := NEW.termination_date;
-obj_co.relative_to_terrain    := NEW.relative_to_terrain;
-obj_co.relative_to_water      := NEW.relative_to_water;
-obj_co.last_modification_date := NEW.last_modification_date;
-obj_co.updating_person        := NEW.updating_person;
-obj_co.reason_for_update      := NEW.reason_for_update;
-obj_co.lineage                := NEW.lineage;
-
-obj_rc.id  := OLD.id;
-obj_rc.lod := NEW.lod;
-
-obj_tr.id              := OLD.id;
-obj_tr.max_length      := NEW.max_length;
-obj_tr.max_length_unit := NEW.max_length_unit; 
-
-PERFORM qgis_pkg.upd_tin_relief_atts(obj_co, obj_rc, obj_tr, schema_name);
-
-RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_upd_tin_relief(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_upd_tin_relief IS 'Update record in view *_tin_relief_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_INS_TIN_RELIEF
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_ins_tin_relief CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_ins_tin_relief()
-RETURNS trigger AS $$
-DECLARE
-BEGIN
-RAISE EXCEPTION 'You are not allowed to insert new records using the QGIS plugin';
-RETURN NULL;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_ins_tin_relief(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_ins_tin_relief IS '(Block) insert record in view *_tin_relief_*';
-
-----------------------------------------------------------------
--- Create trigger FUNCTION QGIS_PKG.TR_DEL_TIN_RELIEF
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_tin_relief CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_tin_relief()
-RETURNS trigger AS $$
-DECLARE
-  schema_name varchar := split_part(TG_TABLE_NAME, '_', 1);
-BEGIN
-EXECUTE format('PERFORM %I.del_tin_relief(%L)', schema_name, OLD.id);
-RETURN OLD;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_tin_relief(id: %): %', OLD.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.tr_del_tin_relief IS 'Delete record in view *_tin_relief_*';
-
-
-
+END LOOP; -- loop tr_upd functions
 
 
 --**************************

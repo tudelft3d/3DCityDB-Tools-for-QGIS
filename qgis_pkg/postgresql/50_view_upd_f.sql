@@ -10,39 +10,136 @@
 
 DO $MAINBODY$
 DECLARE
+r RECORD;
+sql_statement varchar;
+
 BEGIN
 
+-- Create update attribute functions with 1 object
+FOR r IN
+	SELECT * FROM (VALUES
+	('address'::text),
+	('appearance'),
+	('bridge_opening'),
+	('bridge_thematic_surface'),
+	('cityobject_genericattrib'),
+	('external_reference'),
+--	('grid_coverage'),
+	('surface_data'),
+	('opening'),
+	('thematic_surface'),
+	('tunnel_opening'),
+	('tunnel_thematic_surface'),
+	('waterboundary_surface')
+	) AS t(table_name)
+LOOP
+
+sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_BUILDING_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_building_atts(
-obj_co      qgis_pkg.obj_cityobject,
-obj_b       qgis_pkg.obj_building,
-schema_name varchar --DEFAULT 'citydb'::varchar 
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+obj         qgis_pkg.obj_',r.table_name,',
+schema_name varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_',r.table_name,'(obj, schema_name) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+--COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),''';
+');
+EXECUTE sql_statement;
+
+END LOOP;  -- loop 1 object
+
+
+-- Create update attribute functions with 2 objects
+FOR r IN
+	SELECT * FROM (VALUES
+	('bridge'::text),
+	('bridge_constr_element'),	
+	('bridge_furniture'),
+	('bridge_installation'),
+	('bridge_room'),
+	('building'),
+	('building_furniture'),
+	('building_installation'),
+	('city_furniture'),
+	('cityobjectgroup'),
+	('generic_cityobject'),
+	('land_use'),
+	('plant_cover'),	
+	('relief_feature'),
+	('room'),
+	('solitary_vegetat_object'),
+	('traffic_area'),
+	('transportation_complex'),
+	('tunnel'),
+	('tunnel_furniture'),
+	('tunnel_hollow_space'),
+	('tunnel_installation'),
+	('waterbody')
+	) AS t(table_name)
+LOOP
+
+sql_statement := concat('
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_',r.table_name,',
+schema_name varchar 
 )
 RETURNS bigint AS $$
 DECLARE
   updated_id bigint;
 BEGIN
 
-SELECT  qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
-PERFORM qgis_pkg.upd_t_building(obj_b, schema_name);
+SELECT  qgis_pkg.upd_t_cityobject(obj, schema_name) INTO updated_id;
+PERFORM qgis_pkg.upd_t_',r.table_name,'(obj_1, schema_name);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_building_atts(id: %): %', obj_co.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) IS 'Update attributes of Building/BuildingPart';
+COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
+');
+EXECUTE sql_statement;
 
+END LOOP; -- loop 1 object (cityobject + 1)
+
+
+-- Create update attribute functions with 3 objects
+FOR r IN
+	SELECT * FROM (VALUES
+	('tin_relief'::text, 	'relief_component'::text),
+	('raster_relief',		'relief_component'::text)	
+--	('masspoint_relief', 	'relief_component'), questo non ha attributi
+--	('breakline_relief',	'relief_component')	 questo non ha attributi	
+
+	
+	) AS t(table_name, parent_table_name)
+LOOP
+
+sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_BUILDING_INSTALLATION_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_building_installation_atts(
-obj_co      qgis_pkg.obj_cityobject,
-obj_bi      qgis_pkg.obj_building_installation,
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+obj      qgis_pkg.obj_cityobject,
+obj_1    qgis_pkg.obj_',r.parent_table_name,',
+obj_2    qgis_pkg.obj_',r.table_name,',
 schema_name varchar
 )
 RETURNS bigint AS $$
@@ -50,22 +147,28 @@ DECLARE
   updated_id bigint;
 BEGIN
 
-SELECT  qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
-PERFORM qgis_pkg.upd_t_building_installation(obj_bi, schema_name);
+SELECT  qgis_pkg.upd_t_cityobject(obj, schema_name) INTO updated_id;
+PERFORM qgis_pkg.upd_t_',r.parent_table_name,'(obj_1, schema_name);
+PERFORM qgis_pkg.upd_t_',r.table_name,'(obj_2, schema_name);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_building_installation_atts(id: %): %', obj_co.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) IS 'Update attributes of (Inner/Outer) BuildingInstallation';
+COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.parent_table_name,', qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
+');
+EXECUTE sql_statement;
+
+END LOOP; -- loop 3 object (cityobject + 2)
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_BDG_THEMATIC_SURFACE_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERBODY_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_bdg_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_bdg_thematic_surface_atts(
-obj_co      qgis_pkg.obj_cityobject,
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(
+obj      qgis_pkg.obj_cityobject,
+obj_1    qgis_pkg.obj_waterboundary_surface,
 schema_name varchar
 )
 RETURNS bigint AS $$
@@ -73,92 +176,18 @@ DECLARE
   updated_id bigint;
 BEGIN
 
-SELECT qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
+SELECT  qgis_pkg.upd_t_cityobject(obj, schema_name) INTO updated_id;
+PERFORM qgis_pkg.upd_t_waterboundary_surface(obj_1, schema_name);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bdg_thematic_surface_atts(id: %): %', obj_co.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterboundary_surface_waterbody_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_bdg_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of a (Building) ThematicSurface';
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_SOLITARY_VEGETAT_OBJECT_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(
-obj_co      qgis_pkg.obj_cityobject,
-obj_svo     qgis_pkg.obj_solitary_vegetat_object,
-schema_name varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-
-SELECT  qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
-PERFORM qgis_pkg.upd_t_solitary_vegetat_object(obj_svo, schema_name);
-
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_solitary_vegetat_object_atts(id: %): %', obj_co.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) IS 'Update attributes of a SolitaryVegetationObject';
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_RELIEF_FEATURE_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_relief_feature_atts(
-obj_co      qgis_pkg.obj_cityobject,
-obj_rf      qgis_pkg.obj_relief_feature,
-schema_name varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-
-SELECT  qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
-PERFORM qgis_pkg.upd_t_relief_feature(obj_rf, schema_name);
-
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_relief_feature_atts(id: %): %', obj_co.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) IS 'Update attributes of a ReliefFeature';
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_TIN_RELIEF_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_tin_relief_atts(
-obj_co      qgis_pkg.obj_cityobject,
-obj_rc      qgis_pkg.obj_relief_component,
-obj_tr      qgis_pkg.obj_tin_relief,
-schema_name varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-
-SELECT  qgis_pkg.upd_t_cityobject(obj_co, schema_name) INTO updated_id;
-PERFORM qgis_pkg.upd_t_relief_component(obj_rc, schema_name);
-PERFORM qgis_pkg.upd_t_tin_relief(obj_tr, schema_name);
-
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tin_relief_atts(id: %): %', obj_co.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) IS 'Update attributes of a TINRelief';
-
+COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of tables WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
 
 
 --**************************
-RAISE NOTICE E'\n\nDone\n\n';
+RAISE NOTICE E'\n\nInstallation of view-update functions: Done\n\n';
 END $MAINBODY$;
 --**************************

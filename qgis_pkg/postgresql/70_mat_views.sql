@@ -1440,6 +1440,14 @@ EXECUTE sql_statement;
 	END LOOP; -- tin relief lod
 END LOOP;  -- tin relief
 
+
+
+
+
+
+
+
+
 -- ***********************
 -- BRIDGE MODULE
 -- ***********************
@@ -1492,8 +1500,6 @@ INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, r
 (''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''lod1'',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
 ');
 --EXECUTE sql_statement;
-
-
 
 ---------------------------------------------------------------
 -- Create MATERIALIZED VIEW QGIS_PKG._G_*_TRANSPORTATION_COMPLEX_LOD2-4
@@ -1565,8 +1571,31 @@ qml_file_name  := concat('traffic_area_form.qml');
 -- To be checked whether the (aux)traffic area objects are to be considered as "thematic surfaces"
 -- in this case, move this loop into the transportation complex one.
 
+IF mview_bbox IS NOT NULL THEN
+	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
+ELSE
+	sql_where := NULL;
+END IF;
+
+sql_statement := concat('
+DROP MATERIALIZED VIEW IF EXISTS qgis_pkg.',mview_name,' CASCADE;
+CREATE MATERIALIZED VIEW         qgis_pkg.',mview_name,' AS
+
+
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW qgis_pkg.',mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',citydb_schema,''';
+CREATE INDEX ',mview_idx_name,' ON qgis_pkg.',mview_name,' (co_id);
+CREATE INDEX ',mview_spx_name,' ON qgis_pkg.',mview_name,' USING gist (geom);
+DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name) VALUES
+(''',citydb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,''');
+');
+--EXECUTE sql_statement;
+
 	END LOOP; -- end loop aux_traffic_area lod 2-4
 END LOOP;  -- end loop aux_traffic_area
+
+
 
 
 -- ***********************
@@ -1784,16 +1813,8 @@ INSERT INTO qgis_pkg.layer_metadata (schema_name, feature_type, qml_file, lod, r
 EXECUTE sql_statement;
 		
 		END LOOP; -- waterbody lod2-4 thematic surfaces
-
 	END LOOP; -- waterbody lod2-4
-
 END LOOP;  -- waterbody
-
-
-
-
-
-
 
 
 -- Upsert table qgis_pkg.extents with m_view bbox
