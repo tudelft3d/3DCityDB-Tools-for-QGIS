@@ -163,7 +163,7 @@ class View():
         self.schema_name=schema_name
         self.feature_type = feature_type
         self.lod = lod
-        self.root_class= root_class
+        self.root_class = root_class
         self.layer_name = layer_name
         self.n_features=n_features
         self.n_selected=0

@@ -1,5 +1,14 @@
+"""This module contains functions that relate to the server side
+operations.
+
+These functions are responsible to communicate and fetch data from
+the database with sql queries all sql function calls.
+"""
+#TODO: Catching error and logging code block seems too repretive,
+# could probably set it as a function
+
 import time
- 
+
 from qgis.core import QgsMessageLog, Qgis
 import psycopg2
 
@@ -92,7 +101,11 @@ def fetch_layer_metadata(dbLoader) -> tuple:
     try:
         t0 = time.time()
         with dbLoader.conn.cursor() as cur:
-            cur.execute("""SELECT * FROM qgis_pkg.layer_metadata;""")
+            cur.execute(f"""
+                        SELECT * FROM qgis_pkg.layer_metadata
+                        WHERE schema_name = '{dbLoader.SCHEMA}'
+                        AND n_features > 0;
+                        """)
             metadata=cur.fetchall()
             colnames = [desc[0] for desc in cur.description]
         dbLoader.conn.commit()

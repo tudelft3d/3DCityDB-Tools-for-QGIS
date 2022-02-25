@@ -30,7 +30,7 @@ from qgis.PyQt.QtWidgets import QAction, QWidget
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsExtentGroupBox, QgsExtentWidget
 import psycopg2
-from sqlalchemy import false
+
 
 from .resources import qInitResources
 from .citydb_loader_dialog import DBLoaderDialog     #Main dialog
@@ -68,6 +68,9 @@ class DBLoader:
 
         # Variable to store the selected extents.
         self.EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+
+        # Variable to store the City Model's extents.
+        self.SCHEMA_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem

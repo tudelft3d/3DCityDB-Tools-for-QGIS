@@ -1,4 +1,13 @@
-"""reset  docsting"""
+"""This module contains reset functions for each QT widget in the GUI of the
+plugin.
+
+The logic behind all of the functions is to reset widgets as individual 
+objects or as block of objects, depending on the needs.
+
+These function help declutter the widget_setup.py from repetitive code.
+
+The reset functions consist of clearing text or changed text to original state,
+clearing widget items or selections and deacivating widgets."""
 
 #### Connection tab ##############################################
 def reset_tabConnection(dbLoader):

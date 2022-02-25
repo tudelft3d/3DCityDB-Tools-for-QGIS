@@ -1,4 +1,4 @@
-"""Connections docsting"""
+"""This module contains classes and functions related to the connections."""
 
 from qgis.core import QgsSettings
 from ..connector_dialog import Ui_dlgConnector
@@ -7,6 +7,9 @@ from qgis.PyQt.QtWidgets import QDialog
 import psycopg2
 
 class DlgConnector(QDialog, Ui_dlgConnector):
+    """Connector Dialog. This dialog pops-up when a user requests 
+    to make a new connection"""
+
     def __init__(self):
         super(DlgConnector, self).__init__()
         self.setupUi(self)
@@ -17,6 +20,9 @@ class DlgConnector(QDialog, Ui_dlgConnector):
 
 
     def evt_btnConnect_clicked(self):
+        #TODO: get the following code in a widget_setup function.
+        # BE consistent with your own code structure 
+
         connectionInstance = Connection()
 
         connectionInstance.connection_name = self.ledConnName.text()
@@ -26,7 +32,6 @@ class DlgConnector(QDialog, Ui_dlgConnector):
         connectionInstance.username = self.ledUserName.text()
         connectionInstance.password = self.qledPassw.text()
         if self.checkBox.isEnabled: connectionInstance.store_creds=True 
-        
 
         try:
             connect(connectionInstance)
@@ -53,7 +58,8 @@ class DlgConnector(QDialog, Ui_dlgConnector):
 
 
 class Connection:
-    """Class to store connection information"""
+    """Class to store connection information."""
+
     def __init__(self): 
         self.connection_name=None
         self.database_name=None
@@ -99,8 +105,13 @@ class Connection:
     # def add_to_collection(self,db_collection):
     #     db_collection.append(self)
 
-def get_postgres_conn(dbLoader):
-    """Function that reads the QGIS user settings to look for existing connections"""
+def get_postgres_conn(dbLoader) -> None:
+    """Function that reads the QGIS user settings to look for 
+    existing connections
+    
+    All found existing connection are store in 'Connection'
+    objects and can be found and accessed from 'cbxExistingConnection'
+    widget"""
 
     # Clear the contents of the comboBox from previous runs
     dbLoader.dlg.cbxExistingConnection.clear()
@@ -130,8 +141,6 @@ def get_postgres_conn(dbLoader):
         dbLoader.dlg.cbxExistingConnection.addItem(f'{c}',connectionInstance)
         qsettings.endGroup()
 
-    return None
-
 def connect(db):
     """Open a connection to postgres database"""
 
@@ -139,4 +148,5 @@ def connect(db):
                             user= db.username,
                             password= db.password,
                             host= db.host,
-                            port= db.port)
+                            port= db.port,
+                            application_name= "3DCityDB-Loader")

@@ -1,4 +1,9 @@
-"""Connection tab docsting"""
+"""This module contains functions that relate to the 'Connection Tab'
+(in the GUI look for the elephant).
+
+These functions are usually called from widget_setup functions 
+relating to child widgets of the 'Connection Tab'.
+"""
 
 from .connection import connect
 from . import constants
@@ -13,7 +18,6 @@ def open_connection(dbLoader) -> bool:
 
         :rtype: bool
     """
-
 
     try:
         # Open the connection.
@@ -72,7 +76,6 @@ def is_3dcitydb(dbLoader):
         dbLoader.conn.rollback()
         cur.close()
 
-    
 
 def get_schemas(dbLoader):
     """Gets all schemas that exist in database"""
@@ -103,7 +106,7 @@ def fill_schema_box(dbLoader):
             dbLoader.dlg.cbxSchema.addItem(schema,res)
 
 def schema_has_features(dbLoader,schema,features):
-    cur=dbLoader.conn.cursor()
+    cur=dbLoader.conn.cursor() #TODO move this to sql
     try:
         cur.execute(f"""SELECT table_name, table_schema FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 

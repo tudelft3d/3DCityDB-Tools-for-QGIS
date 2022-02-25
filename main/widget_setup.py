@@ -1,6 +1,20 @@
-"""Widget setup docsting"""
+"""This module contains set-up functions for each QT widget in the GUI of the
+plugin. The functions are called as events from signals.
+
+The logic behind all of the functions is that are responsible to configure
+the plugin, depending on the emitted signal of a widget.
+
+The set-up can consist of many things but it is mainly responsible to
+activate/deactivate widgets, reset widgets, change informative text,
+call other functions, execute back-end operations and more.
+
+Example: When another 'Existing Connection' is selected, then the signal
+'currentIndexChanged' is emitted from the 'cbxExistingConnection' widget.
+The event listening to this signal executes the function
+'cbxExistingConnection_setup' which is responsible for the set-up."""
 
 import time
+
 from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem, QgsProject
 from qgis.core import QgsMessageLog, Qgis, QgsGeometry, QgsRasterLayer, QgsWkbTypes
 from qgis.gui import QgsRubberBand, QgsMapCanvas
@@ -106,8 +120,6 @@ def btnConnectToDB_setup(dbLoader) -> None:
 
 def cbxSchema_setup(dbLoader):
 
-
-
     if not dbLoader.SCHEMA: return None
 
     ### Connection Status groupbox
@@ -154,7 +166,6 @@ def cbxSchema_setup(dbLoader):
             return False#installation_query(dbLoader,f"'qgis_pkg' needs to be enhanced with contents mapping '{selected_schema}' schema.\nDo you want to proceed?")
 
 
-
 def gbxUserType_setup(dbLoader,user_type):
     print(f'I am {user_type}')
     
@@ -193,18 +204,14 @@ def gbxUserType_setup(dbLoader,user_type):
         f"Do you want to refresh the materilised views?!\n"
                 f"Note that this process takes a lot of time!") 
     if res == 16384: # YES
+        # Move focus to Settings Tab.
+        dbLoader.dlg.wdgMain.setCurrentIndex(2)
         # Refreash views. Initiates worker thread for loading animation.
         threads.refresh_views_thread(dbLoader)
 
 
-    dbLoader.dlg.wdgMain.setCurrentIndex(1)
     
     
-    
-    
-
-    
-
 ### Import tab
 def gbxBasemap_setup(dbLoader, extents: QgsRectangle = None) ->  None:
 
@@ -228,8 +235,9 @@ def gbxBasemap_setup(dbLoader, extents: QgsRectangle = None) ->  None:
 
                 # Convert extents format to QgsRectangle object.
                 extents = QgsRectangle.fromWkt(extents)
-                # Store extents into plugin variable.
+                # Store extents into plugin variables.
                 dbLoader.EXTENTS = extents
+                dbLoader.SCHEMA_EXTENTS = extents
 
                 # Move canvas widget in the layout containing the extents.
                 dbLoader.dlg.verticalLayout_5.addWidget(dbLoader.CANVAS)
@@ -296,7 +304,7 @@ def CANVAS_setup(dbLoader,
     # Make sure that the layer can load properly
     assert vlayer.isValid()
 
-    # add layer to the registry
+    # Add layer to the registry
     QgsProject.instance().addMapLayer(vlayer,addToLegend=False)
 
     # Set the map canvas layer set
@@ -371,8 +379,6 @@ def btnCityExtents_setup(dbLoader):
     # Put extents coordinates into the widget.
     dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(dbLoader.EXTENTS,dbLoader.CRS)
 
-
-
 def qgbxExtent_setup(dbLoader):
     dbLoader.dlg.cbxFeatureType.clear()
     dbLoader.dlg.gbxParameters.setDisabled(False)
@@ -394,12 +400,19 @@ def qgbxExtent_setup(dbLoader):
 
     # Draw the extents in the canvas
     insert_rubber_band(dbLoader, extents=dbLoader.EXTENTS, color=Qt.red)
+    usr= QgsGeometry.fromRect(dbLoader.EXTENTS)
+    orig= QgsGeometry.fromRect(dbLoader.SCHEMA_EXTENTS)
+
+    if not usr.intersects(orig):
+        QMessageBox.critical(dbLoader.dlg,"Warning", f"No data can be found here!\n"
+                                                    f"Pick a region in the blue area.") 
+        return None
+
 
     t0 = time.time()
     # Operations cascade to a lot of functions from here!
     import_tab.fill_FeatureType_box(dbLoader)
     t1 = time.time()
-
     print("time to excectute events from signals emited by \na change of extents: ",t1-t0)
 
 def cbxFeatureType_setup(dbLoader):
@@ -453,7 +466,6 @@ def btnImport_setup(dbLoader):
     QgsMessageLog.logMessage(message="",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
 
 
-    
 ### Settings tab
 def tabSettings_setup(dbLoader,user_type):
 

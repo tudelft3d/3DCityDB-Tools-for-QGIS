@@ -1,7 +1,10 @@
-"""
-DOc string
-asdasd
-asdasd
+"""This module contains functions that relate to the package Installation
+operations.
+
+These functions are usually called from widget_setup functions 
+relating to child widgets of the 'Settings Tab' or 'Connection Tab'
+as from either of these tabs installation,uninstallation processes
+can commence.
 """
 
 from qgis.PyQt.QtWidgets import QProgressBar,QMessageBox

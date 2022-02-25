@@ -1,13 +1,17 @@
-"""Import tab docstring"""
-from importlib_metadata import metadata
+"""This module contains functions that relate to the 'Import Tab'
+(in the GUI look for the plugin logo).
+
+These functions are usually called from widget_setup functions 
+relating to child widgets of the 'Import Tab'.
+"""
+from collections import OrderedDict
+
+from qgis.core import QgsProject, QgsMessageLog, QgsEditorWidgetSetup,QgsDataSourceUri,QgsRelation
+from qgis.core import QgsVectorLayer, QgsCoordinateReferenceSystem, Qgis,QgsLayerTreeGroup,QgsAttributeEditorRelation
 from qgis.PyQt.QtWidgets import QLabel
 from .constants import *
-from .functions import *
 from . import sql
-
-
- 
-
+import psycopg2
 
 
 def count_objects(dbLoader,view_name):
@@ -282,7 +286,7 @@ def create_layers(dbLoader,v_view):
     #SELECT UpdateGeometrySRID('roads','geom',4326);
     uri = QgsDataSourceUri()
     uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_view}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && ST_Envelope(geom)",aKeyColumn= 'id')
+    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_view}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && geom",aKeyColumn= 'id')
     vlayer = QgsVectorLayer(uri.uri(False), f"{v_view}", "postgres")
 
     vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:28992'))#TODO: Dont hardcode it
