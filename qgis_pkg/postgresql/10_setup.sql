@@ -22,6 +22,10 @@ srid_id integer := (SELECT srid FROM citydb.database_srs LIMIT 1);
 sql_statement	varchar;
 BEGIN
 
+
+------------------------------------------------------------------
+-- TABLE qgis_pkg.extents
+------------------------------------------------------------------
 sql_statement := concat('
 DROP TABLE IF EXISTS qgis_pkg.extents  CASCADE;
 CREATE TABLE         qgis_pkg.extents (
@@ -43,12 +47,15 @@ INSERT INTO qgis_pkg.extents (schema_name, bbox_type, label) VALUES
 ');
 EXECUTE sql_statement;
 
-
 END $MAINBODY$;
 
+------------------------------------------------------------------
+-- TABLE qgis_pkg.layer_metadata
+------------------------------------------------------------------
 DROP TABLE IF EXISTS qgis_pkg.layer_metadata CASCADE;
 CREATE TABLE         qgis_pkg.layer_metadata (
 id				serial PRIMARY KEY,
+--user			varchar,
 schema_name		varchar,
 feature_type	varchar,
 lod				varchar(4),
