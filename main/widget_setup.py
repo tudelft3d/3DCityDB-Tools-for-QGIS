@@ -15,10 +15,11 @@ The event listening to this signal executes the function
 
 import time
 
-from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem, QgsProject
-from qgis.core import QgsMessageLog, Qgis, QgsGeometry, QgsRasterLayer, QgsWkbTypes
-from qgis.gui import QgsRubberBand, QgsMapCanvas
-from qgis.PyQt.QtWidgets import QMessageBox, QSizePolicy
+from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem
+from qgis.core import QgsGeometry, QgsWkbTypes, QgsRasterLayer
+from qgis.core import Qgis, QgsProject ,QgsMessageLog
+from qgis.gui import QgsRubberBand
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtCore import Qt
 import psycopg2
@@ -34,7 +35,7 @@ from . import sql
 
 # Connection tab
 def cbxExistingConnection_setup(dbLoader) -> None:
-    """Function to setup the entire gui after a change signal is emitted from
+    """Function to setup the gui after a change signal is emitted from
     the cbxExistingConnection comboBox.
 
     This function runs every time the current selection of 'Existing Connection'
@@ -44,34 +45,34 @@ def cbxExistingConnection_setup(dbLoader) -> None:
     # Variable to store the plugin's main dialog
     dialog = dbLoader.dlg
 
-    # Database groupbox.
+    # In 'Database' groupbox.
     dialog.gbxDatabase.setDisabled(False)
 
-    # TODO: create and set to init_text for btnConnectToDB (btnInstallDB). 
+    # TODO: create and set to init_text for btnConnectToDB (like btnInstallDB).
     dialog.btnConnectToDB.setText(f"Connect to '{dbLoader.DB.database_name}'")
     dialog.btnConnectToDB.setDisabled(False)
     dialog.lblConnectToDB.setDisabled(False)
 
     widget_reset.reset_gbxDatabase(dbLoader=dbLoader)
 
-    # Connection Status groupbox
+    # In 'Connection Status' groupbox
     widget_reset.reset_gbxConnectionStatus(dbLoader=dbLoader)
 
-    # User Type groupbox
+    # In 'User Type' groupbox
     widget_reset.reset_gbxUserType(dbLoader=dbLoader)
 
     # Close the current open connection.
     if dbLoader.conn is not None:
         dbLoader.conn.close()
 
-    # Import tab
+    # In 'Import' tab
     widget_reset.reset_tabImport(dbLoader)
 
-    # Settings tab
+    # In 'Settings' tab
     widget_reset.reset_tabSettings(dbLoader)
 
 def btnConnectToDB_setup(dbLoader) -> None:
-    """Function to setup the entire gui after a click signal is emitted from
+    """Function to setup the gui after a click signal is emitted from
     the btnConnectToDB pushButton.
 
     This function runs every time the 'Connect to {DB}' button is pressed.
@@ -80,95 +81,129 @@ def btnConnectToDB_setup(dbLoader) -> None:
     # Variable to store the plugin's main dialog
     dialog = dbLoader.dlg
 
-    ### Connection Status groupbox
+    #In 'Connection Status' groupbox
     dialog.gbxConnectionStatus.setDisabled(False)
 
-
+    # Attempt to connect to the database
     successful_connection = connection_tab.open_connection(dbLoader)
-    
+
     if successful_connection:
-        
-        ##Show successful database name connection and server version
-        dialog.lblConnectedToDB_out.setText(constants.success_html.format(dbLoader.DB.database_name))
+
+        # Show database name
+        dialog.lblConnectedToDB_out.setText(constants.success_html.format(
+            text=dbLoader.DB.database_name))
         dbLoader.DB.green_connection=True
-        dialog.lblServerVersion_out.setText(constants.success_html.format(dbLoader.DB.s_version))
-        dbLoader.DB.green_s_version=True
 
+        if dbLoader.DB.s_version is not None:
+            # Show server version
+            dialog.lblServerVersion_out.setText(constants.success_html.format(
+                text=dbLoader.DB.s_version))
+            dbLoader.DB.green_s_version=True
+
+        # Check that database has 3DCityDB installed.
         if connection_tab.is_3dcitydb(dbLoader):
+            # Show 3DCityDB version
+            dialog.lbl3DCityDBVersion_out.setText(constants.success_html.format(
+                text=dbLoader.DB.c_version))
             dbLoader.DB.green_c_verison=True
-            dialog.lbl3DCityDBVersion_out.setText(constants.success_html.format(dbLoader.DB.c_version))
-        else: 
+        else:
+            # Show fail message
+            dialog.lbl3DCityDBVersion_out.setText(constants.failure_html.format(
+                text="3DCityDB is not installed!"))
             dbLoader.DB.green_c_verison=False
-            dialog.lbl3DCityDBVersion_out.setText(constants.failure_html.format(dbLoader.DB.database_name+' DOES NOT have 3DCityDB installed.'))
 
-        
-        ##Enalbe and fill schema comboBox
+        # Enable schema comboBox
         dialog.cbxSchema.setDisabled(False)
         dialog.lblSchema.setDisabled(False)
-        connection_tab.get_schemas(dbLoader)           #Stored in dbLoader.schemas
-        connection_tab.fill_schema_box(dbLoader)       #Stored in dbLoader.dlg.cbxSchema
-        #At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event. 
-        #So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
-    else: 
-        dialog.lblConnectedToDB_out.setText(constants.failure_html.format('Unsucessful connection'))
+        # Get 3DCityDB schemas from database 
+        #schemas = sql.exec_get_feature_schemas(dbLoader)
+        schemas = connection_tab.get_schemas(dbLoader)
+
+        # Fill schema combo box
+        connection_tab.fill_schema_box(dbLoader, schemas=schemas)
+        # At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event. 
+        # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
+
+    else: # Connection failed!
+
+        dialog.lblConnectedToDB_out.setText(constants.failure_html.format(
+            text="Unsucessful connection"))
         dbLoader.DB.green_connection=False
-        dialog.lblServerVersion_out.setText(constants.failure_html.format('')) 
-        dbLoader.DB.green_s_version=False     
-        dialog.cbxSchema.setDisabled(True)
-        dialog.lblSchema.setDisabled(True)
 
-def cbxSchema_setup(dbLoader):
+        dialog.lblServerVersion_out.setText(constants.failure_html.format(
+            text=''))
+        dbLoader.DB.green_s_version=False
 
-    if not dbLoader.SCHEMA: return None
+        widget_reset.reset_gbxDatabase(dbLoader)
 
-    ### Connection Status groupbox
-    dbLoader.dlg.lblInstall.setText(f"Installation for {dbLoader.SCHEMA}:")
+def cbxSchema_setup(dbLoader) -> None:
+    """Function to setup the gui after an 'indexChanged' signal is emitted from
+    the cbxSchema combo box.
+
+    This function runs every time the selected schema is changed.
+    """
+
+    # By now, the schema variable must have be assigned.
+    assert dbLoader.SCHEMA, "Somehting went wrong,dbLoader.SCHEMA is None or False"
+
+    # In 'Connection Status' groupbox
+    dbLoader.dlg.lblInstall.setText(constants.lblInstall_text.format(
+        schema=dbLoader.SCHEMA))
     dbLoader.dlg.lblUserPrivileges_out.clear()
 
-   
-    
-    #Catch and show errors
-    privileges_dict=connection_tab.table_privileges(dbLoader)
-    if not privileges_dict: 
+    # Get the urer's privileges 
+    privileges_dict=sql.fetch_table_privileges(dbLoader)
+
+    if not privileges_dict: # An error occured
         dbLoader.dlg.lblInstall_out.clear()
         dbLoader.DB.green_privileges=False
-        return dbLoader.dlg.lblUserPrivileges_out.setText(constants.failure_html.format('An error occured assesing privileges. See log'))
 
-    #Show user privilages
+        # Show failure in 'connection status.'
+        dbLoader.dlg.lblUserPrivileges_out.setText(constants.failure_html.format(text='An error occured assesing privileges. See log'))
+
+    # Get only the effective privileges
     dbLoader.availiable_privileges = connection_tab.true_privileges(privileges_dict)
-    if len(privileges_dict)==len(privileges_dict):
-        dbLoader.dlg.lblUserPrivileges_out.setText(constants.success_html.format(dbLoader.availiable_privileges))
-        dbLoader.DB.green_privileges=True
-    elif len(privileges_dict)==0:
-        dbLoader.dlg.lblUserPrivileges_out.setText(constants.failure_html.format(dbLoader.availiable_privileges))
-        dbLoader.DB.green_privileges=False
-    else: dbLoader.dlg.lblUserPrivileges_out.setText(constants.crit_warning_html.format(dbLoader.availiable_privileges))
-    
-     #Check for schema installation
-    dbLoader.dlg.lblInstall_out.clear()
-    has_qgispkg= installation.has_qgis_pkg(dbLoader)
-    if not has_qgispkg:
-        dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format('qgis_pkg is not installed!\n\tRequires installation!'))
-        dbLoader.DB.green_installation=False
-        return installation.installation_query(dbLoader,f"Database '{dbLoader.DB.database_name}' requires 'qgis_pkg' to be installed with contents mapping '{dbLoader.SCHEMA}' schema.\nDo you want to proceed?",origin=dbLoader.dlg.lblInstallLoadingCon)
-    else:
-        dbLoader.DB.has_installation = True
-        qgispkg_has_views= installation.has_schema_views(dbLoader,dbLoader.SCHEMA)
-    #NOTE: TODO need to check also for materialised views, functions and triggers are OK
 
-        if qgispkg_has_views:
-            dbLoader.dlg.lblInstall_out.setText(constants.success_html.format('qgis_pkg is already installed!'))
-            dbLoader.DB.green_installation=True
-        elif has_qgispkg and not qgispkg_has_views: 
-            dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format(f'qgis_pkg is already installed but NOT for {dbLoader.SCHEMA}!\n\tRequires installation!'))
-            dbLoader.DB.green_installation=False
-            return False#installation_query(dbLoader,f"'qgis_pkg' needs to be enhanced with contents mapping '{selected_schema}' schema.\nDo you want to proceed?")
+    # Show effective privileges in 'connection status'.
+    dbLoader.dlg.lblUserPrivileges_out.setText(constants.success_html.format(text=dbLoader.availiable_privileges))
+    dbLoader.DB.green_privileges=True
+
+
+    # Clear installation label from previous text.
+    dbLoader.dlg.lblInstall_out.clear()
+
+    # Check if qgis_pkg is installed in database.
+    has_qgispkg = sql.has_plugin_pkg(dbLoader)
+    if has_qgispkg:
+        # Check if qgis_pkg has generated views for the current schema.
+        qgispkg_supports_schema = sql.exec_support_for_schema(dbLoader)
+    else:
+        dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format(text='qgis_pkg is not installed!\n\tRequires installation!'))
+        dbLoader.DB.green_installation=False
+        # Prompt user to install qgis_pkg, plugin cannot work without it!
+        installation.installation_query(dbLoader,f"Database '{dbLoader.DB.database_name}' requires 'qgis_pkg' to be installed with contents mapping '{dbLoader.SCHEMA}' schema.\nDo you want to proceed?",origin=dbLoader.dlg.lblInstallLoadingCon)
+        # Check if qgis_pkg has generated views for the current schema. True!
+        qgispkg_supports_schema = sql.exec_support_for_schema(dbLoader)
+
+
+    if has_qgispkg and qgispkg_supports_schema: # This is what we want!
+        dbLoader.dlg.lblInstall_out.setText(constants.success_html.format(text='qgis_pkg is already installed!'))
+        dbLoader.DB.green_installation=True
+
+    # NOTE: Installing for additional schema is not yet implemented.
+    elif has_qgispkg and not qgispkg_supports_schema: 
+        dbLoader.dlg.lblInstall_out.setText(constants.crit_warning_html.format(text=f'qgis_pkg is already installed but NOT for {dbLoader.SCHEMA}!\n\tRequires installation!'))
+        dbLoader.DB.green_installation=False
+        # temporarily does nothing.
+        # installation_query(dbLoader,f"'qgis_pkg' needs to be enhanced with contents mapping '{selected_schema}' schema.\nDo you want to proceed?")
 
 
 def gbxUserType_setup(dbLoader,user_type):
-    print(f'I am {user_type}')
+
     
+    print(f'I am {user_type}')
+
     #dbLoader.CANVAS.scene().removeItem(dbLoader.RUBBER_EXTS)
 
     selected_schema=dbLoader.dlg.cbxSchema.currentText()
@@ -208,6 +243,9 @@ def gbxUserType_setup(dbLoader,user_type):
         dbLoader.dlg.wdgMain.setCurrentIndex(2)
         # Refreash views. Initiates worker thread for loading animation.
         threads.refresh_views_thread(dbLoader)
+    else: 
+        # Move focus to Import Tab.
+        dbLoader.dlg.wdgMain.setCurrentIndex(1)
 
 
     
@@ -221,7 +259,7 @@ def gbxBasemap_setup(dbLoader, extents: QgsRectangle = None) ->  None:
 
             # Get the extents stored in server.
             extents = sql.fetch_extents(dbLoader,
-                type=constants.bbox_types["schema"])
+                type=constants.SCHEMA_EXT_TYPE)
 
             # Extents might be None (not computed yet).
             if extents:
@@ -296,19 +334,20 @@ def CANVAS_setup(dbLoader,
     dbLoader.CANVAS.setDestinationCrs(dbLoader.CRS)
     dbLoader.CANVAS.setExtent(extents,True)
 
-    # Create WMS "sudo-layer" to set as the basemap of tje canvas
-    vlayer = QgsRasterLayer(constants.GOOGLE_URI,
-        baseName="Google Maps Basemap",
+    # Create WMS "pseudo-layer" to set as the basemap of the canvas
+    # pseudo means that the lays is not going to be added to the legentd.
+    vlayer = QgsRasterLayer(constants.OSM_URI,
+        baseName="OSM Basemap",
         providerType="wms")
-    
+
     # Make sure that the layer can load properly
     assert vlayer.isValid()
 
     # Add layer to the registry
-    QgsProject.instance().addMapLayer(vlayer,addToLegend=False)
+    QgsProject.instance().addMapLayer(vlayer, addToLegend=False)
 
-    # Set the map canvas layer set
-    dbLoader.CANVAS.setLayers([vlayer])   
+    # Set the map canvas layer set.
+    dbLoader.CANVAS.setLayers([vlayer])
 
     # Draw the extents in the canvas
     # Create polygon rubber band corespoding to the extents
@@ -366,7 +405,8 @@ def btnCityExtents_setup(dbLoader):
     
     
     # Get the extents stored in server (already computed at this point).
-    extents = sql.fetch_extents(dbLoader, type=constants.bbox_types["schema"])
+    extents = sql.fetch_extents(dbLoader, 
+        type=constants.SCHEMA_EXT_TYPE)
 
     assert extents, "Extents don't exist but should have been aleady computed!"
 

@@ -123,7 +123,7 @@ def install_pkg_thread(dbLoader,path,password,origin):
 
 def install_success(dbLoader):
     dbLoader.dlg.gbxUserType.setDisabled(False)
-    dbLoader.dlg.lblInstall_out.setText(success_html.format('qgis_pkg is already installed!'))
+    dbLoader.dlg.lblInstall_out.setText(success_html.format(text='qgis_pkg is already installed!'))
     dbLoader.dlg.cbxExistingConnection.currentData().has_installation = True
     dbLoader.connection_status['Install']=True
     dbLoader.schemas.append(dbLoader.plugin_package)

@@ -100,7 +100,8 @@ class Connection:
                 self.green_s_version,
                 self.green_c_verison,
                 self.green_privileges,
-                self.green_installation)): return True
+                self.green_installation)):
+            return True
         return False
     # def add_to_collection(self,db_collection):
     #     db_collection.append(self)

@@ -100,7 +100,7 @@ class DBLoader:
         self.iface: QgisInterface = iface
 
         # initialize plugin directory.
-        self.plugin_dir: str = os.path.dirname(__file__)
+        self.plugin_dir: str = os.path.dirname(__file__) # = PLUGIN_PATH
         # initialize locale.
         locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
@@ -188,7 +188,7 @@ class DBLoader:
 
             :type whats_this: str
 
-        *    :param parent: Parent widget for the new action. Defaults None.
+        *   :param parent: Parent widget for the new action. Defaults None.
 
             :type parent: QWidget
 
@@ -233,8 +233,8 @@ class DBLoader:
             # 3DCityDB-Loader > 3DCityDB-Loader which we don't want.
             # However using the addAction method to insert the plugin directly,
             # causes the database menu to 'pop out' of the menu ribbon in a
-            # hidden state. Note that this method works for all the menus,
-            # except the database menu for some bizarre reason.
+            # hidden state. Note that this method, for some bizarre reason, 
+            # works for all the menus except the database menu.
             # Using the addPluginToDatabaseMenu method BEFORE the addAction
             # method seems to bypass this issue. Needs further investigation.
 
@@ -325,12 +325,8 @@ class DBLoader:
             # enable "MapCanvasExtent" options (Byproduct).
             self.dlg.qgbxExtent.setMapCanvas(canvas=self.CANVAS,
                 drawOnCanvasOption = False)
-            # Draw on Canvas tool is disabled. Check Note on widget_setup.py 
+            # Draw on Canvas tool is disabled. Check Note on widget_setup.py
 
-            # self.dlg.qgbxExtent.setOriginalExtent(originalExtent=self.EXTENTS,
-            #     originalCrs=self.CRS)
-            # self.dlg.qgbxExtent.setCurrentExtent(currentExtent=self.EXTENTS,
-            #     currentCrs=self.CRS)
             self.dlg.qgbxExtent.setOutputCrs(outputCrs=self.CRS)
 
 
@@ -493,7 +489,6 @@ class DBLoader:
         (QgsExtentGroupBox) widget.
         """
 
-
         # Get canvas's current extent
         extent: QgsRectangle = self.CANVAS.extent()
 
@@ -567,6 +562,8 @@ class DBLoader:
 
         widget_setup.btnClearDB_setup(self)
 
+
+    # 'Database' group box events (in 'Settings' tab)
     def evt_btnRefreshViews_clicked(self) -> None:
         """Event that is called when the 'Referesh all Views' pushButton
         (btnRefreshViews) is pressed.

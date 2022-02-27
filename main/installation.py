@@ -17,14 +17,7 @@ from .constants import get_postgres_array
 from .threads import install_pkg_thread
 import psycopg2
 
-def has_qgis_pkg(dbLoader):
-    """
-    Check if current database has all the necessary view installed.
-    This function helps to avoid new installation on top of existing ones (case when the plugin runs from start)
-    """
-    if 'qgis_pkg' in dbLoader.schemas:
-        return True
-    return False
+
 
 
 def has_schema_views(dbLoader,schema): #TODO: TRY except, or plpgsql it in package

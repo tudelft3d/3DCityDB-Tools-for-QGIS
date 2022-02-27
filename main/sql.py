@@ -13,9 +13,76 @@ from qgis.core import QgsMessageLog, Qgis
 import psycopg2
 
 
-from . import constants
+from . import constants as c
 
-FILE_LOCATION = constants.get_file_location(file=__file__)
+FILE_LOCATION = c.get_file_location(file=__file__)
+
+def fetch_server_version(dbLoader) -> str:
+    """SQL query thar reads and retrieves the server's version.
+    *   :returns: Server version.
+        
+        :rtype: str
+    """   
+    try:
+         # Create cursor.
+        with dbLoader.conn.cursor() as cur:
+            # Get server to fetch its version
+            cur.execute(query="SHOW server_version;")
+            version = cur.fetchone()[0] # Tuple has trailing comma.
+        dbLoader.conn.commit()
+        return version
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = fetch_server_version.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Fetching server v", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return False
+
+def fetch_3dcitydb_version(dbLoader) -> str:
+    """SQL query thar reads and retrieves the 3DCityDB's version.
+    *   :returns: 3DCityDB version.
+        
+        :rtype: str
+    """
+    try:
+         # Create cursor.
+        with dbLoader.conn.cursor() as cur:
+            # Get server to fetch its version
+            cur.execute(query="""   
+                                SELECT  version
+                                FROM citydb_pkg.citydb_version();
+                                """)
+            version = cur.fetchone()[0] # Tuple has trailing comma.
+        dbLoader.conn.commit()
+        return version
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = fetch_3dcitydb_version.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Fetching 3DCityDB v", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
 
 def fetch_extents(dbLoader, type: str) -> str:
     """SQL query thar reads and retrieves extents stored in qgis_pkg.extents
@@ -49,7 +116,7 @@ def fetch_extents(dbLoader, type: str) -> str:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Fetching extents", loc=location)
+        header = c.log_errors.format(type="Fetching extents", loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
         QgsMessageLog.logMessage(message=header + str(error),
@@ -58,8 +125,7 @@ def fetch_extents(dbLoader, type: str) -> str:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
-
+        return None
 
 def fetch_crs(dbLoader) -> int:
     """SQL query thar reads and retrieves the current schema's srid from 
@@ -86,7 +152,7 @@ def fetch_crs(dbLoader) -> int:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Fetching srid", loc=location)
+        header = c.log_errors.format(type="Fetching srid", loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
         QgsMessageLog.logMessage(message=header + str(error),
@@ -95,9 +161,70 @@ def fetch_crs(dbLoader) -> int:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
+
+def fetch_table_privileges(dbLoader) -> dict:
+    """SQL query thar reads and retrieves the user's
+    privileges and their effectiveness.
+    *   :returns: Table privileges
+        
+        :rtype: dict{str:bool}
+    """
+    try:
+        
+        with dbLoader.conn.cursor() as cur:
+            cur.execute(f"""
+            WITH t AS (
+            SELECT concat('{dbLoader.SCHEMA}','.',i.table_name)::varchar 
+            AS qualified_table_name
+            FROM information_schema.tables AS i
+            WHERE table_schema = '{dbLoader.SCHEMA}' 
+                AND table_type = 'BASE TABLE'
+            ) SELECT
+            t.qualified_table_name,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'DELETE')     AS delete_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'SELECT')     AS select_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'REFERENCES') AS references_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRIGGER')    AS trigger_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRUNCATE')   AS truncate_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'UPDATE')     AS update_priv,
+            pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'INSERT')     AS insert_priv
+            FROM t;""")
+            privileges_bool = cur.fetchone()
+        dbLoader.conn.commit()
+
+        # Get privileges name from columns
+        colnames = [desc[0] for desc in cur.description]
+        privileges_dict = dict(zip([col.upper() for col in colnames],privileges_bool))
+
+        # Kyes: priv name (e.g. delete_priv) Values: status (e.g. True)
+        return privileges_dict
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = fetch_table_privileges.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Fetching privileges", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
 
 def fetch_layer_metadata(dbLoader) -> tuple:
+    """SQL query thar reads and retrieves the current schema's layer metadata
+    from qgis_pkg.layer_metadata table.
+    Note: it retrieves metadata only for layers that have n_features > 0
+    *   :returns: metadata of the layers combined with a collection of 
+        the attributes names
+        
+        :rtype: tuple(attribute_names,metadata)
+    """
     try:
         t0 = time.time()
         with dbLoader.conn.cursor() as cur:
@@ -107,6 +234,8 @@ def fetch_layer_metadata(dbLoader) -> tuple:
                         AND n_features > 0;
                         """)
             metadata=cur.fetchall()
+
+            # Attribute names
             colnames = [desc[0] for desc in cur.description]
         dbLoader.conn.commit()
 
@@ -121,7 +250,7 @@ def fetch_layer_metadata(dbLoader) -> tuple:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Fetching layer metadata",
+        header = c.log_errors.format(type="Fetching layer metadata",
             loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
@@ -131,7 +260,7 @@ def fetch_layer_metadata(dbLoader) -> tuple:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
 
 def exec_compute_schema_extents(dbLoader) -> None:
     """SQL qgis_pkg function that computes the schema's extents.
@@ -155,7 +284,7 @@ def exec_compute_schema_extents(dbLoader) -> None:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Computing extents", loc=location)
+        header = c.log_errors.format(type="Computing extents", loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
         QgsMessageLog.logMessage(message=header + str(error),
@@ -164,9 +293,9 @@ def exec_compute_schema_extents(dbLoader) -> None:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
 
-def exec_create_mview(dbLoader) -> tuple:
+def exec_create_mview(dbLoader) -> None:
     """SQL qgis_pkg function that creates the schema's 
     materialised views.
     """
@@ -182,7 +311,7 @@ def exec_create_mview(dbLoader) -> tuple:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Creating mat views",
+        header = c.log_errors.format(type="Creating mat views",
             loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
@@ -192,9 +321,9 @@ def exec_create_mview(dbLoader) -> tuple:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
 
-def exec_create_updatable_views(dbLoader) -> tuple:
+def exec_create_updatable_views(dbLoader) -> None:
     """SQL qgis_pkg function that creates the schema's 
     updatable views.
     """
@@ -210,7 +339,7 @@ def exec_create_updatable_views(dbLoader) -> tuple:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Creating upd views",
+        header = c.log_errors.format(type="Creating upd views",
             loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
@@ -220,10 +349,17 @@ def exec_create_updatable_views(dbLoader) -> tuple:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
 
-def exec_view_counter(dbLoader, view: constants.View) -> int:
+def exec_view_counter(dbLoader, view: c.View) -> int:
+    """SQL qgis_pkg function that computes the number of 
+    geometry objects found in selecte extents.
+
+    *   :returns: Number of objects.
     
+        :rtype: int
+    """
+
     try:
         # Convert QgsRectanlce into WKT polygon format
         extents = dbLoader.EXTENTS.asWktPolygon()
@@ -248,7 +384,7 @@ def exec_view_counter(dbLoader, view: constants.View) -> int:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Coutning view n_selected",
+        header = c.log_errors.format(type="Coutning view n_selected",
             loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
@@ -258,8 +394,115 @@ def exec_view_counter(dbLoader, view: constants.View) -> int:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return False
+        return None
 
+def exec_get_feature_schemas(dbLoader) -> tuple:
+    """SQL qgis_pkg function that reads and retrieves the current database's
+    3DCityDB schemas.
+    Note: it returns ONLY the schemas responsible of storing the city model.
+
+    *   :returns: Schemas (e.g. citydb)
+    
+        :rtype: tuple
+    """
+    try:
+
+        with dbLoader.conn.cursor() as cur:
+            # Execute server function to get the citydb schemas.
+            cur.callproc("qgis_pkg.get_feature_schemas")
+            schemas = cur.fetchall() # list of tuples with trailing commas
+            schemas = list(zip(*schemas))[0]
+        dbLoader.conn.commit()
+        return schemas
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = exec_get_feature_schemas.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Getting 3DCityDB schemas",
+            loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
+ 
+def exec_get_table_privileges(dbLoader) -> dict:
+    """SQL qgis_pkg function that reads and retrieves the current schema's table 
+    privileges.
+    Note!: This functions is probably wont be used at all, as it requires that 
+    qgis_pkg is already installed, but the approach requires its execution 
+    before checking whether the qgis_pkg is installed or not.
+    *   :returns: Table privileges
+        
+        :rtype: dict{str:bool}
+    """
+    try:
+        with dbLoader.conn.cursor() as cur:
+            # Execute server function to get the citydb schemas.
+            cur.callproc("qgis_pkg.get_table_privileges")
+            privileges_bool = cur.fetchone()
+            colnames = [desc[0] for desc in cur.description]
+            privileges_dict= dict(zip([col.upper() for col in colnames],privileges_bool))
+        dbLoader.conn.commit()
+        return privileges_dict
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = exec_get_table_privileges.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Getting privileges",
+            loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
+
+def exec_support_for_schema(dbLoader) -> bool:
+    """SQL qgis_pkg function that determines if qgis_pkg has views
+    regarding the current schema.
+    *   :returns: Support status
+        
+        :rtype: bool
+    """
+    try:
+        with dbLoader.conn.cursor() as cur:
+            # Execute function to find if qgis_pkg supports current schema.
+            cur.callproc("qgis_pkg.support_for_schema",[dbLoader.SCHEMA])
+            result_bool = cur.fetchone()[0] # Tuple has trailing comma.
+        dbLoader.conn.commit()
+        return result_bool
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = exec_support_for_schema.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Getting support for schema",
+            loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
 
 def fetch_mat_views(dbLoader) -> list:
     """SQL query thar reads and retrieves the current schema's
@@ -290,7 +533,7 @@ def fetch_mat_views(dbLoader) -> list:
         location = ">".join([FILE_LOCATION,function_name])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Fetching mat views",
+        header = c.log_errors.format(type="Fetching mat views",
              loc=location)
 
         # Show the error in the log panel. Should open it even if its closed.
@@ -300,6 +543,45 @@ def fetch_mat_views(dbLoader) -> list:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
+        return None
+
+def has_plugin_pkg(dbLoader) -> bool:
+    """SQL query thar searches for qgis_pkg in the database.
+    *   :returns: Search result
+        
+        :rtype: bool
+    """
+
+    try:
+
+        # Create cursor.
+        with dbLoader.conn.cursor() as cur:
+            # Get package name from database
+            cur.execute(query= f"""
+                                SELECT schema_name 
+                                FROM information_schema.schemata 
+	                            WHERE schema_name = '{c.PLUGIN_PKG}'
+                                """)
+            pkg_name = cur.fetchone()[0] # Tuple has trailing comma.
+        dbLoader.conn.commit()
+
+        if pkg_name:
+            return True
         return False
 
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = has_plugin_pkg.__name__
+        location = ">".join([FILE_LOCATION,function_name])
 
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Searching package", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return False

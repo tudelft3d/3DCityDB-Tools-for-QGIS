@@ -48,6 +48,42 @@ COMMENT ON FUNCTION qgis_pkg.xx_funcname_xx(varchar) IS 'xxxx short comment xxxx
 */
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.SUPPORT_FOR_SCHEMA
+----------------------------------------------------------------
+-- Returns True if qgis_pkg schema supports the input schema.
+-- In pratice it searches the schema for view names starting with
+-- the input schema name.
+
+DROP FUNCTION IF EXISTS    qgis_pkg.support_for_schema(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.support_for_schema(
+	schema varchar
+)
+RETURNS boolean
+AS $$
+
+BEGIN
+PERFORM table_name
+	FROM information_schema.tables 
+    WHERE table_schema = 'qgis_pkg'
+	AND table_type = 'VIEW'
+	AND table_name LIKE schema || '%'; 
+	-- Don't use FORMAT, something happens with
+	-- the variable FOUND assignment (many false positives)
+
+
+RETURN FOUND;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.support_for_schema(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.support_for_schema(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar) IS 'Searches for schema name into the views name to determine if qgis_pkg support the input schema.';
+
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GET_ALL_SCHEMAS
 ----------------------------------------------------------------
 -- Retrieves all available schemas in the current database

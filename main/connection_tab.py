@@ -6,13 +6,15 @@ relating to child widgets of the 'Connection Tab'.
 """
 
 from .connection import connect
+from . import sql
 from . import constants
 from qgis.core import QgsMessageLog,Qgis
 import psycopg2
 
 def open_connection(dbLoader) -> bool:
     """Opens a connection using the parameters stored in DBLoader.DB
-    and retrieves the server's verison
+    and retrieves the server's verison. The server version is stored
+    in 's_version' attribute of the Connection object.
 
     *   :returns: connection attempt results
 
@@ -22,13 +24,10 @@ def open_connection(dbLoader) -> bool:
     try:
         # Open the connection.
         dbLoader.conn = connect(dbLoader.DB)
+        dbLoader.conn.commit() # This seems redundant.
 
-        # Create cursor.
-        with dbLoader.conn.cursor() as cur:
-            # Get server to fetch its version
-            cur.execute(query="SHOW server_version;")
-            version = cur.fetchone()[0] # Tuple has trailing comma.
-            dbLoader.conn.commit()
+        # Get server version.
+        version = sql.fetch_server_version(dbLoader)
 
         # Store verison into the connection object.
         dbLoader.DB.s_version = version
@@ -40,41 +39,39 @@ def open_connection(dbLoader) -> bool:
         LOCATION = ">".join([FILE_LOCATION,FUNCTION_NAME])
 
         # Specify in the header the type of error and where it happend.
-        header = constants.log_errors.format(type="Connection", loc=LOCATION)
+        header = constants.log_errors.format(type="Attempting connection", loc=LOCATION)
 
         # Show the error in the log panel. Should open it even if its closed.
         QgsMessageLog.logMessage(message=header + str(error),
             tag="3DCityDB-Loader",
             level=Qgis.Critical,
             notifyUser=True)
-        cur.close()
         dbLoader.conn.rollback()
         return False
 
     return True
 
-def is_3dcitydb(dbLoader):
-    """ Checks if current database has specific 3DCityDB requirements.\n
-    Requiremnt list:
-        > Extentions: postgis, uuid-ossp, postgis_sfcgal
-        > Schemas: citydb_pkg
-        > Tables: cityobject, building, surface_geometry
-        
+def is_3dcitydb(dbLoader) -> bool:
+    """Function that checks if the current database has 
+    3DCityDB installed. The check is done by querying the 3DCityDB
+    version from citydb_pkg.version().
 
-    """ 
-    database = dbLoader.dlg.cbxExistingConnection.currentData()
-    try:
-        cur = dbLoader.conn.cursor()  
-        cur.execute("SELECT version FROM citydb_pkg.citydb_version();")
-        version= cur.fetchall()
-        cur.close()
-        database.c_version= version[0][0]
-        return 1
+    On 3DCityDB absence a database error is emited which means that 
+    it is not installed.
 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-        dbLoader.conn.rollback()
-        cur.close()
+    Note for future 3DCityDB version: this function MUST be updated
+    for every change in the abovementioned 3DCitydb function's name 
+    or schema.
+    """
+    
+    # Get 3DCityDB version
+    version = sql.fetch_3dcitydb_version(dbLoader)
+
+    if version: # Could be None
+        # Store verison into the connection object.
+        dbLoader.DB.c_version = version
+        return True
+    return False
 
 
 def get_schemas(dbLoader):
@@ -90,17 +87,20 @@ def get_schemas(dbLoader):
         
         schemas,empty=zip(*schemas)
         dbLoader.schemas = list(schemas)
+        return schemas
 
     except (Exception, psycopg2.DatabaseError) as error:
         print("At 'get_schemas:",error)
         dbLoader.conn.rollback()
         cur.close()
 
-def fill_schema_box(dbLoader):
-    """Fils schema combo box with ONLY those schemas that contain the feature tables (citydb: YES, public: NO)"""
+def fill_schema_box(dbLoader, schemas: tuple) -> None:
+    """Function that fills schema combo box with the provided schemas."""
+
+    # Clear combo box from previous entries
     dbLoader.dlg.cbxSchema.clear()
 
-    for schema in dbLoader.schemas: 
+    for schema in schemas: 
         res = schema_has_features(dbLoader,schema,constants.features_tables)
         if res:
             dbLoader.dlg.cbxSchema.addItem(schema,res)
@@ -156,18 +156,21 @@ def table_privileges(dbLoader):
         cur = dbLoader.conn.cursor()
         #Get all schemas
         cur.execute(f""" 
-        WITH "tables"("table") AS (
-        SELECT table_name FROM information_schema.tables 
-	    WHERE table_schema = '{selected_schema}' AND table_type = 'BASE TABLE'
-        ) SELECT
-        pg_catalog.has_table_privilege(current_user, "table", 'DELETE') AS "delete",
-        pg_catalog.has_table_privilege(current_user, "table", 'SELECT') AS "select",
-        pg_catalog.has_table_privilege(current_user, "table", 'REFERENCES') AS "references",
-        pg_catalog.has_table_privilege(current_user, "table", 'TRIGGER') AS "trigger",
-        pg_catalog.has_table_privilege(current_user, "table", 'TRUNCATE') AS "truncate",
-        pg_catalog.has_table_privilege(current_user, "table", 'UPDATE') AS "update",
-        pg_catalog.has_table_privilege(current_user, "table", 'INSERT') AS "insert"
-        FROM "tables";""")
+        WITH t AS (
+		SELECT concat('{selected_schema}','.',i.table_name)::varchar AS qualified_table_name
+		FROM information_schema.tables AS i
+		WHERE table_schema = '{selected_schema}' 
+			AND table_type = 'BASE TABLE'
+	    ) SELECT
+        t.qualified_table_name,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'DELETE')     AS delete_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'SELECT')     AS select_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'REFERENCES') AS references_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRIGGER')    AS trigger_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRUNCATE')   AS truncate_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'UPDATE')     AS update_priv,
+		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'INSERT')     AS insert_priv
+	    FROM t;""")
         privileges_bool = cur.fetchone()
         colnames = [desc[0] for desc in cur.description]
         privileges_dict= dict(zip([col.upper() for col in colnames],privileges_bool))
@@ -181,14 +184,25 @@ def table_privileges(dbLoader):
         cur.close()
         return None
 
-def true_privileges(allpriv_dict):
+def true_privileges(allpriv_dict: dict) -> list:
+    """Function that returns the effective privieges names.
+    From a dictionary dict{str,bool} coming from sql.fetch_table_privileges().
+
+    *   :param allpriv_dict: Dicitonary containg a collection of user
+        privileges as keys and their effectiveness as values.
+
+        :type allpriv_dict: dict{str,bool}
+
+    *   :returns: Effective user privileges
+  
+        :rtype: list
+    """
+
     true_privileges=[]
-    for key, value in allpriv_dict.items():
-        if value == True:
-            true_privileges.append(key)
+    for priv_name, status in allpriv_dict.items():
+        if status == True:
+            true_privileges.append(priv_name)
     return true_privileges
-
-
 
 def successful_connection_tab(dbLoader):
 
