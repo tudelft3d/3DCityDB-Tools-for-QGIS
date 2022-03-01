@@ -21,29 +21,31 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
 import os.path
 import typing
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
-from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsExtentGroupBox, QgsExtentWidget
+from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand
 import psycopg2
 
-
 from .resources import qInitResources
-from .citydb_loader_dialog import DBLoaderDialog     #Main dialog
+from .citydb_loader_dialog import DBLoaderDialog # Main dialog
 from .main import connection
-from .main import installation
-from .main import widget_setup
-from .main import widget_reset
 from .main import constants
+from .main import installation
+from .main import widget_reset
+from .main import widget_setup
+
 
 class DBLoader:
     """QGIS Plugin Implementation. Main class."""
-    QAction
-    plugin_package = "qgis_pkg"
+
+    plugin_package = constants.PLUGIN_PKG
 
     def __init__(self, iface: QgisInterface) -> None:
         """DBLoader class Constructor.
@@ -82,7 +84,7 @@ class DBLoader:
         # Variable to store an additional canvas (to show the extents).
         self.CANVAS: QgsMapCanvas = QgsMapCanvas()
         self.CANVAS.enableAntiAliasing(True)
-    
+
 
         # Variable to store all availiable FeatureTypes.
         # The availiability is defined by the existance of at least one feature.
@@ -233,7 +235,7 @@ class DBLoader:
             # 3DCityDB-Loader > 3DCityDB-Loader which we don't want.
             # However using the addAction method to insert the plugin directly,
             # causes the database menu to 'pop out' of the menu ribbon in a
-            # hidden state. Note that this method, for some bizarre reason, 
+            # hidden state. Note that this method, for some bizarre reason,
             # works for all the menus except the database menu.
             # Using the addPluginToDatabaseMenu method BEFORE the addAction
             # method seems to bypass this issue. Needs further investigation.
@@ -320,7 +322,7 @@ class DBLoader:
             self.dlg.rdViewer.clicked.connect(self.evt_rdViewer_clicked)
             self.dlg.rdEditor.clicked.connect(self.evt_rdEditor_clicked)
 
-            
+
             # Link the addition canvas to the extents qgroupbox and
             # enable "MapCanvasExtent" options (Byproduct).
             self.dlg.qgbxExtent.setMapCanvas(canvas=self.CANVAS,
@@ -423,7 +425,7 @@ class DBLoader:
 
         Checks if the connection + schema meet the necessary requirements.
         """
-        
+
         # Set the current schema variable
         self.SCHEMA = self.dlg.cbxSchema.currentText()
 
@@ -450,13 +452,12 @@ class DBLoader:
             widget_reset.reset_gbxUserType(self)
             self.dlg.gbxUserType.setDisabled(True)
 
-
     # 'User Type' group box events (in 'Connection' tab)
     def evt_rdViewer_clicked(self) -> None:
         """Event that is called when the current 'Viewer' radioButton
         (rdViewer) is checked.
 
-        ..  Note privileges are not fully imeplemented yet.
+        ..  Note user types are not fully imeplemented yet.
         ..  (20-02-2022) Currently it doesn't work as intended
         """
 
@@ -466,7 +467,7 @@ class DBLoader:
         """Event that is called when the current 'Editor' radioButton
         (rdEditor) is checked.
 
-        ..  Note privileges are not fully imeplemented yet.
+        ..  Note user types are not fully imeplemented yet.
         ..  (20-02-2022) Currently it doesn't work as intended
         """
 
@@ -479,7 +480,6 @@ class DBLoader:
         """
 
         widget_setup.btnCityExtents_setup(self)
-        
 
     def evt_canvas_extChanged(self) -> None:
         """Event that is called when the current canvas extents (pan over map)
@@ -534,7 +534,6 @@ class DBLoader:
         """
 
         widget_setup.btnImport_setup(self)
-
         # Here is the final step.
         # Meaning that user did everything and can now close
         # the window to continue working outside the plugin.
@@ -551,9 +550,9 @@ class DBLoader:
         """Event that is called when the 'Uninstall' pushButton
         (btnUnInstallDB) is pressed.
         """
-
-        installation.uninstall_views(self,
-            schema=self.dlg.cbxSchema.currentText())
+        print("BTN Does nothing")
+        # installation.uninstall_views(self,
+        #     schema=self.dlg.cbxSchema.currentText())
 
     def evt_btnClearDB_clicked(self) -> None:
         """Event that is called when the 'Clear All' pushButton

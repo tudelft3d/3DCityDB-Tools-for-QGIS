@@ -12,7 +12,6 @@ import time
 from qgis.core import QgsMessageLog, Qgis
 import psycopg2
 
-
 from . import constants as c
 
 FILE_LOCATION = c.get_file_location(file=__file__)
@@ -20,9 +19,9 @@ FILE_LOCATION = c.get_file_location(file=__file__)
 def fetch_server_version(dbLoader) -> str:
     """SQL query thar reads and retrieves the server's version.
     *   :returns: Server version.
-        
+
         :rtype: str
-    """   
+    """
     try:
          # Create cursor.
         with dbLoader.conn.cursor() as cur:
@@ -52,14 +51,14 @@ def fetch_server_version(dbLoader) -> str:
 def fetch_3dcitydb_version(dbLoader) -> str:
     """SQL query thar reads and retrieves the 3DCityDB's version.
     *   :returns: 3DCityDB version.
-        
+
         :rtype: str
     """
     try:
          # Create cursor.
         with dbLoader.conn.cursor() as cur:
             # Get server to fetch its version
-            cur.execute(query="""   
+            cur.execute(query="""
                                 SELECT  version
                                 FROM citydb_pkg.citydb_version();
                                 """)
@@ -84,30 +83,30 @@ def fetch_3dcitydb_version(dbLoader) -> str:
         dbLoader.conn.rollback()
         return None
 
-def fetch_extents(dbLoader, type: str) -> str:
+def fetch_extents(dbLoader, ext_type: str) -> str:
     """SQL query thar reads and retrieves extents stored in qgis_pkg.extents
     *   :returns: Extents as WKT or None if the entry is empty.
-        
+
         :rtype: str
     """
     try:
         t0 = time.time()
-    
+
         # Create cursor.
         with dbLoader.conn.cursor() as cur:
             # Get db_schema extents from server as WKT.
-            cur.execute(query= f"""  
+            cur.execute(query= f"""
                                 SELECT ST_AsText(envelope) 
                                 FROM qgis_pkg.extents 
                                 WHERE schema_name = '{dbLoader.SCHEMA}'
-                                AND bbox_type = '{type}';
+                                AND bbox_type = '{ext_type}';
                                 """)
             extents = cur.fetchone()[0] # Tuple has trailing comma.
         dbLoader.conn.commit()
 
         t1 = time.time()
         print("time to fetch extents from server: ",t1-t0)
-        
+
         return extents
 
     except (Exception, psycopg2.Error) as error:
@@ -128,10 +127,10 @@ def fetch_extents(dbLoader, type: str) -> str:
         return None
 
 def fetch_crs(dbLoader) -> int:
-    """SQL query thar reads and retrieves the current schema's srid from 
+    """SQL query thar reads and retrieves the current schema's srid from
     {schema}.database_srs
     *   :returns: srid number
-        
+
         :rtype: int
     """
     try:
@@ -167,11 +166,11 @@ def fetch_table_privileges(dbLoader) -> dict:
     """SQL query thar reads and retrieves the user's
     privileges and their effectiveness.
     *   :returns: Table privileges
-        
+
         :rtype: dict{str:bool}
     """
     try:
-        
+
         with dbLoader.conn.cursor() as cur:
             cur.execute(f"""
             WITH t AS (
@@ -216,13 +215,54 @@ def fetch_table_privileges(dbLoader) -> dict:
         dbLoader.conn.rollback()
         return None
 
+def fetch_schemas(dbLoader) -> tuple:
+    """SQL query thar reads and retrieves the database's
+    schemas.
+
+    *   :returns: A list with all the schemas in DB
+
+        :rtype: list(str)
+    """
+    try:
+        with dbLoader.conn.cursor() as cur:
+            #Get all schemas
+            cur.execute("""
+                        SELECT schema_name,'' 
+                        FROM information_schema.schemata 
+                        WHERE schema_name != 'information_schema' 
+                        AND NOT schema_name LIKE '%pg%' 
+                        ORDER BY schema_name ASC
+                        """)
+            schemas = cur.fetchall()
+        schemas, empty = tuple(zip(*schemas))
+        dbLoader.conn.commit()
+        return schemas
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = fetch_schemas.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Fetching all schemas",
+            loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
+
 def fetch_layer_metadata(dbLoader) -> tuple:
     """SQL query thar reads and retrieves the current schema's layer metadata
     from qgis_pkg.layer_metadata table.
     Note: it retrieves metadata only for layers that have n_features > 0
-    *   :returns: metadata of the layers combined with a collection of 
+    *   :returns: metadata of the layers combined with a collection of
         the attributes names
-        
+
         :rtype: tuple(attribute_names,metadata)
     """
     try:
@@ -262,16 +302,55 @@ def fetch_layer_metadata(dbLoader) -> tuple:
         dbLoader.conn.rollback()
         return None
 
+def fetch_lookup_tables(dbLoader) -> tuple:
+    """SQL query thar reads and retrieves lookup tables from qgis_pkg.
+
+    *   :returns: Look up tables names
+
+        :rtype: tuple(str)
+    """
+    try:
+        with dbLoader.conn.cursor() as cur:
+            #Get all existing look-up tables from database
+            cur.execute("""
+                            SELECT table_name,'' 
+                            FROM information_schema.tables
+                            WHERE table_schema = 'qgis_pkg' 
+                            AND table_name LIKE 'lu_%';
+                        """)
+            lookups=cur.fetchall()
+        dbLoader.conn.commit()
+        lookups,empty=zip(*lookups)
+        return lookups
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = fetch_lookup_tables.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Fetching lookup tables",
+            loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None
+
 def exec_compute_schema_extents(dbLoader) -> None:
     """SQL qgis_pkg function that computes the schema's extents.
 
     *   :returns: x_min, y_min, x_max, y_max, srid
-        
+
         :rtype: tuple
     """
-    try:    
+    try:
         with dbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents 
+            # Execute server function to compute the schema's extents
             cur.callproc("qgis_pkg.compute_schema_extents",[dbLoader.SCHEMA])
             x_min, y_min, x_max, y_max, srid, upserted_id= cur.fetchone()
         upserted_id = None # Not needed.
@@ -296,12 +375,12 @@ def exec_compute_schema_extents(dbLoader) -> None:
         return None
 
 def exec_create_mview(dbLoader) -> None:
-    """SQL qgis_pkg function that creates the schema's 
+    """SQL qgis_pkg function that creates the schema's
     materialised views.
     """
-    try:    
+    try:
         with dbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents 
+            # Execute server function to compute the schema's extents
             cur.callproc("qgis_pkg.create_mview",[dbLoader.SCHEMA])
         dbLoader.conn.commit()
 
@@ -321,13 +400,12 @@ def exec_create_mview(dbLoader) -> None:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return None
 
 def exec_create_updatable_views(dbLoader) -> None:
-    """SQL qgis_pkg function that creates the schema's 
+    """SQL qgis_pkg function that creates the schema's
     updatable views.
     """
-    try:    
+    try:
         with dbLoader.conn.cursor() as cur:
             # Execute server function to compute the schema's extents.
             cur.callproc("qgis_pkg.create_updatable_views",[dbLoader.SCHEMA])
@@ -349,14 +427,13 @@ def exec_create_updatable_views(dbLoader) -> None:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
-        return None
 
 def exec_view_counter(dbLoader, view: c.View) -> int:
-    """SQL qgis_pkg function that computes the number of 
+    """SQL qgis_pkg function that computes the number of
     geometry objects found in selecte extents.
 
     *   :returns: Number of objects.
-    
+
         :rtype: int
     """
 
@@ -370,7 +447,7 @@ def exec_view_counter(dbLoader, view: c.View) -> int:
             cur.callproc("qgis_pkg.view_counter",[view.v_name,extents])
             count = cur.fetchone()[0] # Tuple has trailing comma.
         dbLoader.conn.commit()
-        
+
 
         t1 = time.time()
         print("time to count view objs from server: ",t1-t0)
@@ -402,7 +479,7 @@ def exec_get_feature_schemas(dbLoader) -> tuple:
     Note: it returns ONLY the schemas responsible of storing the city model.
 
     *   :returns: Schemas (e.g. citydb)
-    
+
         :rtype: tuple
     """
     try:
@@ -432,15 +509,15 @@ def exec_get_feature_schemas(dbLoader) -> tuple:
         cur.close()
         dbLoader.conn.rollback()
         return None
- 
+
 def exec_get_table_privileges(dbLoader) -> dict:
-    """SQL qgis_pkg function that reads and retrieves the current schema's table 
+    """SQL qgis_pkg function that reads and retrieves the current schema's table
     privileges.
-    Note!: This functions is probably wont be used at all, as it requires that 
-    qgis_pkg is already installed, but the approach requires its execution 
+    Note!: This functions is probably wont be used at all, as it requires that
+    qgis_pkg is already installed, but the approach requires its execution
     before checking whether the qgis_pkg is installed or not.
     *   :returns: Table privileges
-        
+
         :rtype: dict{str:bool}
     """
     try:
@@ -475,7 +552,7 @@ def exec_support_for_schema(dbLoader) -> bool:
     """SQL qgis_pkg function that determines if qgis_pkg has views
     regarding the current schema.
     *   :returns: Support status
-        
+
         :rtype: bool
     """
     try:
@@ -507,20 +584,25 @@ def exec_support_for_schema(dbLoader) -> bool:
 def fetch_mat_views(dbLoader) -> list:
     """SQL query thar reads and retrieves the current schema's
     materialised views from pg_matviews
-    *   :returns: Materialized view with populated status 
-        
-        :rtype: list
+    *   :returns: Materialized view dictionary with view name as keys and
+            populated status as value.
+
+        :rtype: dict{str,bool}
     """
+    # NOTE: might need to set it as schema dependent.
     try:
         t0 = time.time()
         with dbLoader.conn.cursor() as cur:
             # Get database srid.
-            cur.execute(query= f"""
+            cur.execute(query=  """
                                 SELECT matViewname, ispopulated 
                                 FROM pg_matviews
                                 WHERE schemaname = 'qgis_pkg';
                                 """)
             mat_views = cur.fetchall()
+            mat_views, status = list(zip(*mat_views))
+            mat_views = dict(zip(mat_views,status))
+
         dbLoader.conn.commit()
 
         t1 = time.time()
@@ -546,9 +628,9 @@ def fetch_mat_views(dbLoader) -> list:
         return None
 
 def has_plugin_pkg(dbLoader) -> bool:
-    """SQL query thar searches for qgis_pkg in the database.
+    """SQL query that searches for qgis_pkg in the database.
     *   :returns: Search result
-        
+
         :rtype: bool
     """
 
@@ -560,9 +642,9 @@ def has_plugin_pkg(dbLoader) -> bool:
             cur.execute(query= f"""
                                 SELECT schema_name 
                                 FROM information_schema.schemata 
-	                            WHERE schema_name = '{c.PLUGIN_PKG}'
+	                            WHERE schema_name = '{c.PLUGIN_PKG}';
                                 """)
-            pkg_name = cur.fetchone()[0] # Tuple has trailing comma.
+            pkg_name = cur.fetchone()
         dbLoader.conn.commit()
 
         if pkg_name:
@@ -584,4 +666,79 @@ def has_plugin_pkg(dbLoader) -> bool:
             notifyUser=True)
         cur.close()
         dbLoader.conn.rollback()
+        return None
+
+def drop_package(dbLoader) -> None:
+    """SQL query that drops plugin package from the database.
+
+    As plugin cannot function without its package, the function
+    also closes the connection.
+    """
+
+    try:
+        with dbLoader.conn.cursor() as cur:
+            cur.execute(f"""DROP SCHEMA {c.PLUGIN_PKG} CASCADE;""")
+        dbLoader.conn.commit()
+        dbLoader.conn.close()
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = drop_package.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Droping package", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+
+def schema_has_features(dbLoader, schema: str) -> bool:
+    """SQL query that searches schema for CityGML features.
+
+    *   :param schema: Schema to check if it has CityGML feature tables
+
+        :type schema: str
+
+    *   :returns: Search result
+
+        :rtype: bool
+    """
+
+    try:
+        # Create cursor.
+        with dbLoader.conn.cursor() as cur:
+            # Get package name from database
+            cur.execute(f"""
+                        SELECT table_name FROM information_schema.tables
+                        WHERE table_schema = '{schema}'
+                        AND table_name SIMILAR TO '{c.get_postgres_array(c.features_tables)}'
+                        ORDER BY table_name ASC
+                        """)
+            feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
+        dbLoader.conn.commit()
+
+        if feature_response:
+            return True
         return False
+
+    except (Exception, psycopg2.Error) as error:
+        # Get the location to show in log where an issue happens
+        function_name = schema_has_features.__name__
+        location = ">".join([FILE_LOCATION,function_name])
+
+        # Specify in the header the type of error and where it happend.
+        header = c.log_errors.format(type="Getting schema features", loc=location)
+
+        # Show the error in the log panel. Should open it even if its closed.
+        QgsMessageLog.logMessage(message=header + str(error),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+        cur.close()
+        dbLoader.conn.rollback()
+        return None

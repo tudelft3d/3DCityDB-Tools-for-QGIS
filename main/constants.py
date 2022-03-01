@@ -1,6 +1,9 @@
-"""Constants docsting"""
+"""This module contains all the hardcoded or constant elements that are
+used in the plugin's functionality."""
+
+
 import os.path
-import re
+
 
 # Text - Messages - Log
 icon_msg_core = """
@@ -37,20 +40,20 @@ menu_html = icon_msg_core.format(
 log_errors = "{type} ERROR at {loc}\n ERROR: "
 
 # Widget initial embedded text
-btnInstallDB_text= "Install plugin contents to database {DB} for schema {SC}"
-btnUnInstallDB_text= "Un-install plugin contents from database {DB} for schema {SC}"
-btnClearDB_text= "Clear entire {DB} database from plugin contents"
-btnRefreshViews_text= "Refresh views for schema {SC} in database {DB}"
-lblDbSchema_text="Database: {Database}\nSchema: {Schema}"
-btnImport_text="Import {num} feature layers"
-lblInstall_text="Installation for {schema}:"
+btnInstallDB_text = "Install plugin contents to database {DB}.{SC}"
+btnUnInstallDB_text = "Uninstall plugin contents from database {DB}.{SC}"
+btnClearDB_text = "Clear entire {DB} database from plugin contents"
+btnRefreshViews_text = "Refresh views for {DB}.{SC}"
+lblDbSchema_text = "Database: {Database}\nSchema: {Schema}"
+btnImport_text = "Import {num} feature layers"
+lblInstall_text = "Installation for {schema}:"
+ccbxFeatures_text = "Select availiable features to import"
 
 # Directories - Paths
 DIR_NAME = os.path.split(os.path.dirname(__file__))[1] # main
 QML_FROMS_DIR = "forms"
 PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
 QML_FROMS_PATH = os.path.join(PLUGIN_PATH,QML_FROMS_DIR)
-
 
 # qgis_pkg
 PLUGIN_PKG = "qgis_pkg"
@@ -60,30 +63,62 @@ SCHEMA_EXT_TYPE = "db_schema"
 MAT_VIEW_EXT_TYPE = "m_view"
 QGIS_EXT_TYPE = "qgis"
 
+features_tables = [
+    "cityobject",
+    "building",
+    "tin_relief",
+    "tunnel",
+    "bridge",
+    "waterbody",
+    "solitary_vegetat_object",
+    "city_furniture",
+    "land_use"
+    ]  #Named after their main corresponding table name from the 3DCityDB.
+FeatureTypes = [
+    "CityObject",
+    "Building",
+    "DTM","Tunnel",
+    "Bridge",
+    "Waterbody",
+    "Vegetation",
+    "CityFurniture",
+    "LandUse",
+    "Transportation"
+    ]
+priviledge_types = [
+    "DELETE",
+    "INSERT",
+    "REFERENCES",
+    "SELECT",
+    "TRIGGER",
+    "TRUNCATE",
+    "UPDATE"
+    ]
+lods = [
+    'LoD0',
+    'LoD1',
+    'LoD2',
+    'LoD3',
+    'LoD4'
+    ]
 
-
-
+# Basemaps
 GOOGLE_URL = "http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&"
 GOOGLE_URI = f"type=xyz&url={GOOGLE_URL}zmax=22&zmin=0"
 OSM_URL = "https://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
-OSM_URI = f"type=xyz&url={OSM_URL}&zmax=18&zmin=0"    
+OSM_URI = f"type=xyz&url={OSM_URL}&zmax=18&zmin=0"
 
-features_tables=["cityobject","building","tin_relief","tunnel","bridge","waterbody","solitary_vegetat_object", "city_furniture", "land_use"]  #Named after their main corresponding table name from the 3DCityDB.
-FeatureTypes=["CityObject","Building","DTM","Tunnel","Bridge","Waterbody","Vegetation", "CityFurniture", "LandUse","Transportation"]  #Named after their main corresponding table name from the 3DCityDB.
-priviledge_types=["DELETE","INSERT","REFERENCES","SELECT","TRIGGER","TRUNCATE","UPDATE"]
-lods=['LoD0','LoD1','LoD2','LoD3','LoD4']
 
 # Classes
-
 class View():
-    """This class is used to convert each row of 
-    the qgis_pkg.layer_meatadata table into object 
+    """This class is used to convert each row of
+    the qgis_pkg.layer_meatadata table into object
     instances.
-    
+
     Its purpose is to facilitate access to attributes."""
-    
+
     def __init__(self,
-            id: int,
+            v_id: int,
             schema_name: str,
             feature_type: str,
             lod: str,
@@ -95,7 +130,7 @@ class View():
             qml_file: str,
             creation_data: str,
             refresh_date: str):
-        self.id=id
+        self.v_id=v_id
         self.schema_name=schema_name
         self.feature_type = feature_type
         self.lod = lod
@@ -111,12 +146,11 @@ class View():
         self.creation_data=creation_data
         self.refresh_date=refresh_date
 
-
 class FeatureType():
     """This class acts as a container of the View
     class.
-    
-    It is used to organise all of the views to 
+
+    It is used to organise all of the views to
     their corresponding feature type."""
 
     def __init__(self,alias: str):
@@ -124,7 +158,19 @@ class FeatureType():
         self.views = []
 
 # Functions
-def get_postgres_array(data):
+def get_postgres_array(data) -> str:
+    """Function that formats a collection of data into
+    a postgres array string.
+
+    *   :param data: Elements to be converted like a PostgreSQL array.
+
+        :param data: tuple,list,dict
+
+    *   :returns: a PostgreSQL like array to be used in sql queries.
+
+        :rtype: str
+    """
+
     array=''
     for f in data:
         array+=f
@@ -140,8 +186,8 @@ def get_file_location(file: str = __file__) -> str:
     """Function that retrieves the file path relative to
     plugin's directory (os independent).
 
-    Running get_file_location() returns main/constants.py  
-    
+    Running get_file_location() returns main/constants.py
+
     *   :param file: absolute path of a file
 
         :type file: str

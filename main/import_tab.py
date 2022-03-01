@@ -1,134 +1,165 @@
 """This module contains functions that relate to the 'Import Tab'
 (in the GUI look for the plugin logo).
 
-These functions are usually called from widget_setup functions 
+These functions are usually called from widget_setup functions
 relating to child widgets of the 'Import Tab'.
 """
+
+
 from collections import OrderedDict
 
-from qgis.core import QgsProject, QgsMessageLog, QgsEditorWidgetSetup,QgsDataSourceUri,QgsRelation
-from qgis.core import QgsVectorLayer, QgsCoordinateReferenceSystem, Qgis,QgsLayerTreeGroup,QgsAttributeEditorRelation
-from qgis.PyQt.QtWidgets import QLabel
-from .constants import *
+from qgis.core import QgsProject, QgsMessageLog, QgsEditorWidgetSetup
+from qgis.core import QgsVectorLayer, QgsDataSourceUri
+from qgis.core import QgsAttributeEditorElement,QgsAttributeEditorRelation
+from qgis.core import Qgis,QgsLayerTreeGroup,QgsRelation,QgsAttributeEditorContainer
+from qgis.gui import QgsCheckableComboBox
+
+from . import constants as c
 from . import sql
-import psycopg2
-
-
-def count_objects(dbLoader,view_name):
-
-    try:
-        cur=dbLoader.conn.cursor()
-        cur.execute(f"""SELECT count(*),'' from qgis_pkg.{view_name}""")
-        count=cur.fetchone()
-        cur.close()
-        count,empty=count
-        return count
-    except (Exception, psycopg2.DatabaseError) as error:
-        print('In import_tab.count_objects:',error)
-        cur.close()
 
 
 def has_matviews(dbLoader) -> bool:
+    """Function that checks the existance of materilised
+    views in the database.
+
+    *   :returns: Whether the database has populated mat views.
+
+        :rtype: bool
+    """
+
+    # Get materialised views names.
     mat_views = sql.fetch_mat_views(dbLoader)
 
-    # Check if qgis_pkg has materialised views.
+    # Check if materialised views names exist.
     if mat_views:
         return True
     return False
-    
-        
 
-def fill_FeatureType_box(dbLoader):
+def fill_FeatureType_box(dbLoader) -> None:
+    """Function that fills out the 'Feature Types' combo box.
+    Uses the 'layer_metadata' table in qgis_pkg to instantiate
+    usefull python objects
+    class: FeatureType and
+    class: View
+    """
 
+    # Create 'Feature Type' and 'View' objects
     instantiate_objects(dbLoader)
 
-
+    # Add only those Feature Types that have at least
+    # one view containing > 0 features.
     for FeatureType_obj in dbLoader.FeatureType_container.values():
-
         for view in FeatureType_obj.views:
-            if view.n_selected>0:
+            if view.n_selected > 0:
                 dbLoader.dlg.cbxFeatureType.addItem(FeatureType_obj.alias,FeatureType_obj)
-            break   
+                # The first FeatureType object added in 'cbxFeatureType' emits
+                # a 'currentIndexChanged' signal.
+                break # We need only one view to have > 0 features.
 
-def instantiate_objects(dbLoader):
+def instantiate_objects(dbLoader) -> None:
+    """Function to instantiate usefull python objects from the 'layer_metadata'
+    table in qgis_pkg.
+    class: FeatureType and
+    class: View
+    """
 
+    # Get field names and metadata values from server.
     colnames,metadata = sql.fetch_layer_metadata(dbLoader)
-    metadata_dict_list= [dict(zip(colnames,values)) for values in metadata]
+    # Format metadata into a list of dictionaries where each element is a layer.
+    metadata_dict_list = [dict(zip(colnames,values)) for values in metadata]
 
-    
+    # Instantiate 'FeatureType' objects for each CityGML module
+    # into a plugin variable (dict).
     dbLoader.FeatureType_container = {
-        "Building": FeatureType(alias='Building'),
-        "Relief": FeatureType(alias="Relief"),
-        "CityFurniture": FeatureType(alias="CityFurniture"),
-        "LandUse": FeatureType(alias="LandUse"),
-        "WaterBody": FeatureType(alias="WaterBody"),
-        "Vegetation": FeatureType(alias='Vegetation'),
-        "Generics": FeatureType(alias='Generics')
-        }
-
+        "Building": c.FeatureType(alias='Building'),
+        "Relief": c.FeatureType(alias="Relief"),
+        "CityFurniture": c.FeatureType(alias="CityFurniture"),
+        "LandUse": c.FeatureType(alias="LandUse"),
+        "WaterBody": c.FeatureType(alias="WaterBody"),
+        "Vegetation": c.FeatureType(alias='Vegetation'),
+        "Generics": c.FeatureType(alias='Generics')
+        } # NOTE: incomplete
 
     for metadata_dict in metadata_dict_list:
-        
         #keys:  id,schema_name,feature_type,lod,root_class,layer_name,n_features,
         #       mv_name, v_name,qml_file,creation_data,refresh_date
-        if metadata_dict["n_features"]==0: continue
-        if metadata_dict["refresh_date"] is None: continue
+        if metadata_dict["n_features"]==0:
+            continue
+        if metadata_dict["refresh_date"] is None:
+            continue
+
+        # Get the FeatureType object that the current layer is.
         curr_FeatureType_obj=dbLoader.FeatureType_container[metadata_dict['feature_type']]
-        view = View(*metadata_dict.values())
+
+        # Create a View object with all the values extracted from 'layer_metadata'.
+        view = c.View(*metadata_dict.values())
+
+        # Add the view to the FeatureObject views list
         curr_FeatureType_obj.views.append(view)
-        sql.exec_view_counter(dbLoader,view)
-        
 
-def fill_lod_box(dbLoader):
+        # Count the num of features that the view has in the current extents.
+        sql.exec_view_counter(dbLoader,view) # Stores num in view.n_selected.
+        # NOTE: Takes some time to do this for every view.
+
+def fill_lod_box(dbLoader) -> None:
+    """Function that fills out the 'Geometry Level' combo box (LoD)."""
+
+    # Get 'FeatureType' object from combo box data.
     selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
-    if not selected_FeatureType: return None
-    geom_set=set()
-
-    for view in selected_FeatureType.views:
-        geom_set.add(view.lod)
-            
-
-    for lod in sorted(list(geom_set)):
-        dbLoader.dlg.cbxLod.addItem(lod,lod)
-
-def fill_features_box(dbLoader):
-    selected_lod = dbLoader.dlg.cbxLod.currentText()
-    selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
-    
-    if not selected_FeatureType: return None
-
-    try:
-        for view in selected_FeatureType.views:
-            if view.lod == selected_lod:
-                if view.n_selected > 0:
-                    dbLoader.dlg.ccbxFeatures.addItemWithCheckState(f'{view.layer_name} ({view.n_selected})',0, userData=view)#{view.view_name:(view.FeatureType,view.schema,view.lod,view.root_feature)})
-
-#TODO: 05-02-2021 Add separator between different features NOTE:REMEMBER: don't use method 'setSeparator', it adds a custom separtor to join string of selected items
-
-    except AssertionError as msg:
-        err = f"<b>{msg}</b> doesn\'t have any sub-features"
-        QgsMessageLog.logMessage("At import_tab.py>'fill_features_box':\nERROR_MESSAGE: " + err, tag="3DCityDB-Loader",level=Qgis.Info,notifyUser=True)
-        return 0
-
-def get_view_obj_amount(dbLoader,view):
-    try:
-        extents = dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon()
-        cur=dbLoader.conn.cursor()
-        cur.callproc('qgis_pkg.view_counter',(view.view_name,extents))
-        count=cur.fetchone()[0]
-        cur.close()
-        view.selected_count=count
-        return count
-
-    except (Exception, psycopg2.DatabaseError) as error:
-        QgsMessageLog.logMessage("At import_tab.py>'get_view_obj_amount':\nERROR_MESSAGE: "+str(error),tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
-        dbLoader.conn.rollback()
-        cur.close()
+    if not selected_FeatureType:
         return None
 
-def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
-                    Layer= '', Key= '', Value= '',
-                    NofColumns= 1, OrderByValue= False, UseCompleter= False):
+    geom_set = set() # To store the unique lods.
+    for view in selected_FeatureType.views:
+        geom_set.add(view.lod)
+
+    # Add lod str into both text and data holder of combo box.
+    for lod in sorted(list(geom_set)):
+        dbLoader.dlg.cbxLod.addItem(lod,lod)
+        # The first LoD string added in 'cbxLod' emits
+        # a 'currentIndexChanged' signal.
+
+def fill_features_box(dbLoader) -> None:
+    """Function that fills out the 'Features' checkable combo box."""
+
+    # Get current 'LoD' from widget.
+    selected_lod = dbLoader.dlg.cbxLod.currentText()
+    # Get current 'Feature Type' from widget.
+    selected_FeatureType = dbLoader.dlg.cbxFeatureType.currentData()
+
+    if not selected_FeatureType or not selected_lod:
+        return None
+
+    for view in selected_FeatureType.views:
+        if view.lod == selected_lod:
+            if view.n_selected > 0:
+                dbLoader.dlg.ccbxFeatures.addItemWithCheckState(
+                    text=f'{view.layer_name} ({view.n_selected})',
+                    state=0,
+                    userData=view)
+    # TODO: 05-02-2021 Add separator between different features
+    # REMEMBER: don't use method 'setSeparator',
+    # it adds a custom separtor to join string of selected items
+
+def value_rel_widget(AllowMulti: bool = False,
+        AllowNull: bool = True,
+        FilterExpression: str= "",
+        Layer: str = "",
+        Key: str = "",
+        Value: str= "",
+        NofColumns: int = 1,
+        OrderByValue: bool = False,
+        UseCompleter: bool = False) -> QgsEditorWidgetSetup:
+    """Function to setup the configuration dictionary for
+    the 'Value Relation' widget.
+
+    .. Note:this function could probably be generalized for all availiable
+    ..      widgets of 'attribute from', but there is not need for this yet.
+
+    *   :returns: The object to setup the widget (ValueRelation)
+
+        :rtype: QgsEditorWidgetSetup
+    """
 
     config =   {'AllowMulti': AllowMulti,
                 'AllowNull': AllowNull,
@@ -139,28 +170,60 @@ def value_rel_widget(AllowMulti= False, AllowNull= True, FilterExpression='',
                 'NofColumns': NofColumns,
                 'OrderByValue': OrderByValue,
                 'UseCompleter': UseCompleter}
+
     return QgsEditorWidgetSetup(type= 'ValueRelation',config= config)
 
-def get_attForm_child(container, child_name):
+def get_attForm_child(container: QgsAttributeEditorContainer,
+        child_name: str) -> QgsAttributeEditorElement:
+    """Function that searches to retrieve a child ojbect from
+    an 'attribute form' container.
+
+    *   :param container: An attribute form container object.
+
+        :type container: QgsAttributeEditorContainer
+
+    *   :param child_name: The name of the child to be found.
+
+        :type child_name: str
+
+    *   :returns: The 'attribute form' child element (when found)
+
+        :type child_name: QgsAttributeEditorElement | None
+    """
+
     for child in container.children():
         if child.name()== child_name:
             return child
+    return None
 
+def create_lookup_relations(layer: QgsVectorLayer) -> None:
+    """Function that sets-up the ValueRelation widget
+    for the look-up tables.
 
-def create_lookup_relations(layer):
+    .. Note: Currently the look-up table names are hardcoded.
+    .. The implementation most probably is going to change.
+    .. Warning. Hardcoded for buildings!!
+
+    *   :param layer: Layer to search for and set-up its
+            'Value Relation' widget according to the look-up tables.
+
+        :type layer: QgsVectorLayer
+    """
+
     for field in layer.fields():
         field_name = field.name()
         field_idx = layer.fields().indexOf(field_name)
 
         assertion_msg="ValueRelation Error: layer '{}' doesn\'t exist in project. This layers is also being imported with every layer import (if it doesn\'t already exist)."
+
         if field_name == 'relative_to_water':
             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_water')
             assert target_layer, assertion_msg.format('lu_relative_to_water')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))  
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))
         elif field_name == 'relative_to_terrain':
             target_layer = QgsProject.instance().mapLayersByName('lu_relative_to_terrain')
             assert target_layer, assertion_msg.format('lu_relative_to_terrain')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))   
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name'))
         elif field_name == 'class':
             target_layer = QgsProject.instance().mapLayersByName('lu_building_class')
             assert target_layer, assertion_msg.format('lu_building_class')
@@ -169,22 +232,35 @@ def create_lookup_relations(layer):
             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')
             assert target_layer, assertion_msg.format('lu_building_function_usage')
             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  'NL BAG Gebruiksdoel'"))
-        
         elif field_name == 'usage':
             target_layer = QgsProject.instance().mapLayersByName('lu_building_function_usage')
             assert target_layer, assertion_msg.format('lu_building_function_usage')
             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'code_value', Value= 'code_name', OrderByValue=True, AllowMulti=True, NofColumns=4, FilterExpression="codelist_name  =  'NL BAG Gebruiksdoel'"))
-            
-def create_relations(layer):
+
+def create_relations(layer: QgsVectorLayer) -> None:
+    """Function to set-up the relation for an input layer.
+    - A new relation is created that references the generic attributes.
+    - Relations are also set for 'Value Relation' widget.
+
+    .. Note:Currently relations are created ONLY for specific hardcode lookup
+    ..      tables and the Generic Attributes. In the future we need to make
+    ..        space for 'addresses' and other.
+
+    *   :param layer: vector layer to set-up the relationships for.
+
+        :type layer: QgsVectorLayer
+    """
+
     project = QgsProject.instance()
     layer_configuration = layer.editFormConfig()
     layer_root_container = layer_configuration.invisibleRootContainer()
-    
+
     curr_layer = project.mapLayersByName(layer.name())[0]
     genericAtt_layer = project.mapLayersByName("cityobject_genericattrib")
     assert genericAtt_layer, f"Layer: '{'cityobject_genericattrib'}' doesn\'t exist in project. This layers should also being imported with every layer import (if it doesn't already exist). 17-01-2021 It is not imported automatically yet, so DONT DELETE THE LAYER."
 
-
+    # - Generic Atrributes relation.
+    # Create new relation object (referencing generic attributes)
     rel = QgsRelation()
     rel.setReferencedLayer(id= curr_layer.id())
     rel.setReferencingLayer(id= genericAtt_layer[0].id())
@@ -192,125 +268,196 @@ def create_relations(layer):
     rel.generateId()
     rel.setName('re_'+layer.name())
     rel.setStrength(0)
-    if rel.isValid():
+    if rel.isValid(): # Success
         QgsProject.instance().relationManager().addRelation(rel)
-        QgsMessageLog.logMessage(message=f"Create relation: {rel.name()}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
+        QgsMessageLog.logMessage(
+            message=f"Create relation: {rel.name()}",
+            tag="3DCityDB-Loader",
+            level=Qgis.Success,
+            notifyUser=True)
     else:
-        QgsMessageLog.logMessage(message=f"Invalid relation: {rel.name()}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
+        QgsMessageLog.logMessage(
+            message=f"Invalid relation: {rel.name()}",
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
 
-
+    # Find and store 'Generic Attributes' 'attribute form' element.
     container_GA = get_attForm_child(container=layer_root_container, child_name='Generic Attributes')
+    # Clean the element before inserting the relation
     container_GA.clear()
 
+    # Create an 'attribute form' relation object from the 'relation' object
     relation_field = QgsAttributeEditorRelation(relation= rel, parent= container_GA)
     relation_field.setLabel("Generic Attributes")
-    relation_field.setShowLabel(False)
+    relation_field.setShowLabel(False) # No point setting a label then.
+    # Add the relation to the 'Generic Attributes' container (tab).
     container_GA.addChildElement(relation_field)
 
+    # Commit?
     layer.setEditFormConfig(layer_configuration)
+
+    # - Look-up tables relation
     create_lookup_relations(layer)
 
-def group_has_layer(group,layer_name):
-    if layer_name in [child.name() for child in group.children()] : return True
+def group_has_layer(group: QgsLayerTreeGroup, layer_name: str) -> bool:
+    """Function that check wherther a specific group
+    has a specific underlying layer (by name).
+
+    *   :param group: Node object to check for layer existence.
+
+        :type group: QgsLayerTreeGroup
+
+    *   :param layer_name: Layer name to check if it exists.
+
+        :type layer_name: str
+
+    *   :returns: Search result.
+
+        :rtype: bool
+    """
+
+    if layer_name in [child.name() for child in group.children()]:
+        return True
     return False
 
-def import_lookups(dbLoader): #NOTE: make lookups as a CLASS ???? hmm
-    lookup_group_name = "Look-up tables"
-    
+def import_lookups(dbLoader) -> None:
+    """Function to import the look-up table into the qgis project."""
 
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    cur=dbLoader.conn.cursor()
-
+    # Add look-up tables into their own group in ToC.
     root= QgsProject.instance().layerTreeRoot()
-    if not root.findGroup(lookup_group_name): node_lookups = root.addGroup(lookup_group_name)
-    else: node_lookups= root.findGroup(lookup_group_name)
+    lookups_node = add_node_ToC(parent_node=root,
+        child_name="Look-up tables")
 
-    #Get all existing look-up tables from database
-    cur.execute(f"""SELECT table_name,'' FROM information_schema.tables 
-                    WHERE table_schema = 'qgis_pkg' AND table_name LIKE 'lu_%';
-                    """)
-    lookups=cur.fetchall()
-    cur.close()
-    lookups,empty=zip(*lookups)
-    
+    # Get look-up tables names from the server.
+    lookups = sql.fetch_lookup_tables(dbLoader)
+
+    # Connected database. Just to shorten the variable name.
+    db=dbLoader.DB
+
     for table in lookups:
-        if not group_has_layer(node_lookups,table):
+        # Create ONLY new layers.
+        if not group_has_layer(group=lookups_node, layer_name=table):
             uri = QgsDataSourceUri()
-            uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
+            uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
             uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{table}',aGeometryColumn= None,aKeyColumn= '')
             layer = QgsVectorLayer(uri.uri(False), f"{table}", "postgres")
-            if layer or layer.isValid():
-                node_lookups.addLayer(layer)
+            if layer or layer.isValid(): # Success
+                lookups_node.addLayer(layer)
                 QgsProject.instance().addMapLayer(layer,False)
-                QgsMessageLog.logMessage(message=f"Look-up table import: {table}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
-            else:
-                QgsMessageLog.logMessage(message=f"Look-up table failed to properly load: {table}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
-            
-            
-        
+                QgsMessageLog.logMessage(
+                    message=f"Look-up table import: {table}",
+                    tag="3DCityDB-Loader",
+                    level=Qgis.Success,notifyUser=True)
+            else: # Fail
+                QgsMessageLog.logMessage(
+                    message=f"Look-up table failed to properly load: {table}",
+                    tag="3DCityDB-Loader",
+                    level=Qgis.Critical,notifyUser=True)
 
-    order_ToC(node_lookups)
+    # After loading all look-ups, sort them by name.
+    sort_ToC(lookups_node)
 
-def import_generics(dbLoader):
+def import_generics(dbLoader) -> None:
+    """Function to import the 'generic attributes' into the qgis project."""
 
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    selected_schema=dbLoader.dlg.cbxSchema.currentText()
+    #Just to shorten the variables names.
+    db = dbLoader.DB
+    schema = dbLoader.SCHEMA
 
-    extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() #Readable for debugging
+    generics_name = "cityobject_genericattrib"
 
+    # Add generics tables into their own group in ToC.
     root= QgsProject.instance().layerTreeRoot()
-    group_to_assign = root.findGroup(selected_db.database_name)
+    generics_node = add_node_ToC(parent_node=root,
+        child_name=generics_name)
 
 
-    generics_layer_name = "cityobject_genericattrib"
-
-    if not group_has_layer(group_to_assign,generics_layer_name):
+    # Add it ONLY if it doen't already exists.
+    if not group_has_layer(generics_node,generics_name):
         uri = QgsDataSourceUri()
-        uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-        uri.setDataSource(aSchema= f'{selected_schema}',aTable= f'{generics_layer_name}',aGeometryColumn= None,aKeyColumn= '')
-        layer = QgsVectorLayer(uri.uri(False), f"{generics_layer_name}", "postgres")
-        if layer or layer.isValid():
-            layer.setEditorWidgetSetup(15,QgsEditorWidgetSetup('TextEdit',{})) #Force to Text Edit (instead of automatic relation widget) NOTE: harcoded index (15: cityobject_id)
-            group_to_assign.addLayer(layer)
+        uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
+        uri.setDataSource(aSchema= f'{schema}',aTable = generics_name,aGeometryColumn= None,aKeyColumn= '')
+        layer = QgsVectorLayer(uri.uri(False), generics_name, "postgres")
+        if layer or layer.isValid(): # Success
+            # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
+            # WARNING: harcoded index (15: cityobject_id)
+            layer.setEditorWidgetSetup(15,QgsEditorWidgetSetup('TextEdit',{}))
+
+            generics_node.addLayer(layer)
             QgsProject.instance().addMapLayer(layer,False)
-            QgsMessageLog.logMessage(message=f"Layer import: {generics_layer_name}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
+
+            QgsMessageLog.logMessage(
+                message=f"Layer import: {generics_name}",
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
         else:
-            QgsMessageLog.logMessage(message=f"Layer failed to properly load: {generics_layer_name}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
- 
+            QgsMessageLog.logMessage(
+                message=f"Layer failed to properly load: {generics_name}",
+                tag="3DCityDB-Loader",
+                level=Qgis.Critical,
+                notifyUser=True)
 
+def create_layers(dbLoader,v_name: str) -> QgsVectorLayer:
+    """Function that creates a postgres layer of a server table
+    based on the input view name. This function is used to import
+    updatable views from qgis_pkg queried to the selecte spatial
+    extents.
 
-def create_layers(dbLoader,v_view):
-    selected_db=dbLoader.dlg.cbxExistingConnection.currentData()
-    extents=dbLoader.dlg.qgbxExtent.outputExtent().asWktPolygon() #Readable for debugging
+    *   :param v_name: View name to connect to server.
 
-    #SELECT UpdateGeometrySRID('roads','geom',4326);
+        :type v_name: str
+
+    *   :returns: the created layer object
+
+        :rtype: QgsVectorLayer
+    """
+
+    #Just to shorten the variable names.
+    db = dbLoader.DB
+    extents = dbLoader.EXTENTS.asWktPolygon()
+    crs = dbLoader.CRS
+
     uri = QgsDataSourceUri()
-    uri.setConnection(selected_db.host,selected_db.port,selected_db.database_name,selected_db.username,selected_db.password)
-    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_view}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && geom",aKeyColumn= 'id')
-    vlayer = QgsVectorLayer(uri.uri(False), f"{v_view}", "postgres")
-
-    vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:28992'))#TODO: Dont hardcode it
-    #fieldVisibility(vlayer,'geom') 
+    uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
+    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_name}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && geom",aKeyColumn= 'id')
+    vlayer = QgsVectorLayer(uri.uri(False), f"{v_name}", "postgres")
+    vlayer.setCrs(crs)
 
     return vlayer
 
-def send_to_top_ToC(group):
+def send_to_top_ToC(group: QgsLayerTreeGroup) -> None:
+    """Function that send the input group to the top
+    of the project's 'Table of Contents' tree.
+    """
+    # According to qgis docs, this is the prefered way.
     root = QgsProject.instance().layerTreeRoot()
     move_group =  group.clone()
     root.insertChildNode(0, move_group)
     root.removeChildNode(group)
 
-def get_node_database(dbLoader):
-    selected_db = dbLoader.dlg.cbxExistingConnection.currentData()
+def get_node_database(dbLoader) -> QgsLayerTreeGroup:
+    """Function that finds the database node of the
+    project's 'Table of Contents' tree (by name).
+
+    *   :returns: database node (qgis group)
+
+        :rtype: QgsLayerTreeGroup
+    """
+
     root = QgsProject.instance().layerTreeRoot()
-    return root.findGroup(selected_db.database_name)
+    db_node = root.findGroup(dbLoader.DB.database_name)
+    return db_node
 
-def order_ToC(group):
+def sort_ToC(group: QgsLayerTreeGroup) -> None:
+    """Recursive function to sort the entire 'Table of Contents' tree,
+    including both groups and underlying layers.
+    """
 
-
-    #### Germán Carrillo: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree ########
+    # Germán Carrillo: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree #
     LayerNamesEnumDict=lambda listCh:{listCh[q[0]].name()+str(q[0]):q[1] for q in enumerate(listCh)}
-        
+
     # group instead of root
     mLNED = LayerNamesEnumDict(group.children())
     mLNEDkeys = OrderedDict(sorted(LayerNamesEnumDict(group.children()).items(), reverse=False)).keys()
@@ -319,60 +466,140 @@ def order_ToC(group):
     group.insertChildNodes(0,mLNEDsorted)  # group instead of root
     for n in mLNED.values():
         group.removeChildNode(n)  # group instead of root
-    #############################################################################################################################
+    # Germán Carrillo #
+
     group.setExpanded(True)
     for child in group.children():
         if isinstance(child, QgsLayerTreeGroup):
-            order_ToC(child)
+            sort_ToC(child)
         else: return None
+    return None
 
-def build_ToC(dbLoader,view):
-    selected_db = dbLoader.dlg.cbxExistingConnection.currentData()
+def add_node_ToC(parent_node: QgsLayerTreeGroup,
+        child_name: str) -> QgsLayerTreeGroup:
+    """Function  that add a node (group) into the qgis
+    project 'Table of Contents' tree (by name). It also checks
+    if the node already exists and returns it.
+
+    *   :param parent_node: A node on which the new node is going to be added
+            (or returned if it already exists).
+
+        :type parent_node: QgsLayerTreeGroup
+
+    *   :param child_name: A string name of the new or existing node (group).
+
+        :type child_name: str
+
+    *   :returns: The newly created node object (or the existing one).
+
+        :rtype: QgsLayerTreeGroup
+    """
+
+    # node_name group (e.g. test_db)
+    if not parent_node.findGroup(child_name):
+        # Create group
+        node = parent_node.addGroup(child_name)
+    else:
+        # Get existing group
+        node = parent_node.findGroup(child_name)
+    return node
+
+def build_ToC(dbLoader,view: c.View) -> QgsLayerTreeGroup:
+    """Function that building the porject's 'Table of Contents' tree.
+
+    *   :param view: The view used to build the ToC.
+
+        :type view: View
+
+    *   :returns: The node (group) where the view is going to occupy.
+
+        :rtype: QgsLayerTreeGroup
+    """
 
     root = QgsProject.instance().layerTreeRoot()
-    if not root.findGroup(selected_db.database_name): node_database = root.addGroup(selected_db.database_name)
-    else: node_database = root.findGroup(selected_db.database_name)
 
-    if not node_database.findGroup(view.schema_name): node_schema = node_database.addGroup(view.schema_name)
-    else: node_schema = node_database.findGroup(view.schema_name)
+    # Database group (e.g. test_db)
+    db_node = add_node_ToC(parent_node=root,
+        child_name=dbLoader.DB.database_name)
 
-    if not node_schema.findGroup(f'FeatureType: {view.feature_type}'): node_FeatureType = node_schema.addGroup(f'FeatureType: {view.feature_type}')
-    else: node_FeatureType = node_schema.findGroup(f'FeatureType: {view.feature_type}')
+    # Schema group (e.g. citydb)
+    node_schema = add_node_ToC(parent_node=db_node,
+        child_name=view.schema_name)
 
-    if not node_FeatureType.findGroup(view.root_class): node_feature = node_FeatureType.addGroup(view.root_class)
-    else: node_feature = node_FeatureType.findGroup(view.root_class)
+    # FeatureType group (e.g. Building)
+    node_FeatureType = add_node_ToC(parent_node=node_schema,
+        child_name=f"FeatureType: {view.feature_type}")
 
-    if not node_feature.findGroup(view.lod): node_lod = node_feature.addGroup(view.lod)
-    else: node_lod = node_feature.findGroup(view.lod)
+    # Feature group (e.g. Building Part)
+    node_feature = add_node_ToC(parent_node=node_FeatureType,
+        child_name=view.root_class)
 
-    return node_lod
+    # LoD group (e.g. lod2)
+    node_lod = add_node_ToC(parent_node=node_feature,
+        child_name=view.lod)
 
-def get_checkedItemsData(ccbx):
+    return node_lod # Not where the view is going to be inserted.
+
+def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
+    """Function to exctract the QVariant data from a
+    QgsCheckableComboBox widget.
+
+    Replaces built-in method: checkedItemsData()
+    """
+
     checked_items = []
     for idx in range(ccbx.count()):
         if ccbx.itemCheckState(idx) == 2: #is Checked
             checked_items.append(ccbx.itemData(idx))
     return checked_items
 
-def import_layers(dbLoader,checked_views):
-    for view in checked_views:
-        #Building the Table of Contents Tree
-        node= build_ToC(dbLoader,view)
+def import_layers(dbLoader, layers: list) -> bool:
+    """Function to import the selecte view in the user's
+    qgis project.
+
+    *   :param layers: A list containing View object that
+            correspond to the server views.
+
+        :type layers: list(View)
+
+    *   :returns: The import attempt result
+
+        :rtype: bool
+    """
+
+    for view in layers:
+        #Build the Table of Contents Tree or Restructure it.
+        node = build_ToC(dbLoader,view)
+
+        # Get the look up tables.
+        # While the function checks for existing lookups in the qgis project,
+        # I think that is better to move this out of the loop.
         import_lookups(dbLoader)
-        vlayer = create_layers(dbLoader,view.v_name)
+        vlayer = create_layers(dbLoader,v_name=view.v_name)
         import_generics(dbLoader)
 
-
-        if vlayer or vlayer.isValid():
-            QgsMessageLog.logMessage(message=f"Layer import: {view.v_name}",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
-        else:
-            QgsMessageLog.logMessage(message=f"Layer failed to properly load: {view.v_name}",tag="3DCityDB-Loader",level=Qgis.Critical,notifyUser=True)
+        if vlayer or vlayer.isValid(): # Success
+            QgsMessageLog.logMessage(
+                message=f"Layer import: {view.v_name}",
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
+        else: # Fail
+            QgsMessageLog.logMessage(
+                message=f"Layer failed to properly load: {view.v_name}",
+                tag="3DCityDB-Loader",
+                level=Qgis.Critical,
+                notifyUser=True)
             return False
 
-
+        # Insert the layer to the assigned group
         node.addLayer(vlayer)
         QgsProject.instance().addMapLayer(vlayer,False)
-        
+
+        # Attach 'attribute form' from QML file.
         vlayer.loadNamedStyle(view.qml_path)
+
+        # Setup the relation for this layer.
         create_relations(vlayer)
-    return True
+
+    return True # All went well
