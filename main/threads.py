@@ -19,15 +19,17 @@ play as long as the heavy process takes place in the worker thread.
 """
 
 
-import time
-import subprocess
+import os
 
-from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal
-from qgis.PyQt.QtWidgets import QLabel
+from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal, Qt
+from qgis.PyQt.QtWidgets import QLabel, QProgressBar, QBoxLayout
 from qgis.core import Qgis, QgsMessageLog
+from qgis.gui import QgsMessageBar
 import psycopg2
 
 from . import constants as c
+from .connection import connect
+from . import sql
 
 
 class RefreshMatViewsWorker(QObject):
@@ -109,47 +111,80 @@ def refresh_views_thread(dbLoader) -> None:
 
 
 class PkgInstallationWorker(QObject):
-    """Class to assign Worker that executes the 'installation script'
-    to install the plugin package (qgis_pkg) in the database"""
+    """Class to assign Worker that executes the 'installation scripts'
+    to install the plugin package (qgis_pkg) in the database."""
 
     # Create custom signals.
     finished = pyqtSignal()
+    progress = pyqtSignal(int,str)
+    success = pyqtSignal()
     fail = pyqtSignal()
 
-    def __init__(self,path,password):
+    def __init__(self,dbLoader,path):
         super().__init__()
+        self.plg = dbLoader
         self.path=path
-        self.password=password
 
     def install_thread(self):
         """Execution method that installs the plugin package for
-        support of the default schema.
+        support of the default schema. Sql scripts are installed
+        directly using the execution method. No psql app needed.
         """
+        # Flag to help us break from a failing installation.
+        fail_flag = False
 
-        try:
-            p = subprocess.Popen(self.path, stdin = subprocess.PIPE,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        universal_newlines=True)
-            output,e = p.communicate(f'{self.password}\n')
+        # Get an alphabetocal ordered list of the script names.
+        # Important: Keep the order with number prefixes.
+        install_scripts = sorted(os.listdir(self.path))
 
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("At 'install_dbSettings_thread' in threads.py: ",error)
-            self.fail.emit()
+        # Set progress bar goal
+        self.plg.dlg.bar.setMaximum(len(install_scripts))
 
+        # Open new temp session, reserved for installation.
+        with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Installation)") as conn:
+            for s,script in enumerate(install_scripts,start=1):
+
+                # Update progress bar with current step and script.
+                self.progress.emit(s,script)
+                try:
+                    # Attempt direct sql injection.
+                    with conn.cursor() as cursor:
+                        with open(os.path.join(self.path,script),"r") as sql_script:
+                            cursor.execute(sql_script.read())
+                    conn.commit()
+
+
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print("At 'install_dbSettings_thread' in threads.py: ",script,error)
+                    fail_flag = True
+                    conn.rollback()
+                    self.fail.emit()
+                    break
+
+        # No FAIL = SUCCESS
+        if not fail_flag:
+            self.success.emit()
         self.finished.emit()
 
-# NOTE: if installing qgis_pkg doesn't refreash automatically the views,
-# then the operation is fast enough to not need to run on a separate thread.
-def install_pkg_thread(dbLoader, path: str, password:str) -> None:
+def install_pkg_thread(dbLoader, path: str) -> None:
     """Function that installs the plugin package (qgis_pkg) in the database
     by braching a new Worker thread to execute the operation on.
+
+    *   :param path: The absolute path to the directory storing the
+            sql installation scripts (e.g. ./citydb_loader/qgis_pkg/postgresql)
+
+        :type path: str
     """
+
+    # Add a new progress bar to follow the installation procedure.
+    create_progress_bar(dbLoader,
+        layout=dbLoader.dlg.verticalLayout_ConnectionTab,
+        position=3)
 
     # Create new thread object.
     dbLoader.thread = QThread()
     # Instantiate worker object for the operation.
-    dbLoader.worker = PkgInstallationWorker(path,password)
+    dbLoader.worker = PkgInstallationWorker(dbLoader,path)
     # Move worker object to the be executed on the new thread.
     dbLoader.worker.moveToThread(dbLoader.thread)
 
@@ -157,32 +192,21 @@ def install_pkg_thread(dbLoader, path: str, password:str) -> None:
     #-SIGNALS--################################################################
     #-(start)--################################################################
 
-    # Disable plugin to ignore signals from panic clicking.
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(True))
-
-    # Initiate loading animations.
-    dbLoader.thread.started.connect(lambda:start_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblLoadingInstall))
-    dbLoader.thread.started.connect(lambda:start_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblInstallLoadingCon))
-
     # Execute worker's 'run' method.
     dbLoader.thread.started.connect(dbLoader.worker.install_thread)
 
-    # Stop loading animations.
-    dbLoader.thread.finished.connect(lambda: stop_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblLoadingInstall))
-    dbLoader.thread.finished.connect(lambda: stop_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblInstallLoadingCon))
+    # Capture progress to show in bar.
+    dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
+
 
     # Get rid of worker and thread objects.
     dbLoader.worker.finished.connect(dbLoader.thread.quit)
     dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
 
-    # Enable again the plugin
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(False))
-
     # On installation status
-    dbLoader.thread.finished.connect(lambda: install_success(dbLoader))
+    dbLoader.worker.success.connect(lambda: install_success(dbLoader))
     dbLoader.worker.fail.connect(lambda: install_fail(dbLoader))
-
 
     #----------################################################################
     #-SIGNALS--################################################################
@@ -198,20 +222,31 @@ def install_pkg_thread(dbLoader, path: str, password:str) -> None:
 def install_success(dbLoader) -> None:
     """Event that is called when the thread executing the installation
     finishes successfuly.
+
+    Shows success message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows success message in Connection Status groupbox
+    Shows success message in QgsMessageLog
     """
 
     # Enable 'User Types'
     dbLoader.dlg.gbxUserType.setDisabled(False)
 
+    # Make instllation success known to connection object.
+    dbLoader.DB.green_installation = True
+
+    # Remove progress bar
+    dbLoader.dlg.msg_bar.clearWidgets()
+
+    # Replace with Success msg.
+    msg= dbLoader.dlg.msg_bar.createMessage("'qgis_pkg' has been installed successfully!")
+    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+
     # Inform user
     dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text='qgis_pkg is already installed!'))
-    QgsMessageLog.logMessage(message="qgis_pkg has been installed successfully!",
+    QgsMessageLog.logMessage(message="'qgis_pkg' has been installed successfully!",
             tag="3DCityDB-Loader",
             level=Qgis.Success,
             notifyUser=True)
-
-    # Make instllation success known to connection object.
-    dbLoader.DB.green_installation = True
 
 def install_fail(dbLoader) -> None:
     """Event that is called when the thread executing the installation
@@ -220,20 +255,32 @@ def install_fail(dbLoader) -> None:
     It prompt the user to clear the installation before trying again.
     .. Not sure if this is necessary as in every installation the package
     .. is dropped to replace it with a new one.
+
+    Shows fail message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows fail message in Connection Status groupbox
+    Shows fail message in QgsMessageLog
     """
+
     dbLoader.DB.green_installation=False
     dbLoader.dlg.btnClearDB.setDisabled(False)
     dbLoader.dlg.btnClearDB.setText("Clear corrupted installation!")
 
+    # Remove progress bar
+    dbLoader.dlg.msg_bar.clearWidgets()
+
+    # Replace with Failure msg.
+    msg= dbLoader.dlg.msg_bar.createMessage("'qgis_pkg' installation failed!")
+    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+
     # Inform user
-    dbLoader.dlg.lblInstall_out.setText(c.failure_html.format(text="qgis_pkg installation failed!"))
+    dbLoader.dlg.lblInstall_out.setText(c.failure_html.format(text="'qgis_pkg' installation failed!"))
     QgsMessageLog.logMessage(message="qgis_pkg installation failed!",
             tag="3DCityDB-Loader",
             level=Qgis.Critical,
             notifyUser=True)
 
-    # Move focus to 'Setting' tab.
-    dbLoader.dlg.wdgMain.setCurrentIndex(2)
+    # Drop corrupted installation.
+    sql.drop_package(dbLoader,close_connection=False)
 
 def start_LoadingAnimation(dbLoader,label: QLabel) -> None:
     """Function that starts playing the loading gif
@@ -267,3 +314,38 @@ def stop_LoadingAnimation(dbLoader,label: QLabel):
 #----------################################################################
 #--EVENTS--################################################################
 #--(end)---################################################################
+
+
+def create_progress_bar(dbLoader, layout: QBoxLayout, position: int) -> None:
+    """Function that creates a QProgressBar embedded into
+    a QgsMessageBar, in a specific position in the gui.
+
+    *   :param layout: QLayout of the gui where the bar is to be
+            assigned.
+
+        :type layout: QBoxLayout
+
+    *   :param position: The place (index) in the layout to place
+            the progress bar
+
+        :type position: int
+
+    """
+
+    dialog = dbLoader.dlg
+
+    # Create QgsMessageBar instance.
+    dialog.msg_bar = QgsMessageBar()
+
+    # Add the message bar into the input layer and position.
+    layout.insertWidget(position,dialog.msg_bar)
+
+    # Create QProgressBar instance into QgsMessageBar.
+    dialog.bar = QProgressBar(parent=dialog.msg_bar)
+
+    # Setup progress bar.
+    dialog.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+    dialog.bar.setStyleSheet("text-align: left;")
+
+    # Show progress bar in message bar.
+    dialog.msg_bar.pushWidget(dialog.bar, Qgis.Info)

@@ -49,14 +49,17 @@ btnImport_text = "Import {num} feature layers"
 lblInstall_text = "Installation for {schema}:"
 ccbxFeatures_text = "Select availiable features to import"
 
-# Directories - Paths
+# Directories - Paths - NAMES
 DIR_NAME = os.path.split(os.path.dirname(__file__))[1] # main
 QML_FROMS_DIR = "forms"
 PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
 QML_FROMS_PATH = os.path.join(PLUGIN_PATH,QML_FROMS_DIR)
+PLUGIN_PKG_NAME = "qgis_pkg"
+PLUGIN_NAME = "3DCityDB-Loader"
+INST_SCRIPT_DIR_NAME = "postgresql"
+INST_SCRIPT_DIR_PATH = os.path.join(PLUGIN_PATH,PLUGIN_PKG_NAME,INST_SCRIPT_DIR_NAME)
 
-# qgis_pkg
-PLUGIN_PKG = "qgis_pkg"
+
 
 # Extent type names
 SCHEMA_EXT_TYPE = "db_schema"

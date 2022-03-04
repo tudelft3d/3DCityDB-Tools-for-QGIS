@@ -28,15 +28,18 @@ import os
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtGui import QMovie
-from qgis.gui import QgsMessageBar
 
 
-# This loads the .ui file so that PyQt can populate the plugin 
+# This loads the .ui file so that PyQt can populate the plugin
 # with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), "ui","citydb_loader_dialog_base.ui"))
 
 class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
+    """Main Dialog of the plugin.
+    The gui is imported from an external .ui xml
+    """
+
     def __init__(self, parent=None):
         """Constructor."""
         super(DBLoaderDialog, self).__init__(parent)
@@ -46,9 +49,6 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-
-        self.gbxInstall.bar = QgsMessageBar()
-        self.verticalLayout_SettingsTab.addWidget(self.gbxInstall.bar, 0)
 
         # Hide label reserved for the loading animation.
         self.lblInstallLoadingCon.setHidden(True)

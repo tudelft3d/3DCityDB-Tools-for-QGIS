@@ -211,7 +211,6 @@ def fetch_table_privileges(dbLoader) -> dict:
             tag="3DCityDB-Loader",
             level=Qgis.Critical,
             notifyUser=True)
-        cur.close()
         dbLoader.conn.rollback()
         return None
 
@@ -642,7 +641,7 @@ def has_plugin_pkg(dbLoader) -> bool:
             cur.execute(query= f"""
                                 SELECT schema_name 
                                 FROM information_schema.schemata 
-	                            WHERE schema_name = '{c.PLUGIN_PKG}';
+	                            WHERE schema_name = '{c.PLUGIN_PKG_NAME}';
                                 """)
             pkg_name = cur.fetchone()
         dbLoader.conn.commit()
@@ -668,18 +667,26 @@ def has_plugin_pkg(dbLoader) -> bool:
         dbLoader.conn.rollback()
         return None
 
-def drop_package(dbLoader) -> None:
+def drop_package(dbLoader, close_connection:bool = True) -> None:
     """SQL query that drops plugin package from the database.
 
     As plugin cannot function without its package, the function
     also closes the connection.
+
+    *   :param close_connection: After droping the plugin package,
+            it is not possible to work with the plugin, so the default
+            state is True.
+
+        :type close_connection: boll
     """
 
     try:
         with dbLoader.conn.cursor() as cur:
-            cur.execute(f"""DROP SCHEMA {c.PLUGIN_PKG} CASCADE;""")
+            cur.execute(f"""DROP SCHEMA {c.PLUGIN_PKG_NAME} CASCADE;""")
         dbLoader.conn.commit()
-        dbLoader.conn.close()
+
+        if close_connection:
+            dbLoader.conn.close()
 
     except (Exception, psycopg2.Error) as error:
         # Get the location to show in log where an issue happens

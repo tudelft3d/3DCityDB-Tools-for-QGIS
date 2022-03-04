@@ -6,7 +6,7 @@ from qgis.core import Qgis,QgsSettings
 import psycopg2
 
 from .. import connector_dialog
-
+from . import constants as c
 
 class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
     """Connector Dialog. This dialog pops-up when a user requests
@@ -164,12 +164,16 @@ def get_postgres_conn(dbLoader) -> None:
         dbLoader.dlg.cbxExistingConnection.addItem(f'{c}',connectionInstance)
         qsettings.endGroup()
 
-def connect(db: Connection):
+def connect(db: Connection, app_name: str = c.PLUGIN_NAME):
     """Open a connection to postgres database.
 
     *   :param db: The connection custom object
 
         :rtype: Connection
+ 
+    *   :param app_name: A name for the session
+
+        :rtype: str
 
     *   :returns: The connection psycopg2 object (opened)
 
@@ -181,4 +185,4 @@ def connect(db: Connection):
                             password= db.password,
                             host= db.host,
                             port= db.port,
-                            application_name= "3DCityDB-Loader")
+                            application_name= app_name)

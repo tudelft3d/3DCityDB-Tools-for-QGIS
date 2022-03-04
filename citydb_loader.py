@@ -37,7 +37,6 @@ from .resources import qInitResources
 from .citydb_loader_dialog import DBLoaderDialog # Main dialog
 from .main import connection
 from .main import constants
-from .main import installation
 from .main import widget_reset
 from .main import widget_setup
 
@@ -45,7 +44,7 @@ from .main import widget_setup
 class DBLoader:
     """QGIS Plugin Implementation. Main class."""
 
-    plugin_package = constants.PLUGIN_PKG
+    plugin_package = constants.PLUGIN_PKG_NAME
 
     def __init__(self, iface: QgisInterface) -> None:
         """DBLoader class Constructor.
@@ -452,6 +451,33 @@ class DBLoader:
             widget_reset.reset_gbxUserType(self)
             self.dlg.gbxUserType.setDisabled(True)
 
+    def evt_update_bar(self,step,text) -> None:
+        """Function to setup the progress bar upon update.
+        Important: Progress Bar need to be already created
+        in dbLoader.msg_bar: QgsMessageBar and
+        dbLoader.bar: QProgressBar.
+
+        *   :param step: Current value of the progress
+
+            :type step: int
+
+        *   :param text: Text to display on the bar
+
+            :type text: str
+
+        .. This event is not liked to any widet_setup function
+        .. as it isn't responsible for changes in different
+        .. widgets in the gui.
+        """
+        progress_bar = self.dlg.bar
+
+        # Show text instead of completed percentage.
+        if text:
+            progress_bar.setFormat(f"Installing: {text}")
+        # Update progress with current step
+        progress_bar.setValue(step)
+
+
     # 'User Type' group box events (in 'Connection' tab)
     def evt_rdViewer_clicked(self) -> None:
         """Event that is called when the current 'Viewer' radioButton
@@ -573,6 +599,7 @@ class DBLoader:
     #----------################################################################
     #--EVENTS--################################################################
     #--(end)---################################################################
+
 
 #NOTE: extent groupbox doesnt work for manual user input
 #for every value change in any of the 4 inputs the extent signal is emited

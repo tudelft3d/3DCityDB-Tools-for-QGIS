@@ -185,7 +185,7 @@ def cbxSchema_setup(dbLoader) -> None:
         dbLoader.DB.green_installation=False
         # Prompt user to install qgis_pkg, plugin cannot work without it!
         installation.installation_query(dbLoader,f"Database '{dbLoader.DB.database_name}' requires 'qgis_pkg' to be installed with contents mapping '{dbLoader.SCHEMA}' schema.\nDo you want to proceed?")
-        
+
         if dbLoader.DB.green_installation:
             # Check if qgis_pkg has generated views for the current schema. True!
             qgispkg_supports_schema = sql.exec_support_for_schema(dbLoader)
