@@ -1,34 +1,41 @@
-import time
+import select
 import psycopg2
 import psycopg2.extensions
 import os
 import constants as c
+import time
+
+
+a=[('Building', '_g_citydb_bdg_lod0'), ('Building', '_g_citydb_bdg_lod0_footprint'), ('Building', '_g_citydb_bdg_lod0_roofedge'), ('Building', '_g_citydb_bdg_lod1'), ('Building', '_g_citydb_bdg_lod2'), ('Building', '_g_citydb_bdg_lod2_roofsurf'), ('Building', '_g_citydb_bdg_lod2_wallsurf'), ('Building', '_g_citydb_bdg_lod2_groundsurf'), ('Building', '_g_citydb_bdg_lod2_closuresurf'), ('Building', '_g_citydb_bdg_lod2_outerceilingsurf'), ('Building', '_g_citydb_bdg_lod2_outerfloorsurf'), ('Building', '_g_citydb_bdg_lod3'), ('Building', '_g_citydb_bdg_lod3_roofsurf'), ('Building', '_g_citydb_bdg_lod3_wallsurf'), ('Building', '_g_citydb_bdg_lod3_groundsurf'), ('Building', '_g_citydb_bdg_lod3_closuresurf'), ('Building', '_g_citydb_bdg_lod3_outerceilingsurf'), ('Building', '_g_citydb_bdg_lod3_outerfloorsurf'), ('Building', '_g_citydb_bdg_lod4'), ('Building', '_g_citydb_bdg_lod4_roofsurf'), ('Building', '_g_citydb_bdg_lod4_wallsurf'), ('Building', '_g_citydb_bdg_lod4_groundsurf'), ('Building', '_g_citydb_bdg_lod4_closuresurf'), ('Building', '_g_citydb_bdg_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_out_inst_lod2'), ('Building', '_g_citydb_bdg_out_inst_lod2_roofsurf'), ('Building', '_g_citydb_bdg_out_inst_lod2_wallsurf'), ('Building', '_g_citydb_bdg_out_inst_lod2_groundsurf'), ('Building', '_g_citydb_bdg_out_inst_lod2_closuresurf'), ('Building', '_g_citydb_bdg_out_inst_lod2_outerceilingsurf'), ('Building', '_g_citydb_bdg_out_inst_lod2_outerfloorsurf'), ('Building', '_g_citydb_bdg_out_inst_lod3'), ('Building', '_g_citydb_bdg_out_inst_lod3_roofsurf'), ('Building', '_g_citydb_bdg_out_inst_lod3_wallsurf'), ('Building', '_g_citydb_bdg_out_inst_lod3_groundsurf'), ('Building', '_g_citydb_bdg_out_inst_lod3_closuresurf'), ('Building', '_g_citydb_bdg_out_inst_lod3_outerceilingsurf'), ('Building', '_g_citydb_bdg_out_inst_lod3_outerfloorsurf'), ('Building', '_g_citydb_bdg_out_inst_lod4'), ('Building', '_g_citydb_bdg_out_inst_lod4_roofsurf'), ('Building', '_g_citydb_bdg_out_inst_lod4_wallsurf'), ('Building', '_g_citydb_bdg_out_inst_lod4_groundsurf'), ('Building', '_g_citydb_bdg_out_inst_lod4_closuresurf'), ('Building', '_g_citydb_bdg_out_inst_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_out_inst_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_int_inst_lod4'), ('Building', '_g_citydb_bdg_int_inst_lod4_roofsurf'), ('Building', '_g_citydb_bdg_int_inst_lod4_wallsurf'), ('Building', '_g_citydb_bdg_int_inst_lod4_groundsurf'), ('Building', '_g_citydb_bdg_int_inst_lod4_closuresurf'), ('Building', '_g_citydb_bdg_int_inst_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_int_inst_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_room_lod4'), ('Building', '_g_citydb_bdg_room_lod4_ceilingsurf'), ('Building', '_g_citydb_bdg_room_lod4_intwallsurf'), ('Building', '_g_citydb_bdg_room_lod4_floorsurf'), ('Building', '_g_citydb_bdg_window_lod3'), ('Building', '_g_citydb_bdg_window_lod4'), ('Building', '_g_citydb_bdg_door_lod3'), ('Building', '_g_citydb_bdg_door_lod4'), ('Building', '_g_citydb_bdg_furniture_lod4'), ('Building', '_g_citydb_bdg_part_lod0'), ('Building', '_g_citydb_bdg_part_lod0_footprint'), ('Building', '_g_citydb_bdg_part_lod0_roofedge'), ('Building', '_g_citydb_bdg_part_lod1'), ('Building', '_g_citydb_bdg_part_lod2'), ('Building', '_g_citydb_bdg_part_lod2_roofsurf'), ('Building', '_g_citydb_bdg_part_lod2_wallsurf'), ('Building', '_g_citydb_bdg_part_lod2_groundsurf'), ('Building', '_g_citydb_bdg_part_lod2_closuresurf'), ('Building', '_g_citydb_bdg_part_lod2_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_lod2_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_lod3'), ('Building', '_g_citydb_bdg_part_lod3_roofsurf'), ('Building', '_g_citydb_bdg_part_lod3_wallsurf'), ('Building', '_g_citydb_bdg_part_lod3_groundsurf'), ('Building', '_g_citydb_bdg_part_lod3_closuresurf'), ('Building', '_g_citydb_bdg_part_lod3_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_lod3_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_lod4'), ('Building', '_g_citydb_bdg_part_lod4_roofsurf'), ('Building', '_g_citydb_bdg_part_lod4_wallsurf'), ('Building', '_g_citydb_bdg_part_lod4_groundsurf'), ('Building', '_g_citydb_bdg_part_lod4_closuresurf'), ('Building', '_g_citydb_bdg_part_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_roofsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_wallsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_groundsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_closuresurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod2_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_roofsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_wallsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_groundsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_closuresurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod3_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_roofsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_wallsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_groundsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_closuresurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_out_inst_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_roofsurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_wallsurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_groundsurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_closuresurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_outerceilingsurf'), ('Building', '_g_citydb_bdg_part_int_inst_lod4_outerfloorsurf'), ('Building', '_g_citydb_bdg_part_room_lod4'), ('Building', '_g_citydb_bdg_part_room_lod4_ceilingsurf'), ('Building', '_g_citydb_bdg_part_room_lod4_intwallsurf'), ('Building', '_g_citydb_bdg_part_room_lod4_floorsurf'), ('Building', '_g_citydb_bdg_part_window_lod3'), ('Building', '_g_citydb_bdg_part_window_lod4'), ('Building', '_g_citydb_bdg_part_door_lod3'), ('Building', '_g_citydb_bdg_part_door_lod4'), ('Building', '_g_citydb_bdg_part_furniture_lod4'), ('Vegetation', '_g_citydb_sol_veg_obj_lod1'), ('Vegetation', '_g_citydb_sol_veg_obj_lod2'), ('Vegetation', '_g_citydb_sol_veg_obj_lod3'), ('Vegetation', '_g_citydb_sol_veg_obj_lod4'), ('Vegetation', '_g_citydb_plant_cover_lod1'), ('Vegetation', '_g_citydb_plant_cover_lod2'), ('Vegetation', '_g_citydb_plant_cover_lod3'), ('Vegetation', '_g_citydb_plant_cover_lod4'), ('LandUse', '_g_citydb_land_use_lod0'), ('LandUse', '_g_citydb_land_use_lod1'), ('LandUse', '_g_citydb_land_use_lod2'), ('LandUse', '_g_citydb_land_use_lod3'), ('LandUse', '_g_citydb_land_use_lod4'), ('Generics', '_g_citydb_gen_cityobject_lod0'), ('Generics', '_g_citydb_gen_cityobject_lod1'), ('Generics', '_g_citydb_gen_cityobject_lod2'), ('Generics', '_g_citydb_gen_cityobject_lod3'), ('Generics', '_g_citydb_gen_cityobject_lod4'), ('CityFurniture', '_g_citydb_city_furniture_lod1'), ('CityFurniture', '_g_citydb_city_furniture_lod2'), ('CityFurniture', '_g_citydb_city_furniture_lod3'), ('CityFurniture', '_g_citydb_city_furniture_lod4'), ('Relief', '_g_citydb_relief_feature_lod0'), ('Relief', '_g_citydb_relief_feature_lod1'), ('Relief', '_g_citydb_relief_feature_lod2'), ('Relief', '_g_citydb_relief_feature_lod3'), ('Relief', '_g_citydb_relief_feature_lod4'), ('Relief', '_g_citydb_tin_relief_lod0'), ('Relief', '_g_citydb_tin_relief_lod1'), ('Relief', '_g_citydb_tin_relief_lod2'), ('Relief', '_g_citydb_tin_relief_lod3'), ('Relief', '_g_citydb_tin_relief_lod4'), ('WaterBody', '_g_citydb_waterbody_lod0'), ('WaterBody', '_g_citydb_waterbody_lod1'), ('WaterBody', '_g_citydb_waterbody_lod2'), ('WaterBody', '_g_citydb_waterbody_lod2_watersurf'), ('WaterBody', '_g_citydb_waterbody_lod2_watergroundsurf'), ('WaterBody', '_g_citydb_waterbody_lod2_waterclosuresurf'), ('WaterBody', '_g_citydb_waterbody_lod3'), ('WaterBody', '_g_citydb_waterbody_lod3_watersurf'), ('WaterBody', '_g_citydb_waterbody_lod3_watergroundsurf'), ('WaterBody', '_g_citydb_waterbody_lod3_waterclosuresurf'), ('WaterBody', '_g_citydb_waterbody_lod4'), ('WaterBody', '_g_citydb_waterbody_lod4_watersurf'), ('WaterBody', '_g_citydb_waterbody_lod4_watergroundsurf'), ('WaterBody', '_g_citydb_waterbody_lod4_waterclosuresurf')]
+
+a='asd'
+c='fff'
+v='213'
+print(",".join([a,c,v]))
+time.sleep(1000)
 
 conn = psycopg2.connect(
-    database="3DCityDB_v3.3",
+    database="GEO5014",
     user="postgres",
     password="maitrisedb",
     host="localhost",
     port="5432",
-    application_name="test"
+    application_name="Listener_test"
 )
+conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 #conn.set_session(autocommit=True)
 
-install_script_dir = os.path.join(c.PLUGIN_PATH,c.PLUGIN_PKG,"postgresql")
-install_scripts= sorted(os.listdir(install_script_dir))
+with conn.cursor() as cur:
+    cur.execute("LISTEN ref_mview;")
 
-for script in install_scripts:
-    print(f"Installing {script}")
-    if script in ("25_functions_k_old.sql","90_examples.sql"): continue
-    with conn.cursor() as cursor:
-        cursor.execute(open(os.path.join(install_script_dir,script),"r").read())
-    conn.commit()
+gen = conn.notifies
 
-
-
-# c=0
-# while True:
-#     time.sleep(2)
-#     print("ITER: ",c)
-#     c+=1
+while True:
+    if select.select([conn],[],[],5) == ([],[],[]):
+        print("Timeout")
+    else:
+        conn.poll()
+        while conn.notifies:
+            notify = conn.notifies.pop(0)
+            print("Got NOTIFY:", notify.pid, notify.channel, notify.payload)

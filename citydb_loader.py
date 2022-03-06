@@ -473,7 +473,7 @@ class DBLoader:
 
         # Show text instead of completed percentage.
         if text:
-            progress_bar.setFormat(f"Installing: {text}")
+            progress_bar.setFormat(text)
         # Update progress with current step
         progress_bar.setValue(step)
 

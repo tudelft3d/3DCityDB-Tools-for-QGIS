@@ -10,25 +10,25 @@ The plugin runs on single thread, meaning that in such processes the plugin
 think that it broke.
 
 To avoid this module provides two visuals cues.
-1. Loading animation
+1. Progress bar.
 2. Disabling the entire plugin (gray-out to ignore signals from panic clicking)
 
 This is done by assigning a working thread for the
-heavy process. In the main thread the loading animation is assigned to
-play as long as the heavy process takes place in the worker thread.
+heavy process. In the main thread the progress bar is assigned to
+update following the heavy process taking place in the worker thread.
 """
 
 
 import os
 
 from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal, Qt
-from qgis.PyQt.QtWidgets import QLabel, QProgressBar, QBoxLayout
+from qgis.PyQt.QtWidgets import QProgressBar, QBoxLayout
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
 import psycopg2
 
-from . import constants as c
 from .connection import connect
+from . import constants as c
 from . import sql
 
 
@@ -38,35 +38,59 @@ class RefreshMatViewsWorker(QObject):
 
     # Create custom signals.
     finished = pyqtSignal()
+    progress = pyqtSignal(int,str)
     fail = pyqtSignal()
 
     def __init__(self,dbLoader):
         super().__init__()
         self.plg = dbLoader
-        self.conn = dbLoader.conn
 
 
     def refresh_all_mat_views(self):
-        """Execution method that refreshes the materlised views in the
+        """Execution method that refreshes the materialized views in the
         server (for a specific schema).
         """
-        try:
-            with self.conn.cursor() as cur:
-                cur.callproc("qgis_pkg.refresh_mview",[self.plg.SCHEMA])
-            self.conn.commit()
 
-            #time.sleep(10) # Use this for debugin instead waiting for mats.
+        # Get feature types from layer_metadata table.
+        cols_to_featch = ",".join(["feature_type","mv_name"])
+        col,ftype_mview = sql.fetch_layer_metadata(self.plg,cols=cols_to_featch)
+        col = None # Discard byproduct.
 
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("At 'refresh_all_mat_views' in threads.py: ",error)
-            self.conn.rollback()
-            self.fail.emit()
+        # Set progress bar goal
+        self.plg.dlg.bar.setMaximum(len(ftype_mview))
+
+        # Open new temp session, reserved for mat refresh.
+        with connect(db=self.plg.DB, app_name=f"{connect.__defaults__[0]} (Rrefresh)") as conn:
+            for s, (ftype, mview) in enumerate(ftype_mview):
+
+                # Update progress bar with current step and text.
+                text = " ".join(["Refreshing materialized views of:",ftype])
+                self.progress.emit(s,text)
+                print(s,ftype,mview)
+                try:
+                    with conn.cursor() as cur:
+                        cur.callproc(f"{c.PLUGIN_PKG_NAME}.refresh_mview",[None,mview])
+                    conn.commit()
+
+                    # time.sleep(0.05) # Use this for debuging instead of waiting for mats.
+
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print("At 'refresh_all_mat_views' in threads.py: ",error)
+                    conn.rollback()
+                    self.fail.emit()
+
+
         self.finished.emit()
 
 def refresh_views_thread(dbLoader) -> None:
-    """Function that refreshes the materilised view in the database
+    """Function that refreshes the materilised views in the database
     by braching a new Worker thread to execute the operation on.
     """
+
+    # Add a new progress bar to follow the installation procedure.
+    create_progress_bar(dbLoader,
+        layout=dbLoader.dlg.verticalLayout_SettingsTab,
+        position=2)
 
     # Create new thread object.
     dbLoader.thread = QThread()
@@ -79,32 +103,34 @@ def refresh_views_thread(dbLoader) -> None:
     #-SIGNALS--################################################################
     #-(start)--################################################################
 
-    # Disable plugin to ignore signals from panic clicking.
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(True))
-
-    # Initiate loading animations.
-    dbLoader.thread.started.connect(lambda:start_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblLoadingRefresh))
-    dbLoader.thread.started.connect(lambda:start_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblInstallLoadingCon))
+    # Disable widgets to avoid queuing signals.
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxInstall.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxDatabaseSettings.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabImport.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabConnection.setDisabled(True))
 
     # Execute worker's 'run' method.
     dbLoader.thread.started.connect(dbLoader.worker.refresh_all_mat_views)
+
+    # Capture progress to show in bar.
+    dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
 
     # Get rid of worker and thread objects.
     dbLoader.worker.finished.connect(dbLoader.thread.quit)
     dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
 
-    # Stop loading animations.
-    dbLoader.thread.finished.connect(lambda: stop_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblLoadingRefresh))
-    dbLoader.thread.finished.connect(lambda: stop_LoadingAnimation(dbLoader,label=dbLoader.dlg.lblInstallLoadingCon))
-    # Enable again the plugin
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setDisabled(False))
-    # Move focus to the 'Import' tab.
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.wdgMain.setCurrentIndex(1))
+    # Enable widgets.
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.gbxInstall.setDisabled(False))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxDatabaseSettings.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabImport.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabConnection.setDisabled(False))
+
+    dbLoader.worker.finished.connect(lambda: refresh_success(dbLoader))
 
     #----------################################################################
     #-SIGNALS--################################################################
-    #-(end)--################################################################
+    #-(end)--##################################################################
 
     # Initiate worker thread
     dbLoader.thread.start()
@@ -145,7 +171,8 @@ class PkgInstallationWorker(QObject):
             for s,script in enumerate(install_scripts,start=1):
 
                 # Update progress bar with current step and script.
-                self.progress.emit(s,script)
+                text = " ".join(["Installing:",script])
+                self.progress.emit(s,text)
                 try:
                     # Attempt direct sql injection.
                     with conn.cursor() as cursor:
@@ -198,7 +225,6 @@ def install_pkg_thread(dbLoader, path: str) -> None:
     # Capture progress to show in bar.
     dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
 
-
     # Get rid of worker and thread objects.
     dbLoader.worker.finished.connect(dbLoader.thread.quit)
     dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
@@ -218,6 +244,29 @@ def install_pkg_thread(dbLoader, path: str) -> None:
 #----------################################################################
 #--EVENTS--################################################################
 #-(start)--################################################################
+
+def refresh_success(dbLoader) -> None:
+    """Event that is called when the thread executing the refresh
+    finishes successfuly.
+
+    Shows success message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows success message in Connection Status groupbox
+    Shows success message in QgsMessageLog
+    """
+
+    # Remove progress bar
+    dbLoader.dlg.msg_bar.clearWidgets()
+
+    # Replace with Success msg.
+    msg= dbLoader.dlg.msg_bar.createMessage("Materialized views have been refreshed successfully!")
+    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+
+    # Inform user
+    dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text="Materialized views have been refreshed successfully!"))
+    QgsMessageLog.logMessage(message="Materialized views have been refreshed successfully!",
+            tag="3DCityDB-Loader",
+            level=Qgis.Success,
+            notifyUser=True)
 
 def install_success(dbLoader) -> None:
     """Event that is called when the thread executing the installation
@@ -242,7 +291,7 @@ def install_success(dbLoader) -> None:
     dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
     # Inform user
-    dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text='qgis_pkg is already installed!'))
+    dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text="qgis_pkg is already installed!"))
     QgsMessageLog.logMessage(message="'qgis_pkg' has been installed successfully!",
             tag="3DCityDB-Loader",
             level=Qgis.Success,
@@ -282,39 +331,9 @@ def install_fail(dbLoader) -> None:
     # Drop corrupted installation.
     sql.drop_package(dbLoader,close_connection=False)
 
-def start_LoadingAnimation(dbLoader,label: QLabel) -> None:
-    """Function that starts playing the loading gif
-    in the input label.
-
-    *   :param label: label QT object where the animation is displayed.
-
-        :type label: QLabel
-    """
-
-    label.setMovie(dbLoader.dlg.movie)
-    # Reveal hidden label to play the animation on.
-    label.setHidden(False)
-    dbLoader.dlg.movie.start()
-
-def stop_LoadingAnimation(dbLoader,label: QLabel):
-    """Function that stops playing the loading gif
-    in the input label. Make sure this function follows
-    function 'start_LoadingAnimation' or that a movie is
-    already playing in the input label.
-
-    *   :param label: label QT object where the animation is playing.
-
-        :type label: QLabel
-    """
-
-    dbLoader.dlg.movie.stop()
-    # Hide label widget.
-    label.setHidden(True)
-
 #----------################################################################
 #--EVENTS--################################################################
 #--(end)---################################################################
-
 
 def create_progress_bar(dbLoader, layout: QBoxLayout, position: int) -> None:
     """Function that creates a QProgressBar embedded into

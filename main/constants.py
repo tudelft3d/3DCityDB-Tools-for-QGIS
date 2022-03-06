@@ -58,7 +58,7 @@ PLUGIN_PKG_NAME = "qgis_pkg"
 PLUGIN_NAME = "3DCityDB-Loader"
 INST_SCRIPT_DIR_NAME = "postgresql"
 INST_SCRIPT_DIR_PATH = os.path.join(PLUGIN_PATH,PLUGIN_PKG_NAME,INST_SCRIPT_DIR_NAME)
-
+CITYDB_DEF_NAME = "citydb"
 
 
 # Extent type names
@@ -77,16 +77,18 @@ features_tables = [
     "city_furniture",
     "land_use"
     ]  #Named after their main corresponding table name from the 3DCityDB.
-FeatureTypes = [
+feature_types = [
     "CityObject",
     "Building",
-    "DTM","Tunnel",
+    "Relief",
+    "Tunnel",
     "Bridge",
     "Waterbody",
     "Vegetation",
     "CityFurniture",
     "LandUse",
-    "Transportation"
+    "Transportation",
+    "Generics"
     ]
 priviledge_types = [
     "DELETE",

@@ -580,12 +580,12 @@ CASE
 			EXECUTE format('REFRESH MATERIALIZED VIEW %I.%I', qgis_pkg_schema_name, mview_name);
 			stop_timestamp := clock_timestamp();
 
-			EXECUTE format('SELECT count(co_id) FROM %I.%I', qgis_pkg_schema_name, r.mview_name) INTO mv_n_features;
+			EXECUTE format('SELECT count(co_id) FROM %I.%I', qgis_pkg_schema_name, mview_name) INTO mv_n_features;
 
 			UPDATE qgis_pkg.layer_metadata AS lm SET
 				n_features    = mv_n_features,
 				refresh_date  = stop_timestamp
-			WHERE lm.mv_name = r.mview_name;
+			WHERE lm.mv_name = mview_name;
 
 			RAISE NOTICE 'Refreshed materialized view "%.%" in %', qgis_pkg_schema_name, mview_name, stop_timestamp-start_timestamp; 
 			RETURN 1;

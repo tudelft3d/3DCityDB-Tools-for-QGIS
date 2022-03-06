@@ -255,10 +255,15 @@ def fetch_schemas(dbLoader) -> tuple:
         dbLoader.conn.rollback()
         return None
 
-def fetch_layer_metadata(dbLoader) -> tuple:
+def fetch_layer_metadata(dbLoader, cols = "*") -> tuple:
     """SQL query thar reads and retrieves the current schema's layer metadata
-    from qgis_pkg.layer_metadata table.
-    Note: it retrieves metadata only for layers that have n_features > 0
+    from qgis_pkg.layer_metadata table. By default it fetchs all columns.
+
+    *   :param cols: The columns to retrieve from the table.
+            Note: to fetch multiple columns use:
+            ",".join([col1,col2,col3])
+        :type cols: str
+
     *   :returns: metadata of the layers combined with a collection of
         the attributes names
 
@@ -268,12 +273,10 @@ def fetch_layer_metadata(dbLoader) -> tuple:
         t0 = time.time()
         with dbLoader.conn.cursor() as cur:
             cur.execute(f"""
-                        SELECT * FROM qgis_pkg.layer_metadata
-                        WHERE schema_name = '{dbLoader.SCHEMA}'
-                        AND n_features > 0;
+                        SELECT {cols} FROM {c.PLUGIN_PKG_NAME}.layer_metadata
+                        WHERE schema_name = '{dbLoader.SCHEMA}';
                         """)
-            metadata=cur.fetchall()
-
+            metadata = cur.fetchall()
             # Attribute names
             colnames = [desc[0] for desc in cur.description]
         dbLoader.conn.commit()
@@ -593,10 +596,10 @@ def fetch_mat_views(dbLoader) -> list:
         t0 = time.time()
         with dbLoader.conn.cursor() as cur:
             # Get database srid.
-            cur.execute(query=  """
+            cur.execute(query= f"""
                                 SELECT matViewname, ispopulated 
                                 FROM pg_matviews
-                                WHERE schemaname = 'qgis_pkg';
+                                WHERE schemaname = '{c.PLUGIN_PKG_NAME}';
                                 """)
             mat_views = cur.fetchall()
             mat_views, status = list(zip(*mat_views))
