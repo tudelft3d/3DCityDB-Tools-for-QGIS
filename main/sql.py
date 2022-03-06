@@ -274,7 +274,8 @@ def fetch_layer_metadata(dbLoader, cols = "*") -> tuple:
         with dbLoader.conn.cursor() as cur:
             cur.execute(f"""
                         SELECT {cols} FROM {c.PLUGIN_PKG_NAME}.layer_metadata
-                        WHERE schema_name = '{dbLoader.SCHEMA}';
+                        WHERE schema_name = '{dbLoader.SCHEMA}'
+                        ORDER BY feature_type, lod, root_class, layer_name;
                         """)
             metadata = cur.fetchall()
             # Attribute names
