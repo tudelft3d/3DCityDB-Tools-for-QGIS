@@ -95,7 +95,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_relative_to_terrain_1b88274c_4408_4144_b336_9c52bfe0330c" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="1" name="NofColumns"/>
             <Option type="bool" value="false" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
@@ -112,7 +112,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_relative_to_water_0d8964c4_d81d_4404_93f2_c352dfbf0f80" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="1" name="NofColumns"/>
             <Option type="bool" value="false" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
@@ -186,7 +186,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_building_class_81dcce0c_a37c_4ec5_8655_f0a20133e6b7" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="1" name="NofColumns"/>
             <Option type="bool" value="false" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
@@ -213,7 +213,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_building_function_usage_c6053305_4e96_4aba_88a9_209e2282ddfb" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="4" name="NofColumns"/>
             <Option type="bool" value="true" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
@@ -240,7 +240,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_building_function_usage_c6053305_4e96_4aba_88a9_209e2282ddfb" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="4" name="NofColumns"/>
             <Option type="bool" value="true" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>

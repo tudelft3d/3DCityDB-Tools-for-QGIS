@@ -92,7 +92,7 @@
             <Option name="AllowNull" value="true" type="bool"/>
             <Option name="FilterExpression" value="" type="QString"/>
             <Option name="Key" value="code_value" type="QString"/>
-            <Option name="Layer" value="lu_relative_to_terrain_410c9956_9635_4cfa_8d35_9f272205fd65" type="QString"/>
+            <Option name="Layer" value="" type="QString"/>
             <Option name="NofColumns" value="1" type="int"/>
             <Option name="OrderByValue" value="false" type="bool"/>
             <Option name="UseCompleter" value="false" type="bool"/>
@@ -109,7 +109,7 @@
             <Option name="AllowNull" value="true" type="bool"/>
             <Option name="FilterExpression" value="" type="QString"/>
             <Option name="Key" value="code_value" type="QString"/>
-            <Option name="Layer" value="lu_relative_to_water_a527b29c_2c2a_4b8f_9c2f_86dfe39057a7" type="QString"/>
+            <Option name="Layer" value="" type="QString"/>
             <Option name="NofColumns" value="1" type="int"/>
             <Option name="OrderByValue" value="false" type="bool"/>
             <Option name="UseCompleter" value="false" type="bool"/>
@@ -170,10 +170,8 @@
             <Option name="Description" value="" type="QString"/>
             <Option name="FilterExpression" value=" &quot;codelist_name&quot;  =  'TUD 3DGeoInfo 3DBAG' " type="QString"/>
             <Option name="Key" value="code_value" type="QString"/>
-            <Option name="Layer" value="lu_building_class_c19e74da_f53d_4c4c_a420_43b7f2ae4e13" type="QString"/>
-            <Option name="LayerName" value="lu_building_class" type="QString"/>
-            <Option name="LayerProviderName" value="postgres" type="QString"/>
-            <Option name="LayerSource" value="dbname='qgis_test' host=3dcities.bk.tudelft.nl port=5810 user='qgis_test_user' sslmode=disable key='code_value' estimatedmetadata=true checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_class&quot;" type="QString"/>
+            <Option name="Layer" value="" type="QString"/>
+            <Option name="LayerName" value="" type="QString"/>
             <Option name="NofColumns" value="1" type="int"/>
             <Option name="OrderByValue" value="false" type="bool"/>
             <Option name="UseCompleter" value="false" type="bool"/>
@@ -198,10 +196,8 @@
             <Option name="Description" value="" type="QString"/>
             <Option name="FilterExpression" value=" &quot;codelist_name&quot;  =  'NL BAG Gebruiksdoel' " type="QString"/>
             <Option name="Key" value="code_value" type="QString"/>
-            <Option name="Layer" value="lu_building_function_usage_149bb804_f8a6_458d_8411_0f94740abf27" type="QString"/>
-            <Option name="LayerName" value="lu_building_function_usage" type="QString"/>
-            <Option name="LayerProviderName" value="postgres" type="QString"/>
-            <Option name="LayerSource" value="dbname='qgis_test' host=3dcities.bk.tudelft.nl port=5810 user='qgis_test_user' sslmode=disable key='code_value' estimatedmetadata=true checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_function_usage&quot;" type="QString"/>
+            <Option name="Layer" value="" type="QString"/>
+            <Option name="LayerName" value="" type="QString"/>
             <Option name="NofColumns" value="4" type="int"/>
             <Option name="OrderByValue" value="true" type="bool"/>
             <Option name="UseCompleter" value="false" type="bool"/>
@@ -226,10 +222,8 @@
             <Option name="Description" value="" type="QString"/>
             <Option name="FilterExpression" value=" &quot;codelist_name&quot;  =  'NL BAG Gebruiksdoel' " type="QString"/>
             <Option name="Key" value="code_value" type="QString"/>
-            <Option name="Layer" value="lu_building_function_usage_149bb804_f8a6_458d_8411_0f94740abf27" type="QString"/>
-            <Option name="LayerName" value="lu_building_function_usage" type="QString"/>
-            <Option name="LayerProviderName" value="postgres" type="QString"/>
-            <Option name="LayerSource" value="dbname='qgis_test' host=3dcities.bk.tudelft.nl port=5810 user='qgis_test_user' sslmode=disable key='code_value' estimatedmetadata=true checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_function_usage&quot;" type="QString"/>
+            <Option name="Layer" value="" type="QString"/>
+            <Option name="LayerName" value="" type="QString"/>
             <Option name="NofColumns" value="4" type="int"/>
             <Option name="OrderByValue" value="true" type="bool"/>
             <Option name="UseCompleter" value="false" type="bool"/>

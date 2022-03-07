@@ -3,7 +3,9 @@ used in the plugin's functionality."""
 
 
 import os.path
+from typing import Callable
 
+from qgis.core import QgsMessageLog, Qgis
 
 # Text - Messages - Log
 icon_msg_core = """
@@ -201,3 +203,37 @@ def get_file_location(file: str = __file__) -> str:
     file_name = os.path.split(file)[1]
     relative_file_location = os.path.join(DIR_NAME,file_name)
     return relative_file_location
+
+def critical_log(func: Callable, location: str, header: str, error: str) -> None:
+    """Function used to form and display caught error in a critical message
+    into the QGIS Message Log panel.
+
+    *   :param func: The function producing the error.
+
+        :type func: function
+
+    *   :param location: The relative path (to the plugin directory) of the
+            function's file.
+
+        :type location: str
+
+    *   :param header: Informative text appended to the location of the error.
+
+        :type header: str
+
+    *   :param error: Error to be displayed.
+
+        :type error: str
+        """
+    # Get the location to show in log where an issue happens
+    function_name = func.__name__
+    location = ">".join([location,function_name])
+
+    # Specify in the header the type of error and where it happend.
+    header = log_errors.format(type=header, loc=location)
+
+    # Show the error in the log panel. Should open it even if its closed.
+    QgsMessageLog.logMessage(message=header + str(error),
+        tag="3DCityDB-Loader",
+        level=Qgis.Critical,
+        notifyUser=True)

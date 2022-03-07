@@ -96,10 +96,8 @@
             <Option name="Description" type="QString" value=""/>
             <Option name="FilterExpression" type="QString" value=""/>
             <Option name="Key" type="QString" value="code_value"/>
-            <Option name="Layer" type="QString" value="lu_relative_to_terrain_2a8ad7c7_2b8e_4e9e_ab59_f2bf1dc522cb"/>
-            <Option name="LayerName" type="QString" value="lu_relative_to_terrain"/>
-            <Option name="LayerProviderName" type="QString" value="postgres"/>
-            <Option name="LayerSource" type="QString" value="dbname='GEO5014' host=127.0.0.1 port=5432 user='postgres' key='code_value' checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_relative_to_terrain&quot;"/>
+            <Option name="Layer" type="QString" value=""/>
+            <Option name="LayerName" type="QString" value=""/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -117,10 +115,8 @@
             <Option name="Description" type="QString" value=""/>
             <Option name="FilterExpression" type="QString" value=""/>
             <Option name="Key" type="QString" value="code_value"/>
-            <Option name="Layer" type="QString" value="lu_relative_to_water_49098735_c0e9_4d95_9ba0_f9a64723c9e1"/>
-            <Option name="LayerName" type="QString" value="lu_relative_to_water"/>
-            <Option name="LayerProviderName" type="QString" value="postgres"/>
-            <Option name="LayerSource" type="QString" value="dbname='GEO5014' host=127.0.0.1 port=5432 user='postgres' key='code_value' checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_relative_to_water&quot;"/>
+            <Option name="Layer" type="QString" value=""/>
+            <Option name="LayerName" type="QString" value=""/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -181,10 +177,8 @@
             <Option name="Description" type="QString" value=""/>
             <Option name="FilterExpression" type="QString" value=""/>
             <Option name="Key" type="QString" value="code_value"/>
-            <Option name="Layer" type="QString" value="lu_building_class_729d0ca5_b60a_40d0_87e5_1b73381beed4"/>
-            <Option name="LayerName" type="QString" value="lu_building_class"/>
-            <Option name="LayerProviderName" type="QString" value="postgres"/>
-            <Option name="LayerSource" type="QString" value="dbname='GEO5014' host=127.0.0.1 port=5432 user='postgres' key='code_value' checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_class&quot;"/>
+            <Option name="Layer" type="QString" value=""/>
+            <Option name="LayerName" type="QString" value=""/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -212,10 +206,8 @@
             <Option name="Description" type="QString" value=""/>
             <Option name="FilterExpression" type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'"/>
             <Option name="Key" type="QString" value="code_value"/>
-            <Option name="Layer" type="QString" value="lu_building_function_usage_7560e668_f337_4b68_8a78_e37877cf5f43"/>
-            <Option name="LayerName" type="QString" value="lu_building_function_usage"/>
-            <Option name="LayerProviderName" type="QString" value="postgres"/>
-            <Option name="LayerSource" type="QString" value="dbname='GEO5014' host=127.0.0.1 port=5432 user='postgres' key='code_value' checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_function_usage&quot;"/>
+            <Option name="Layer" type="QString" value=""/>
+            <Option name="LayerName" type="QString" value=""/>
             <Option name="NofColumns" type="int" value="4"/>
             <Option name="OrderByValue" type="bool" value="true"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -243,10 +235,8 @@
             <Option name="Description" type="QString" value=""/>
             <Option name="FilterExpression" type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'"/>
             <Option name="Key" type="QString" value="code_value"/>
-            <Option name="Layer" type="QString" value="lu_building_function_usage_7560e668_f337_4b68_8a78_e37877cf5f43"/>
-            <Option name="LayerName" type="QString" value="lu_building_function_usage"/>
-            <Option name="LayerProviderName" type="QString" value="postgres"/>
-            <Option name="LayerSource" type="QString" value="dbname='GEO5014' host=127.0.0.1 port=5432 user='postgres' key='code_value' checkPrimaryKeyUnicity='1' table=&quot;qgis_pkg&quot;.&quot;lu_building_function_usage&quot;"/>
+            <Option name="Layer" type="QString" value=""/>
+            <Option name="LayerName" type="QString" value=""/>
             <Option name="NofColumns" type="int" value="4"/>
             <Option name="OrderByValue" type="bool" value="true"/>
             <Option name="UseCompleter" type="bool" value="false"/>

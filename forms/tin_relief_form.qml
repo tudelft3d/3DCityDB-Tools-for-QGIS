@@ -95,7 +95,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_relative_to_terrain_8869babe_0ac1_442a_884d_7a92414758eb" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="1" name="NofColumns"/>
             <Option type="bool" value="false" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
@@ -112,7 +112,7 @@
             <Option type="bool" value="true" name="AllowNull"/>
             <Option type="QString" value="" name="FilterExpression"/>
             <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="lu_relative_to_water_3621d177_e7bf_4aec_b45e_588a6dbff1c5" name="Layer"/>
+            <Option type="QString" value="" name="Layer"/>
             <Option type="int" value="1" name="NofColumns"/>
             <Option type="bool" value="false" name="OrderByValue"/>
             <Option type="bool" value="false" name="UseCompleter"/>
