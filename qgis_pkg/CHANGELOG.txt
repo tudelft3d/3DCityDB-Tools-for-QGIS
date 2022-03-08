@@ -3,6 +3,17 @@
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-03-08
+----------
+Script 20: 
+	- Renamed function [qgis_pkg.snap_poly_to_grid()] to [qgis_pkg.ST_Snap_poly_to_grid()]
+	- Script 70 adapted accordingly
+	- Added function [qgis_pkg.drop_layers()]
+Script 70: Added mviews for remaining modules (Bridge, Tunnel, Transportation)
+Script 80: Added mviews for remaining modules (Bridge, Tunnel, Transportation)
+Corrected some bugs in update trigger functions (bdg thematic surfaces, tin relief)
+Added (for now empty) columns for usr_name and usr_schema to tables [layer_metadata] and [extents]
+
 2022-02-24
 ----------
 Added script 15 (Look-up tables revised):

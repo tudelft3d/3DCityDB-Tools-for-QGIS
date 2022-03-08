@@ -501,7 +501,7 @@ obj_2.id              := OLD.id;
 obj_2.max_length      := NEW.max_length;
 obj_2.max_length_unit := NEW.max_length_unit; 
 
-PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, schema_name);
+PERFORM qgis_pkg.upd_',r.table_name,'_atts(obj, obj_1, obj_2, schema_name);
 ');
 
 	WHEN r.table_name = 'tunnel'					THEN sql_statement_body := concat('

@@ -20,17 +20,9 @@ FOR r IN
 	SELECT * FROM (VALUES
 	('address'::text),
 	('appearance'),
-	('bridge_opening'),
-	('bridge_thematic_surface'),
 	('cityobject_genericattrib'),
 	('external_reference'),
---	('grid_coverage'),
-	('surface_data'),
-	('opening'),
-	('thematic_surface'),
-	('tunnel_opening'),
-	('tunnel_thematic_surface'),
-	('waterboundary_surface')
+	('surface_data')
 	) AS t(table_name)
 LOOP
 
@@ -53,11 +45,53 @@ EXCEPTION
   WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
---COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),''';
+COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),''';
 ');
 EXECUTE sql_statement;
 
 END LOOP;  -- loop 1 object
+
+
+-- Create update attribute functions for objects based only on cityobject table
+FOR r IN
+	SELECT * FROM (VALUES
+	('bridge_opening'),
+	('bridge_thematic_surface'),
+--	('grid_coverage'),
+	('opening'),
+	('thematic_surface'),
+	('tunnel_opening'),
+	('tunnel_thematic_surface'),
+	('waterboundary_surface')  -- the ones without attributes
+	) AS t(table_name)
+LOOP
+
+sql_statement := concat('
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+obj         qgis_pkg.obj_cityobject,
+schema_name varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, schema_name) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
+');
+EXECUTE sql_statement;
+
+END LOOP;  -- loop 1 object
+
+
 
 
 -- Create update attribute functions with 2 objects
@@ -127,7 +161,6 @@ FOR r IN
 --	('masspoint_relief', 	'relief_component'), questo non ha attributi
 --	('breakline_relief',	'relief_component')	 questo non ha attributi	
 
-	
 	) AS t(table_name, parent_table_name)
 LOOP
 
@@ -184,7 +217,7 @@ EXCEPTION
   WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterboundary_surface_waterbody_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of tables WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
+COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
 
 
 --**************************

@@ -92,7 +92,7 @@ COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar) IS 'Searches for schema
 DROP FUNCTION IF EXISTS    qgis_pkg.get_all_schemas() CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.get_all_schemas()
 RETURNS TABLE(
-schema information_schema.sql_identifier  -- to be checked if too PostgreSQL specific
+schema information_schema.sql_identifier  -- to be checked if it is too PostgreSQL specific
 )
 AS $$
 DECLARE
@@ -339,7 +339,7 @@ COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar) IS 'Counts records i
 -- It must be run ONLY ONCE in a specific dbschema, upon installation.
 DROP FUNCTION IF EXISTS    qgis_pkg.add_ga_indices(varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.add_ga_indices(
-citydb_schema varchar --DEFAULT 'citydb'
+cdb_schema varchar --DEFAULT 'citydb'
 )
 RETURNS integer AS $$
 DECLARE
@@ -349,11 +349,9 @@ BEGIN
 
 RAISE NOTICE 'Adding indices to table cityobject_genericattrib';
 sql_statement := concat('
---ALTER TABLE ',citydb_schema,'.cityobject_genericattrib ALTER COLUMN datatype SET NOT NULL;
---DROP INDEX IF EXISTS ',citydb_schema,'.genericattrib_attrname_inx;
-CREATE INDEX IF NOT EXISTS genericattrib_attrname_inx ON ',citydb_schema,'.cityobject_genericattrib (attrname);
---DROP INDEX IF EXISTS ',citydb_schema,'.genericattrib_datatype_inx;
-CREATE INDEX IF NOT EXISTS genericattrib_datatype_inx ON ',citydb_schema,'.cityobject_genericattrib (datatype);
+--ALTER TABLE ',cdb_schema,'.cityobject_genericattrib ALTER COLUMN datatype SET NOT NULL;
+CREATE INDEX IF NOT EXISTS genericattrib_attrname_inx ON ',cdb_schema,'.cityobject_genericattrib (attrname);
+CREATE INDEX IF NOT EXISTS genericattrib_datatype_inx ON ',cdb_schema,'.cityobject_genericattrib (datatype);
 ');
 EXECUTE sql_statement;
 RETURN 1;
@@ -367,7 +365,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.add_ga_indices(varchar) IS 'Adds some indices to table cityobject_genericattrib';
 
---PERFORM qgis_pkg.add_indices(citydb_schema := 'citydb');
+--PERFORM qgis_pkg.add_indices(cdb_schema := 'citydb');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.COMPUTE_SCHEMA_EXTENTS
@@ -383,7 +381,6 @@ OUT y_max numeric,
 OUT srid_id integer,
 OUT upserted_id integer
 )
---RETURNS integer 
 AS $$
 DECLARE
 citydb_envelope		geometry(Polygon) := NULL;
@@ -430,8 +427,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.compute_schema_extents(varchar) IS 'Computes extents of the selected citydb schema';
 
---PERFORM * FROM qgis_pkg.compute_schema_extents(citydb_schema := 'citydb');
---PERFORM SELECT qgis_pkg.compute_schema_extents(citydb_schema := 'citydb');
+--SELECT * FROM qgis_pkg.compute_schema_extents(citydb_schema := 'citydb');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPSERT_EXTENTS
@@ -490,15 +486,15 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, geometry) IS 'Updates the qgis_pkg.extents table';
 
---PERFORM qgis_pkg.upsert_extents('citydb','db_schema', NULL);
+--SELECT qgis_pkg.upsert_extents('citydb','db_schema', NULL);
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEW
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.refresh_mview(varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.refresh_mview(
-citydb_schema varchar DEFAULT NULL,
-mview_name   varchar DEFAULT NULL
+citydb_schema	varchar DEFAULT NULL,
+mview_name		varchar DEFAULT NULL
 )
 RETURNS integer AS $$
 DECLARE
@@ -538,14 +534,24 @@ CASE
 		RETURN 1;
 
 	WHEN citydb_schema IS NOT NULL THEN -- refresh all existing materialized views for that schema
-		IF EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE pg_namespace.nspname=citydb_schema) THEN
-		RAISE NOTICE 'Refreshing all materialized views associated to schema "%"', citydb_schema;		
+		IF EXISTS (
+			--SELECT 1 FROM pg_catalog.pg_namespace WHERE pg_namespace.nspname=citydb_schema
+			SELECT 1
+			FROM pg_catalog.pg_class
+				INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+			WHERE pg_class.relkind = 'm' AND pg_namespace.nspname = qgis_pkg_schema_name
+				AND split_part(pg_class.relname::text, '_', 3) = citydb_schema
+				--AND pg_class.relname LIKE '_g_'||citydb_schema||'_%'
+			LIMIT 1
+			) THEN
+			RAISE NOTICE 'Refreshing all materialized views associated to schema "%"', citydb_schema;		
 			FOR r IN 
 				SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
 				FROM pg_catalog.pg_class
 					INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
 				WHERE pg_class.relkind = 'm' AND pg_namespace.nspname = qgis_pkg_schema_name
-					AND pg_class.relname LIKE '_g_'||citydb_schema||'_%'
+					AND split_part(pg_class.relname::text, '_', 3) = citydb_schema
+					--AND pg_class.relname LIKE '_g_'||citydb_schema||'_%'
 				ORDER BY table_schema, mview_name
 			LOOP
 				start_timestamp := clock_timestamp();
@@ -690,10 +696,10 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 COMMENT ON FUNCTION qgis_pkg.st_3darea_poly(geometry) IS 'Returns the 3D area of a 3D polygon';
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.SNAP_POLY_TO_GRID
+-- Create FUNCTION QGIS_PKG.ST_SNAP_POLY_TO_GRID
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.snap_poly_to_grid(geometry, integer, integer, numeric) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.snap_poly_to_grid(
+DROP FUNCTION IF EXISTS    qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.st_snap_poly_to_grid(
 polygon 			geometry DEFAULT NULL, 		-- do not forget to remove the default null after debugging
 perform_snapping 	integer DEFAULT 0, 			-- i.e. default is "do nothing", otherwise 1.
 digits 				integer DEFAULT 3,			-- number of digits after comma for precision
@@ -717,32 +723,7 @@ area_poly 		numeric;
 new_polygon 	geometry(PolygonZ);
 
 BEGIN
-/*
-polygon := ST_SetSRID(ST_GeomFromText('PolygonZ((
-10.123456789 10.123456789 10.123456789,
-20.223456789 10.123456789 10.123456789,			   
-20.223456789 20.223456789 10.123456789,			   
-10.123456789 20.223456789 10.123456789,
-10.123456789 10.123456789 10.123456789
-),(  
-14.123456789 14.123456789 10.123456789,
-14.223456789 16.123456789 10.123456789,			   
-16.223456789 16.223456789 10.123456789,			   
-16.123456789 14.223456789 10.123456789,
-14.123456789 14.123456789 10.123456789
-))'
-),28992);
---*/
-/*
-polygon := ST_SetSRID(ST_GeomFromText('PolygonZ((
-10.0001 10.0001 10.123456789,
-20.0001 10.0001 10.123456789,			   
-20.0001 10.0002 10.123456789,			   
-10.0001 10.0002 10.123456789,
-10.0001 10.0001 10.123456789
-))'
-),28992);
-*/
+
 CASE 
 	WHEN perform_snapping = 0 THEN
 		--RAISE NOTICE 'polygon: %', ST_AsEWKT(polygon);
@@ -822,14 +803,244 @@ END IF;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.snap_poly_to_grid(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.st_snap_poly_to_grid(): Error QUERY_CANCELED';
 	WHEN OTHERS THEN
-		RAISE EXCEPTION 'qgis_pkg.snap_poly_to_grid(): %', SQLERRM;
+		RAISE EXCEPTION 'qgis_pkg.st_snap_poly_to_grid(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.snap_poly_to_grid(geometry, integer, integer, numeric) IS 'Snaps 3D polygon to grid and drops it if it is smaller than the minimum area threshold';
+COMMENT ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) IS 'Snaps 3D polygon to grid and drops it if it is smaller than the minimum area threshold';
 
---SELECT qgis_pkg.snap_poly_to_grid(geometry, 1, 2, 0.01) FROM citydb.surface_geometry WHERE geometry IS NOT NULL LIMIT 10000;
+--SELECT qgis_pkg.st_snap_poly_to_grid(geometry, 1, 2, 0.01) FROM citydb.surface_geometry WHERE geometry IS NOT NULL LIMIT 10000;
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.DROP_LAYERS
+----------------------------------------------------------------
+-- Drops layers (e.g. mviews, views, and associated triggers)
+DROP FUNCTION IF EXISTS    qgis_pkg.drop_layers(varchar, varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.drop_layers(
+usr_schema		varchar DEFAULT 'qgis_pkg',  -- default value to be dropped in future
+cdb_schema		varchar DEFAULT NULL,
+feat_type		varchar DEFAULT NULL
+)
+RETURNS integer
+AS $$
+DECLARE
+r RECORD;
+BEGIN
+
+CASE 
+	WHEN cdb_schema IS NULL THEN 
+		RAISE NOTICE 'Dropping all views in user schema %', usr_schema;
+		FOR r IN 
+			SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+			FROM pg_catalog.pg_class
+				INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+			WHERE 
+				pg_class.relkind = 'm' 
+				AND pg_namespace.nspname = usr_schema
+			ORDER BY mview_name
+		LOOP
+			EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+		END LOOP;
+		
+	WHEN cdb_schema IS NOT NULL AND feat_type IS NULL THEN
+		RAISE NOTICE 'Dropping all views in user schema % related to citydb_schema %', usr_schema, cdb_schema;
+		FOR r IN 
+			SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+			FROM pg_catalog.pg_class
+				INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+			WHERE 
+				pg_class.relkind = 'm' 
+				AND pg_namespace.nspname = usr_schema
+				AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+			ORDER BY mview_name
+		LOOP
+			EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+		END LOOP;
+
+	WHEN cdb_schema IS NOT NULL AND feat_type IS NOT NULL THEN
+		RAISE NOTICE 'Dropping all views in user schema % related to citydb_schema % for feature type %', usr_schema, cdb_schema, feat_type;
+		CASE feat_type
+			WHEN 'Bridge' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'bri'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'Building' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'bdg'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'CityFurniture' THEN	
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'city'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'CityObjectGroup' THEN				
+			
+			WHEN 'Generics' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'gen'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'LandUse' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'land'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'Relief' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) IN ('relief', 'tin')						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'Transportation' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) IN ('railway', 'road', 'square', 'track', 'tran')						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'Tunnel' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'tun'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'Vegetation' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) IN ('sol', 'plant')						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+
+			WHEN 'WaterBody' THEN
+				FOR r IN 
+					SELECT pg_namespace.nspname AS table_schema, pg_class.relname AS mview_name
+					FROM pg_catalog.pg_class
+						INNER JOIN pg_catalog.pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+					WHERE 
+						pg_class.relkind = 'm' 
+						AND pg_namespace.nspname = usr_schema
+						AND split_part(pg_class.relname::text, '_', 3) = cdb_schema
+						AND split_part(pg_class.relname::text, '_', 4) = 'waterbody'						
+					ORDER BY mview_name
+				LOOP
+					EXECUTE format('DROP MATERIALIZED VIEW %I.%I CASCADE', usr_schema, r.mview_name);
+				END LOOP;
+		ELSE
+		END CASE;
+ELSE
+END CASE;	
+
+RETURN 1;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.drop_layers(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.drop_layers(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.drop_layers(varchar, varchar, varchar) IS 'Drops views';
+
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Building');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Vegetation');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Relief');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'WaterBody');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Generics');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'LandUse');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Transportation');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'LandUse');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'CityFurniture');
+--SELECT qgis_pkg.drop_layers(usr_schema:= 'qgis_pkg', cdb_schema:= 'citydb', feat_type := 'Tunnel');
+
+
 
 --**************************
 RAISE NOTICE E'\n\nDone\n\n';
