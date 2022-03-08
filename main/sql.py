@@ -531,10 +531,10 @@ def has_plugin_pkg(dbLoader) -> bool:
 def drop_package(dbLoader, close_connection:bool = True) -> None:
     """SQL query that drops plugin package from the database.
 
-    As plugin cannot function without its package, the function
+    As the plugin cannot function without its package, the function
     also closes the connection.
 
-    *   :param close_connection: After droping the plugin package,
+    *   :param close_connection: After dropping the plugin package,
             it is not possible to work with the plugin, so the default
             state is True.
 
@@ -543,7 +543,7 @@ def drop_package(dbLoader, close_connection:bool = True) -> None:
 
     try:
         with dbLoader.conn.cursor() as cur:
-            cur.execute(f"""DROP SCHEMA {c.PLUGIN_PKG_NAME} CASCADE;""")
+            cur.execute(f"""DROP SCHEMA IF EXISTS {c.PLUGIN_PKG_NAME} CASCADE;""")
         dbLoader.conn.commit()
 
         if close_connection:
@@ -553,7 +553,7 @@ def drop_package(dbLoader, close_connection:bool = True) -> None:
         # Send error to QGIS Message Log panel.
         c.critical_log(func=drop_package,
             location=FILE_LOCATION,
-            header="Droping package",
+            header="Dropping package",
             error=error)
         dbLoader.conn.rollback()
 
