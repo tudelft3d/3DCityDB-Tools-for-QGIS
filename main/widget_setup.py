@@ -22,7 +22,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem
 from qgis.core import QgsGeometry, QgsWkbTypes, QgsRasterLayer
 from qgis.core import Qgis, QgsProject ,QgsMessageLog
-from qgis.gui import QgsRubberBand
+from qgis.gui import QgsRubberBand, QgsMapCanvas
 import psycopg2
 
 from . import connection_tab
@@ -314,11 +314,22 @@ def gbxBasemap_setup(dbLoader) ->  None:
                 dbLoader.dlg.verticalLayout_5.addWidget(dbLoader.CANVAS)
                 #dbLoader.CANVAS.show()
 
-                # Setting up CRS, extents, basemap for the canvas.
-                CANVAS_setup(dbLoader, extents=extents)
+                # Draw the extents in the canvas
+                # Create polygon rubber band corespoding to the extents
+                rb = QgsRubberBand(dbLoader.CANVAS, QgsWkbTypes.PolygonGeometry)
+                extents_geometry = QgsGeometry.fromRect(extents)
+                rb.setToGeometry(extents_geometry,dbLoader.CRS)
+                rb.setColor(QColor(Qt.blue))
+                rb.setWidth(3)
+                rb.setFillColor(Qt.transparent)
 
                 # Put extents coordinates into the widget.
                 dbLoader.dlg.qgbxExtent.setOutputExtentFromUser(dbLoader.EXTENTS,dbLoader.CRS)
+
+                # Setting up CRS, extents, basemap for the canvas.
+                CANVAS_setup(dbLoader, extents=extents)
+
+
 
                 # Zoom to these extents.
                 dbLoader.CANVAS.zoomToFeatureExtent(extents)
@@ -376,15 +387,6 @@ def CANVAS_setup(dbLoader, extents: QgsRectangle) -> None:
 
     # Set the map canvas layer set.
     dbLoader.CANVAS.setLayers([vlayer])
-
-    # Draw the extents in the canvas
-    # Create polygon rubber band corespoding to the extents
-    rb = QgsRubberBand(dbLoader.CANVAS, QgsWkbTypes.PolygonGeometry)
-    extents_geometry = QgsGeometry.fromRect(extents)
-    rb.setToGeometry(extents_geometry,dbLoader.CRS)
-    rb.setColor(QColor(Qt.blue))
-    rb.setWidth(3)
-    rb.setFillColor(Qt.transparent)
 
 def insert_rubber_band(dbLoader,
         extents: QgsRectangle,

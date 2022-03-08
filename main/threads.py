@@ -29,6 +29,7 @@ import psycopg2
 
 from .connection import connect
 from . import constants as c
+from . import import_tab
 from . import sql
 
 
@@ -267,6 +268,8 @@ def refresh_success(dbLoader) -> None:
             tag="3DCityDB-Loader",
             level=Qgis.Success,
             notifyUser=True)
+
+    import_tab.fill_FeatureType_box(dbLoader)
 
 def install_success(dbLoader) -> None:
     """Event that is called when the thread executing the installation
