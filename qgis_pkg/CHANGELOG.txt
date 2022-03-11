@@ -1,7 +1,29 @@
 2022-xx-xx TO DO
 ----------
+Clean up old and redundant funtions in script 020.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
+
+2022-03-10
+----------
+MAJOR UPDATE!
+All scripts are now prefixed with 3 digits
+New names for variables: cty_schema, usr_name and usr_schema. schema_name mostly dropped everywhere.
+For compatibility reasons, schema_name column is temporarily still in table layer_metadata
+Fixed/improved generation of implicit geometries in m_views.
+Added support for user-defined schemas. At the moment only "qgis_user"
+	- Tables [layer_metadata], [extents], and for [enumerations] and [codelists] 
+		are created	for each user schema
+	- Added function [qgis_pkg.create_qgis_user_schema()]
+Script 010-015
+	- Dropped "old" way of defining serial types in tables
+	- Fixed views for enumerations and codelists
+Scripts 070 and 080 are now obsolete
+Script 200 contains additional functions (to be merged into script 020)
+Scripts 210...340 contain new [qgis_pkg.create_layers_xxxx()] functions
+	- Functions correspond to CityGML modules
+	- They are cdb_schema- and usr_schema-aware
+	- Currently: CityFurniture, Generics, LandUse, Vegetation, Relief are done
 
 2022-03-08
 ----------
