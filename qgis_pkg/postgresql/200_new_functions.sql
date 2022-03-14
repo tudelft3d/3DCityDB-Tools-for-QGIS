@@ -8,6 +8,74 @@
 -- ****************************************************************************
 -- ****************************************************************************
 
+
+/* --- TEMPLATE FOR FUNCTIONS
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.XX_FUNCNAME_XX
+----------------------------------------------------------------
+-- A short description of what it does
+-- ...
+-- ...
+DROP FUNCTION IF EXISTS    qgis_pkg.xx_funcname_xx(signature) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.xx_funcname_xx(
+param1 type,
+param2 type
+...
+)
+RETURNS xxxx
+AS $$
+DECLARE
+	param3 type;
+	param4 type;
+...
+
+BEGIN
+
+-- body of the function
+
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.xx_funcname_xx(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.xx_funcname_xx(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.xx_funcname_xx(varchar) IS 'xxxx short comment xxxx';
+*/
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.QGIS_PKG_VERSION
+----------------------------------------------------------------
+-- Returns the version of the QGIS Package
+DROP FUNCTION IF EXISTS    qgis_pkg.qgis_pkg_version() CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.qgis_pkg_version(
+OUT version text,
+OUT major_version integer,
+OUT minor_version integer,
+OUT minor_revision integer
+)
+RETURNS record
+AS $$
+DECLARE
+BEGIN
+major_version  := 0;
+minor_version  := 2;
+minor_revision := 1;
+version := concat(major_version,',',minor_version,',',minor_revision);
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.qgis_pkg_version(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.qgis_pkg_version(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.qgis_pkg_version() IS 'Returns the version of the QGIS Package';
+
+-- SELECT version, major_version, minor_version, minor_revision FROM qgis_pkg.qgis_pkg_version();
+
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEW_new
 ----------------------------------------------------------------
