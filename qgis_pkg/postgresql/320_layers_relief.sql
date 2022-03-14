@@ -170,6 +170,7 @@ CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
 --DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+-- REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
 
@@ -188,7 +189,7 @@ FROM
   	INNER JOIN ',cdb_schema,'.relief_feature AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,')
 WHERE
 	o.lod = ',right(t.lodx_label,1),';
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -283,6 +284,7 @@ CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
 --DELETE FROM qgis_pkg.layer_metadata AS l WHERE l.v_name = ''',view_name,''';
+-- REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
 
@@ -302,7 +304,7 @@ FROM
 	INNER JOIN ',cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
 	INNER JOIN ',cdb_schema,'.relief_component AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' AND o.lod = ',right(t.lodx_label,1),')	
   	INNER JOIN ',cdb_schema,'.tin_relief AS o2 ON (o2.id = co.id AND o2.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -418,26 +420,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Create layers for module Reief';
 
-
---SELECT qgis_pkg.create_layers_relief(force_layer_creation := FALSE);
-
-
-/*
--- Testing
-
-DO $MAINBODY$
-DECLARE
-sql_statement text := NULL;
-
-BEGIN
-SELECT qgis_pkg.generate_sql_layers_relief() INTO sql_statement;
-
-IF sql_statement IS NOT NULL THEN
-	EXECUTE sql_statement;
-END IF;
-
-END $MAINBODY$
-*/
+--SELECT qgis_pkg.create_layers_relief(cdb_schema := 'citydb',force_layer_creation := FALSE);
 
 --**************************
 DO $MAINBODY$

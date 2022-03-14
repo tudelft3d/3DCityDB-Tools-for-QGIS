@@ -239,7 +239,7 @@ FROM
 	',usr_schema,'.',mview_name,' AS g 
 	INNER JOIN ',cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',cdb_schema,'.generic_cityobject AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -339,26 +339,7 @@ COMMENT ON FUNCTION qgis_pkg.create_layers_generics
 	(varchar, varchar, integer, integer, numeric, geometry, boolean)
 	IS 'Create layers for module Generics';
 
-SELECT qgis_pkg.create_layers_generics(cdb_schema := 'citydb3', force_layer_creation := FALSE);
-
-
-
--- Testing
-/*
-DO $MAINBODY$
-DECLARE
-sql_statement text := NULL;
-
-BEGIN
-SELECT qgis_pkg.generate_sql_layers_generics() INTO sql_statement;
-
-IF sql_statement IS NOT NULL THEN
-	EXECUTE sql_statement;
-END IF;
-
-END $MAINBODY$
-
-*/
+--SELECT qgis_pkg.create_layers_generics(cdb_schema := 'citydb', force_layer_creation := FALSE);
 
 --**************************
 DO $MAINBODY$

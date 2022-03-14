@@ -246,7 +246,7 @@ FROM
 	',usr_schema,'.',mview_name,' AS g 
 	INNER JOIN ',cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',cdb_schema,'.solitary_vegetat_object AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -363,7 +363,6 @@ CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
 --DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
--- ****************
 --REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -388,7 +387,7 @@ FROM
 	',usr_schema,'.',mview_name,' AS g 
 	INNER JOIN ',cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',cdb_schema,'.plant_cover AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);

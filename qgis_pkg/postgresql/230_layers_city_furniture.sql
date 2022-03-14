@@ -238,7 +238,7 @@ FROM
 	',usr_schema,'.',mview_name,' AS g 
 	INNER JOIN ',cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',cdb_schema,'.city_furniture AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,''';
+COMMENT ON VIEW ',usr_schema,'.',view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',cdb_schema,''';
 ALTER TABLE ',usr_schema,'.',view_name,' OWNER TO ',usr_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
