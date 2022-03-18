@@ -1105,6 +1105,6 @@ COMMENT ON TYPE qgis_pkg.obj_waterboundary_surface IS 'This object (type) corres
 DO $MAINBODY$
 DECLARE
 BEGIN
-RAISE NOTICE E'\n\nInstallation of db types: Done\n\n';
+RAISE NOTICE E'Done\n\n';
 END $MAINBODY$;
 --**************************

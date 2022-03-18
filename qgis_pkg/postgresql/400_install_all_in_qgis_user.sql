@@ -2,7 +2,7 @@
 
 INSTRUCTIONS:
 
-As ADMINISTRATOR, you install as usual scripts 010 till 060.
+As ADMINISTRATOR, you install as usual scripts 010 till 3xx.
 
 The stuff in schema "qgis_pkg" is installed.
 
@@ -146,7 +146,7 @@ force_layer_creation := FALSE  -- TRUE to create all layers, even when empty
 );
 */
 
-SELECT qgis_pkg.refresh_mview_new(usr_schema := 'qgis_user', cdb_schema := 'citydb');
+SELECT qgis_pkg.refresh_mview(usr_schema := 'qgis_user', cdb_schema := 'citydb');
 
 --**************************
 DO $MAINBODY$

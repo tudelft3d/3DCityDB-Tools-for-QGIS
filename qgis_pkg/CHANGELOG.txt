@@ -4,9 +4,21 @@ Clean up old and redundant funtions in script 020.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-03-18
+----------
+Script 010:
+	- Dropped column "schema_name" from all tables, now it is "cdb_schema"
+	- All functions use the new column
+Script 020:
+	- Made functions in script 020 user_schema-aware
+	- Renamed some parameters for consistency
+	- Integrated functions from script 200
+Script 200: dropped
+Scripts for layer generation:
+	- Small updates and debugging
+
 2022-03-10
 ----------
-MAJOR UPDATE!
 All scripts are now prefixed with 3 digits
 New names for variables: cty_schema, usr_name and usr_schema. schema_name mostly dropped everywhere.
 For compatibility reasons, schema_name column is temporarily still in table layer_metadata

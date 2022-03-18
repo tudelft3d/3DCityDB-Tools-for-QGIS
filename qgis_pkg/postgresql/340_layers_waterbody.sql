@@ -84,7 +84,7 @@ sql_upd := format('
 DELETE FROM %I.layer_metadata AS l WHERE l.cdb_schema = %L AND l.feature_type = %L;',usr_schema, cdb_schema, feature_type);
 sql_upd := concat(sql_upd,'
 INSERT INTO ',usr_schema,'.layer_metadata 
-(schema_name, n_features, cdb_schema, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name)
+(n_features, cdb_schema, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name)
 VALUES');
 
 
@@ -165,7 +165,7 @@ COMMENT ON MATERIALIZED VIEW ',usr_schema,'.',mview_name,' IS ''Mat. view of ',r
 CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
---DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+--DELETE FROM ',usr_schema,'.layer_metadata WHERE v_name = ''',view_name,''';
 --REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -205,7 +205,7 @@ sql_trig := concat(sql_trig,sql_trig_part);
 
 -- ADD ENTRY TO UPDATE TABLE LAYER_METADATA
 sql_ins_part := concat('
-(''',cdb_schema,''',''',num_features,''',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
+(',num_features,',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
 sql_ins := concat(sql_ins,sql_ins_part);
 
 ELSE
@@ -280,7 +280,7 @@ COMMENT ON MATERIALIZED VIEW ',usr_schema,'.',mview_name,' IS ''Mat. view of ',r
 CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
---DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+--DELETE FROM ',usr_schema,'.layer_metadata WHERE v_name = ''',view_name,''';
 --REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -320,7 +320,7 @@ sql_trig := concat(sql_trig,sql_trig_part);
 
 -- ADD ENTRY TO UPDATE TABLE LAYER_METADATA
 sql_ins_part := concat('
-(''',cdb_schema,''',''',num_features,''',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
+(',num_features,',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
 sql_ins := concat(sql_ins,sql_ins_part);
 
 ELSE
@@ -426,7 +426,7 @@ COMMENT ON MATERIALIZED VIEW ',usr_schema,'.',mview_name,' IS ''Mat. view of ',r
 CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
---DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+--DELETE FROM ',usr_schema,'.layer_metadata WHERE v_name = ''',view_name,''';
 --REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -466,7 +466,7 @@ sql_trig := concat(sql_trig,sql_trig_part);
 
 -- ADD ENTRY TO UPDATE TABLE LAYER_METADATA
 sql_ins_part := concat('
-(''',cdb_schema,''',''',num_features,''',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
+(',num_features,',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
 sql_ins := concat(sql_ins,sql_ins_part);
 
 ELSE
@@ -533,7 +533,7 @@ COMMENT ON MATERIALIZED VIEW ',usr_schema,'.',mview_name,' IS ''Mat. view of (',
 CREATE INDEX ',mview_idx_name,' ON ',usr_schema,'.',mview_name,' (co_id);
 CREATE INDEX ',mview_spx_name,' ON ',usr_schema,'.',mview_name,' USING gist (geom);
 ALTER TABLE ',usr_schema,'.',mview_name,' OWNER TO ',usr_name,';
---DELETE FROM qgis_pkg.layer_metadata WHERE v_name = ''',view_name,''';
+--DELETE FROM ',usr_schema,'.layer_metadata WHERE v_name = ''',view_name,''';
 --REFRESH MATERIALIZED VIEW ',usr_schema,'.',mview_name,';
 ');
 sql_layer := concat(sql_layer,sql_layer_part);
@@ -580,7 +580,7 @@ sql_trig := concat(sql_trig,sql_trig_part);
 
 -- ADD ENTRY TO UPDATE TABLE LAYER_METADATA
 sql_ins_part := concat('
-(''',cdb_schema,''',''',num_features,''',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
+(',num_features,',''',cdb_schema,''',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),''',mview_name,''',''',view_name,'''),');
 sql_ins := concat(sql_ins,sql_ins_part);
 
 ELSE
@@ -666,7 +666,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Create layers for module CityFurniture';
 
---SELECT qgis_pkg.create_layers_waterbody(cdb_schema := 'citydb3',force_layer_creation := FALSE);
+--SELECT qgis_pkg.create_layers_waterbody(cdb_schema := 'citydb',force_layer_creation := FALSE);
 
 --**************************
 DO $MAINBODY$
