@@ -8,6 +8,8 @@ import psycopg2
 from .. import connector_dialog
 from . import constants as c
 
+FILE_LOCATION = c.get_file_location(__file__)
+
 class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
     """Connector Dialog. This dialog pops-up when a user requests
     to make a new connection.
@@ -23,7 +25,7 @@ class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
         # Connection object variable
         self.new_connection: Connection = None
 
-    def evt_btnConnect_clicked(self):
+    def evt_btnConnect_clicked(self) -> None:
         """Event that is called when the current 'Connect' pushButton
         (btnConnect) is pressed.
         """
@@ -40,7 +42,7 @@ class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
         connectionInstance.database_name = self.ledDb.text()
         connectionInstance.username = self.ledUserName.text()
         connectionInstance.password = self.qledPassw.text()
-        if self.checkBox.isEnabled:
+        if self.checkBox.isChecked():
             connectionInstance.store_creds=True
 
         try:
@@ -49,14 +51,19 @@ class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
             self.new_connection = connectionInstance
 
             self.gbxConnDet.bar.pushMessage("Success","Connection is valid! You can find it in 'existing connection' box.",level=Qgis.Success, duration=3)
-            if self.checkBox.isEnabled:
+            if self.checkBox.isChecked():
                 self.store_credetials()
 
         except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
+            c.critical_log(
+                func=self.evt_btnConnect_clicked,
+                location=FILE_LOCATION,
+                header="Attempting connection",
+                error=error)
             self.gbxConnDet.bar.pushMessage("Error",'Connection failed!',
                 level=Qgis.Critical,
                 duration=5)
+                
 
     def store_credetials(self):
         """Function that stores the user's parameters
@@ -90,11 +97,13 @@ class Connection:
         self.id=id(self)
         self.hex_location=hex(self.id)
 
-        self.green_connection=False
-        self.green_s_version=False
-        self.green_c_verison=False
-        self.green_privileges=False
-        self.green_installation=False
+        self.green_db_conn = False
+        self.green_post_inst = False
+        self.green_citydb_inst = False
+        self.green_main_inst = False
+        self.green_user_inst = False
+        self.green_schema_supp = False
+        self.green_refresh_date = False
 
 
     def __str__(self):
@@ -120,11 +129,13 @@ class Connection:
 
             :rtype: bool
         """
-        if all((self.green_connection,
-                self.green_s_version,
-                self.green_c_verison,
-                self.green_privileges,
-                self.green_installation)):
+        if all((self.green_db_conn,
+                self.green_post_inst,
+                self.green_citydb_inst,
+                self.green_main_inst,
+                self.green_user_inst,
+                self.green_schema_supp,
+                self.green_refresh_date)):
             return True
         return False
 
@@ -133,11 +144,13 @@ def get_postgres_conn(dbLoader) -> None:
     existing connections
 
     All found existing connection are store in 'Connection'
-    objects and can be found and accessed from 'cbxExistingConnection'
-    widget"""
+    objects and can be found and accessed from 'cbxExistingConnC'
+    or 'cbxExistingConn' widget
+    """
 
     # Clear the contents of the comboBox from previous runs
-    dbLoader.dlg.cbxExistingConnection.clear()
+    dbLoader.dlg.cbxExistingConnC.clear()
+    dbLoader.dlg.cbxExistingConn.clear()
 
     qsettings = QgsSettings()
 
@@ -148,20 +161,23 @@ def get_postgres_conn(dbLoader) -> None:
     connections=qsettings.childGroups()
 
     #Get database connection settings for every stored connection
-    for c in connections:
+    for conn in connections:
 
         connectionInstance = Connection()
 
-        qsettings.beginGroup(c)
+        qsettings.beginGroup(conn)
 
-        connectionInstance.connection_name = c
+        connectionInstance.connection_name = conn
         connectionInstance.database_name = qsettings.value('database')
         connectionInstance.host = qsettings.value('host')
         connectionInstance.port = qsettings.value('port')
         connectionInstance.username = qsettings.value('username')
         connectionInstance.password = qsettings.value('password')
 
-        dbLoader.dlg.cbxExistingConnection.addItem(f'{c}',connectionInstance)
+        # For 'User Connection' tab.
+        dbLoader.dlg.cbxExistingConnC.addItem(f'{conn}',connectionInstance)
+        # For 'Database Administration' tab.
+        dbLoader.dlg.cbxExistingConn.addItem(f'{conn}',connectionInstance)
         qsettings.endGroup()
 
 def connect(db: Connection, app_name: str = c.PLUGIN_NAME):
@@ -180,9 +196,9 @@ def connect(db: Connection, app_name: str = c.PLUGIN_NAME):
         :rtype: psycopg2.connection
     """
 
-    return psycopg2.connect(dbname= db.database_name,
-                            user= db.username,
-                            password= db.password,
-                            host= db.host,
-                            port= db.port,
-                            application_name= app_name)
+    return psycopg2.connect(dbname=db.database_name,
+                            user=db.username,
+                            password=db.password,
+                            host=db.host,
+                            port=db.port,
+                            application_name=app_name)

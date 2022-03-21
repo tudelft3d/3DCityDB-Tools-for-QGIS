@@ -14,5 +14,8 @@
         <file>icons/uninstall_icon.svg</file>
         <file>icons/settings_info.svg</file>
         <file>icons/loading.gif</file>
+        <file>icons/superuser.svg</file>
+        <file>icons/user.svg</file>
+        <file>icons/layers.svg</file>
     </qresource>
 </RCC>

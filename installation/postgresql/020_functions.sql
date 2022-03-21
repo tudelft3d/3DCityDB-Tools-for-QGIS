@@ -51,9 +51,10 @@ COMMENT ON FUNCTION qgis_pkg.xx_funcname_xx(varchar) IS 'xxxx short comment xxxx
 -- In pratice it searches the schema for view names starting with
 -- the input schema name.
 
-DROP FUNCTION IF EXISTS    qgis_pkg.support_for_schema(varchar) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.support_for_schema(varchar,varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.support_for_schema(
-	schema varchar
+	cdb_schema varchar,
+	usr_schema varchar
 )
 RETURNS boolean
 AS $$
@@ -61,12 +62,11 @@ AS $$
 BEGIN
 PERFORM table_name
 	FROM information_schema.tables 
-    WHERE table_schema = 'qgis_pkg'
+    WHERE table_schema = usr_schema
 	AND table_type = 'VIEW'
-	AND table_name LIKE schema || '%'; 
+	AND table_name LIKE cdb_schema || '%'; 
 	-- Don't use FORMAT, something happens with
 	-- the variable FOUND assignment (many false positives)
-
 
 RETURN FOUND;
 
@@ -77,177 +77,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.support_for_schema(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar) IS 'Searches for schema name into the views name to determine if qgis_pkg support the input schema.';
-
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.GET_ALL_SCHEMAS
-----------------------------------------------------------------
--- Retrieves all available schemas in the current database
--- SUGGESTION: rename schema variable from schema to dbschema
---
-DROP FUNCTION IF EXISTS    qgis_pkg.get_all_schemas() CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.get_all_schemas()
-RETURNS TABLE(
-schema information_schema.sql_identifier  -- to be checked if it is too PostgreSQL specific
-)
-AS $$
-DECLARE
-BEGIN
-
-RETURN QUERY
-	SELECT 
-		schema_name
-	FROM 
-		information_schema.schemata 
-	WHERE 
-		(schema_name != 'information_schema') 
-		AND (schema_name NOT LIKE 'pg_%') 
-	ORDER BY schema_name ASC;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.get_all_schemas(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.get_all_schemas(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.get_all_schemas() IS 'Retrieves all available schemas in the current database';
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.GET_FEATURE_SCHEMAS
-----------------------------------------------------------------
--- Retrieves all 3dcitydb schemas in the current database
---
--- TO DO: possibly to be renamed to "get_citydb_schemas"
--- SUGGESTION: rename schema variable from schema to citydb_schema
---
-DROP FUNCTION IF EXISTS    qgis_pkg.get_feature_schemas() CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.get_feature_schemas()
-RETURNS TABLE(
-schema information_schema.sql_identifier  -- to be checked if too PostgreSQL specific
-)
-AS $$
-DECLARE
-feature_tables CONSTANT varchar := '(cityobject|building|tunnel|tin_relief|bridge|
-waterbody|solitary_vegetat_object|land_use|)'; --Ideally should check for all 60+x tables (for v.4.x)
-
-BEGIN
-
-RETURN QUERY
-	SELECT 
-		DISTINCT(table_schema) 
-	FROM information_schema.tables  
-	WHERE table_name SIMILAR TO feature_tables
-	ORDER BY table_schema ASC;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.get_feature_schemas(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.get_feature_schemas(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.get_feature_schemas() IS 'Retrieves all 3dcitydb schemas in the current database';
-
-
-
--- *************************************************************************
--- ***************** What is the difference to the next function?
--- *************************************************************************
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.GET_MAIN_SCHEMAS
-----------------------------------------------------------------
--- A short description of what it does
--- SUGGESTION: rename schema variable from schema to citydb_schema
--- ...
-DROP FUNCTION IF EXISTS    qgis_pkg.get_main_schemas() CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.get_main_schemas()
-RETURNS TABLE(
-schema information_schema.sql_identifier
-)
-AS $$
-DECLARE
-feature_tables CONSTANT varchar := '(cityobject|building|tunnel|tin_relief|bridge|
-waterbody|solitary_vegetat_object|land_use|)'; --Ideally should check for all 60+x tables (for v.4.x)
-
-BEGIN
-
-RETURN QUERY 
-	SELECT 
-		DISTINCT(table_schema) 
-	FROM information_schema.tables  
-	WHERE table_name SIMILAR TO feature_tables
-	ORDER BY table_schema ASC;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.get_main_schemas(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.get_main_schemas(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.get_main_schemas() IS 'xxxx short comment xxxx';
-
-
-
-
--- *************************************************************************
--- ***************** Is this used or can it be commented out?
--- *************************************************************************
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.GET_TABLE_PRIVILEGES
-----------------------------------------------------------------
--- Retrieves the privileges for all tables in the selected schema
---
-DROP FUNCTION IF EXISTS    qgis_pkg.get_table_privileges(varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.get_table_privileges(
-schema varchar
-)
-RETURNS TABLE(
-table_name varchar,
-delete_priv boolean, 
-select_priv boolean, 
-referenc_priv boolean, 
-trigger_priv boolean, 
-truncuat_priv boolean, 
-update_priv boolean, 
-insert_priv boolean
-)
-AS $$
-DECLARE
-BEGIN
-RETURN QUERY
-	WITH t AS (
-		SELECT concat(schema,'.',i.table_name)::varchar AS qualified_table_name
-		FROM information_schema.tables AS i
-		WHERE table_schema = schema 
-			AND table_type = 'BASE TABLE'
-	) 
-	SELECT
-		t.qualified_table_name,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'DELETE')     AS delete_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'SELECT')     AS select_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'REFERENCES') AS references_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRIGGER')    AS trigger_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'TRUNCATE')   AS truncate_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'UPDATE')     AS update_priv,
-		pg_catalog.has_table_privilege(current_user, t.qualified_table_name, 'INSERT')     AS insert_priv
-	FROM t;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.get_table_privileges(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.get_table_privileges(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.get_table_privileges(varchar) IS 'Retrieves the privileges for all tables in the selected schema';
-
--- Set returning function, to be used with:
---SELECT * FROM qgis_pkg.get_table_privileges('citydb');
+COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) IS 'Searches for citydb schema name into the view names of the user schema to determine if it supports the input citydb schema.';
 
 
 -- *************************************************************************
@@ -269,7 +99,7 @@ COMMENT ON FUNCTION qgis_pkg.get_table_privileges(varchar) IS 'Retrieves the pri
 DROP FUNCTION IF EXISTS    qgis_pkg.view_counter(varchar, varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.view_counter(
 usr_schema	varchar,
-view_name	varchar,
+mview_name	varchar, 				-- Matirialised view name
 extents		varchar DEFAULT NULL	-- PostGIS polygon as WKT. QGIS SRID is missing!
 									-- e.g. ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
 --qgis_srid integer??
@@ -286,16 +116,16 @@ query_bbox box2d;
 BEGIN
 IF EXISTS(
 		SELECT
-			table_name 
+			matviewname 
 		FROM
-			information_schema.tables AS i
+			pg_matviews
 		WHERE
-			i.table_name = view_name
-			AND i.table_schema = usr_schema   -- Add this one to narrow the query
+			schemaname = usr_schema
+			AND ispopulated
 		) 
 THEN
 	IF extents IS NULL THEN
-		EXECUTE format('SELECT count(co_id) FROM %I._g_%I', usr_schema, view_name)
+		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, mview_name)
 			INTO counter;
 	ELSE
 		db_srid := (SELECT srid FROM citydb.database_srs LIMIT 1);
@@ -307,11 +137,11 @@ THEN
 		-- ST_Transform or something similar.
 		-- Ideally, this check is carried out in QGIS and then bbox passed to the function is already in the same srid.
 
-		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I._g_%I t WHERE $1 && t.geom',
-			usr_schema, view_name, query_bbox) USING query_bbox INTO counter;
+		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom',
+			usr_schema, mview_name, query_bbox) USING query_bbox INTO counter;
 	END IF;
 ELSE
-	RAISE EXCEPTION 'View %.% does not exist',usr_schema, view_name;	
+	RAISE EXCEPTION 'View %.% does not exist',usr_schema, mview_name;	
 END IF;
 RETURN counter;
 EXCEPTION
@@ -397,7 +227,7 @@ IF cdb_envelope IS NOT NULL THEN
 	EXECUTE format('
 		INSERT INTO %I.extents AS e (cdb_schema, bbox_type, envelope, creation_date)
 		VALUES (%L, ''db_schema'', %L, clock_timestamp())
-		ON CONFLICT ON CONSTRAINT extents_schema_bbox_unique DO
+		ON CONFLICT ON CONSTRAINT extents_cdb_schema_bbox_type_key DO
 			UPDATE SET
 				envelope = %L,
 				creation_date = clock_timestamp()
@@ -453,7 +283,7 @@ CASE
 			EXECUTE format('
 				INSERT INTO %I.extents AS e (cdb_schema, bbox_type, label, envelope, creation_date)
 				VALUES (%L, %L, %L, %L, clock_timestamp())
-				ON CONFLICT ON CONSTRAINT extents_schema_bbox_unique DO
+				ON CONFLICT ON CONSTRAINT extents_cdb_schema_bbox_type_key DO
 					UPDATE SET
 						envelope = %L,
 						label = %L,

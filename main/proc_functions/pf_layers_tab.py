@@ -14,7 +14,7 @@ from qgis.core import QgsAttributeEditorElement,QgsAttributeEditorRelation
 from qgis.core import Qgis,QgsLayerTreeGroup,QgsRelation,QgsAttributeEditorContainer
 from qgis.gui import QgsCheckableComboBox
 
-from . import constants as c
+from .. import constants as c
 from . import sql
 
 
@@ -64,7 +64,7 @@ def instantiate_objects(dbLoader) -> None:
     """
 
     # Get field names and metadata values from server.
-    colnames,metadata = sql.fetch_layer_metadata(dbLoader)
+    colnames,metadata = sql.fetch_layer_metadata(dbLoader,dbLoader.USER_SCHEMA,dbLoader.SCHEMA)
     # Format metadata into a list of dictionaries where each element is a layer.
     metadata_dict_list = [dict(zip(colnames,values)) for values in metadata]
 
@@ -81,7 +81,7 @@ def instantiate_objects(dbLoader) -> None:
         } # NOTE: incomplete
 
     for metadata_dict in metadata_dict_list:
-        #keys:  id,schema_name,feature_type,lod,root_class,layer_name,n_features,
+        #keys:  id,cdb_schema,feature_type,lod,root_class,layer_name,n_features,
         #       mv_name, v_name,qml_file,creation_data,refresh_date
         if metadata_dict["n_features"]==0:
             continue
@@ -196,7 +196,7 @@ def get_attForm_child(container: QgsAttributeEditorContainer,
             return child
     return None
 
-def create_lookup_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> None:
+def create_lookup_relations(layer: QgsVectorLayer) -> None:
     """Function that sets-up the ValueRelation widget
     for the look-up tables.
 
@@ -209,9 +209,7 @@ def create_lookup_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> Non
 
         :type layer: QgsVectorLayer
 
-    *   :param view: View related to the layer parameter
-
-        :type layer: View
+    .. The problem of codelists is too dynamic to be solved by this function.
     """
 
     for field in layer.fields():
@@ -228,42 +226,43 @@ def create_lookup_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> Non
             target_layer = QgsProject.instance().mapLayersByName('enumeration_value')
             assert target_layer, assertion_msg.format('enumeration_value')
             layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="enum_id = 2"))
+        
+        # Codelists.
+        # elif field_name == 'class':
+        #     code_id_cl = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Class')
+        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
+        #     assert target_layer, assertion_msg.format('codelist_value')
+        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
+        #         Key= 'value',
+        #         Value= 'description',
+        #         OrderByValue=True,
+        #         AllowMulti=True,
+        #         NofColumns=4,
+        #         FilterExpression=f"code_id = {code_id_cl}"))
+        # elif field_name == 'function':
+        #     code_id_fu = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Function')
+        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
+        #     assert target_layer, assertion_msg.format('codelist_value')
+        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
+        #         Key= 'value',
+        #         Value= 'description',
+        #         OrderByValue=True,
+        #         AllowMulti=True,
+        #         NofColumns=4,
+        #         FilterExpression=f"code_id = {code_id_fu}"))
+        # elif field_name == 'usage':
+        #     code_id_us = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Usage')
+        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
+        #     assert target_layer, assertion_msg.format('codelist_value')
+        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
+        #         Key= 'value',
+        #         Value= 'description',
+        #         OrderByValue=True,
+        #         AllowMulti=True,
+        #         NofColumns=4,
+        #         FilterExpression=f"code_id = {code_id_us}"))
 
-        elif field_name == 'class':
-            code_id_cl = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Class')
-            target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-            assert target_layer, assertion_msg.format('codelist_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-                Key= 'value',
-                Value= 'description',
-                OrderByValue=True,
-                AllowMulti=True,
-                NofColumns=4,
-                FilterExpression=f"code_id = {code_id_cl}"))
-        elif field_name == 'function':
-            code_id_fu = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Function')
-            target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-            assert target_layer, assertion_msg.format('codelist_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-                Key= 'value',
-                Value= 'description',
-                OrderByValue=True,
-                AllowMulti=True,
-                NofColumns=4,
-                FilterExpression=f"code_id = {code_id_fu}"))
-        elif field_name == 'usage':
-            code_id_us = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Usage')
-            target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-            assert target_layer, assertion_msg.format('codelist_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-                Key= 'value',
-                Value= 'description',
-                OrderByValue=True,
-                AllowMulti=True,
-                NofColumns=4,
-                FilterExpression=f"code_id = {code_id_us}"))
-
-def create_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> None:
+def create_relations(layer: QgsVectorLayer) -> None:
     """Function to set-up the relation for an input layer.
     - A new relation is created that references the generic attributes.
     - Relations are also set for 'Value Relation' widget.
@@ -276,9 +275,6 @@ def create_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> None:
 
         :type layer: QgsVectorLayer
 
-    *   :param view: View related to the layer parameter
-
-        :type layer: View
     """
 
     project = QgsProject.instance()
@@ -328,7 +324,7 @@ def create_relations(dbLoader,layer: QgsVectorLayer, view: c.View) -> None:
     layer.setEditFormConfig(layer_configuration)
 
     # - Look-up tables relation
-    create_lookup_relations(dbLoader,layer,view)
+    create_lookup_relations(layer)
 
 def group_has_layer(group: QgsLayerTreeGroup, layer_name: str) -> bool:
     """Function that check wherther a specific group
@@ -355,7 +351,7 @@ def import_lookups(dbLoader) -> None:
     """Function to import the look-up table into the qgis project."""
 
     # Add look-up tables into their own group in ToC.
-    root= QgsProject.instance().layerTreeRoot()
+    root= QgsProject.instance().layerTreeRoot().findGroup(dbLoader.SCHEMA)
     lookups_node = add_node_ToC(parent_node=root,
         child_name="Look-up tables")
 
@@ -370,7 +366,7 @@ def import_lookups(dbLoader) -> None:
         if not group_has_layer(group=lookups_node, layer_name=table):
             uri = QgsDataSourceUri()
             uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
-            uri.setDataSource(aSchema= c.PLUGIN_PKG_NAME, aTable= f'{table}',aGeometryColumn= None,aKeyColumn= '')
+            uri.setDataSource(aSchema= c.MAIN_PKG_NAME, aTable= f'{table}',aGeometryColumn= None,aKeyColumn= '')
             layer = QgsVectorLayer(uri.uri(False), f"{table}", "postgres")
             if layer or layer.isValid(): # Success
                 lookups_node.addLayer(layer)
@@ -391,24 +387,26 @@ def import_lookups(dbLoader) -> None:
 def import_generics(dbLoader) -> None:
     """Function to import the 'generic attributes' into the qgis project."""
 
-    #Just to shorten the variables names.
+    # Just to shorten the variables names.
     db = dbLoader.DB
-    schema = dbLoader.SCHEMA
+    cdb_schema = dbLoader.SCHEMA
 
-    generics_name = "cityobject_genericattrib"
 
     # Add generics tables into their own group in ToC.
-    root= QgsProject.instance().layerTreeRoot()
+    root = QgsProject.instance().layerTreeRoot().findGroup(cdb_schema)
     generics_node = add_node_ToC(parent_node=root,
-        child_name=generics_name)
+        child_name=c.generics_alias)
 
 
     # Add it ONLY if it doen't already exists.
-    if not group_has_layer(generics_node,generics_name):
+    if not group_has_layer(generics_node,c.generics_table):
         uri = QgsDataSourceUri()
         uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
-        uri.setDataSource(aSchema= f'{schema}',aTable = generics_name,aGeometryColumn= None,aKeyColumn= '')
-        layer = QgsVectorLayer(uri.uri(False), generics_name, "postgres")
+        uri.setDataSource(aSchema=cdb_schema,
+            aTable = c.generics_table,
+            aGeometryColumn=None,
+            aKeyColumn="")
+        layer = QgsVectorLayer(uri.uri(False), c.generics_table, "postgres")
         if layer or layer.isValid(): # Success
             # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
             # WARNING: harcoded index (15: cityobject_id)
@@ -418,13 +416,13 @@ def import_generics(dbLoader) -> None:
             QgsProject.instance().addMapLayer(layer,False)
 
             QgsMessageLog.logMessage(
-                message=f"Layer import: {generics_name}",
+                message=f"Layer import: {c.generics_table}",
                 tag="3DCityDB-Loader",
                 level=Qgis.Success,
                 notifyUser=True)
         else:
             QgsMessageLog.logMessage(
-                message=f"Layer failed to properly load: {generics_name}",
+                message=f"Layer failed to properly load: {c.generics_table}",
                 tag="3DCityDB-Loader",
                 level=Qgis.Critical,
                 notifyUser=True)
@@ -446,13 +444,18 @@ def create_layers(dbLoader,v_name: str) -> QgsVectorLayer:
 
     #Just to shorten the variable names.
     db = dbLoader.DB
+    usr_schema = dbLoader.USER_SCHEMA
     extents = dbLoader.EXTENTS.asWktPolygon()
     crs = dbLoader.CRS
 
     uri = QgsDataSourceUri()
     uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
-    uri.setDataSource(aSchema= 'qgis_pkg',aTable= f'{v_name}',aGeometryColumn= 'geom',aSql=f"ST_GeomFromText('{extents}') && geom",aKeyColumn= 'id')
-    vlayer = QgsVectorLayer(uri.uri(False), f"{v_name}", "postgres")
+    uri.setDataSource(aSchema=usr_schema,
+        aTable=v_name,
+        aGeometryColumn=c.geom_col,
+        aSql=f"ST_GeomFromText('{extents}') && {c.geom_col}",
+        aKeyColumn=c.id_col)
+    vlayer = QgsVectorLayer(uri.uri(False), v_name, "postgres")
     vlayer.setCrs(crs)
 
     return vlayer
@@ -507,7 +510,7 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
 
 def add_node_ToC(parent_node: QgsLayerTreeGroup,
         child_name: str) -> QgsLayerTreeGroup:
-    """Function  that add a node (group) into the qgis
+    """Function that adds a node (group) into the qgis
     project 'Table of Contents' tree (by name). It also checks
     if the node already exists and returns it.
 
@@ -554,7 +557,7 @@ def build_ToC(dbLoader,view: c.View) -> QgsLayerTreeGroup:
 
     # Schema group (e.g. citydb)
     node_schema = add_node_ToC(parent_node=db_node,
-        child_name=view.schema_name)
+        child_name=view.cdb_schema)
 
     # FeatureType group (e.g. Building)
     node_FeatureType = add_node_ToC(parent_node=node_schema,
@@ -630,6 +633,6 @@ def import_layers(dbLoader, layers: list) -> bool:
         vlayer.loadNamedStyle(view.qml_path)
 
         # Setup the relation for this layer.
-        create_relations(dbLoader,layer=vlayer, view = view)
+        create_relations(layer=vlayer)
 
     return True # All went well

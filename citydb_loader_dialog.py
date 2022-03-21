@@ -27,7 +27,9 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
-from qgis.PyQt.QtGui import QMovie
+
+from .main import constants as c
+from .main import widget_setup
 
 
 # This loads the .ui file so that PyQt can populate the plugin
@@ -50,11 +52,20 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        # Hide label reserved for the loading animation.
-        self.lblInstallLoadingCon.setHidden(True)
-        self.lblLoadingClear.setHidden(True)
-        self.lblLoadingInstall.setHidden(True)
-        self.lblLoadingUninstall.setHidden(True)
-        self.lblLoadingRefresh.setHidden(True)
+        # Enhance various Qt Objects with their initial text.
+        # This is used in order to revent to the original state
+        # in reset operations when original text has already changed.
+        self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
+        self.btnCreateLayers.init_text = c.btnCreateLayers_t
+        self.btnRefreshLayers.init_text = c.btnRefreshLayers_t
+        self.btnCityExtentsC.init_text = c.btnCityExtentsC_t
 
-        self.movie = QMovie(':/plugins/citydb_loader/icons/loading.gif')
+        self.lblInfoText.init_text = c.lblInfoText_t
+        self.btnCityExtents.init_text = c.btnCityExtents_t
+        self.ccbxFeatures.init_text = c.ccbxFeatures_t
+
+        self.btnConnectToDb.init_text = c.btnConnectToDbC_t
+        self.btnMainInst.init_text = c.btnMainInst_t
+        self.btnMainUninst.init_text=  c.btnMainUninst_t
+        self.btnUsrInst.init_text = c.btnUsrInst_t
+        self.btnUsrUninst.init_text = c.btnUsrUninst_t

@@ -5,7 +5,29 @@ used in the plugin's functionality."""
 import os.path
 from typing import Callable
 
-from qgis.core import QgsMessageLog, Qgis
+from qgis.core import QgsMessageLog, Qgis, QgsRectangle, QgsCoordinateReferenceSystem
+
+# Directories - Paths - Names
+DIR_NAME = os.path.split(os.path.dirname(__file__))[1] # main
+QML_FORMS_DIR = "forms"
+PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
+QML_FORMS_PATH = os.path.join(PLUGIN_PATH,QML_FORMS_DIR)
+
+PLUGIN_NAME = "3DCityDB-Loader"
+MAIN_PKG_NAME = "qgis_pkg"
+USER_PKG_NAME = "qgis_{user}"
+INST_DIR_NAME = "installation"
+INST_SCRIPTS_DIR_NAME = "postgresql"
+# MAIN_INST_DIR_NAME = "main_inst"
+# USER_INST_DIR_NAME = "user_inst"
+
+MAIN_INST_PATH = os.path.join(PLUGIN_PATH,INST_DIR_NAME,INST_SCRIPTS_DIR_NAME)
+USER_INST_PATH = os.path.join(PLUGIN_PATH,INST_DIR_NAME,INST_SCRIPTS_DIR_NAME)
+CITYDB_DEF_NAME = "citydb"
+
+
+MAIN_INST_PREFIX = [0]
+
 
 # Text - Messages - Log
 icon_msg_core = """
@@ -39,29 +61,56 @@ menu_html = icon_msg_core.format(
     color_hex='#000000',
     addtional_text='{text}')
 
+# Log messages
 log_errors = "{type} ERROR at {loc}\n ERROR: "
+INST_SUCCS_MSG = "{pkg} has been installed successfully!"
+INST_ERROR_MSG = "{pkg} installation failed!"
+UNINST_SUCC_MSG = "{pkg} has been uninstalled succeffully!"
+UNINST_ERROR_MSG = "{pkg} was NOT removed!"
+LAYER_CR_SUCCS_MSG = "Layers have been created successfully in {sch}"
+LAYER_CR_ERROR_MSG = "Error occured while creating layers in {sch}"
 
-# Widget initial embedded text
-btnInstallDB_text = "Install plugin contents to database {DB}.{SC}"
-btnUnInstallDB_text = "Uninstall plugin contents from database {DB}.{SC}"
-btnClearDB_text = "Clear entire {DB} database from plugin contents"
-btnRefreshViews_text = "Refresh views for {DB}.{SC}"
-lblDbSchema_text = "Database: {Database}\nSchema: {Schema}"
-btnImport_text = "Import {num} feature layers"
-lblInstall_text = "Installation for {schema}:"
-ccbxFeatures_text = "Select availiable features to import"
+# Connection Status messages
+CONN_FAIL_MSG = "Connection failed!"
+POST_FAIL_MSG = "PostgreSQL sever wasn't reached!"
+CITYDB_FAIL_MSG = "3DCityDB is not installed!"
+INST_FAIL_MSG = "{pkg} is not installed!"
+SCHEMA_SUPP_FAIL_MSG = "Layers need to be created for {sch}!"
+REFR_LAYERS_FAIL_MSG = "Layers need to be refreshed!"
+REFR_LAYERS_MSG = "Last refresh: {date}"
+SCHEMA_SUPP_MSG = "Layers already exist in {sch}!"
+INST_MSG = "{pkg} is already installed!"
 
-# Directories - Paths - NAMES
-DIR_NAME = os.path.split(os.path.dirname(__file__))[1] # main
-QML_FROMS_DIR = "forms"
-PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
-QML_FROMS_PATH = os.path.join(PLUGIN_PATH,QML_FROMS_DIR)
-PLUGIN_PKG_NAME = "qgis_pkg"
-PLUGIN_NAME = "3DCityDB-Loader"
-INST_SCRIPT_DIR_NAME = "postgresql"
-INST_SCRIPT_DIR_PATH = os.path.join(PLUGIN_PATH,PLUGIN_PKG_NAME,INST_SCRIPT_DIR_NAME)
-CITYDB_DEF_NAME = "citydb"
+INST_QUERY = "Any existing installation of '{pkg}' is going to be replaced! Do you want to proceed?"
+UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
 
+# Widget initial embedded text | Note: empty spaces are for positioning.  
+btnConnectToDbC_t = "Connect to {db}"
+btnCreateLayers_t = "Create layers for schema {sch}"
+btnRefreshLayers_t = " Refresh layers in schema {sch}"
+btnCityExtentsC_t = "Set to {sch} schema"
+
+lblInfoText_t = "Database: {db}\nCurrent user: {usr}\nCurrent citydb schema: {sch}"
+btnCityExtents_t = btnCityExtentsC_t
+ccbxFeatures_t = "Select availiable features to import"
+
+btnConnectToDb = btnConnectToDbC_t
+btnMainInst_t = "  Install to database {db}"
+btnMainUninst_t = "  Uninstall from database {db}"
+btnUsrInst_t = "  Create schema for user {usr}"
+btnUsrUninst_t = "  Drop schema for user {usr}"
+
+# Parameters
+DEC_PREC = 3
+MIN_AREA = 0.0001
+
+# View constants
+geom_col = "geom" # Geometry column name of db views.
+id_col = "id" # Primary key column name of db views.
+
+# 3DCityDB constants
+generics_table = "cityobject_genericattrib"
+generics_alias = "Generic Attributes"
 
 # Extent type names
 SCHEMA_EXT_TYPE = "db_schema"
@@ -109,12 +158,23 @@ lods = [
     'LoD4'
     ]
 
+create_layers_funcs = [
+    "create_layers_city_furniture",
+    "create_layers_generics",
+    "create_layers_land_use",
+    "create_layers_relief",
+    "create_layers_vegetation"
+    ]
+    # NOTE:TODO fill in the rest when they're done
+
 # Basemaps
 GOOGLE_URL = "http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&"
 GOOGLE_URI = f"type=xyz&url={GOOGLE_URL}zmax=22&zmin=0"
 OSM_URL = "https://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
-OSM_URI = f"type=xyz&url={OSM_URL}&zmax=18&zmin=0"
-
+OSM_URI = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
+OSM_INIT_EXTS = QgsRectangle(-14372453,-6084688,16890255,13952819)
+OSM_INIT_CRS = QgsCoordinateReferenceSystem("EPSG:3857")
+OSM_NAME = "OSM Basemap"
 
 # Classes
 class View():
@@ -126,7 +186,7 @@ class View():
 
     def __init__(self,
             v_id: int,
-            schema_name: str,
+            cdb_schema: str,
             feature_type: str,
             lod: str,
             root_class: str,
@@ -137,19 +197,19 @@ class View():
             qml_file: str,
             creation_data: str,
             refresh_date: str):
-        self.v_id=v_id
-        self.schema_name=schema_name
+        self.v_id = v_id
+        self.cdb_schema = cdb_schema
         self.feature_type = feature_type
         self.lod = lod
         self.root_class = root_class
         self.layer_name = layer_name
-        self.n_features=n_features
-        self.n_selected=0
-        self.mv_name=mv_name
+        self.n_features = n_features
+        self.n_selected = 0
+        self.mv_name = mv_name
         self.v_name= v_name
         self.v_name = v_name
-        self.qml_file=qml_file
-        self.qml_path=os.path.join(QML_FROMS_PATH,qml_file)
+        self.qml_file = qml_file
+        self.qml_path = os.path.join(QML_FORMS_PATH,qml_file)
         self.creation_data=creation_data
         self.refresh_date=refresh_date
 

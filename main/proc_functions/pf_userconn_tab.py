@@ -9,8 +9,8 @@ relating to child widgets of the 'Connection Tab'.
 from qgis.core import QgsMessageLog, Qgis
 import psycopg2
 
-from . import connection
-from . import constants
+from .. import connection
+from .. import constants
 from . import sql
 
 
@@ -57,12 +57,13 @@ def open_connection(dbLoader) -> bool:
 def is_3dcitydb(dbLoader) -> bool:
     """Function that checks if the current database has
     3DCityDB installed. The check is done by querying the 3DCityDB
-    version from citydb_pkg.version().
+    version from citydb_pkg.version(). The version is stored
+    in 'c_version' attribute of the Connection object.
 
     On 3DCityDB absence a database error is emited which means that
     it is not installed.
 
-    Note for future 3DCityDB version: this function MUST be updated
+    Note for future 3DCityDB versions: this function MUST be updated
     for every change in the abovementioned 3DCitydb function's name
     or schema.
     """
@@ -86,23 +87,3 @@ def fill_schema_box(dbLoader, schemas: tuple) -> None:
         res = sql.schema_has_features(dbLoader, schema=schema)
         if res:
             dbLoader.dlg.cbxSchema.addItem(schema,res)
-
-def true_privileges(allpriv_dict: dict) -> list:
-    """Function that returns the effective privieges names.
-    From a dictionary dict{str,bool} coming from sql.fetch_table_privileges().
-
-    *   :param allpriv_dict: Dicitonary containg a collection of user
-        privileges as keys and their effectiveness as values.
-
-        :type allpriv_dict: dict{str,bool}
-
-    *   :returns: Effective user privileges
-
-        :rtype: list
-    """
-
-    true_priv=[]
-    for priv_name, status in allpriv_dict.items():
-        if status:
-            true_priv.append(priv_name)
-    return true_priv

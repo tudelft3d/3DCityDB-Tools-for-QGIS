@@ -23,14 +23,122 @@ import os
 
 from qgis.PyQt.QtCore import QObject,QThread,pyqtSignal, Qt
 from qgis.PyQt.QtWidgets import QProgressBar, QBoxLayout
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsMessageLog, QgsGeometry
 from qgis.gui import QgsMessageBar
 import psycopg2
 
-from .connection import connect
-from . import constants as c
-from . import import_tab
+from ..connection import connect
+from .. import constants as c
+from ..widget_setup import ws_layers_tab as lrs_setup
+from . import pf_layers_tab as lrs_tab
 from . import sql
+
+class LayerCreationWorker(QObject):
+    """Class to assign Worker that executes the 'layer creation' sql
+    functions in the database."""
+
+    # Create custom signals.
+    finished = pyqtSignal()
+    progress = pyqtSignal(int,str)
+    success = pyqtSignal()
+    fail = pyqtSignal()
+
+    def __init__(self,dbLoader):
+        super().__init__()
+        self.plg = dbLoader
+
+    def create_thread(self):
+        """Execution method that creates the layers
+        using function from the 'qgis_pkg' installation.
+        """
+        # Flag to help us break from a failing installation.
+        fail_flag = False
+
+        # Set progress bar goal
+        self.plg.dlg.bar.setMaximum(len(c.create_layers_funcs))
+
+        # Set function input
+        params = [
+            self.plg.SCHEMA, # citydb schema
+            self.plg.DB.username,
+            int(self.plg.dlg.gbxSimplifyGeom.isChecked()),
+            self.plg.dlg.qspbDecimalPrec.value(),
+            self.plg.dlg.qspbMinArea.value(),
+            self.plg.EXTENTS.asWktPolygon(),
+            False
+            ]
+
+        # Open new temp session, reserved for installation.
+        with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Layer creation)") as conn:
+            for s,module_func in enumerate(c.create_layers_funcs,start=1):
+
+                # Update progress bar with current step and script.
+                text = " ".join(["Executing:",module_func])
+                self.progress.emit(s,text)
+                try:
+                    # Attempt direct sql injection.
+                    with conn.cursor() as cursor:
+                        cursor.callproc(f"{c.MAIN_PKG_NAME}.{module_func}",[*params])
+                    conn.commit()
+
+                except (Exception, psycopg2.DatabaseError) as error:
+                    QgsMessageLog.logMessage(message=error,
+                        tag="3DCityDB-Loader",
+                        level=Qgis.Critical,
+                        notifyUser=True)
+                    fail_flag = True
+                    conn.rollback()
+                    self.fail.emit()
+                    break
+
+        # No FAIL = SUCCESS
+        if not fail_flag:
+            self.success.emit()
+        self.finished.emit()
+
+def create_layers_thread(dbLoader) -> None:
+    """Function that create layers in the user schema in the database
+    by braching a new Worker thread to execute the operation on.
+    """
+
+
+    # Add a new progress bar to follow the installation procedure.
+    create_progress_bar(dbLoader,
+        layout=dbLoader.dlg.vLayoutUserConn,
+        position=5)
+
+    # Create new thread object.
+    dbLoader.thread = QThread()
+    # Instantiate worker object for the operation.
+    dbLoader.worker = LayerCreationWorker(dbLoader)
+    # Move worker object to the be executed on the new thread.
+    dbLoader.worker.moveToThread(dbLoader.thread)
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #-(start)--################################################################
+
+    # Execute worker's 'run' method.
+    dbLoader.thread.started.connect(dbLoader.worker.create_thread)
+
+    # Capture progress to show in bar.
+    dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
+
+    # Get rid of worker and thread objects.
+    dbLoader.worker.finished.connect(dbLoader.thread.quit)
+    dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
+    dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
+
+    # On installation status
+    dbLoader.worker.success.connect(lambda: layers_success(dbLoader))
+    dbLoader.worker.fail.connect(lambda: layers_fail(dbLoader))
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #--(end)---################################################################
+
+    # Initiate worker thread
+    dbLoader.thread.start()
 
 
 class RefreshMatViewsWorker(QObject):
@@ -54,7 +162,7 @@ class RefreshMatViewsWorker(QObject):
 
         # Get feature types from layer_metadata table.
         cols_to_featch = ",".join(["feature_type","mv_name"])
-        col,ftype_mview = sql.fetch_layer_metadata(self.plg,cols=cols_to_featch)
+        col,ftype_mview = sql.fetch_layer_metadata(self.plg,from_schema = self.plg.USER_SCHEMA, for_schema=self.plg.SCHEMA, cols=cols_to_featch)
         col = None # Discard byproduct.
 
         # Set progress bar goal
@@ -70,13 +178,13 @@ class RefreshMatViewsWorker(QObject):
                 print(s,ftype,mview)
                 try:
                     with conn.cursor() as cur:
-                        cur.callproc(f"{c.PLUGIN_PKG_NAME}.refresh_mview",[None,mview])
+                        cur.callproc(f"{c.MAIN_PKG_NAME}.refresh_mview",[self.plg.USER_SCHEMA,None,mview])
                     conn.commit()
 
                     # time.sleep(0.05) # Use this for debuging instead of waiting for mats.
 
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print("At 'refresh_all_mat_views' in threads.py: ",error)
+                    print(error)
                     conn.rollback()
                     self.fail.emit()
 
@@ -90,8 +198,8 @@ def refresh_views_thread(dbLoader) -> None:
 
     # Add a new progress bar to follow the installation procedure.
     create_progress_bar(dbLoader,
-        layout=dbLoader.dlg.verticalLayout_SettingsTab,
-        position=2)
+        layout=dbLoader.dlg.vLayoutUserConn,
+        position=6)
 
     # Create new thread object.
     dbLoader.thread = QThread()
@@ -105,10 +213,9 @@ def refresh_views_thread(dbLoader) -> None:
     #-(start)--################################################################
 
     # Disable widgets to avoid queuing signals.
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxInstall.setDisabled(True))
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxDatabaseSettings.setDisabled(True))
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabImport.setDisabled(True))
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabConnection.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnRefreshLayers.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabLayers.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabDbAdmin.setDisabled(True))
 
     # Execute worker's 'run' method.
     dbLoader.thread.started.connect(dbLoader.worker.refresh_all_mat_views)
@@ -122,10 +229,9 @@ def refresh_views_thread(dbLoader) -> None:
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
 
     # Enable widgets.
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.gbxInstall.setDisabled(False))
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.gbxDatabaseSettings.setDisabled(False))
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabImport.setDisabled(False))
-    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabConnection.setDisabled(False))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnRefreshLayers.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabLayers.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabDbAdmin.setDisabled(False))
 
     dbLoader.worker.finished.connect(lambda: refresh_success(dbLoader))
 
@@ -135,7 +241,6 @@ def refresh_views_thread(dbLoader) -> None:
 
     # Initiate worker thread
     dbLoader.thread.start()
-
 
 class PkgInstallationWorker(QObject):
     """Class to assign Worker that executes the 'installation scripts'
@@ -160,7 +265,7 @@ class PkgInstallationWorker(QObject):
         # Flag to help us break from a failing installation.
         fail_flag = False
 
-        # Get an alphabetocal ordered list of the script names.
+        # Get an alphabetical ordered list of the script names.
         # Important: Keep the order with number prefixes.
         install_scripts = sorted(os.listdir(self.path))
 
@@ -183,7 +288,7 @@ class PkgInstallationWorker(QObject):
 
 
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print("At 'install_dbSettings_thread' in threads.py: ",script,error)
+                    print(error)
                     fail_flag = True
                     conn.rollback()
                     self.fail.emit()
@@ -194,20 +299,26 @@ class PkgInstallationWorker(QObject):
             self.success.emit()
         self.finished.emit()
 
-def install_pkg_thread(dbLoader, path: str) -> None:
+def install_pkg_thread(dbLoader, path: str, pkg: str) -> None:
     """Function that installs the plugin package (qgis_pkg) in the database
     by braching a new Worker thread to execute the operation on.
 
     *   :param path: The absolute path to the directory storing the
-            sql installation scripts (e.g. ./citydb_loader/qgis_pkg/postgresql)
+            sql installation scripts
+            (e.g. ./citydb_loader/installation/postgresql/main_inst)
+
+        :type path: str
+    
+    *   :param path: The package (schema) name that's installed
 
         :type path: str
     """
 
-    # Add a new progress bar to follow the installation procedure.
-    create_progress_bar(dbLoader,
-        layout=dbLoader.dlg.verticalLayout_ConnectionTab,
-        position=3)
+    if pkg == c.MAIN_PKG_NAME:
+        # Add a new progress bar to follow the installation procedure.
+        create_progress_bar(dbLoader,
+            layout=dbLoader.dlg.vLayoutMainInst,
+            position=1)
 
     # Create new thread object.
     dbLoader.thread = QThread()
@@ -232,8 +343,8 @@ def install_pkg_thread(dbLoader, path: str) -> None:
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
 
     # On installation status
-    dbLoader.worker.success.connect(lambda: install_success(dbLoader))
-    dbLoader.worker.fail.connect(lambda: install_fail(dbLoader))
+    dbLoader.worker.success.connect(lambda: install_success(dbLoader,pkg))
+    dbLoader.worker.fail.connect(lambda: install_fail(dbLoader,pkg))
 
     #----------################################################################
     #-SIGNALS--################################################################
@@ -258,20 +369,35 @@ def refresh_success(dbLoader) -> None:
     # Remove progress bar
     dbLoader.dlg.msg_bar.clearWidgets()
 
-    # Replace with Success msg.
-    msg= dbLoader.dlg.msg_bar.createMessage("Materialized views have been refreshed successfully!")
-    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+    # Check if the materialised views are populated. # NOTE: duplicate code?
+    refresh_date = sql.fetch_layer_metadata(dbLoader, from_schema=dbLoader.USER_SCHEMA,for_schema=dbLoader.SCHEMA,cols="refresh_date")
+    # Extract a date.
+    date =list(set(refresh_date[1]))[0][0]
+    if date:
 
-    # Inform user
-    dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text="Materialized views have been refreshed successfully!"))
-    QgsMessageLog.logMessage(message="Materialized views have been refreshed successfully!",
-            tag="3DCityDB-Loader",
-            level=Qgis.Success,
-            notifyUser=True)
+        # Replace with Success msg.
+        msg= dbLoader.dlg.msg_bar.createMessage("Materialized views have been refreshed successfully!")
+        dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
-    import_tab.fill_FeatureType_box(dbLoader)
+        # Inform user
+        dbLoader.dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
+        QgsMessageLog.logMessage(message="Materialized views have been refreshed successfully!",
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
 
-def install_success(dbLoader) -> None:
+        # Setup GUI
+        dbLoader.dlg.tabLayers.setDisabled(False)
+        dbLoader.dlg.lblInfoText.setDisabled(False)
+        dbLoader.dlg.lblInfoText.setText(dbLoader.dlg.lblInfoText.init_text.format(db=dbLoader.DB.database_name,
+        usr=dbLoader.DB.username,sch=dbLoader.SCHEMA))
+        dbLoader.dlg.gbxBasemap.setDisabled(False)
+        dbLoader.dlg.qgbxExtents.setDisabled(False)
+        dbLoader.dlg.btnCityExtents.setDisabled(False)
+        dbLoader.dlg.btnCityExtents.setText(dbLoader.dlg.btnCityExtents.init_text.format(sch="layers extents"))
+        lrs_setup.gbxBasemap_setup(dbLoader,dbLoader.CANVAS)
+
+def install_success(dbLoader, pkg: str) -> None:
     """Event that is called when the thread executing the installation
     finishes successfuly.
 
@@ -280,27 +406,25 @@ def install_success(dbLoader) -> None:
     Shows success message in QgsMessageLog
     """
 
-    # Enable 'User Types'
-    dbLoader.dlg.gbxUserType.setDisabled(False)
-
-    # Make instllation success known to connection object.
-    dbLoader.DB.green_installation = True
 
     # Remove progress bar
     dbLoader.dlg.msg_bar.clearWidgets()
 
-    # Replace with Success msg.
-    msg= dbLoader.dlg.msg_bar.createMessage("'qgis_pkg' has been installed successfully!")
-    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+    if sql.has_main_pkg(dbLoader):
+        # Replace with Success msg.
+        msg= dbLoader.dlg.msg_bar.createMessage(c.INST_SUCCS_MSG.format(pkg=pkg))
+        dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
-    # Inform user
-    dbLoader.dlg.lblInstall_out.setText(c.success_html.format(text="qgis_pkg is already installed!"))
-    QgsMessageLog.logMessage(message="'qgis_pkg' has been installed successfully!",
-            tag="3DCityDB-Loader",
-            level=Qgis.Success,
-            notifyUser=True)
+        # Inform user
+        dbLoader.dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=pkg)))
+        QgsMessageLog.logMessage(message=c.INST_SUCCS_MSG.format(pkg=pkg),
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
+    else:
+        install_fail(dbLoader)
 
-def install_fail(dbLoader) -> None:
+def install_fail(dbLoader, pkg: str) -> None:
     """Event that is called when the thread executing the installation
     emits a fail signal meaning that something went wront with installation.
 
@@ -313,26 +437,72 @@ def install_fail(dbLoader) -> None:
     Shows fail message in QgsMessageLog
     """
 
-    dbLoader.DB.green_installation=False
-    dbLoader.dlg.btnClearDB.setDisabled(False)
-    dbLoader.dlg.btnClearDB.setText("Clear corrupted installation!")
-
     # Remove progress bar
     dbLoader.dlg.msg_bar.clearWidgets()
 
     # Replace with Failure msg.
-    msg= dbLoader.dlg.msg_bar.createMessage("'qgis_pkg' installation failed!")
+    msg= dbLoader.dlg.msg_bar.createMessage(c.INST_ERROR_MSG.format(pkg=pkg))
     dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
     # Inform user
-    dbLoader.dlg.lblInstall_out.setText(c.failure_html.format(text="'qgis_pkg' installation failed!"))
-    QgsMessageLog.logMessage(message="qgis_pkg installation failed!",
+    dbLoader.dlg.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=pkg)))
+    QgsMessageLog.logMessage(message=c.INST_ERROR_MSG.format(pkg=pkg),
             tag="3DCityDB-Loader",
             level=Qgis.Critical,
             notifyUser=True)
 
     # Drop corrupted installation.
-    sql.drop_package(dbLoader,close_connection=False)
+    sql.drop_package(dbLoader,schema=c.MAIN_PKG_NAME, close_connection=False)
+
+def layers_success(dbLoader) -> None:
+    """Event that is called when the thread executing the layer
+    creation finishes successfuly.
+
+    Shows success message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows success message in Connection Status groupbox
+    Shows success message in QgsMessageLog
+    """
+
+    # Remove progress bar
+    dbLoader.dlg.msg_bar.clearWidgets()
+
+    if sql.exec_support_for_schema(dbLoader):
+        # Replace with Success msg.
+        msg= dbLoader.dlg.msg_bar.createMessage(c.LAYER_CR_SUCCS_MSG.format(sch=dbLoader.USER_SCHEMA))
+        dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+
+        # Inform user
+        dbLoader.dlg.lblSupport_out.setText(c.success_html.format(text=c.SCHEMA_SUPP_MSG.format(sch=dbLoader.USER_SCHEMA)))
+        QgsMessageLog.logMessage(message=c.LAYER_CR_SUCCS_MSG.format(sch=dbLoader.USER_SCHEMA),
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
+    else:
+        layers_fail(dbLoader)
+
+def layers_fail(dbLoader) -> None:
+    """Event that is called when the thread executing the layer creations
+    emits a fail signal meaning that something went wrong with the process.
+
+    Shows fail message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows fail message in Connection Status groupbox
+    Shows fail message in QgsMessageLog
+    """
+
+    # Remove progress bar
+    dbLoader.dlg.msg_bar.clearWidgets()
+
+    # Replace with Failure msg.
+    msg= dbLoader.dlg.msg_bar.createMessage(c.LAYER_CR_ERROR_MSG.format(sch=dbLoader.USER_SCHEMA))
+    dbLoader.dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+
+    # Inform user
+    dbLoader.dlg.lblMainInst_out.setText(c.failure_html.format(text=c.SCHEMA_SUPP_FAIL_MSG.format(sch=dbLoader.USER_SCHEMA)))
+    QgsMessageLog.logMessage(message=c.LAYER_CR_ERROR_MSG.format(sch=dbLoader.USER_SCHEMA),
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+
 
 #----------################################################################
 #--EVENTS--################################################################

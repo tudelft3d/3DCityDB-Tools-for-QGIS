@@ -4,6 +4,14 @@ Clean up old and redundant funtions in script 020.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-03-19
+Script 020:
+	- Drop unused functions.
+	In functions 'upsert_extents' and 'compute_schema_extents':
+	- Set checking constraint name to 'extents_cdb_schema_bbox_type_key'.
+	In function 'view_counter':
+	- Replace 'view' input param to 'mview'. 
+
 2022-03-18
 ----------
 Script 010:

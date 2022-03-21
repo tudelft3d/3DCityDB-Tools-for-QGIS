@@ -30,21 +30,24 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
+from qgis.core import QgsWkbTypes
 from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand
 import psycopg2
 
 from .resources import qInitResources
 from .citydb_loader_dialog import DBLoaderDialog # Main dialog
 from .main import connection
-from .main import constants
-from .main import widget_reset
-from .main import widget_setup
+from .main import constants as c
+from .main.widget_setup import ws_userconn_tab as usr_setup
+from .main.widget_setup import ws_layers_tab as lrs_setup
+from .main.widget_setup import ws_dbadmin_tab as dba_setup
+from .main.widget_setup import widget_reset
 
 
 class DBLoader:
     """QGIS Plugin Implementation. Main class."""
 
-    plugin_package = constants.PLUGIN_PKG_NAME
+    plugin_package = c.MAIN_PKG_NAME
 
     def __init__(self, iface: QgisInterface) -> None:
         """DBLoader class Constructor.
@@ -64,35 +67,48 @@ class DBLoader:
         # Variable to store the existing connection object.
         self.DB: connection.Connection = None
 
-        # Variable to store the existing schema name.
+        # Variable to store the selected citydb schema name.
         self.SCHEMA: str = None
+        
+        # Variable to store the selected user schema name.
+        self.USER_SCHEMA: str = c.USER_PKG_NAME
 
         # Variable to store the selected extents.
         self.EXTENTS: QgsRectangle = iface.mapCanvas().extent()
-
-        # Variable to store the City Model's extents.
-        self.SCHEMA_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
-
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem
         self.CRS = iface.mapCanvas().mapSettings().destinationCrs()
 
-        # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_EXTS: QgsRubberBand = None
+        # Variable to store the citydb schema's extents.
+        self.SCHEMA_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+        # Variable to store the mat views extents.
+        self.VIEWS_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+
+        # Variable to store an additional canvas (to show the extents).
+        self.CANVAS_C: QgsMapCanvas = QgsMapCanvas()
+        self.CANVAS_C.enableAntiAliasing(True)
+        self.CANVAS_C.setMinimumWidth(300)
+        self.CANVAS_C.setMaximumHeight(350)
 
         # Variable to store an additional canvas (to show the extents).
         self.CANVAS: QgsMapCanvas = QgsMapCanvas()
         self.CANVAS.enableAntiAliasing(True)
+        self.CANVAS.setMinimumWidth(300)
+        self.CANVAS.setMaximumHeight(350)
 
+        # Variable to store a rubberband formed by the current extents.
+        self.RUBBER_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_USER = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+
+        # Variable to store a rubberband formed by the current extents.
+        self.RUBBER_SCHEMA_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
 
         # Variable to store all availiable FeatureTypes.
         # The availiability is defined by the existance of at least one feature.
         # instance inside the current selected extents (bboox).
         self.FeatureType_container: dict = {}
-
-        # Variable to store all abailiable privileges.
-        # CAUSION: This is not yet fully implemented. Might change.
-        self.availiable_privileges: dict = {}
 
         # Variable to store the current open connection of a database.
         self.conn: psycopg2.connection = None
@@ -290,77 +306,94 @@ class DBLoader:
             # Create the dialog with elements (after translation).
             self.dlg = DBLoaderDialog()
 
-            # Enhance various Qt Objects with their initial text.
-            # This is used in order to revent to the original state
-            # in reset operations when original text has already changed.
-            self.dlg.btnInstallDB.init_text = constants.btnInstallDB_text
-            self.dlg.btnUnInstallDB.init_text= constants.btnUnInstallDB_text
-            self.dlg.btnClearDB.init_text = constants.btnClearDB_text
-            self.dlg.btnRefreshViews.init_text = constants.btnRefreshViews_text
-            self.dlg.lblDbSchema.init_text = constants.lblDbSchema_text
-            self.dlg.btnImport.init_text = constants.btnImport_text
-            self.dlg.lblInstall.init_text = constants.lblInstall_text
-
     #----------################################################################
     #-SIGNALS--################################################################
     #-(start)--################################################################
 
-            # 'Connection' group box signals (in 'Connection' tab)
-            self.dlg.cbxExistingConnection.currentIndexChanged.connect(
-                self.evt_cbxExistingConnection_changed)
-            self.dlg.btnNewConnection.clicked.connect(
-                self.evt_btnNewConnection_clicked)
+            # 'Connection' group box signals (in 'User Connection' tab)
+            self.dlg.cbxExistingConnC.currentIndexChanged.connect(
+                self.evt_cbxExistingConnC_changed)
+            self.dlg.btnNewConnC.clicked.connect(
+                self.evt_btnNewConnC_clicked)
 
-            # 'Database' group box signals (in 'Connection' tab)
-            self.dlg.btnConnectToDB.clicked.connect(
-                self.evt_btnConnectToDB_clicked)
+            # 'Database' group box signals (in 'User Connection' tab)
+            self.dlg.btnConnectToDbC.clicked.connect(
+                self.evt_btnConnectToDbC_clicked)
             self.dlg.cbxSchema.currentIndexChanged.connect(
                 self.evt_cbxSchema_changed)
 
-            # 'User Type' group box signals (in 'Connection' tab)
-            self.dlg.rdViewer.clicked.connect(self.evt_rdViewer_clicked)
-            self.dlg.rdEditor.clicked.connect(self.evt_rdEditor_clicked)
-
+            # Basemap (OSM) group box signals (in 'User Connection' tab)
 
             # Link the addition canvas to the extents qgroupbox and
             # enable "MapCanvasExtent" options (Byproduct).
-            self.dlg.qgbxExtent.setMapCanvas(canvas=self.CANVAS,
+            self.dlg.qgbxExtentsC.setMapCanvas(canvas=self.CANVAS_C,
                 drawOnCanvasOption = False)
-            # Draw on Canvas tool is disabled. Check Note on widget_setup.py
+            # Draw on Canvas tool is disabled.
+            # Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
 
-            self.dlg.qgbxExtent.setOutputCrs(outputCrs=self.CRS)
+            self.dlg.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
 
 
-            # 'Extent' groupbox signals (in 'Import' tab)
+            # 'Extents' groupbox signals (in 'User Connection' tab)
+            self.dlg.btnCityExtentsC.clicked.connect(
+                self.evt_btnCityExtentsC_clicked)
+            self.CANVAS_C.extentsChanged.connect(self.evt_canvas_extChanged)
+            self.dlg.qgbxExtentsC.extentChanged.connect(
+                self.evt_qgbxExtentsC_extChanged)
+
+            self.dlg.btnCreateLayers.clicked.connect(
+                self.evt_btnCreateLayers_clicked)
+            self.dlg.btnRefreshLayers.clicked.connect(
+                self.evt_btnRefreshLayers_clicked)
+
+            # Link the addition canvas to the extents qgroupbox and
+            # enable "MapCanvasExtent" options (Byproduct).
+            self.dlg.qgbxExtents.setMapCanvas(canvas=self.CANVAS,
+                drawOnCanvasOption = False)
+            # Draw on Canvas tool is disabled.
+            # Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
+            self.dlg.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+
+            # 'Extents' groupbox signals (in 'Layers' tab)
+            self.dlg.qgbxExtents.extentChanged.connect(
+                self.evt_qgbxExtents_extChanged)
             self.dlg.btnCityExtents.clicked.connect(
                 self.evt_btnCityExtents_clicked)
-            self.CANVAS.extentsChanged.connect(self.evt_canvas_extChanged)
-            self.dlg.qgbxExtent.extentChanged.connect(
-                self.evt_qgbxExtent_extChanged)
+                
 
-            # 'Parameters' groupbox signals (in 'Import' tab)
+            # 'Parameters' groupbox signals (in 'Layers' tab)
             self.dlg.cbxFeatureType.currentIndexChanged.connect(
                 self.evt_cbxFeatureType_changed)
             self.dlg.cbxLod.currentIndexChanged.connect(
                 self.evt_cbxLod_changed)
 
-            # 'Features to Import' groupbox signals (in 'Import' tab)
+            # 'Features to Import' groupbox signals (in 'Layers' tab)
             self.dlg.ccbxFeatures.checkedItemsChanged.connect(
                 self.evt_ccbxFeatures_changed)
             self.dlg.btnImport.clicked.connect(
                 self.evt_btnImport_clicked)
 
-            # 'Installation' groupbox signals (in 'Settings' tab)
-            self.dlg.btnInstallDB.clicked.connect(
-                self.evt_btnInstallDB_clicked)
-            self.dlg.btnUnInstallDB.clicked.connect(
-                self.evt_btnUnInstallDB_clicked)
-            self.dlg.btnClearDB.clicked.connect(
-                self.evt_btnClearDB_clicked)
+            # 'Connection' group box signals (in 'Database Admin' tab)
+            self.dlg.cbxExistingConn.currentIndexChanged.connect(
+                self.evt_cbxExistingConn_changed)
+            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
+            self.dlg.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
 
-            # 'Database' groupbox signals (in 'Settings' tab)
-            self.dlg.btnRefreshViews.clicked.connect(
-                self.evt_btnRefreshViews_clicked)
+
+            # 'Main Installation' group box signals (in 'Database Admin' tab)
+            self.dlg.btnMainInst.clicked.connect(
+                self.evt_btnMainInst_clicked)
+            self.dlg.btnMainUninst.clicked.connect(
+                self.evt_btnMainUninst_clicked)
+
+            # 'User Installation' group box signals (in 'Database Admin' tab)
+            self.dlg.cbxUser.currentIndexChanged.connect(
+                self.evt_cbxUser_changed)
+            self.dlg.btnUsrInst.clicked.connect(
+                self.evt_btnUsrInst_clicked)
+            self.dlg.btnUsrUninst.clicked.connect(
+                self.evt_btnUsrUninst_clicked)
+            
 
     #----------################################################################
     #-SIGNALS--################################################################
@@ -372,6 +405,28 @@ class DBLoader:
             # Get existing connections from QGIS profile settings.
             connection.get_postgres_conn(self) # Stored in self.conn
 
+
+
+            #self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget()
+
+            # Move canvas widget in the layout containing the extents.
+
+
+            #self.dlg.gLayoutBasemapC.addWidget(self.CANVAS,1,1)
+            #self.dlg.vLayoutBasemap.addWidget(self.CANVAS)
+            # Replace empty graphics view widget with Map canvas.
+            self.dlg.vLayoutBasemap.replaceWidget(self.dlg.gvCanvas, self.CANVAS)
+            self.dlg.gLayoutBasemapC.replaceWidget(self.dlg.gvCanvasC, self.CANVAS_C)
+
+            # Remove empty graphics View widget from dialog.
+            self.dlg.gvCanvasC.setParent(None)
+            self.dlg.gvCanvas.setParent(None)
+
+            #widget_setup.CANVAS_setup(self)
+
+            #print(self.CANVAS, self.dlg.gvCanvas)
+            #print(self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget())
+
         # Show the dialog
         self.dlg.show()
 
@@ -382,19 +437,25 @@ class DBLoader:
     #--EVENTS--################################################################
     #-(start)--################################################################
 
-    # 'Connection' group box events (in 'Connection' tab)
-    def evt_cbxExistingConnection_changed(self) -> None:
+    # 'Connection' group box events (in 'User Connection' tab)
+    def evt_cbxExistingConnC_changed(self) -> None:
         """Event that is called when the 'Existing Connection'
-        comboBox (cbxExistingConnection) current index chages.
+        comboBox (cbxExistingConnC) current index changes.
         """
 
         # Set the current database connection object variable
-        self.DB = self.dlg.cbxExistingConnection.currentData()
-        widget_setup.cbxExistingConnection_setup(self)
+        self.DB = self.dlg.cbxExistingConnC.currentData()
 
-    def evt_btnNewConnection_clicked(self) -> None:
+        # Set the current user schema name.
+        #self.USER_SCHEMA = c.USER_PKG_NAME.format(user=self.DB.username)
+        # NOTE: temopararily hardcoded!
+        self.USER_SCHEMA = c.USER_PKG_NAME.format(user="user")
+
+        usr_setup.cbxExistingConnC_setup(self)
+
+    def evt_btnNewConnC_clicked(self) -> None:
         """Event that is called when the 'New Connection' pushButton
-        (btnNewConnection) is pressed.
+        (btnNewConnC) is pressed.
 
         Resposible to add VALID new connection to the 'Existing connections'.
         """
@@ -406,17 +467,20 @@ class DBLoader:
 
         # Add new connection to the Existing connections
         if dlgConnector.new_connection:
-            self.dlg.cbxExistingConnection.addItem(
-                text=f"{dlgConnector.new_connection.connection_name}",
-                userData=dlgConnector.new_connection)
+            self.dlg.cbxExistingConnC.addItem(
+                f"{dlgConnector.new_connection.connection_name}",
+                dlgConnector.new_connection)
+            self.dlg.cbxExistingConn.addItem(
+                f"{dlgConnector.new_connection.connection_name}",
+                dlgConnector.new_connection)
 
     # 'Database' group box events (in 'Connection' tab)
-    def evt_btnConnectToDB_clicked(self) -> None:
-        """Event that is called when the current 'Connect to {DB}' pushButton
-        (btnConnectToDB) is pressed.
+    def evt_btnConnectToDbC_clicked(self) -> None:
+        """Event that is called when the current 'Connect to {db}' pushButton
+        (btnConnectToDbC) is pressed.
         """
 
-        widget_setup.btnConnectToDB_setup(self)
+        usr_setup.btnConnectToDbC_setup(self)
 
     def evt_cbxSchema_changed(self) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema)
@@ -428,28 +492,61 @@ class DBLoader:
         # Set the current schema variable
         self.SCHEMA = self.dlg.cbxSchema.currentText()
 
-        res = widget_setup.cbxSchema_setup(self)
-        if not res:
-            widget_reset.reset_tabImport(self)
-            widget_reset.reset_tabSettings(self)
+        usr_setup.cbxSchema_setup(self)
 
         # We can proceed ONLY if the necessary requirements are met.
         if self.DB.meets_requirements():
-            self.dlg.gbxUserType.setDisabled(False)
-
-            # Allow user type selection depending on privileges.
-            # CAUSION: Privileges are not fully imeplemented yet.
-            if all(
-                priv in self.availiable_privileges
-            for priv in constants.priviledge_types):
-                self.dlg.rdEditor.setDisabled(False)
-                self.dlg.rdViewer.setDisabled(False)
-            elif any(p == "SELECT" for p in self.availiable_privileges):
-                self.dlg.rdEditor.setDisabled(True)
-                self.dlg.rdViewer.setDisabled(False)
+            self.dlg.tabLayers.setDisabled(False)
         else:
-            widget_reset.reset_gbxUserType(self)
-            self.dlg.gbxUserType.setDisabled(True)
+            widget_reset.reset_tabLayers(self)
+            self.dlg.tabLayers.setDisabled(True)
+
+    # 'Basemap (OSM)' group box events (in 'User Connection' tab)
+    def evt_canvas_extChanged(self) -> None:
+        """Event that is called when the current canvas extents (pan over map)
+        changes.
+
+        Reads the new current extents from the map and sets it in the 'Extents'
+        (qgbxExtentsC) widget.
+        """
+
+        # Get canvas's current extent
+        extent: QgsRectangle = self.CANVAS_C.extent()
+
+        # Set the current extent to show in the 'extent' widget.
+        self.dlg.qgbxExtentsC.setCurrentExtent(
+            currentExtent=extent,
+            currentCrs=self.CRS)
+        self.dlg.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
+
+    def evt_qgbxExtentsC_extChanged(self) -> None:
+        """Event that is called when the 'Extents' groubBox (qgbxExtentsC)
+        extent in widget changes.
+        """
+
+        usr_setup.qgbxExtentsC_setup(self)
+
+    def evt_btnCityExtentsC_clicked(self) -> None:
+        """Event that is called when the current 'Calculate from City model'
+        pushButton (btnCityExtentsC) is pressed.
+        """
+
+        usr_setup.btnCityExtentsC_setup(self)
+
+
+    def evt_btnCreateLayers_clicked(self) -> None:
+        """Event that is called when the 'Create layers for schema {sch}'
+        pushButton (btnCreateLayers) is pressed.
+        """
+
+        usr_setup.btnCreateLayers_setup(self)
+
+    def evt_btnRefreshLayers_clicked(self) -> None:
+        """Event that is called when the 'Refresh layers in schema {sch}'
+        pushButton (btnRefreshLayers) is pressed.
+        """
+
+        usr_setup.btnRefreshLayers_setup(self)
 
     def evt_update_bar(self,step,text) -> None:
         """Function to setup the progress bar upon update.
@@ -478,73 +575,36 @@ class DBLoader:
         progress_bar.setValue(step)
 
 
-    # 'User Type' group box events (in 'Connection' tab)
-    def evt_rdViewer_clicked(self) -> None:
-        """Event that is called when the current 'Viewer' radioButton
-        (rdViewer) is checked.
 
-        ..  Note user types are not fully imeplemented yet.
-        ..  (20-02-2022) Currently it doesn't work as intended
-        """
 
-        widget_setup.gbxUserType_setup(self,user_type=self.dlg.rdViewer.text())
-
-    def evt_rdEditor_clicked(self) -> None:
-        """Event that is called when the current 'Editor' radioButton
-        (rdEditor) is checked.
-
-        ..  Note user types are not fully imeplemented yet.
-        ..  (20-02-2022) Currently it doesn't work as intended
-        """
-
-        widget_setup.gbxUserType_setup(self,user_type=self.dlg.rdEditor.text())
-
-    # 'Extents' group box events (in 'Import' tab)
-    def evt_btnCityExtents_clicked(self) -> None:
-        """Event that is called when the current 'Calculate from City model'
-        pushButton (btnCityExtents) is pressed.
-        """
-
-        widget_setup.btnCityExtents_setup(self)
-
-    def evt_canvas_extChanged(self) -> None:
-        """Event that is called when the current canvas extents (pan over map)
-        changes.
-
-        Reads the new current extents from the map and sets it in the 'Extents'
-        (QgsExtentGroupBox) widget.
-        """
-
-        # Get canvas's current extent
-        extent: QgsRectangle = self.CANVAS.extent()
-
-        # Set the current extent to show in the 'extent' widget.
-        self.dlg.qgbxExtent.setCurrentExtent(
-            currentExtent=extent,
-            currentCrs=self.CRS)
-        self.dlg.qgbxExtent.setOutputCrs(outputCrs=self.CRS)
-
-    def evt_qgbxExtent_extChanged(self) -> None:
-        """Event that is called when the 'Extents' groubBox (qgbxExtent)
+    # 'Parameters' group box events (in 'Import' tab)
+    def evt_qgbxExtents_extChanged(self) -> None:
+        """Event that is called when the 'Extents' groubBox (qgbxExtents)
         extent changes.
         """
 
-        widget_setup.qgbxExtent_setup(self)
+        lrs_setup.qgbxExtents_setup(self)
 
-    # 'Parameters' group box events (in 'Import' tab)
+    def evt_btnCityExtents_clicked(self) -> None:
+        """Event that is called when the current 'Set to layers extents'
+        pushButton (btnCityExtents) is pressed.
+        """
+
+        lrs_setup.btnCityExtents_setup(self)
+
     def evt_cbxFeatureType_changed(self) -> None:
         """Event that is called when the 'Feature Type'comboBox (cbxFeatureType)
         current index chages.
         """
 
-        widget_setup.cbxFeatureType_setup(self)
+        lrs_setup.cbxFeatureType_setup(self)
 
     def evt_cbxLod_changed(self) -> None:
         """Event that is called when the 'Geometry Level'comboBox (cbxLod)
         current index chages.
         """
 
-        widget_setup.cbxLod_setup(self)
+        lrs_setup.cbxLod_setup(self)
 
     # 'Features to Import' group box events (in 'Import' tab)
     def evt_ccbxFeatures_changed(self) -> None:
@@ -552,49 +612,83 @@ class DBLoader:
         checkableComboBox (ccbxFeatures) current index chages.
         """
 
-        widget_setup.ccbxFeatures_setup(self)
+        lrs_setup.ccbxFeatures_setup(self)
 
     def evt_btnImport_clicked(self) -> None:
         """Event that is called when the 'Import Features' pushButton
         (btnImport) is pressed.
         """
 
-        widget_setup.btnImport_setup(self)
+        lrs_setup.btnImport_setup(self)
         # Here is the final step.
         # Meaning that user did everything and can now close
         # the window to continue working outside the plugin.
 
+    # 'Connection' group box events (in 'Database Administration' tab)
+    def evt_cbxExistingConn_changed(self) -> None:
+        """Event that is called when the 'Existing Connection'
+        comboBox (cbxExistingConn) current index changes.
+        """
+        # Set the current database connection object variable
+        self.DB = self.dlg.cbxExistingConn.currentData()
+
+        # Set the current user schema name.
+        #self.USER_SCHEMA = c.USER_PKG_NAME.format(user=self.DB.username)
+        # NOTE: temopararily hardcoded!
+        self.USER_SCHEMA = c.USER_PKG_NAME.format(user="user")
+
+        dba_setup.cbxExistingConn_setup(self)
+
+    def evt_btnConnectToDb_clicked(self) -> None:
+        """Event that is called when the current 'Connect to {db}' pushButton
+        (btnConnectToDb) is pressed.
+        """
+
+        dba_setup.btnConnectToDb_setup(self)
+
+    def evt_cbxUser_changed(self) -> None:
+        """Event that is called when the 'Selected User'
+        comboBox (cbxUser) current index changes.
+        """
+
+        dba_setup.cbxUser_setup(self)
+
     # 'Installation' group box events (in 'Settings' tab)
-    def evt_btnInstallDB_clicked(self) -> None:
-        """Event that is called when the 'Install' pushButton
-        (btnInstallDB) is pressed.
+    def evt_btnMainInst_clicked(self) -> None:
+        """Event that is called when the 'Install to database' pushButton
+        (btnMainInst) is pressed.
         """
 
-        widget_setup.btnInstallDB_setup(self)
+        dba_setup.btnMainInst_setup(self)
 
-    def evt_btnUnInstallDB_clicked(self) -> None:
-        """Event that is called when the 'Uninstall' pushButton
-        (btnUnInstallDB) is pressed.
+    def evt_btnMainUninst_clicked(self) -> None:
+        """Event that is called when the 'Uninstall from database' pushButton
+        (btnMainUninst) is pressed.
         """
-        print("BTN Does nothing")
-        # installation.uninstall_views(self,
-        #     schema=self.dlg.cbxSchema.currentText())
+        dba_setup.btnMainUninst_setup(self)
 
-    def evt_btnClearDB_clicked(self) -> None:
-        """Event that is called when the 'Clear All' pushButton
-        (btnClearDB) is pressed.
+        # 'Installation' group box events (in 'Settings' tab)
+    def evt_btnUsrInst_clicked(self) -> None:
+        """Event that is called when the 'Create schema for user' pushButton
+        (btnUsrInst) is pressed.
         """
 
-        widget_setup.btnClearDB_setup(self)
+        dba_setup.btnUsrInst_setup(self)
 
+    def evt_btnUsrUninst_clicked(self) -> None:
+        """Event that is called when the 'Drop schema for user' pushButton
+        (btnUsrUninst) is pressed.
+        """
+        dba_setup.btnUsrUninst_setup(self)
+        
 
     # 'Database' group box events (in 'Settings' tab)
-    def evt_btnRefreshViews_clicked(self) -> None:
+    def evt_btnRefreshLayers_clicked(self) -> None:
         """Event that is called when the 'Referesh all Views' pushButton
-        (btnRefreshViews) is pressed.
+        (btnRefreshLayers) is pressed.
         """
 
-        widget_setup.btnRefreshViews_setup(self)
+        dba_setup.btnRefreshLayers_setup(self)
 
     #----------################################################################
     #--EVENTS--################################################################
