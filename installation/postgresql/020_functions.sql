@@ -45,6 +45,54 @@ COMMENT ON FUNCTION qgis_pkg.xx_funcname_xx(varchar) IS 'xxxx short comment xxxx
 */
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.GENERATE_MVIEW_BBOX_POLY
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.generate_mview_bbox_poly(numeric[]) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.generate_mview_bbox_poly(
+bbox_corners_array numeric[]    -- To be passed as 'ARRAY[1.1,2.2,3.3,4.4]' 
+)
+RETURNS geometry AS $$
+DECLARE
+srid_id integer;
+x_min numeric;
+y_min numeric;
+x_max numeric;
+y_max numeric;
+mview_bbox_poly geometry(Polygon);
+
+BEGIN
+IF bbox_corners_array IS NULL THEN
+	mview_bbox_poly := NULL;
+ELSIF array_position(bbox_corners_array, NULL) IS NOT NULL THEN
+	RAISE EXCEPTION 'Array with corner coordinates is invalid and contains a null value';
+ELSE
+	EXECUTE 'SELECT srid FROM citydb.database_srs LIMIT 1' INTO srid_id;
+	x_min :=   floor(bbox_corners_array[1]);
+	y_min :=   floor(bbox_corners_array[2]);
+	x_max := ceiling(bbox_corners_array[3]);
+	y_max := ceiling(bbox_corners_array[4]);
+	mview_bbox_poly := ST_MakeEnvelope(x_min, y_min, x_max, y_max, srid_id);
+	--RAISE NOTICE 'Polygon is: %', ST_AsEWKT(mview_bbox_poly);
+END IF;
+
+RETURN mview_bbox_poly;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.generate_mview_bbox_poly(): Error QUERY_CANCELED';
+	WHEN OTHERS THEN
+		RAISE EXCEPTION 'qgis_pkg.generate_mview_bbox_poly(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.generate_mview_bbox_poly(numeric[]) IS 'Create polygon of mview bbox';
+
+--SELECT qgis_pkg.generate_mview_bbox_poly(
+--	bbox_corners_array := ARRAY[220177, 481471, 220755, 482133]
+--	bbox_corners_array := '{220177, 481471, 220755, 482133}'
+--);
+
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.SUPPORT_FOR_SCHEMA
 ----------------------------------------------------------------
 -- Returns True if qgis_pkg schema supports the input schema.
@@ -896,8 +944,8 @@ AS $$
 DECLARE
 BEGIN
 major_version  := 0;
-minor_version  := 2;
-minor_revision := 1;
+minor_version  := 3;
+minor_revision := 0;
 version := concat(major_version,',',minor_version,',',minor_revision);
 
 EXCEPTION

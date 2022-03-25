@@ -98,7 +98,6 @@ ELSE
 	mview_bbox_ymin := floor(ST_YMin(mview_bbox));
 	mview_bbox_xmax := ceil(ST_XMax(mview_bbox));
 	mview_bbox_ymax := ceil(ST_YMax(mview_bbox));
-	mview_bbox := ST_MakeEnvelope(mview_bbox_xmin, mview_bbox_ymin, mview_bbox_xmax, mview_bbox_ymax, srid_id);
 	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
 END IF;
 
@@ -623,21 +622,27 @@ IS 'Create layers for module WaterBody';
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_WATERBODY
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, geometry, boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_waterbody(
 cdb_schema 			varchar  DEFAULT 'citydb',
 usr_name            varchar  DEFAULT 'postgres',
 perform_snapping 	integer  DEFAULT 0,
 digits 				integer	 DEFAULT 3,
 area_poly_min 		numeric  DEFAULT 0.0001,
-mview_bbox			geometry DEFAULT NULL,
+bbox_corners_array	numeric[] DEFAULT NULL, -- can be passed as ARRAY[1,2,3,4] or string '{1,2,3,4}'
 force_layer_creation boolean DEFAULT FALSE
 )
 RETURNS integer AS $$
 DECLARE
-sql_statement text := NULL;
+sql_statement 	text := NULL;
+mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
+
+SELECT qgis_pkg.generate_mview_bbox_poly(
+	bbox_corners_array := bbox_corners_array
+) INTO mview_bbox;
+
 SELECT qgis_pkg.generate_sql_layers_waterbody(
 	cdb_schema 			 := cdb_schema, 			
 	usr_name             := usr_name,            
@@ -664,9 +669,14 @@ EXCEPTION
 		RAISE EXCEPTION 'qgis_pkg.create_layers_waterbody(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Create layers for module CityFurniture';
+COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create layers for module WaterBody';
 
---SELECT qgis_pkg.create_layers_waterbody(cdb_schema := 'citydb',force_layer_creation := FALSE);
+--SELECT qgis_pkg.create_layers_waterbody(
+--	cdb_schema := 'citydb',
+--	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
+--	bbox_corners_array := ARRAY[220177, 481471, 220755, 482133],
+--	bbox_corners_array := '{220177, 481471, 220755, 482133}',
+--	force_layer_creation := FALSE);
 
 --**************************
 DO $MAINBODY$

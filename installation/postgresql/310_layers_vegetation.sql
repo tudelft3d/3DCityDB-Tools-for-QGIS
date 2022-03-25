@@ -98,7 +98,6 @@ ELSE
 	mview_bbox_ymin := floor(ST_YMin(mview_bbox));
 	mview_bbox_xmax := ceil(ST_XMax(mview_bbox));
 	mview_bbox_ymax := ceil(ST_YMax(mview_bbox));
-	mview_bbox := ST_MakeEnvelope(mview_bbox_xmin, mview_bbox_ymin, mview_bbox_xmax, mview_bbox_ymax, srid_id);
 	sql_where := concat('AND ST_MakeEnvelope(',mview_bbox_xmin,', ',mview_bbox_ymin,', ',mview_bbox_xmax,', ',mview_bbox_ymax,', ',srid_id,') && co.envelope');
 END IF;
 
@@ -440,21 +439,27 @@ COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_vegetation(varchar, varchar, in
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_VEGETATION
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, geometry, boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_vegetation(
 cdb_schema 			varchar  DEFAULT 'citydb',
 usr_name            varchar  DEFAULT 'postgres',
 perform_snapping 	integer  DEFAULT 0,
 digits 				integer	 DEFAULT 3,
 area_poly_min 		numeric  DEFAULT 0.0001,
-mview_bbox			geometry DEFAULT NULL,
-force_layer_creation boolean DEFAULT FALSE  -- to be set to FALSE in normal usage
+bbox_corners_array	numeric[] DEFAULT NULL, -- can be passed as ARRAY[1,2,3,4] or string '{1,2,3,4}'
+force_layer_creation boolean DEFAULT FALSE
 )
 RETURNS integer AS $$
 DECLARE
-sql_statement text := NULL;
+sql_statement 	text := NULL;
+mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
+
+SELECT qgis_pkg.generate_mview_bbox_poly(
+	bbox_corners_array := bbox_corners_array
+) INTO mview_bbox;
+
 SELECT qgis_pkg.generate_sql_layers_vegetation(
 	cdb_schema 			 := cdb_schema, 			
 	usr_name             := usr_name,            
@@ -482,7 +487,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_vegetation
-(varchar, varchar, integer, integer, numeric, geometry, boolean)
+(varchar, varchar, integer, integer, numeric, numeric[], boolean)
  IS 'Create layers for module Vegetation';
 
 --SELECT qgis_pkg.create_layers_vegetation(cdb_schema := 'citydb', force_layer_creation := FALSE);

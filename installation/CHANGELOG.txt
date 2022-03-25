@@ -4,7 +4,15 @@ Clean up old and redundant funtions in script 020.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-03-25
+----------
+Script 020:
+	- Added function [qgis_pkg.generate_mview_bbox_poly()]
+Scripts 2xx
+	- Updated existing scripts to handle bbox as array for corner coordinates
+
 2022-03-19
+----------
 Script 020:
 	- Drop unused functions.
 	In functions 'upsert_extents' and 'compute_schema_extents':
