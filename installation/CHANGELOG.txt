@@ -4,6 +4,10 @@ Clean up old and redundant funtions in script 020.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-03-28
+----------
+Added script 220 for layer generation of building module
+
 2022-03-25
 ----------
 Script 020:
