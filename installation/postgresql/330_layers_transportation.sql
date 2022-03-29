@@ -286,7 +286,6 @@ CREATE MATERIALIZED VIEW         ',usr_schema,'.',mview_name,' AS
 		FROM (
 			SELECT
 				coalesce(o.id, ta_t.co_id) as co_id,
-				--o.id AS co_id,
 				CASE 
 					WHEN ta_t.sg_id_array IS NOT NULL THEN ta_t.sg_id_array
 					ELSE ARRAY[o.',t.lodx_label,'_multi_surface_id]
@@ -295,7 +294,6 @@ CREATE MATERIALIZED VIEW         ',usr_schema,'.',mview_name,' AS
 				',cdb_schema,'.transportation_complex AS o
 				INNER JOIN ',cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
 				FULL OUTER JOIN (
-				--INNER JOIN (
 					SELECT 
 						ta.transportation_complex_id AS co_id, 
 						array_agg(ta.',t.lodx_label,'_multi_surface_id) AS sg_id_array

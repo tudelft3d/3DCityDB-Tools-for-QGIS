@@ -490,7 +490,12 @@ COMMENT ON FUNCTION qgis_pkg.create_layers_vegetation
 (varchar, varchar, integer, integer, numeric, numeric[], boolean)
  IS 'Create layers for module Vegetation';
 
---SELECT qgis_pkg.create_layers_vegetation(cdb_schema := 'citydb', force_layer_creation := FALSE);
+--SELECT qgis_pkg.create_layers_vegetation(
+--	cdb_schema := 'citydb',
+--	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
+--	bbox_corners_array := ARRAY[220177, 481471, 220755, 482133],
+--	bbox_corners_array := '{220177, 481471, 220755, 482133}',
+--	force_layer_creation := FALSE);
 
 --**************************
 DO $MAINBODY$

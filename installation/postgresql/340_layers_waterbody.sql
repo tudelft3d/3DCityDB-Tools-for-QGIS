@@ -396,7 +396,6 @@ CREATE MATERIALIZED VIEW         ',usr_schema,'.',mview_name,' AS
 		FROM (
 			SELECT
 				coalesce(o.id, ts_t.co_id) as co_id,
-				--o.id AS co_id,
 				CASE 
 					WHEN ts_t.sg_id_array IS NOT NULL THEN ts_t.sg_id_array
 					ELSE ARRAY[o.',t.lodx_label,'_solid_id]
@@ -414,8 +413,8 @@ CREATE MATERIALIZED VIEW         ',usr_schema,'.',mview_name,' AS
 						ts.',t.lodx_label,'_surface_id IS NOT NULL
 					GROUP BY ww.waterbody_id
 					) AS ts_t ON (ts_t.co_id = o.id)
-			WHERE 
-				sg_id_array IS NOT NULL
+--			WHERE 
+--				sg_id_array IS NOT NULL
 			) AS foo
 		) AS foo2
 		INNER JOIN ',cdb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
@@ -592,7 +591,7 @@ sql_layer := concat(sql_layer,sql_layer_part);
 
 END IF;
 
-		END LOOP; -- end loop (auxiliary) traffic areas lod 2-4
+		END LOOP; -- end loop waterbody thematic surfaces lod 2-4
 
 	END LOOP; -- waterbody lod2-4
 

@@ -285,7 +285,7 @@ EXCEPTION
 		RAISE EXCEPTION 'qgis_pkg.generate_sql_layers_city_furniture(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_city_furniture(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Create layers for module LandUse';
+COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_city_furniture(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Create layers for module CityFurniture';
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_CITY_FURNITURE

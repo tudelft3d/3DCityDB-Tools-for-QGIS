@@ -1,8 +1,14 @@
 2022-xx-xx TO DO
 ----------
-Clean up old and redundant funtions in script 020.
+Rewrite layer generation functions to be less exposed to code injection.
 Updating install script to be more similar to the one of 3DCityDB v. 4.x
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
+
+2022-03-29
+----------
+Added script 210 for layer generation of bridge module
+Added script 250 for layer generation of tunnel module
+Minor updates and buxfixes for remaining layer generation functions
 
 2022-03-28
 ----------
