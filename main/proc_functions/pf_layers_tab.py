@@ -72,6 +72,9 @@ def instantiate_objects(dbLoader) -> None:
     # into a plugin variable (dict).
     dbLoader.FeatureType_container = {
         "Building": c.FeatureType(alias='Building'),
+        "Bridge": c.FeatureType(alias='Bridge'),
+        "Transportation": c.FeatureType(alias='Transportation'),
+        "Tunnel": c.FeatureType(alias='Tunnel'),
         "Relief": c.FeatureType(alias="Relief"),
         "CityFurniture": c.FeatureType(alias="CityFurniture"),
         "LandUse": c.FeatureType(alias="LandUse"),

@@ -57,6 +57,12 @@ class LayerCreationWorker(QObject):
         # Set progress bar goal
         self.plg.dlg.bar.setMaximum(len(c.create_layers_funcs))
 
+        # Get cornern coordinates
+        y_min = str(self.plg.EXTENTS.yMinimum())
+        x_min = str(self.plg.EXTENTS.xMinimum())
+        y_max = str(self.plg.EXTENTS.yMaximum())
+        x_max = str(self.plg.EXTENTS.xMaximum())
+
         # Set function input
         params = [
             self.plg.SCHEMA, # citydb schema
@@ -64,7 +70,7 @@ class LayerCreationWorker(QObject):
             int(self.plg.dlg.gbxSimplifyGeom.isChecked()),
             self.plg.dlg.qspbDecimalPrec.value(),
             self.plg.dlg.qspbMinArea.value(),
-            self.plg.EXTENTS.asWktPolygon(),
+            "{"+",".join([x_min,y_min,x_max,y_max])+"}",
             False
             ]
 
@@ -422,7 +428,7 @@ def install_success(dbLoader, pkg: str) -> None:
                 level=Qgis.Success,
                 notifyUser=True)
     else:
-        install_fail(dbLoader)
+        install_fail(dbLoader, pkg)
 
 def install_fail(dbLoader, pkg: str) -> None:
     """Event that is called when the thread executing the installation

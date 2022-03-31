@@ -159,11 +159,16 @@ lods = [
     ]
 
 create_layers_funcs = [
+    "create_layers_building",
+    "create_layers_bridge",
     "create_layers_city_furniture",
     "create_layers_generics",
+    "create_layers_tunnel",
+    "create_layers_transportation",
     "create_layers_land_use",
     "create_layers_relief",
-    "create_layers_vegetation"
+    "create_layers_vegetation",
+    "create_layers_waterbody",
     ]
     # NOTE:TODO fill in the rest when they're done
 
