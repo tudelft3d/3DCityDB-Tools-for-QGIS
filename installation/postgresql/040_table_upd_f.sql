@@ -1,12 +1,44 @@
--- ****************************************************************************
--- ****************************************************************************
+-- ***********************************************************************
+--
+--      QGIS Package for the CityGML 3D City Database (for PostgreSQL)
 --
 --
--- TABLE UPDATE FUNCTIONS, using objects (types)
+--                        Copyright 2022
+--
+-- Delft University of Technology, The Netherlands
+-- 3D Geoinformation Group
+-- https://3d.bk.tudelft.nl/
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+--     
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+-- Author: Giorgio Agugiaro
+-- Delft University of Technology, The Netherlands
+-- 3D Geoinformation Group
+-- https://3d.bk.tudelft.nl/gagugiaro/
+--
+-- ***********************************************************************
+-- ***********************************************************************
 --
 --
--- ****************************************************************************
--- ****************************************************************************
+-- This script installs update functions for the tables in a citydb schema.
+-- BEWARE: Only "normal" attributes are updated: no geometries, no primary
+-- keys, no foreign keys, etc.
+-- These functions can be used with any cdb_schema inside the database.
+-- In certain cases, some checks are carried out before the update
+-- operation, e.g. on enumeration values.
+--
+--
+-- ***********************************************************************
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG_DEV.UPD_T_ADDRESS
@@ -262,7 +294,7 @@ DECLARE
 BEGIN
 -- checks
 IF (obj.storeys_above_ground < 0) OR (obj.storeys_below_ground < 0) THEN
-  RAISE EXCEPTION 'Number of storeys above (or below) ground must be a value >= 0';	
+  RAISE EXCEPTION 'Number of storeys above (or below) ground must be an integer value >= 0';	
 END IF;
 
 EXECUTE format('

@@ -5,6 +5,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 import psycopg2
 
 from .. import constants as c
+from .. import connection
 from ..proc_functions import pf_userconn_tab as usr_tab
 from ..proc_functions import threads, sql, canvas
 from . import ws_layers_tab as lrs_setup
@@ -39,7 +40,7 @@ def cbxExistingConnC_setup(dbLoader) -> None:
         dbLoader.conn.close()
 
     widget_reset.reset_tabLayers(dbLoader)
-    widget_reset.reset_tabDbAdmin(dbLoader)
+    #widget_reset.reset_tabDbAdmin(dbLoader)
 
 # In 'Database' groupBox.
 def btnConnectToDbC_setup(dbLoader) -> None:
@@ -56,9 +57,10 @@ def btnConnectToDbC_setup(dbLoader) -> None:
 
     #In 'Connection Status' groupbox
     dlg.gbxConnStatusC.setDisabled(False)
+    dlg.btnCloseConnC.setDisabled(False)
 
     # Attempt to connect to the database
-    successful_connection = usr_tab.open_connection(dbLoader)
+    successful_connection = connection.open_connection(dbLoader)
 
     if successful_connection:
         # Show database name
@@ -79,10 +81,18 @@ def btnConnectToDbC_setup(dbLoader) -> None:
 
         # Check that database has 3DCityDB installed.
         if usr_tab.is_3dcitydb(dbLoader):
-            # Show 3DCityDB version
-            dlg.lbl3DCityDBInstC_out.setText(c.success_html.format(
-                text=dbLoader.DB.c_version))
-            dbLoader.DB.green_citydb_inst = True
+            version_major = int(dbLoader.DB.c_version.split(".")[0])
+            if version_major >= c.MIN_VERSION:
+                # Show 3DCityDB version
+                dlg.lbl3DCityDBInstC_out.setText(c.success_html.format(
+                    text=dbLoader.DB.c_version))
+                dbLoader.DB.green_citydb_inst = True
+            else:
+                dlg.lbl3DCityDBInstC_out.setText(c.crit_warning_html.format(
+                    text=f"{dbLoader.DB.c_version} (minimum major version: {c.MIN_VERSION})"))
+                dbLoader.DB.green_citydb_inst = False
+                return None
+
         else:
             dlg.lbl3DCityDBInstC_out.setText(c.failure_html.format(
                 text=c.CITYDB_FAIL_MSG))
@@ -93,10 +103,13 @@ def btnConnectToDbC_setup(dbLoader) -> None:
         dlg.cbxSchema.setDisabled(False)
         dlg.lblSchema.setDisabled(False)
 
+        # Get schema name for user
+        sql.exec_create_qgis_usr_schema_name(dbLoader)
+
         # Get 3DCityDB schemas from database
         #schemas = sql.exec_get_feature_schemas(dbLoader)
-        schemas = sql.fetch_schemas(dbLoader)
-
+        schemas = sql.exec_list_cdb_schemas(dbLoader)
+        print(schemas)
         # Fill schema combo box
         usr_tab.fill_schema_box(dbLoader, schemas=schemas)
         # At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event.
@@ -136,10 +149,18 @@ def cbxSchema_setup(dbLoader) -> None:
     dbLoader.dlg.lblSupport_out.clear()
     dbLoader.dlg.lblLayerRefr_out.clear()
 
+    dbLoader.dlg.btnRefreshLayers.setText(dbLoader.dlg.btnRefreshLayers.init_text.format(sch=dbLoader.SCHEMA))
+    dbLoader.dlg.btnCityExtentsC.setText(dbLoader.dlg.btnCityExtentsC.init_text.format(sch=dbLoader.SCHEMA))
+    dbLoader.dlg.btnCreateLayers.setText(dbLoader.dlg.btnCreateLayers.init_text.format(sch=dbLoader.SCHEMA))
+    dbLoader.dlg.btnDropLayers.setText(dbLoader.dlg.btnDropLayers.init_text.format(sch=dbLoader.SCHEMA))
+
     # Check if main package (schema) is installed in database.
     has_main_inst = sql.has_main_pkg(dbLoader)
     if has_main_inst:
-        dbLoader.dlg.lblMainInstC_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=c.MAIN_PKG_NAME)))
+        # Get qgis_pkg version.
+        full_version = f"(v.{sql.exec_qgis_pkg_version(dbLoader)})"
+        # Show message in Connection Status
+        dbLoader.dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG,full_version]).format(pkg=c.MAIN_PKG_NAME)))
         dbLoader.DB.green_main_inst = True
     else:
         dbLoader.dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG).format(pkg=c.MAIN_PKG_NAME))
@@ -155,11 +176,9 @@ def cbxSchema_setup(dbLoader) -> None:
 
         dbLoader.dlg.gbxBasemapC.setDisabled(False)
         dbLoader.dlg.cgbxOptions.setDisabled(False)
-        dbLoader.dlg.btnCityExtentsC.setText(dbLoader.dlg.btnCityExtentsC.init_text.format(sch=dbLoader.SCHEMA))
+        
         dbLoader.dlg.btnCreateLayers.setDisabled(False)
-        dbLoader.dlg.btnCreateLayers.setText(dbLoader.dlg.btnCreateLayers.init_text.format(sch=dbLoader.SCHEMA))
-        dbLoader.dlg.btnRefreshLayers.setDisabled(False)
-        dbLoader.dlg.btnRefreshLayers.setText(dbLoader.dlg.btnRefreshLayers.init_text.format(sch=dbLoader.SCHEMA))
+        
 
 
         # Setup the 'Basemap (OSM)' groupbox.
@@ -181,13 +200,18 @@ def cbxSchema_setup(dbLoader) -> None:
         dbLoader.DB.green_user_inst = False
         return None
 
-    # Check if user package has views corresponding to the current schema.
+    # Check if user package has views corresponding to the current schema (layers).
     has_schema_support = sql.exec_support_for_schema(dbLoader)
     if has_schema_support:
         dbLoader.dlg.lblSupport_out.setText(
             c.success_html.format(text=c.SCHEMA_SUPP_MSG.format(
                 sch=dbLoader.SCHEMA)))
         dbLoader.DB.green_schema_supp = True
+
+        dbLoader.dlg.btnRefreshLayers.setDisabled(False)
+
+        dbLoader.dlg.btnDropLayers.setDisabled(False)
+        
     else:
         dbLoader.dlg.lblSupport_out.setText(c.failure_html.format(text=c.SCHEMA_SUPP_FAIL_MSG.format(
                 sch=dbLoader.SCHEMA)))
@@ -284,6 +308,7 @@ def gbxBasemapC_setup(dbLoader,canvas_widget) ->  None:
             
             else: # Compute the extents.
                 sql.exec_compute_schema_extents(dbLoader)
+                print(dbLoader.USER_SCHEMA,dbLoader.SCHEMA,c.SCHEMA_EXT_TYPE)
                 if not sql.fetch_extents(dbLoader,
                     from_schema=dbLoader.USER_SCHEMA,
                     for_schema=dbLoader.SCHEMA,
@@ -383,8 +408,8 @@ def btnCreateLayers_setup(dbLoader) -> None:
 
     # Update the mat vies extents in the corresponding table in the server.
     sql.exec_upsert_extents(dbLoader,
-        from_schema=dbLoader.USER_SCHEMA,
-        for_schema=dbLoader.SCHEMA,
+        usr_schema=dbLoader.USER_SCHEMA,
+        cdb_schema=dbLoader.SCHEMA,
         bbox_type=c.MAT_VIEW_EXT_TYPE,
         extents=dbLoader.VIEWS_EXTENTS.asWktPolygon())
 
@@ -410,4 +435,8 @@ def btnRefreshLayers_setup(dbLoader) -> None:
 
     threads.refresh_views_thread(dbLoader)
 
-    
+
+def btnDropLayers_setup(dbLoader) -> None:
+
+    threads.drop_layers_thread(dbLoader)
+

@@ -35,16 +35,16 @@ from .main import widget_setup
 # This loads the .ui file so that PyQt can populate the plugin
 # with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), "ui","citydb_loader_dialog_base.ui"))
+    os.path.dirname(__file__), "ui","administration.ui"))
 
-class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
+class AdministrationDialog(QtWidgets.QDialog, FORM_CLASS):
     """Main Dialog of the plugin.
     The gui is imported from an external .ui xml
     """
 
     def __init__(self, parent=None):
         """Constructor."""
-        super(DBLoaderDialog, self).__init__(parent)
+        super(AdministrationDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -55,12 +55,8 @@ class DBLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Enhance various Qt Objects with their initial text.
         # This is used in order to revent to the original state
         # in reset operations when original text has already changed.
-        self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
-        self.btnCreateLayers.init_text = c.btnCreateLayers_t
-        self.btnRefreshLayers.init_text = c.btnRefreshLayers_t
-        self.btnDropLayers.init_text = c.btnDropLayers_t
-        self.btnCityExtentsC.init_text = c.btnCityExtentsC_t
-        
-        self.lblInfoText.init_text = c.lblInfoText_t
-        self.btnCityExtents.init_text = c.btnCityExtents_t
-        self.ccbxFeatures.init_text = c.ccbxFeatures_t
+        self.btnConnectToDb.init_text = c.btnConnectToDbC_t
+        self.btnMainInst.init_text = c.btnMainInst_t
+        self.btnMainUninst.init_text=  c.btnMainUninst_t
+        self.btnUsrInst.init_text = c.btnUsrInst_t
+        self.btnUsrUninst.init_text = c.btnUsrUninst_t

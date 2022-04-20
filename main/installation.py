@@ -14,6 +14,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 
 from . import constants as c
 from .proc_functions import sql
+from .proc_functions import pf_dbadmin_tab as dba_tab
 from .proc_functions import threads as th
 
 def installation_query(dbLoader, message: str, inst_type: str) -> None:
@@ -31,21 +32,21 @@ def installation_query(dbLoader, message: str, inst_type: str) -> None:
 
     if inst_type == "main":
         #message = message.format(pkg=c.MAIN_PKG_NAME)
-        res= QMessageBox.question(dbLoader.dlg,"Installation", message)
+        res= QMessageBox.question(dbLoader.dlg_admin,"Installation", message)
         if res == 16384: #YES
             th.install_pkg_thread(dbLoader, path=c.MAIN_INST_PATH, pkg=c.MAIN_PKG_NAME)
             return True
         return False
     elif inst_type == "user":
         #message = message.format(usr=c.USER_PKG_NAME.format(user=dbLoader.DB.username))
-        res= QMessageBox.question(dbLoader.dlg,"Installation", message)
+        res= QMessageBox.question(dbLoader.dlg_admin,"Installation", message)
         if res == 16384: #YES
             # Run scripts
-            sql.exec_create_user_schema(dbLoader)
+            sql.exec_create_qgis_usr_schema(dbLoader)
             return True
         return False
     else:
-        QMessageBox.critical(dbLoader.dlg,"Installation", "Unrecognised inst type!")
+        QMessageBox.critical(dbLoader.dlg_admin,"Installation", "Unrecognised inst type!")
         return False
 
 def uninstallation_query(dbLoader, message: str, uninst_type: str) -> None:
@@ -64,20 +65,24 @@ def uninstallation_query(dbLoader, message: str, uninst_type: str) -> None:
 
     if uninst_type == "main":
         #message = message.format(pkg=c.MAIN_PKG_NAME)
-        res= QMessageBox.question(dbLoader.dlg,"Uninstallation", message)
+        res= QMessageBox.question(dbLoader.dlg_admin,"Uninstallation", message)
         if res == 16384: #YES
+            # Get user schemas.
+            schemas = sql.exec_list_usr_schemas(dbLoader)
             # Drop both main and user schemas.
             sql.drop_package(dbLoader, c.MAIN_PKG_NAME, False)
-            sql.drop_package(dbLoader, dbLoader.USER_SCHEMA, False)
+            for s in schemas:
+                sql.drop_package(dbLoader, s, False)
+
             return True
         return False
     elif uninst_type == "user":
         #message = message.format(pkg=c.USER_PKG_NAME)
-        res= QMessageBox.question(dbLoader.dlg,"Uninstallation", message)
+        res= QMessageBox.question(dbLoader.dlg_admin,"Uninstallation", message)
         if res == 16384: #YES
             sql.drop_package(dbLoader, dbLoader.USER_SCHEMA, False)
             return True
         return False
     else: 
-        QMessageBox.critical(dbLoader.dlg,"Uninstallation", "Unrecognised uninst type!")
+        QMessageBox.critical(dbLoader.dlg_admin,"Uninstallation", "Unrecognised uninst type!")
         return False

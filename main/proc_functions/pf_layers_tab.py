@@ -222,13 +222,13 @@ def create_lookup_relations(layer: QgsVectorLayer) -> None:
         assertion_msg="ValueRelation Error: layer '{}' doesn\'t exist in project. This layers is also being imported with every layer import (if it doesn\'t already exist)."
 
         if field_name == 'relative_to_terrain':
-            target_layer = QgsProject.instance().mapLayersByName('enumeration_value')
-            assert target_layer, assertion_msg.format('enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="enum_id = 1"))
+            target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value') # NOTE: hardcoded view name and values
+            assert target_layer, assertion_msg.format('v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = RelativeToTerrainType"))
         elif field_name == 'relative_to_water':
-            target_layer = QgsProject.instance().mapLayersByName('enumeration_value')
-            assert target_layer, assertion_msg.format('enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="enum_id = 2"))
+            target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value')
+            assert target_layer, assertion_msg.format('v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = RelativeToWaterType"))
         
         # Codelists.
         # elif field_name == 'class':
@@ -369,7 +369,7 @@ def import_lookups(dbLoader) -> None:
         if not group_has_layer(group=lookups_node, layer_name=table):
             uri = QgsDataSourceUri()
             uri.setConnection(db.host,db.port,db.database_name,db.username,db.password)
-            uri.setDataSource(aSchema= c.MAIN_PKG_NAME, aTable= f'{table}',aGeometryColumn= None,aKeyColumn= '')
+            uri.setDataSource(aSchema= dbLoader.USER_SCHEMA, aTable= table,aGeometryColumn= None,aKeyColumn= "id")
             layer = QgsVectorLayer(uri.uri(False), f"{table}", "postgres")
             if layer or layer.isValid(): # Success
                 lookups_node.addLayer(layer)

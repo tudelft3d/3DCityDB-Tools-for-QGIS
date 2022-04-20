@@ -1,77 +1,143 @@
--- ****************************************************************************
--- ****************************************************************************
+-- ***********************************************************************
+--
+--      QGIS Package for the CityGML 3D City Database (for PostgreSQL)
 --
 --
--- VIEW UPDATE FUNCTIONs
+--                        Copyright 2022
 --
+-- Delft University of Technology, The Netherlands
+-- 3D Geoinformation Group
+-- https://3d.bk.tudelft.nl/
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+--     
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 --
--- ****************************************************************************
--- ****************************************************************************
+-- Author: Giorgio Agugiaro
+-- Delft University of Technology, The Netherlands
+-- 3D Geoinformation Group
+-- https://3d.bk.tudelft.nl/gagugiaro/
+--
+-- ***********************************************************************
+--
+-- This script installs in schema qgis_pkg update functions for the views
+-- that will be generated in the usr_schemas.
+--
+-- ***********************************************************************
 
-DO $MAINBODY$
-DECLARE
-r RECORD;
-sql_statement varchar;
-
-BEGIN
-
--- Create update attribute functions with 1 object
-FOR r IN
-	SELECT * FROM (VALUES
-	('address'::text),
-	('appearance'),
-	('cityobject_genericattrib'),
-	('external_reference'),
-	('surface_data')
-	) AS t(table_name)
-LOOP
-
-sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_ADDRESS_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
-obj         qgis_pkg.obj_',r.table_name,',
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_address_atts(
+obj         qgis_pkg.obj_address,
 cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
   updated_id bigint;
 BEGIN
-SELECT qgis_pkg.upd_t_',r.table_name,'(obj, cdb_schema) INTO updated_id;
+SELECT qgis_pkg.upd_t_address(obj, cdb_schema) INTO updated_id;
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_address_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),''';
-');
-EXECUTE sql_statement;
+COMMENT ON FUNCTION qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) IS 'Update attributes of table ADDRESS';
 
-END LOOP;  -- loop 1 object
-
-
--- Create update attribute functions for objects based only on cityobject table
-FOR r IN
-	SELECT * FROM (VALUES
-	('bridge_opening'),
-	('bridge_thematic_surface'),
---	('grid_coverage'),
-	('opening'),
-	('thematic_surface'),
-	('tunnel_opening'),
-	('tunnel_thematic_surface'),
-	('waterboundary_surface')  -- the ones without attributes
-	) AS t(table_name)
-LOOP
-
-sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_APPEARANCE_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_appearance_atts(
+obj         qgis_pkg.obj_appearance,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_appearance(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_appearance_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) IS 'Update attributes of table APPEARANCE';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_CITYOBJECT_GENERICATTRIB_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(
+obj         qgis_pkg.obj_cityobject_genericattrib,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject_genericattrib(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_cityobject_genericattrib_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) IS 'Update attributes of table CITYOBJECT_GENERICATTRIB';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_EXTERNAL_REFERENCE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_external_reference_atts(
+obj         qgis_pkg.obj_external_reference,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_external_reference(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_external_reference_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) IS 'Update attributes of table EXTERNAL_REFERENCE';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_SURFACE_DATA_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_surface_data_atts(
+obj         qgis_pkg.obj_surface_data,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_surface_data(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_surface_data_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) IS 'Update attributes of table SURFACE_DATA';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_OPENING_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_opening_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_opening_atts(
 obj         qgis_pkg.obj_cityobject,
 cdb_schema varchar
 )
@@ -82,52 +148,138 @@ BEGIN
 SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_opening_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
-');
-EXECUTE sql_statement;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table BRIDGE_OPENING (and parent ones)';
 
-END LOOP;  -- loop 1 object
-
--- Create update attribute functions with 2 objects
-FOR r IN
-	SELECT * FROM (VALUES
-	('bridge'::text),
-	('bridge_constr_element'),	
-	('bridge_furniture'),
-	('bridge_installation'),
-	('bridge_room'),
-	('building'),
-	('building_furniture'),
-	('building_installation'),
-	('city_furniture'),
-	('cityobjectgroup'),
-	('generic_cityobject'),
-	('land_use'),
-	('plant_cover'),	
-	('relief_feature'),
-	('room'),
-	('solitary_vegetat_object'),
-	('traffic_area'),
-	('transportation_complex'),
-	('tunnel'),
-	('tunnel_furniture'),
-	('tunnel_hollow_space'),
-	('tunnel_installation'),
-	('waterbody')
-	) AS t(table_name)
-LOOP
-
-sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_THEMATIC_SURFACE_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_thematic_surface_atts(
 obj         qgis_pkg.obj_cityobject,
-obj_1       qgis_pkg.obj_',r.table_name,',
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_thematic_surface_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table BRIDGE_THEMATIC_SURFACE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_OPENING_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_opening_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_opening_atts(
+obj         qgis_pkg.obj_cityobject,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_opening_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table OPENING (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_THEMATIC_SURFACE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_thematic_surface_atts(
+obj         qgis_pkg.obj_cityobject,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_thematic_surface_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table THEMATIC_SURFACE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_OPENING_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_opening_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_opening_atts(
+obj         qgis_pkg.obj_cityobject,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_opening_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table TUNNEL_OPENING (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_THEMATIC_SURFACE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_thematic_surface_atts(
+obj         qgis_pkg.obj_cityobject,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_thematic_surface_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table TUNNEL_THEMATIC_SURFACE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_waterboundary_surface_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_waterboundary_surface_atts(
+obj         qgis_pkg.obj_cityobject,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+SELECT qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterboundary_surface_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_bridge,
 cdb_schema varchar 
 )
 RETURNS bigint AS $$
@@ -136,40 +288,551 @@ DECLARE
 BEGIN
 
 SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
-PERFORM qgis_pkg.upd_t_',r.table_name,'(obj_1, cdb_schema);
+PERFORM qgis_pkg.upd_t_bridge(obj_1, cdb_schema);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
-');
-EXECUTE sql_statement;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge, varchar) IS 'Update attributes of table BRIDGE (and parent ones)';
 
-END LOOP; -- loop 1 object (cityobject + 1)
-
-
--- Create update attribute functions with 3 objects
-FOR r IN
-	SELECT * FROM (VALUES
-	('tin_relief'::text, 	'relief_component'::text),
-	('raster_relief',		'relief_component'::text)	
---	('masspoint_relief', 	'relief_component'), questo non ha attributi
---	('breakline_relief',	'relief_component')	 questo non ha attributi	
-
-	) AS t(table_name, parent_table_name)
-LOOP
-
-sql_statement := concat('
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_',upper(r.table_name),'_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_CONSTR_ELEMENT_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_',r.table_name,', varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_',r.table_name,'_atts(
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_constr_element_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_constr_element, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_constr_element_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_bridge_constr_element,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_bridge_constr_element(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_constr_element_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_constr_element_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_constr_element, varchar) IS 'Update attributes of table BRIDGE_CONSTR_ELEMENT (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_FURNITURE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_furniture, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_furniture_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_bridge_furniture,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_bridge_furniture(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_furniture_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_furniture, varchar) IS 'Update attributes of table BRIDGE_FURNITURE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_INSTALLATION_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_installation, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_installation_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_bridge_installation,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_bridge_installation(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_installation_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_installation, varchar) IS 'Update attributes of table BRIDGE_INSTALLATION (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BRIDGE_ROOM_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_room, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_bridge_room_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_bridge_room,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_bridge_room(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_bridge_room_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_bridge_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_room, varchar) IS 'Update attributes of table BRIDGE_ROOM (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BUILDING_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_building_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_building,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_building(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_building_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) IS 'Update attributes of table BUILDING (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BUILDING_FURNITURE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_building_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_furniture, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_building_furniture_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_building_furniture,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_building_furniture(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_building_furniture_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_building_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_furniture, varchar) IS 'Update attributes of table BUILDING_FURNITURE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_BUILDING_INSTALLATION_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_building_installation_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_building_installation,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_building_installation(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_building_installation_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) IS 'Update attributes of table BUILDING_INSTALLATION (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_CITY_FURNITURE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_city_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_city_furniture, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_city_furniture_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_city_furniture,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_city_furniture(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_city_furniture_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_city_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_city_furniture, varchar) IS 'Update attributes of table CITY_FURNITURE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_CITYOBJECTGROUP_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_cityobjectgroup_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_cityobjectgroup, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_cityobjectgroup_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_cityobjectgroup,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_cityobjectgroup(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_cityobjectgroup_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_cityobjectgroup_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_cityobjectgroup, varchar) IS 'Update attributes of table CITYOBJECTGROUP (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_GENERIC_CITYOBJECT_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_generic_cityobject_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_generic_cityobject, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_generic_cityobject_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_generic_cityobject,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_generic_cityobject(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_generic_cityobject_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_generic_cityobject_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_generic_cityobject, varchar) IS 'Update attributes of table GENERIC_CITYOBJECT (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_LAND_USE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_land_use_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_land_use, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_land_use_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_land_use,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_land_use(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_land_use_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_land_use_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_land_use, varchar) IS 'Update attributes of table LAND_USE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_PLANT_COVER_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_plant_cover_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_plant_cover, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_plant_cover_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_plant_cover,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_plant_cover(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_plant_cover_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_plant_cover_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_plant_cover, varchar) IS 'Update attributes of table PLANT_COVER (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_RELIEF_FEATURE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_relief_feature_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_relief_feature,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_relief_feature(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_relief_feature_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) IS 'Update attributes of table RELIEF_FEATURE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_ROOM_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_room, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_room_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_room,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_room(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_room_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_room, varchar) IS 'Update attributes of table ROOM (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_SOLITARY_VEGETAT_OBJECT_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_solitary_vegetat_object,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_solitary_vegetat_object(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_solitary_vegetat_object_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) IS 'Update attributes of table SOLITARY_VEGETAT_OBJECT (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TRAFFIC_AREA_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_traffic_area_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_traffic_area, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_traffic_area_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_traffic_area,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_traffic_area(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_traffic_area_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_traffic_area_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_traffic_area, varchar) IS 'Update attributes of table TRAFFIC_AREA (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TRANSPORTATION_COMPLEX_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_transportation_complex_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_transportation_complex, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_transportation_complex_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_transportation_complex,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_transportation_complex(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_transportation_complex_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_transportation_complex_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_transportation_complex, varchar) IS 'Update attributes of table TRANSPORTATION_COMPLEX (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_tunnel,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_tunnel(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel, varchar) IS 'Update attributes of table TUNNEL (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_FURNITURE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_furniture, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_furniture_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_tunnel_furniture,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_tunnel_furniture(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_furniture_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_furniture, varchar) IS 'Update attributes of table TUNNEL_FURNITURE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_HOLLOW_SPACE_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_hollow_space_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_hollow_space, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_hollow_space_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_tunnel_hollow_space,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_tunnel_hollow_space(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_hollow_space_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_hollow_space_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_hollow_space, varchar) IS 'Update attributes of table TUNNEL_HOLLOW_SPACE (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TUNNEL_INSTALLATION_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tunnel_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_installation, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tunnel_installation_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_tunnel_installation,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_tunnel_installation(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tunnel_installation_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_tunnel_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_installation, varchar) IS 'Update attributes of table TUNNEL_INSTALLATION (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_WATERBODY_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterbody, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_waterbody_atts(
+obj         qgis_pkg.obj_cityobject,
+obj_1       qgis_pkg.obj_waterbody,
+cdb_schema varchar 
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_waterbody(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterbody_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterbody, varchar) IS 'Update attributes of table WATERBODY (and parent ones)';
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_TIN_RELIEF_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_tin_relief_atts(
 obj      qgis_pkg.obj_cityobject,
-obj_1    qgis_pkg.obj_',r.parent_table_name,',
-obj_2    qgis_pkg.obj_',r.table_name,',
+obj_1    qgis_pkg.obj_relief_component,
+obj_2    qgis_pkg.obj_tin_relief,
 cdb_schema varchar
 )
 RETURNS bigint AS $$
@@ -178,19 +841,41 @@ DECLARE
 BEGIN
 
 SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
-PERFORM qgis_pkg.upd_t_',r.parent_table_name,'(obj_1, cdb_schema);
-PERFORM qgis_pkg.upd_t_',r.table_name,'(obj_2, cdb_schema);
+PERFORM qgis_pkg.upd_t_relief_component(obj_1, cdb_schema);
+PERFORM qgis_pkg.upd_t_tin_relief(obj_2, cdb_schema);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE ''qgis_pkg.upd_',r.table_name,'_atts(id: %): %'', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_tin_relief_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_',r.table_name,'_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_',r.parent_table_name,', qgis_pkg.obj_',r.table_name,', varchar) IS ''Update attributes of table ',upper(r.table_name),' (and parent ones)'';
-');
-EXECUTE sql_statement;
+COMMENT ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) IS 'Update attributes of table TIN_RELIEF (and parent ones)';
 
-END LOOP; -- loop 3 object (cityobject + 2)
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_RASTER_RELIEF_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_raster_relief_atts(
+obj      qgis_pkg.obj_cityobject,
+obj_1    qgis_pkg.obj_relief_component,
+obj_2    qgis_pkg.obj_raster_relief,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_relief_component(obj_1, cdb_schema);
+PERFORM qgis_pkg.upd_t_raster_relief(obj_2, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_raster_relief_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) IS 'Update attributes of table RASTER_RELIEF (and parent ones)';
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERBODY_ATTS
@@ -216,8 +901,9 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
 
-
 --**************************
+DO $$
+BEGIN
 RAISE NOTICE E'\n\nDone\n\n';
-END $MAINBODY$;
+END $$;
 --**************************

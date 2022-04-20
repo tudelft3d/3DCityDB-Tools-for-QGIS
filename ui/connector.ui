@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Establish new postgres connection</string>
+   <string>Establish new postgreSQL connection</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="gbxConnDet">
        <property name="title">
-        <string>Postgres connection credentials</string>
+        <string>PostgreSQL connection credentials</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>

@@ -7,17 +7,32 @@ import psycopg2
 
 from .. import connector_dialog
 from . import constants as c
+from .proc_functions import sql
+
+import os
+
+from qgis.PyQt import uic
+from qgis.PyQt import QtWidgets
+from PyQt5 import QtCore, QtWidgets
+from qgis.gui import QgsMessageBar,QgsPasswordLineEdit
+
 
 FILE_LOCATION = c.get_file_location(__file__)
 
-class DlgConnector(QDialog, connector_dialog.Ui_dlgConnector):
+FORM_CLASS, _ = uic.loadUiType(os.path.join(
+    c.PLUGIN_PATH, "ui","connector.ui"))
+
+class DlgConnector(QtWidgets.QDialog, FORM_CLASS):
     """Connector Dialog. This dialog pops-up when a user requests
     to make a new connection.
     """
 
-    def __init__(self):
-        super(DlgConnector, self).__init__()
+    def __init__(self,parent=None):
+        super(DlgConnector, self).__init__(parent)
         self.setupUi(self)
+
+        self.gbxConnDet.bar = QgsMessageBar()
+        self.verticalLayout.addWidget(self.gbxConnDet.bar, 0)
 
         # Connect signals
         self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
@@ -149,8 +164,10 @@ def get_postgres_conn(dbLoader) -> None:
     """
 
     # Clear the contents of the comboBox from previous runs
-    dbLoader.dlg.cbxExistingConnC.clear()
-    dbLoader.dlg.cbxExistingConn.clear()
+    if dbLoader.dlg:
+        dbLoader.dlg.cbxExistingConnC.clear()
+    if dbLoader.dlg_admin:
+        dbLoader.dlg_admin.cbxExistingConn.clear()
 
     qsettings = QgsSettings()
 
@@ -175,9 +192,11 @@ def get_postgres_conn(dbLoader) -> None:
         connectionInstance.password = qsettings.value('password')
 
         # For 'User Connection' tab.
-        dbLoader.dlg.cbxExistingConnC.addItem(f'{conn}',connectionInstance)
+        if dbLoader.dlg:
+            dbLoader.dlg.cbxExistingConnC.addItem(f'{conn}',connectionInstance)
         # For 'Database Administration' tab.
-        dbLoader.dlg.cbxExistingConn.addItem(f'{conn}',connectionInstance)
+        if dbLoader.dlg_admin:
+            dbLoader.dlg_admin.cbxExistingConn.addItem(f'{conn}',connectionInstance)
         qsettings.endGroup()
 
 def connect(db: Connection, app_name: str = c.PLUGIN_NAME):
@@ -202,3 +221,38 @@ def connect(db: Connection, app_name: str = c.PLUGIN_NAME):
                             host=db.host,
                             port=db.port,
                             application_name=app_name)
+
+def open_connection(dbLoader, app_name: str = c.PLUGIN_NAME) -> bool:
+    """Opens a connection using the parameters stored in DBLoader.DB
+    and retrieves the server's verison. The server version is stored
+    in 's_version' attribute of the Connection object.
+
+    *   :param app_name: A name for the session
+
+        :rtype: str
+
+    *   :returns: connection attempt results
+
+        :rtype: bool
+    """
+
+    try:
+        # Open the connection.
+        dbLoader.conn = connect(dbLoader.DB,app_name=app_name)
+        dbLoader.conn.commit() # This seems redundant.
+
+        # Get server version.
+        version = sql.fetch_server_version(dbLoader)
+
+        # Store verison into the connection object.
+        dbLoader.DB.s_version = version
+
+    except (Exception, psycopg2.Error) as error:
+        c.critical_log(func=open_connection,
+            location=c.get_file_location(file=__file__),
+            header="Attempting connection",
+            error=error)
+        dbLoader.conn.rollback()
+        return False
+
+    return True

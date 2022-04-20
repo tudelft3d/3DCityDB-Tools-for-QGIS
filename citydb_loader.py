@@ -36,8 +36,10 @@ import psycopg2
 
 from .resources import qInitResources
 from .citydb_loader_dialog import DBLoaderDialog # Main dialog
+from .citydb_loader_administration_dialog import AdministrationDialog # Admin dialog
 from .main import connection
 from .main import constants as c
+from .main.proc_functions import sql
 from .main.widget_setup import ws_userconn_tab as usr_setup
 from .main.widget_setup import ws_layers_tab as lrs_setup
 from .main.widget_setup import ws_dbadmin_tab as dba_setup
@@ -62,7 +64,9 @@ class DBLoader:
         qInitResources()
 
         # Variable to store the main dialog of the plugin.
-        self.dlg: DBLoaderDialog = None
+        self.dlg = None
+        # Variable to store the admin dialog of the plugin.
+        self.dlg_admin = None
 
         # Variable to store the existing connection object.
         self.DB: connection.Connection = None
@@ -136,6 +140,7 @@ class DBLoader:
         # Check if plugin was started the first time in current QGIS session.
         # Must be set in initGui() to survive plugin reloads.
         self.first_start: bool = True
+        self.first_start_admin: bool = True
 
     def tr(self, message: str ) -> str:
         """Get the translation for a string using Qt translation API.
@@ -256,13 +261,13 @@ class DBLoader:
             # method seems to bypass this issue. Needs further investigation.
 
             # Add the action to the database menu (bug countermeasure)
-            self.iface.addPluginToDatabaseMenu(name=txt, action=action)
+            self.iface.addPluginToDatabaseMenu(name=c.PLUGIN_NAME, action=action)
 
             # Add the action to the database menu
-            self.iface.databaseMenu().addAction(action)
+            #self.iface.databaseMenu().addAction(action)
 
-            #Now that we made sure that the bug didn't occure, remove it.
-            self.iface.removePluginDatabaseMenu(name=txt,action=action)
+            # #Now that we made sure that the bug didn't occure, remove it.
+            # self.iface.removePluginDatabaseMenu(name=txt,action=action)
 
         self.actions.append(action)
 
@@ -271,23 +276,94 @@ class DBLoader:
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
+        # User plugin
         # The icon path is set from the compiled resources file (in main dir).
         icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
         self.add_action(
             icon_path=icon_path,
-            txt=self.tr("3DCityDB-Loader"),
+            txt=self.tr(c.PLUGIN_NAME),
             callback=self.run,
             parent=self.iface.mainWindow())
 
-        # will be set False in run()
+
+        # Admin plugin
+        self.add_action(
+            icon_path=icon_path,
+            txt=self.tr(c.PLUGIN_NAME_ADMIN),
+            callback=self.run_admin,
+            parent=self.iface.mainWindow(),
+            add_to_toolbar=False)
+
+        # Will be set False in run(), run_admin()
         self.first_start = True
+        self.first_start_admin = True
 
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI."""
 
         for action in self.actions:
             self.iface.removeDatabaseToolBarIcon(qAction=action)
-            self.iface.databaseMenu().removeAction(action)
+            self.iface.removePluginDatabaseMenu(name=c.PLUGIN_NAME,action=action)
+
+
+    def run_admin(self) -> None:
+        # Only create GUI ONCE in callback,
+        # so that it will only load when the plugin is started.
+        if self.first_start_admin:
+            self.first_start_admin = False
+
+            # Create the dialog with elements (after translation).
+            self.dlg_admin = AdministrationDialog()
+
+        #----------################################################################
+        #-SIGNALS--################################################################
+        #-(start)--################################################################
+
+
+            # 'Connection' group box signals (in 'Database Admin' tab)
+            self.dlg_admin.cbxExistingConn.currentIndexChanged.connect(
+                self.evt_cbxExistingConn_changed)
+            self.dlg_admin.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
+            self.dlg_admin.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
+
+
+            # 'Main Installation' group box signals (in 'Database Admin' tab)
+            self.dlg_admin.btnMainInst.clicked.connect(
+                self.evt_btnMainInst_clicked)
+            self.dlg_admin.btnMainUninst.clicked.connect(
+                self.evt_btnMainUninst_clicked)
+
+            # 'User Installation' group box signals (in 'Database Admin' tab)
+            self.dlg_admin.cbxUser.currentIndexChanged.connect(
+                self.evt_cbxUser_changed)
+            self.dlg_admin.btnUsrInst.clicked.connect(
+                self.evt_btnUsrInst_clicked)
+            self.dlg_admin.btnUsrUninst.clicked.connect(
+                self.evt_btnUsrUninst_clicked)
+        
+            self.dlg_admin.btnCloseConn.clicked.connect(
+                self.evt_btnCloseConn_clicked)
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #--(end)---################################################################
+
+            # Get existing connections from QGIS profile settings.
+            connection.get_postgres_conn(self) # Stored in self.conn
+
+        # When this dialogue is open, inputs in any other windows are blocked.
+        self.dlg_admin.setWindowModality(2)
+
+        # Show the dialog
+        self.dlg_admin.show()
+
+        # Run the dialog event loop.
+        res = self.dlg_admin.exec_()
+        if not res: # Dialog has closed (X button was pressed)
+            # Reset the dialog widgets. (Closes the current open connection.)
+            widget_reset.reset_tabDbAdmin(self)
+
+
 
     def run(self) -> None:
         """Run main method that performs all the real work.
@@ -345,6 +421,12 @@ class DBLoader:
                 self.evt_btnCreateLayers_clicked)
             self.dlg.btnRefreshLayers.clicked.connect(
                 self.evt_btnRefreshLayers_clicked)
+            self.dlg.btnDropLayers.clicked.connect(
+                self.evt_btnDropLayers_clicked)
+
+
+            self.dlg.btnCloseConnC.clicked.connect(
+                self.evt_btnCloseConnC_clicked)
 
             # Link the addition canvas to the extents qgroupbox and
             # enable "MapCanvasExtent" options (Byproduct).
@@ -373,26 +455,26 @@ class DBLoader:
             self.dlg.btnImport.clicked.connect(
                 self.evt_btnImport_clicked)
 
-            # 'Connection' group box signals (in 'Database Admin' tab)
-            self.dlg.cbxExistingConn.currentIndexChanged.connect(
-                self.evt_cbxExistingConn_changed)
-            self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
-            self.dlg.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
+            # # 'Connection' group box signals (in 'Database Admin' tab)
+            # self.dlg.cbxExistingConn.currentIndexChanged.connect(
+            #     self.evt_cbxExistingConn_changed)
+            # self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
+            # self.dlg.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
 
 
-            # 'Main Installation' group box signals (in 'Database Admin' tab)
-            self.dlg.btnMainInst.clicked.connect(
-                self.evt_btnMainInst_clicked)
-            self.dlg.btnMainUninst.clicked.connect(
-                self.evt_btnMainUninst_clicked)
+            # # 'Main Installation' group box signals (in 'Database Admin' tab)
+            # self.dlg.btnMainInst.clicked.connect(
+            #     self.evt_btnMainInst_clicked)
+            # self.dlg.btnMainUninst.clicked.connect(
+            #     self.evt_btnMainUninst_clicked)
 
-            # 'User Installation' group box signals (in 'Database Admin' tab)
-            self.dlg.cbxUser.currentIndexChanged.connect(
-                self.evt_cbxUser_changed)
-            self.dlg.btnUsrInst.clicked.connect(
-                self.evt_btnUsrInst_clicked)
-            self.dlg.btnUsrUninst.clicked.connect(
-                self.evt_btnUsrUninst_clicked)
+            # # 'User Installation' group box signals (in 'Database Admin' tab)
+            # self.dlg.cbxUser.currentIndexChanged.connect(
+            #     self.evt_cbxUser_changed)
+            # self.dlg.btnUsrInst.clicked.connect(
+            #     self.evt_btnUsrInst_clicked)
+            # self.dlg.btnUsrUninst.clicked.connect(
+            #     self.evt_btnUsrUninst_clicked)
             
 
     #----------################################################################
@@ -404,8 +486,6 @@ class DBLoader:
 
             # Get existing connections from QGIS profile settings.
             connection.get_postgres_conn(self) # Stored in self.conn
-
-
 
             #self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget()
 
@@ -445,11 +525,8 @@ class DBLoader:
 
         # Set the current database connection object variable
         self.DB = self.dlg.cbxExistingConnC.currentData()
-
-        # Set the current user schema name.
-        #self.USER_SCHEMA = c.USER_PKG_NAME.format(user=self.DB.username)
-        # NOTE: temopararily hardcoded!
-        self.USER_SCHEMA = c.USER_PKG_NAME.format(user="user")
+        if not self.DB:
+            return None
 
         usr_setup.cbxExistingConnC_setup(self)
 
@@ -459,9 +536,13 @@ class DBLoader:
 
         Resposible to add VALID new connection to the 'Existing connections'.
         """
+        if self.dlg_admin: # Bypass the input blockade for the connector dialogue
+            self.dlg_admin.setWindowModality(1)
+
 
         # Create/Show/Execture additional dialog for the new connection
         dlgConnector = connection.DlgConnector()
+        dlgConnector.setWindowModality(2)
         dlgConnector.show()
         dlgConnector.exec_()
 
@@ -470,9 +551,13 @@ class DBLoader:
             self.dlg.cbxExistingConnC.addItem(
                 f"{dlgConnector.new_connection.connection_name}",
                 dlgConnector.new_connection)
-            self.dlg.cbxExistingConn.addItem(
+            self.dlg_admin.cbxExistingConn.addItem(
                 f"{dlgConnector.new_connection.connection_name}",
                 dlgConnector.new_connection)
+#            dlgConnector.close()
+
+        if self.dlg_admin: # Reinstage the input blockage.
+            self.dlg_admin.setWindowModality(2)
 
     # 'Database' group box events (in 'Connection' tab)
     def evt_btnConnectToDbC_clicked(self) -> None:
@@ -542,17 +627,29 @@ class DBLoader:
         usr_setup.btnCreateLayers_setup(self)
 
     def evt_btnRefreshLayers_clicked(self) -> None:
-        """Event that is called when the 'Refresh layers in schema {sch}'
+        """Event that is called when the 'Refresh layers for schema {sch}'
         pushButton (btnRefreshLayers) is pressed.
         """
 
         usr_setup.btnRefreshLayers_setup(self)
 
-    def evt_update_bar(self,step,text) -> None:
+    def evt_btnDropLayers_clicked(self) -> None:
+        """Event that is called when the 'Drop layers for schema {sch}'
+        pushButton (btnRefreshLayers) is pressed.
+        """
+
+        usr_setup.btnDropLayers_setup(self)
+
+    def evt_update_bar(self,dialog,step,text) -> None:
         """Function to setup the progress bar upon update.
         Important: Progress Bar need to be already created
         in dbLoader.msg_bar: QgsMessageBar and
         dbLoader.bar: QProgressBar.
+
+        *   :param dialog: The dialog to hold the bar.
+            "admin" or "main"
+
+            :type step: str
 
         *   :param step: Current value of the progress
 
@@ -562,11 +659,15 @@ class DBLoader:
 
             :type text: str
 
-        .. This event is not liked to any widet_setup function
+        .. This event is not linked to any widet_setup function
         .. as it isn't responsible for changes in different
         .. widgets in the gui.
         """
-        progress_bar = self.dlg.bar
+
+        if dialog == "admin":
+            progress_bar = self.dlg_admin.bar
+        elif dialog == "main":
+            progress_bar = self.dlg.bar
 
         # Show text instead of completed percentage.
         if text:
@@ -574,7 +675,13 @@ class DBLoader:
         # Update progress with current step
         progress_bar.setValue(step)
 
+    def evt_btnCloseConnC_clicked(self) -> None:
+        """Event that is called when the 'Close current connection' pushButton
+        (btnCloseConn) is pressed.
+        """
 
+        widget_reset.reset_tabConnection(self)
+        widget_reset.reset_tabLayers(self)
 
 
     # 'Parameters' group box events (in 'Import' tab)
@@ -630,14 +737,12 @@ class DBLoader:
         comboBox (cbxExistingConn) current index changes.
         """
         # Set the current database connection object variable
-        self.DB = self.dlg.cbxExistingConn.currentData()
-
-        # Set the current user schema name.
-        #self.USER_SCHEMA = c.USER_PKG_NAME.format(user=self.DB.username)
-        # NOTE: temopararily hardcoded!
-        self.USER_SCHEMA = c.USER_PKG_NAME.format(user="user")
+        self.DB = self.dlg_admin.cbxExistingConn.currentData()
+        if not self.DB:
+            return None
 
         dba_setup.cbxExistingConn_setup(self)
+        
 
     def evt_btnConnectToDb_clicked(self) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
@@ -653,7 +758,7 @@ class DBLoader:
 
         dba_setup.cbxUser_setup(self)
 
-    # 'Installation' group box events (in 'Settings' tab)
+    # 'Installation' group box events (in 'Database Administration' tab)
     def evt_btnMainInst_clicked(self) -> None:
         """Event that is called when the 'Install to database' pushButton
         (btnMainInst) is pressed.
@@ -667,7 +772,7 @@ class DBLoader:
         """
         dba_setup.btnMainUninst_setup(self)
 
-        # 'Installation' group box events (in 'Settings' tab)
+        # 'Installation' group box events (in 'Database Administration' tab)
     def evt_btnUsrInst_clicked(self) -> None:
         """Event that is called when the 'Create schema for user' pushButton
         (btnUsrInst) is pressed.
@@ -679,16 +784,22 @@ class DBLoader:
         """Event that is called when the 'Drop schema for user' pushButton
         (btnUsrUninst) is pressed.
         """
-        dba_setup.btnUsrUninst_setup(self)
-        
+        dba_setup.btnUsrUninst_setup(self)   
 
-    # 'Database' group box events (in 'Settings' tab)
-    def evt_btnRefreshLayers_clicked(self) -> None:
-        """Event that is called when the 'Referesh all Views' pushButton
-        (btnRefreshLayers) is pressed.
+    # # 'Database' group box events (in 'Database Administration' tab) #NOTE: to be deleted?
+    # def evt_btnRefreshLayers_clicked(self) -> None:
+    #     """Event that is called when the 'Referesh all Views' pushButton
+    #     (btnRefreshLayers) is pressed.
+    #     """
+
+    #     dba_setup.btnRefreshLayers_setup(self)
+
+    def evt_btnCloseConn_clicked(self) -> None:
+        """Event that is called when the 'Close current connection' pushButton
+        (btnCloseConn) is pressed.
         """
 
-        dba_setup.btnRefreshLayers_setup(self)
+        widget_reset.reset_tabDbAdmin(self)
 
     #----------################################################################
     #--EVENTS--################################################################

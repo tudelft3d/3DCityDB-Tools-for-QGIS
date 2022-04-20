@@ -1,8 +1,55 @@
 2022-xx-xx TO DO
 ----------
-Rewrite layer generation functions to be less exposed to code injection.
-Updating install script to be more similar to the one of 3DCityDB v. 4.x
+TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
+
+2022-04-16
+----------
+Version 0.6.1
+Added "DELETE FROM LAYER_MEDATADA ..." for functions that drop layers
+Improved function [qgis_pkg.qgis_pkg_version()] with codename and release_date
+Inverted order of input parameters of function [qgis_pkg.support_for_schema()]
+
+2022-04-14
+----------
+Version 0.6.0
+Made functions to drop and refresh layers compatible with usr_schema names with "_"
+Cleaned up a bit some code
+
+2022-04-11
+----------
+MAJOR UPDATE -> Version 0.5.0
+Major code restructuring with some bug fixes.
+Added header and copyright notice to each file.
+Renumbered sql files.
+Renamed all [sql_generator_xx()] [functions to generate_sql_xx()]
+Script: 
+Script 070: Added scripts to create/refresh/drop layer functions
+	- Drop functions can handle up to one cdb_schema at once (circa max 520 layers)
+Script 080-170: Cleaned up code of layer generation functions
+	- Switched order of first 2 input parameters
+	- Added controls for usr_name, cdb_schema validity
+Script 180:
+	- Finalise install, add default users
+
+2022-04-06
+----------
+MAJOR UPDATE -> Version 0.4.0
+Merged script 015 back into 010
+Script 010 Renamed "template" objects in qgis_pkg to *_template
+Script 020
+	- Added/updated functions to activate multi-user, with different privileges
+	- Added  functions:
+		[qgis_pkg.list_cdb_schemas()]
+		[qgis_pkg.list_qgis_pkg_usrgroup_members()]
+		[qgis_pkg.grant_qgis_usr_privileges()]
+		[qgis_pkg.revoke_qgis_usr_privileges()]
+	- Added some [qgis_pkg.sql_generator_xx()] functions
+Scripts 2xx
+	- Code restructuring
+	- Functions renamed to qgis_pkg.sql_generator_layer_xx
+	- Function made safe for SQL identifiers that need to be quoted
+Minor updates and buxfixes
 
 2022-03-29
 ----------
@@ -58,7 +105,7 @@ Script 010-015
 	- Fixed views for enumerations and codelists
 Scripts 070 and 080 are now obsolete
 Script 200 contains additional functions (to be merged into script 020)
-Scripts 210...340 contain new [qgis_pkg.create_layers_xxxx()] functions
+Scripts 210...340 contain new [qgis_pkg.create_layers_xx()] functions
 	- Functions correspond to CityGML modules
 	- They are cdb_schema- and usr_schema-aware
 	- Currently: CityFurniture, Generics, LandUse, Vegetation, Relief are done

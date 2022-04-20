@@ -7,6 +7,8 @@ from typing import Callable
 
 from qgis.core import QgsMessageLog, Qgis, QgsRectangle, QgsCoordinateReferenceSystem
 
+MIN_VERSION = 4 #3 DCityDB
+
 # Directories - Paths - Names
 DIR_NAME = os.path.split(os.path.dirname(__file__))[1] # main
 QML_FORMS_DIR = "forms"
@@ -14,6 +16,7 @@ PLUGIN_PATH = os.path.split(os.path.dirname(__file__))[0]
 QML_FORMS_PATH = os.path.join(PLUGIN_PATH,QML_FORMS_DIR)
 
 PLUGIN_NAME = "3DCityDB-Loader"
+PLUGIN_NAME_ADMIN = " ".join([PLUGIN_NAME,"(Administration)"])
 MAIN_PKG_NAME = "qgis_pkg"
 USER_PKG_NAME = "qgis_{user}"
 INST_DIR_NAME = "installation"
@@ -69,6 +72,8 @@ UNINST_SUCC_MSG = "{pkg} has been uninstalled succeffully!"
 UNINST_ERROR_MSG = "{pkg} was NOT removed!"
 LAYER_CR_SUCCS_MSG = "Layers have been created successfully in {sch}"
 LAYER_CR_ERROR_MSG = "Error occured while creating layers in {sch}"
+LAYER_DR_SUCCS_MSG = "Layers have been removed successfully from {sch}"
+LAYER_DR_ERROR_MSG = "Error occured while removing layers from {sch}"
 
 # Connection Status messages
 CONN_FAIL_MSG = "Connection failed!"
@@ -84,11 +89,12 @@ INST_MSG = "{pkg} is already installed!"
 INST_QUERY = "Any existing installation of '{pkg}' is going to be replaced! Do you want to proceed?"
 UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
 
-# Widget initial embedded text | Note: empty spaces are for positioning.  
+# Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDbC_t = "Connect to {db}"
 btnCreateLayers_t = "Create layers for schema {sch}"
-btnRefreshLayers_t = " Refresh layers in schema {sch}"
+btnRefreshLayers_t = " Refresh layers for schema {sch}"
 btnCityExtentsC_t = "Set to {sch} schema"
+btnDropLayers_t = "Drop layers for schema {sch}"
 
 lblInfoText_t = "Database: {db}\nCurrent user: {usr}\nCurrent citydb schema: {sch}"
 btnCityExtents_t = btnCityExtentsC_t
@@ -100,7 +106,7 @@ btnMainUninst_t = "  Uninstall from database {db}"
 btnUsrInst_t = "  Create schema for user {usr}"
 btnUsrUninst_t = "  Drop schema for user {usr}"
 
-# Parameters
+# Options dafault Parameters
 DEC_PREC = 3
 MIN_AREA = 0.0001
 
@@ -161,16 +167,28 @@ lods = [
 create_layers_funcs = [
     "create_layers_building",
     "create_layers_bridge",
-    "create_layers_city_furniture",
+    "create_layers_cityfurniture",
     "create_layers_generics",
     "create_layers_tunnel",
     "create_layers_transportation",
-    "create_layers_land_use",
+    "create_layers_landuse",
     "create_layers_relief",
     "create_layers_vegetation",
     "create_layers_waterbody",
     ]
-    # NOTE:TODO fill in the rest when they're done
+
+drop_layers_funcs = [
+    "drop_layers_building",
+    "drop_layers_bridge",
+    "drop_layers_cityfurniture",
+    "drop_layers_generics",
+    "drop_layers_tunnel",
+    "drop_layers_transportation",
+    "drop_layers_landuse",
+    "drop_layers_relief",
+    "drop_layers_vegetation",
+    "drop_layers_waterbody",
+    ]
 
 # Basemaps
 GOOGLE_URL = "http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&"
@@ -184,7 +202,7 @@ OSM_NAME = "OSM Basemap"
 # Classes
 class View():
     """This class is used to convert each row of
-    the qgis_pkg.layer_meatadata table into object
+    the 'layer_metadata' table into object
     instances.
 
     Its purpose is to facilitate access to attributes."""
@@ -212,7 +230,6 @@ class View():
         self.n_selected = 0
         self.mv_name = mv_name
         self.v_name= v_name
-        self.v_name = v_name
         self.qml_file = qml_file
         self.qml_path = os.path.join(QML_FORMS_PATH,qml_file)
         self.creation_data=creation_data

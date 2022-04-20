@@ -18,13 +18,17 @@ def reset_tabConnection(dbLoader) -> None:
     """Function to reset the 'Connection' tab.
     Resets: gbxConnStatusC and gbxDatabase.
     """
-    
+    # Close the current open connection.
+    if dbLoader.conn is not None:
+        dbLoader.conn.close()
     reset_gbxDatabase(dbLoader)
     reset_gbxConnStatusC(dbLoader)
     reset_gbxBasemapC(dbLoader)
     reset_cgbxOptions(dbLoader)
     reset_btnCreateLayers(dbLoader)
     reset_btnRefreshLayers(dbLoader)
+    reset_btnDropLayers(dbLoader)
+    dbLoader.dlg.btnCloseConnC.setDisabled(True)
 
 def reset_gbxDatabase(dbLoader) -> None:
     """Function to reset the 'Database' groupbox (in Connection tab)."""
@@ -95,6 +99,12 @@ def reset_btnRefreshLayers(dbLoader) -> None:
     dbLoader.dlg.btnRefreshLayers.setDisabled(True)
     dbLoader.dlg.btnRefreshLayers.setText(dbLoader.dlg.btnRefreshLayers.init_text)
 
+def reset_btnDropLayers(dbLoader) -> None:
+    """Function to reset the 'Drop layers' pushButton (in 'User Connection' tab)."""
+
+    dbLoader.dlg.btnDropLayers.setDisabled(True)
+    dbLoader.dlg.btnDropLayers.setText(dbLoader.dlg.btnDropLayers.init_text)
+
 
 # Import tab # TODO: create reset function for the basemap
 def reset_tabLayers(dbLoader) -> None:
@@ -144,26 +154,30 @@ def reset_tabDbAdmin(dbLoader) -> None:
     Resets: gbxInstall and lblInfoText.
     """
 
+    # Close the current open connection.
+    if dbLoader.conn is not None:
+        dbLoader.conn.close()
     reset_gbxMainInst(dbLoader)
     reset_gbxUserInst(dbLoader)
     reset_gbxConnStatus(dbLoader)
+    dbLoader.dlg_admin.btnCloseConn.setDisabled(True)
 
 def reset_gbxMainInst(dbLoader) -> None:
     """Function to reset the 'Main Installation' groupBox
     (in Database Administration tab)."""
 
-    dbLoader.dlg.gbxMainInst.setDisabled(True)
-    dbLoader.dlg.btnMainInst.setText(dbLoader.dlg.btnMainInst.init_text)
-    dbLoader.dlg.btnMainUninst.setText(dbLoader.dlg.btnMainUninst.init_text)
+    dbLoader.dlg_admin.gbxMainInst.setDisabled(True)
+    dbLoader.dlg_admin.btnMainInst.setText(dbLoader.dlg_admin.btnMainInst.init_text)
+    dbLoader.dlg_admin.btnMainUninst.setText(dbLoader.dlg_admin.btnMainUninst.init_text)
 
 def reset_gbxUserInst(dbLoader) -> None:
     """Function to reset the 'User Installation' groupBox
     (in Database Administration tab)."""
     
-    dbLoader.dlg.gbxUserInst.setDisabled(True)
-    dbLoader.dlg.btnUsrInst.setText(dbLoader.dlg.btnUsrInst.init_text)
-    dbLoader.dlg.btnUsrUninst.setText(dbLoader.dlg.btnUsrUninst.init_text)
-    dbLoader.dlg.cbxUser.clear()
+    dbLoader.dlg_admin.gbxUserInst.setDisabled(True)
+    dbLoader.dlg_admin.btnUsrInst.setText(dbLoader.dlg_admin.btnUsrInst.init_text)
+    dbLoader.dlg_admin.btnUsrUninst.setText(dbLoader.dlg_admin.btnUsrUninst.init_text)
+    dbLoader.dlg_admin.cbxUser.clear()
 
 
 def reset_gbxConnStatus(dbLoader) -> None:
@@ -171,9 +185,9 @@ def reset_gbxConnStatus(dbLoader) -> None:
     (in  Database Administration tab).
     """
 
-    dbLoader.dlg.gbxConnStatus.setDisabled(True)
-    dbLoader.dlg.lblConnToDb_out.clear()
-    dbLoader.dlg.lblPostInst_out.clear()
-    dbLoader.dlg.lbl3DCityDBInst_out.clear()
-    dbLoader.dlg.lblMainInst_out.clear()
-    dbLoader.dlg.lblUserInst_out.clear()
+    dbLoader.dlg_admin.gbxConnStatus.setDisabled(True)
+    dbLoader.dlg_admin.lblConnToDb_out.clear()
+    dbLoader.dlg_admin.lblPostInst_out.clear()
+    dbLoader.dlg_admin.lbl3DCityDBInst_out.clear()
+    dbLoader.dlg_admin.lblMainInst_out.clear()
+    dbLoader.dlg_admin.lblUserInst_out.clear()
