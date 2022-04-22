@@ -1,5 +1,4 @@
 
-from readline import set_completion_display_matches_hook
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
 from qgis.PyQt.QtWidgets import QMessageBox

@@ -7,7 +7,6 @@ the database with sql queries all sql function calls.
 #TODO: Catching error and logging code block seems too repretive,
 # could probably set it as a function
 
-from xxlimited import Str
 import psycopg2
 
 from .. import constants as c
@@ -123,7 +122,7 @@ def fetch_crs(dbLoader) -> int:
             error=error)
         dbLoader.conn.rollback()
 
-def exec_qgis_pkg_version(dbLoader) -> Str:
+def exec_qgis_pkg_version(dbLoader) -> str:
     """SQL function thar reads and retrieves the qgis_pkg version
 
     *   :returns: The qgis_pkg verison.

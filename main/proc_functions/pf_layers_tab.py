@@ -224,46 +224,12 @@ def create_lookup_relations(layer: QgsVectorLayer) -> None:
         if field_name == 'relative_to_terrain':
             target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value') # NOTE: hardcoded view name and values
             assert target_layer, assertion_msg.format('v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = RelativeToTerrainType"))
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = 'RelativeToTerrainType'"))
         elif field_name == 'relative_to_water':
             target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value')
             assert target_layer, assertion_msg.format('v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = RelativeToWaterType"))
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = 'RelativeToWaterType'"))
         
-        # Codelists.
-        # elif field_name == 'class':
-        #     code_id_cl = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Class')
-        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-        #     assert target_layer, assertion_msg.format('codelist_value')
-        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-        #         Key= 'value',
-        #         Value= 'description',
-        #         OrderByValue=True,
-        #         AllowMulti=True,
-        #         NofColumns=4,
-        #         FilterExpression=f"code_id = {code_id_cl}"))
-        # elif field_name == 'function':
-        #     code_id_fu = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Function')
-        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-        #     assert target_layer, assertion_msg.format('codelist_value')
-        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-        #         Key= 'value',
-        #         Value= 'description',
-        #         OrderByValue=True,
-        #         AllowMulti=True,
-        #         NofColumns=4,
-        #         FilterExpression=f"code_id = {code_id_fu}"))
-        # elif field_name == 'usage':
-        #     code_id_us = sql.fetch_codelist_id(dbLoader,root_class = view.root_class, lu_type='Usage')
-        #     target_layer = QgsProject.instance().mapLayersByName('codelist_value')
-        #     assert target_layer, assertion_msg.format('codelist_value')
-        #     layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(),
-        #         Key= 'value',
-        #         Value= 'description',
-        #         OrderByValue=True,
-        #         AllowMulti=True,
-        #         NofColumns=4,
-        #         FilterExpression=f"code_id = {code_id_us}"))
 
 def create_relations(layer: QgsVectorLayer) -> None:
     """Function to set-up the relation for an input layer.

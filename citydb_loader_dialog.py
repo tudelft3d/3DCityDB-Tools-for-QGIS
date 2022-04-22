@@ -27,6 +27,7 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.PyQt import Qt
 
 from .main import constants as c
 from .main import widget_setup

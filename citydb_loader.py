@@ -454,27 +454,6 @@ class DBLoader:
                 self.evt_ccbxFeatures_changed)
             self.dlg.btnImport.clicked.connect(
                 self.evt_btnImport_clicked)
-
-            # # 'Connection' group box signals (in 'Database Admin' tab)
-            # self.dlg.cbxExistingConn.currentIndexChanged.connect(
-            #     self.evt_cbxExistingConn_changed)
-            # self.dlg.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
-            # self.dlg.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
-
-
-            # # 'Main Installation' group box signals (in 'Database Admin' tab)
-            # self.dlg.btnMainInst.clicked.connect(
-            #     self.evt_btnMainInst_clicked)
-            # self.dlg.btnMainUninst.clicked.connect(
-            #     self.evt_btnMainUninst_clicked)
-
-            # # 'User Installation' group box signals (in 'Database Admin' tab)
-            # self.dlg.cbxUser.currentIndexChanged.connect(
-            #     self.evt_cbxUser_changed)
-            # self.dlg.btnUsrInst.clicked.connect(
-            #     self.evt_btnUsrInst_clicked)
-            # self.dlg.btnUsrUninst.clicked.connect(
-            #     self.evt_btnUsrUninst_clicked)
             
 
     #----------################################################################
