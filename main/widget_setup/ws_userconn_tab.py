@@ -99,21 +99,38 @@ def btnConnectToDbC_setup(dbLoader) -> None:
             dbLoader.DB.green_citydb_inst = False
             return None
 
-        # Enable schema comboBox
-        dlg.cbxSchema.setDisabled(False)
-        dlg.lblSchema.setDisabled(False)
+        # Check if main package (schema) is installed in database.
+        has_main_inst = sql.has_main_pkg(dbLoader)
+        if has_main_inst:
+            dlg.lblMainInstC_out.clear()
 
-        # Get schema name for user
-        sql.exec_create_qgis_usr_schema_name(dbLoader)
+            # Get qgis_pkg version.
+            full_version = f"(v.{sql.exec_qgis_pkg_version(dbLoader)})"
+            # Show message in Connection Status
+            dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG,full_version]).format(pkg=c.MAIN_PKG_NAME)))
+            dbLoader.DB.green_main_inst = True
+            # Enable schema comboBox
+            dlg.cbxSchema.setDisabled(False)
+            dlg.lblSchema.setDisabled(False)
 
-        # Get 3DCityDB schemas from database
-        #schemas = sql.exec_get_feature_schemas(dbLoader)
-        schemas = sql.exec_list_cdb_schemas(dbLoader)
-        print(schemas)
-        # Fill schema combo box
-        usr_tab.fill_schema_box(dbLoader, schemas=schemas)
-        # At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event.
-        # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
+
+            # Get schema name for user
+            sql.exec_create_qgis_usr_schema_name(dbLoader)
+
+            # Get 3DCityDB schemas from database
+            #schemas = sql.exec_get_feature_schemas(dbLoader)
+            schemas = sql.exec_list_cdb_schemas(dbLoader)
+
+            # Fill schema combo box
+            usr_tab.fill_schema_box(dbLoader, schemas=schemas)
+            # At this point,filling the schema box, activates the 'evt_cbxSchema_changed' event.
+            # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
+        else:
+            dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG).format(pkg=c.MAIN_PKG_NAME))
+            dbLoader.DB.green_main_inst = False
+            return None
+
+
 
     else: # Connection failed!
         widget_reset.reset_gbxConnStatusC(dbLoader)
@@ -144,7 +161,6 @@ def cbxSchema_setup(dbLoader) -> None:
         return None
 
     # Clear status of previous schema.
-    dbLoader.dlg.lblMainInstC_out.clear()
     dbLoader.dlg.lblUserInstC_out.clear()
     dbLoader.dlg.lblSupport_out.clear()
     dbLoader.dlg.lblLayerRefr_out.clear()
@@ -154,18 +170,7 @@ def cbxSchema_setup(dbLoader) -> None:
     dbLoader.dlg.btnCreateLayers.setText(dbLoader.dlg.btnCreateLayers.init_text.format(sch=dbLoader.SCHEMA))
     dbLoader.dlg.btnDropLayers.setText(dbLoader.dlg.btnDropLayers.init_text.format(sch=dbLoader.SCHEMA))
 
-    # Check if main package (schema) is installed in database.
-    has_main_inst = sql.has_main_pkg(dbLoader)
-    if has_main_inst:
-        # Get qgis_pkg version.
-        full_version = f"(v.{sql.exec_qgis_pkg_version(dbLoader)})"
-        # Show message in Connection Status
-        dbLoader.dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG,full_version]).format(pkg=c.MAIN_PKG_NAME)))
-        dbLoader.DB.green_main_inst = True
-    else:
-        dbLoader.dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG).format(pkg=c.MAIN_PKG_NAME))
-        dbLoader.DB.green_main_inst = False
-        return None
+
 
     # Check if user package (schema) is installed in database.
     has_user_inst = sql.has_user_pkg(dbLoader)

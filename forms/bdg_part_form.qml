@@ -1,534 +1,586 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Fields|Forms" version="3.22.3-Białowieża">
+<qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
+  <renderer-3d type="vector" layer="citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b">
+    <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
+    <symbol type="polygon" material_type="phong">
+      <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
+      <material specular="255,255,255,255" diffuse="168,19,21,255" ambient="25,25,25,255" shininess="0">
+        <data-defined-properties>
+          <Option type="Map">
+            <Option name="name" type="QString" value=""/>
+            <Option name="properties"/>
+            <Option name="type" type="QString" value="collection"/>
+          </Option>
+        </data-defined-properties>
+      </material>
+      <data-defined-properties>
+        <Option type="Map">
+          <Option name="name" type="QString" value=""/>
+          <Option name="properties"/>
+          <Option name="type" type="QString" value="collection"/>
+        </Option>
+      </data-defined-properties>
+      <edges color="0,0,0,255" width="1" enabled="0"/>
+    </symbol>
+  </renderer-3d>
+  <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0" referencescale="-1">
+    <symbols>
+      <symbol name="0" alpha="1" type="fill" clip_to_extent="1" force_rhr="0">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" type="QString" value=""/>
+            <Option name="properties"/>
+            <Option name="type" type="QString" value="collection"/>
+          </Option>
+        </data_defined_properties>
+        <layer pass="0" enabled="1" class="SimpleFill" locked="0">
+          <Option type="Map">
+            <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+            <Option name="color" type="QString" value="168,19,21,255"/>
+            <Option name="joinstyle" type="QString" value="bevel"/>
+            <Option name="offset" type="QString" value="0,0"/>
+            <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+            <Option name="offset_unit" type="QString" value="MM"/>
+            <Option name="outline_color" type="QString" value="35,35,35,255"/>
+            <Option name="outline_style" type="QString" value="solid"/>
+            <Option name="outline_width" type="QString" value="0.26"/>
+            <Option name="outline_width_unit" type="QString" value="MM"/>
+            <Option name="style" type="QString" value="solid"/>
+          </Option>
+          <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="color" v="168,19,21,255"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="35,35,35,255"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0.26"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="style" v="solid"/>
+          <data_defined_properties>
+            <Option type="Map">
+              <Option name="name" type="QString" value=""/>
+              <Option name="properties"/>
+              <Option name="type" type="QString" value="collection"/>
+            </Option>
+          </data_defined_properties>
+        </layer>
+      </symbol>
+    </symbols>
+    <rotation/>
+    <sizescale/>
+  </renderer-v2>
+  <blendMode>0</blendMode>
+  <featureBlendMode>0</featureBlendMode>
   <fieldConfiguration>
-    <field configurationFlags="None" name="id">
+    <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="gmlid">
+    <field name="gmlid" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="gmlid_codespace">
+    <field name="gmlid_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="name">
+    <field name="name" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="name_codespace">
+    <field name="name_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="description">
+    <field name="description" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="creation_date">
+    <field name="creation_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="termination_date">
+    <field name="termination_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="relative_to_terrain">
+    <field name="relative_to_terrain" configurationFlags="None">
       <editWidget type="ValueRelation">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="1" name="NofColumns"/>
-            <Option type="bool" value="false" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
+            <Option name="AllowMulti" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
+            <Option name="Key" type="QString" value="value"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
+            <Option name="NofColumns" type="int" value="1"/>
+            <Option name="OrderByValue" type="bool" value="false"/>
+            <Option name="UseCompleter" type="bool" value="false"/>
+            <Option name="Value" type="QString" value="description"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="relative_to_water">
+    <field name="relative_to_water" configurationFlags="None">
       <editWidget type="ValueRelation">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="1" name="NofColumns"/>
-            <Option type="bool" value="false" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
+            <Option name="AllowMulti" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="FilterExpression" type="QString" value="name = 'RelativeToWaterType'"/>
+            <Option name="Key" type="QString" value="value"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
+            <Option name="NofColumns" type="int" value="1"/>
+            <Option name="OrderByValue" type="bool" value="false"/>
+            <Option name="UseCompleter" type="bool" value="false"/>
+            <Option name="Value" type="QString" value="description"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="last_modification_date">
+    <field name="last_modification_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="updating_person">
+    <field name="updating_person" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="reason_for_update">
+    <field name="reason_for_update" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="lineage">
+    <field name="lineage" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="building_parent_id">
+    <field name="building_parent_id" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="building_root_id">
+    <field name="building_root_id" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="class">
-      <editWidget type="ValueRelation">
-        <config>
-          <Option type="Map">
-            <Option type="bool" value="false" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="1" name="NofColumns"/>
-            <Option type="bool" value="false" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
-    <field configurationFlags="None" name="class_codespace">
+    <field name="class" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="function">
-      <editWidget type="ValueRelation">
-        <config>
-          <Option type="Map">
-            <Option type="bool" value="true" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="4" name="NofColumns"/>
-            <Option type="bool" value="true" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
-    <field configurationFlags="None" name="function_codespace">
+    <field name="class_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="usage">
-      <editWidget type="ValueRelation">
-        <config>
-          <Option type="Map">
-            <Option type="bool" value="true" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="codelist_name  =  'NL BAG Gebruiksdoel'" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="4" name="NofColumns"/>
-            <Option type="bool" value="true" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
-    <field configurationFlags="None" name="usage_codespace">
+    <field name="function" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="year_of_construction">
+    <field name="function_codespace" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="usage" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="usage_codespace" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="year_of_construction" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="yyyy" name="display_format"/>
-            <Option type="QString" value="yyyy" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="yyyy"/>
+            <Option name="field_format" type="QString" value="yyyy"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="year_of_demolition">
+    <field name="year_of_demolition" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="yyyy" name="display_format"/>
-            <Option type="QString" value="yyyy" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="yyyy"/>
+            <Option name="field_format" type="QString" value="yyyy"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="roof_type">
+    <field name="roof_type" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="roof_type_codespace">
+    <field name="roof_type_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="measured_height">
+    <field name="measured_height" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="measured_height_unit">
+    <field name="measured_height_unit" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storeys_above_ground">
+    <field name="storeys_above_ground" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storeys_below_ground">
+    <field name="storeys_below_ground" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storey_heights_above_ground">
+    <field name="storey_heights_above_ground" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storey_heights_ag_unit">
+    <field name="storey_heights_ag_unit" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storey_heights_below_ground">
+    <field name="storey_heights_below_ground" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="storey_heights_bg_unit">
+    <field name="storey_heights_bg_unit" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias field="id" index="0" name="ID"/>
-    <alias field="gmlid" index="1" name="GML ID"/>
-    <alias field="gmlid_codespace" index="2" name="GML codespace"/>
-    <alias field="name" index="3" name="Name"/>
-    <alias field="name_codespace" index="4" name="Name codespace"/>
-    <alias field="description" index="5" name="Description"/>
-    <alias field="creation_date" index="6" name="Creation Date"/>
-    <alias field="termination_date" index="7" name="Termination Date"/>
-    <alias field="relative_to_terrain" index="8" name="Relative to Terrain"/>
-    <alias field="relative_to_water" index="9" name="Relative to Water"/>
-    <alias field="last_modification_date" index="10" name="Latest Modification"/>
-    <alias field="updating_person" index="11" name="Updating person"/>
-    <alias field="reason_for_update" index="12" name="Updating Reason"/>
-    <alias field="lineage" index="13" name="Lineage"/>
-    <alias field="building_parent_id" index="14" name=""/>
-    <alias field="building_root_id" index="15" name=""/>
-    <alias field="class" index="16" name="Class"/>
-    <alias field="class_codespace" index="17" name="Class codespace"/>
-    <alias field="function" index="18" name="Function"/>
-    <alias field="function_codespace" index="19" name="Function codespace"/>
-    <alias field="usage" index="20" name="Usage"/>
-    <alias field="usage_codespace" index="21" name="Usage codespace"/>
-    <alias field="year_of_construction" index="22" name="Year of Construction"/>
-    <alias field="year_of_demolition" index="23" name="Year of Demolition"/>
-    <alias field="roof_type" index="24" name="Roof Type"/>
-    <alias field="roof_type_codespace" index="25" name="Roof Type codespace"/>
-    <alias field="measured_height" index="26" name="Height"/>
-    <alias field="measured_height_unit" index="27" name="Height UoM"/>
-    <alias field="storeys_above_ground" index="28" name="Storeys above ground"/>
-    <alias field="storeys_below_ground" index="29" name="Storeys below ground"/>
-    <alias field="storey_heights_above_ground" index="30" name="Storey height above ground"/>
-    <alias field="storey_heights_ag_unit" index="31" name="Storey height above ground UoM"/>
-    <alias field="storey_heights_below_ground" index="32" name="Storey height below ground"/>
-    <alias field="storey_heights_bg_unit" index="33" name="Storey height below ground UoM"/>
+    <alias name="ID" field="id" index="0"/>
+    <alias name="GML ID" field="gmlid" index="1"/>
+    <alias name="GML codespace" field="gmlid_codespace" index="2"/>
+    <alias name="Name" field="name" index="3"/>
+    <alias name="Name codespace" field="name_codespace" index="4"/>
+    <alias name="Description" field="description" index="5"/>
+    <alias name="Creation Date" field="creation_date" index="6"/>
+    <alias name="Termination Date" field="termination_date" index="7"/>
+    <alias name="Relative to Terrain" field="relative_to_terrain" index="8"/>
+    <alias name="Relative to Water" field="relative_to_water" index="9"/>
+    <alias name="Latest Modification" field="last_modification_date" index="10"/>
+    <alias name="Updating person" field="updating_person" index="11"/>
+    <alias name="Updating Reason" field="reason_for_update" index="12"/>
+    <alias name="Lineage" field="lineage" index="13"/>
+    <alias name="" field="building_parent_id" index="14"/>
+    <alias name="" field="building_root_id" index="15"/>
+    <alias name="Class" field="class" index="16"/>
+    <alias name="Class codespace" field="class_codespace" index="17"/>
+    <alias name="Function" field="function" index="18"/>
+    <alias name="Function codespace" field="function_codespace" index="19"/>
+    <alias name="Usage" field="usage" index="20"/>
+    <alias name="Usage codespace" field="usage_codespace" index="21"/>
+    <alias name="Year of Construction" field="year_of_construction" index="22"/>
+    <alias name="Year of Demolition" field="year_of_demolition" index="23"/>
+    <alias name="Roof Type" field="roof_type" index="24"/>
+    <alias name="Roof Type codespace" field="roof_type_codespace" index="25"/>
+    <alias name="Height" field="measured_height" index="26"/>
+    <alias name="Height UoM" field="measured_height_unit" index="27"/>
+    <alias name="Storeys above ground" field="storeys_above_ground" index="28"/>
+    <alias name="Storeys below ground" field="storeys_below_ground" index="29"/>
+    <alias name="Storey height above ground" field="storey_heights_above_ground" index="30"/>
+    <alias name="Storey height above ground UoM" field="storey_heights_ag_unit" index="31"/>
+    <alias name="Storey height below ground" field="storey_heights_below_ground" index="32"/>
+    <alias name="Storey height below ground UoM" field="storey_heights_bg_unit" index="33"/>
   </aliases>
   <defaults>
-    <default expression="" field="id" applyOnUpdate="0"/>
-    <default expression="" field="gmlid" applyOnUpdate="0"/>
-    <default expression="" field="gmlid_codespace" applyOnUpdate="0"/>
-    <default expression="" field="name" applyOnUpdate="0"/>
-    <default expression="" field="name_codespace" applyOnUpdate="0"/>
-    <default expression="" field="description" applyOnUpdate="0"/>
-    <default expression="" field="creation_date" applyOnUpdate="0"/>
-    <default expression="" field="termination_date" applyOnUpdate="0"/>
-    <default expression="" field="relative_to_terrain" applyOnUpdate="0"/>
-    <default expression="" field="relative_to_water" applyOnUpdate="0"/>
-    <default expression="" field="last_modification_date" applyOnUpdate="0"/>
-    <default expression="" field="updating_person" applyOnUpdate="0"/>
-    <default expression="" field="reason_for_update" applyOnUpdate="0"/>
-    <default expression="" field="lineage" applyOnUpdate="0"/>
-    <default expression="" field="building_parent_id" applyOnUpdate="0"/>
-    <default expression="" field="building_root_id" applyOnUpdate="0"/>
-    <default expression="" field="class" applyOnUpdate="0"/>
-    <default expression="" field="class_codespace" applyOnUpdate="0"/>
-    <default expression="" field="function" applyOnUpdate="0"/>
-    <default expression="" field="function_codespace" applyOnUpdate="0"/>
-    <default expression="" field="usage" applyOnUpdate="0"/>
-    <default expression="" field="usage_codespace" applyOnUpdate="0"/>
-    <default expression="" field="year_of_construction" applyOnUpdate="0"/>
-    <default expression="" field="year_of_demolition" applyOnUpdate="0"/>
-    <default expression="" field="roof_type" applyOnUpdate="0"/>
-    <default expression="" field="roof_type_codespace" applyOnUpdate="0"/>
-    <default expression="" field="measured_height" applyOnUpdate="0"/>
-    <default expression="" field="measured_height_unit" applyOnUpdate="0"/>
-    <default expression="" field="storeys_above_ground" applyOnUpdate="0"/>
-    <default expression="" field="storeys_below_ground" applyOnUpdate="0"/>
-    <default expression="" field="storey_heights_above_ground" applyOnUpdate="0"/>
-    <default expression="" field="storey_heights_ag_unit" applyOnUpdate="0"/>
-    <default expression="" field="storey_heights_below_ground" applyOnUpdate="0"/>
-    <default expression="" field="storey_heights_bg_unit" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
+    <default field="gmlid" expression="" applyOnUpdate="0"/>
+    <default field="gmlid_codespace" expression="" applyOnUpdate="0"/>
+    <default field="name" expression="" applyOnUpdate="0"/>
+    <default field="name_codespace" expression="" applyOnUpdate="0"/>
+    <default field="description" expression="" applyOnUpdate="0"/>
+    <default field="creation_date" expression="" applyOnUpdate="0"/>
+    <default field="termination_date" expression="" applyOnUpdate="0"/>
+    <default field="relative_to_terrain" expression="" applyOnUpdate="0"/>
+    <default field="relative_to_water" expression="" applyOnUpdate="0"/>
+    <default field="last_modification_date" expression="" applyOnUpdate="0"/>
+    <default field="updating_person" expression="" applyOnUpdate="0"/>
+    <default field="reason_for_update" expression="" applyOnUpdate="0"/>
+    <default field="lineage" expression="" applyOnUpdate="0"/>
+    <default field="building_parent_id" expression="" applyOnUpdate="0"/>
+    <default field="building_root_id" expression="" applyOnUpdate="0"/>
+    <default field="class" expression="" applyOnUpdate="0"/>
+    <default field="class_codespace" expression="" applyOnUpdate="0"/>
+    <default field="function" expression="" applyOnUpdate="0"/>
+    <default field="function_codespace" expression="" applyOnUpdate="0"/>
+    <default field="usage" expression="" applyOnUpdate="0"/>
+    <default field="usage_codespace" expression="" applyOnUpdate="0"/>
+    <default field="year_of_construction" expression="" applyOnUpdate="0"/>
+    <default field="year_of_demolition" expression="" applyOnUpdate="0"/>
+    <default field="roof_type" expression="" applyOnUpdate="0"/>
+    <default field="roof_type_codespace" expression="" applyOnUpdate="0"/>
+    <default field="measured_height" expression="" applyOnUpdate="0"/>
+    <default field="measured_height_unit" expression="" applyOnUpdate="0"/>
+    <default field="storeys_above_ground" expression="" applyOnUpdate="0"/>
+    <default field="storeys_below_ground" expression="" applyOnUpdate="0"/>
+    <default field="storey_heights_above_ground" expression="" applyOnUpdate="0"/>
+    <default field="storey_heights_ag_unit" expression="" applyOnUpdate="0"/>
+    <default field="storey_heights_below_ground" expression="" applyOnUpdate="0"/>
+    <default field="storey_heights_bg_unit" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint notnull_strength="1" field="id" constraints="3" unique_strength="1" exp_strength="0"/>
-    <constraint notnull_strength="0" field="gmlid" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="gmlid_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="name" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="name_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="description" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="creation_date" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="termination_date" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="relative_to_terrain" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="relative_to_water" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="last_modification_date" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="updating_person" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="reason_for_update" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="lineage" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="building_parent_id" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="building_root_id" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="class" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="class_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="function" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="function_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="usage" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="usage_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="year_of_construction" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="year_of_demolition" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="roof_type" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="roof_type_codespace" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="measured_height" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="measured_height_unit" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storeys_above_ground" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storeys_below_ground" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storey_heights_above_ground" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storey_heights_ag_unit" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storey_heights_below_ground" constraints="0" unique_strength="0" exp_strength="0"/>
-    <constraint notnull_strength="0" field="storey_heights_bg_unit" constraints="0" unique_strength="0" exp_strength="0"/>
+    <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="description" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="creation_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="termination_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_terrain" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_water" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="last_modification_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_parent_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_root_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="year_of_construction" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="year_of_demolition" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height_unit" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_above_ground" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_below_ground" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" field="id" desc=""/>
-    <constraint exp="" field="gmlid" desc=""/>
-    <constraint exp="" field="gmlid_codespace" desc=""/>
-    <constraint exp="" field="name" desc=""/>
-    <constraint exp="" field="name_codespace" desc=""/>
-    <constraint exp="" field="description" desc=""/>
-    <constraint exp="" field="creation_date" desc=""/>
-    <constraint exp="" field="termination_date" desc=""/>
-    <constraint exp="" field="relative_to_terrain" desc=""/>
-    <constraint exp="" field="relative_to_water" desc=""/>
-    <constraint exp="" field="last_modification_date" desc=""/>
-    <constraint exp="" field="updating_person" desc=""/>
-    <constraint exp="" field="reason_for_update" desc=""/>
-    <constraint exp="" field="lineage" desc=""/>
-    <constraint exp="" field="building_parent_id" desc=""/>
-    <constraint exp="" field="building_root_id" desc=""/>
-    <constraint exp="" field="class" desc=""/>
-    <constraint exp="" field="class_codespace" desc=""/>
-    <constraint exp="" field="function" desc=""/>
-    <constraint exp="" field="function_codespace" desc=""/>
-    <constraint exp="" field="usage" desc=""/>
-    <constraint exp="" field="usage_codespace" desc=""/>
-    <constraint exp="" field="year_of_construction" desc=""/>
-    <constraint exp="" field="year_of_demolition" desc=""/>
-    <constraint exp="" field="roof_type" desc=""/>
-    <constraint exp="" field="roof_type_codespace" desc=""/>
-    <constraint exp="" field="measured_height" desc=""/>
-    <constraint exp="" field="measured_height_unit" desc=""/>
-    <constraint exp="" field="storeys_above_ground" desc=""/>
-    <constraint exp="" field="storeys_below_ground" desc=""/>
-    <constraint exp="" field="storey_heights_above_ground" desc=""/>
-    <constraint exp="" field="storey_heights_ag_unit" desc=""/>
-    <constraint exp="" field="storey_heights_below_ground" desc=""/>
-    <constraint exp="" field="storey_heights_bg_unit" desc=""/>
+    <constraint desc="" field="id" exp=""/>
+    <constraint desc="" field="gmlid" exp=""/>
+    <constraint desc="" field="gmlid_codespace" exp=""/>
+    <constraint desc="" field="name" exp=""/>
+    <constraint desc="" field="name_codespace" exp=""/>
+    <constraint desc="" field="description" exp=""/>
+    <constraint desc="" field="creation_date" exp=""/>
+    <constraint desc="" field="termination_date" exp=""/>
+    <constraint desc="" field="relative_to_terrain" exp=""/>
+    <constraint desc="" field="relative_to_water" exp=""/>
+    <constraint desc="" field="last_modification_date" exp=""/>
+    <constraint desc="" field="updating_person" exp=""/>
+    <constraint desc="" field="reason_for_update" exp=""/>
+    <constraint desc="" field="lineage" exp=""/>
+    <constraint desc="" field="building_parent_id" exp=""/>
+    <constraint desc="" field="building_root_id" exp=""/>
+    <constraint desc="" field="class" exp=""/>
+    <constraint desc="" field="class_codespace" exp=""/>
+    <constraint desc="" field="function" exp=""/>
+    <constraint desc="" field="function_codespace" exp=""/>
+    <constraint desc="" field="usage" exp=""/>
+    <constraint desc="" field="usage_codespace" exp=""/>
+    <constraint desc="" field="year_of_construction" exp=""/>
+    <constraint desc="" field="year_of_demolition" exp=""/>
+    <constraint desc="" field="roof_type" exp=""/>
+    <constraint desc="" field="roof_type_codespace" exp=""/>
+    <constraint desc="" field="measured_height" exp=""/>
+    <constraint desc="" field="measured_height_unit" exp=""/>
+    <constraint desc="" field="storeys_above_ground" exp=""/>
+    <constraint desc="" field="storeys_below_ground" exp=""/>
+    <constraint desc="" field="storey_heights_above_ground" exp=""/>
+    <constraint desc="" field="storey_heights_ag_unit" exp=""/>
+    <constraint desc="" field="storey_heights_below_ground" exp=""/>
+    <constraint desc="" field="storey_heights_bg_unit" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -539,9 +591,7 @@
 """
 QGIS forms can have a Python function that is called when the form is
 opened.
-
 Use this function to add extra logic to your forms.
-
 Enter the name of the function in the "Python Init function"
 field.
 An example follows:
@@ -555,58 +605,58 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Main Info" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="0" name="id"/>
-      <attributeEditorField showLabel="1" index="1" name="gmlid"/>
-      <attributeEditorField showLabel="1" index="2" name="gmlid_codespace"/>
-      <attributeEditorField showLabel="1" index="3" name="name"/>
-      <attributeEditorField showLabel="1" index="4" name="name_codespace"/>
-      <attributeEditorField showLabel="1" index="5" name="description"/>
+    <attributeEditorContainer name="Main Info" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="id" showLabel="1" index="0"/>
+      <attributeEditorField name="gmlid" showLabel="1" index="1"/>
+      <attributeEditorField name="gmlid_codespace" showLabel="1" index="2"/>
+      <attributeEditorField name="name" showLabel="1" index="3"/>
+      <attributeEditorField name="name_codespace" showLabel="1" index="4"/>
+      <attributeEditorField name="description" showLabel="1" index="5"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Database Info" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="6" name="creation_date"/>
-      <attributeEditorField showLabel="1" index="7" name="termination_date"/>
-      <attributeEditorField showLabel="1" index="10" name="last_modification_date"/>
-      <attributeEditorField showLabel="1" index="11" name="updating_person"/>
-      <attributeEditorField showLabel="1" index="12" name="reason_for_update"/>
-      <attributeEditorField showLabel="1" index="13" name="lineage"/>
+    <attributeEditorContainer name="Database Info" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="creation_date" showLabel="1" index="6"/>
+      <attributeEditorField name="termination_date" showLabel="1" index="7"/>
+      <attributeEditorField name="last_modification_date" showLabel="1" index="10"/>
+      <attributeEditorField name="updating_person" showLabel="1" index="11"/>
+      <attributeEditorField name="reason_for_update" showLabel="1" index="12"/>
+      <attributeEditorField name="lineage" showLabel="1" index="13"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Other" visibilityExpression="">
-      <attributeEditorContainer showLabel="1" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" name="Surface Relation" visibilityExpression="">
-        <attributeEditorField showLabel="1" index="8" name="relative_to_terrain"/>
-        <attributeEditorField showLabel="1" index="9" name="relative_to_water"/>
+    <attributeEditorContainer name="Other" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorContainer name="Surface Relation" visibilityExpression="" columnCount="1" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+        <attributeEditorField name="relative_to_terrain" showLabel="1" index="8"/>
+        <attributeEditorField name="relative_to_water" showLabel="1" index="9"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Generic Attributes" visibilityExpression="">
-      <attributeEditorRelation relationWidgetTypeId="" relation="cityobject_genericattrib_5e19b53c_46ce_4bef_8f55_83981cce0439_cityobject_id_citydb_bdg_part_lod0_cde5cd66_5efe_4cf3_b932_c38c27f87a55_id" label="Generic Attributes" showLabel="0" forceSuppressFormPopup="0" nmRelationId="" name="cityobject_genericattrib_5e19b53c_46ce_4bef_8f55_83981cce0439_cityobject_id_citydb_bdg_part_lod0_cde5cd66_5efe_4cf3_b932_c38c27f87a55_id">
+    <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorRelation name="cityobject_genericattrib_67bf3eec_4b48_4d52_bfe9_484db0afb3ee_cityobject_id_citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_67bf3eec_4b48_4d52_bfe9_484db0afb3ee_cityobject_id_citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b_id" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="1" columnCount="2" visibilityExpressionEnabled="0" name="Building Part Attributes" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="26" name="measured_height"/>
-      <attributeEditorField showLabel="1" index="27" name="measured_height_unit"/>
-      <attributeEditorField showLabel="1" index="30" name="storey_heights_above_ground"/>
-      <attributeEditorField showLabel="1" index="31" name="storey_heights_ag_unit"/>
-      <attributeEditorField showLabel="1" index="32" name="storey_heights_below_ground"/>
-      <attributeEditorField showLabel="1" index="33" name="storey_heights_bg_unit"/>
-      <attributeEditorField showLabel="1" index="28" name="storeys_above_ground"/>
-      <attributeEditorField showLabel="1" index="29" name="storeys_below_ground"/>
-      <attributeEditorField showLabel="1" index="22" name="year_of_construction"/>
-      <attributeEditorField showLabel="1" index="23" name="year_of_demolition"/>
-      <attributeEditorField showLabel="1" index="24" name="roof_type"/>
-      <attributeEditorField showLabel="1" index="25" name="roof_type_codespace"/>
+    <attributeEditorContainer name="Building Part Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="measured_height" showLabel="1" index="26"/>
+      <attributeEditorField name="measured_height_unit" showLabel="1" index="27"/>
+      <attributeEditorField name="storey_heights_above_ground" showLabel="1" index="30"/>
+      <attributeEditorField name="storey_heights_ag_unit" showLabel="1" index="31"/>
+      <attributeEditorField name="storey_heights_below_ground" showLabel="1" index="32"/>
+      <attributeEditorField name="storey_heights_bg_unit" showLabel="1" index="33"/>
+      <attributeEditorField name="storeys_above_ground" showLabel="1" index="28"/>
+      <attributeEditorField name="storeys_below_ground" showLabel="1" index="29"/>
+      <attributeEditorField name="year_of_construction" showLabel="1" index="22"/>
+      <attributeEditorField name="year_of_demolition" showLabel="1" index="23"/>
+      <attributeEditorField name="roof_type" showLabel="1" index="24"/>
+      <attributeEditorField name="roof_type_codespace" showLabel="1" index="25"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Class" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="16" name="class"/>
-      <attributeEditorField showLabel="1" index="17" name="class_codespace"/>
+    <attributeEditorContainer name="Class" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="class" showLabel="1" index="16"/>
+      <attributeEditorField name="class_codespace" showLabel="1" index="17"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Function" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="18" name="function"/>
-      <attributeEditorField showLabel="1" index="19" name="function_codespace"/>
+    <attributeEditorContainer name="Function" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="function" showLabel="1" index="18"/>
+      <attributeEditorField name="function_codespace" showLabel="1" index="19"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" name="Usage" visibilityExpression="">
-      <attributeEditorField showLabel="1" index="20" name="usage"/>
-      <attributeEditorField showLabel="1" index="21" name="usage_codespace"/>
+    <attributeEditorContainer name="Usage" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="usage" showLabel="1" index="20"/>
+      <attributeEditorField name="usage_codespace" showLabel="1" index="21"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -646,76 +696,76 @@ def my_form_open(dialog, layer, feature):
     <field name="year_of_demolition" editable="1"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="building_parent_id"/>
-    <field labelOnTop="0" name="building_root_id"/>
-    <field labelOnTop="0" name="class"/>
-    <field labelOnTop="0" name="class_codespace"/>
-    <field labelOnTop="0" name="creation_date"/>
-    <field labelOnTop="0" name="description"/>
-    <field labelOnTop="0" name="function"/>
-    <field labelOnTop="0" name="function_codespace"/>
-    <field labelOnTop="0" name="gmlid"/>
-    <field labelOnTop="0" name="gmlid_codespace"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="last_modification_date"/>
-    <field labelOnTop="0" name="lineage"/>
-    <field labelOnTop="0" name="measured_height"/>
-    <field labelOnTop="0" name="measured_height_unit"/>
-    <field labelOnTop="0" name="name"/>
-    <field labelOnTop="0" name="name_codespace"/>
-    <field labelOnTop="0" name="reason_for_update"/>
-    <field labelOnTop="0" name="relative_to_terrain"/>
-    <field labelOnTop="0" name="relative_to_water"/>
-    <field labelOnTop="0" name="roof_type"/>
-    <field labelOnTop="0" name="roof_type_codespace"/>
-    <field labelOnTop="0" name="storey_heights_above_ground"/>
-    <field labelOnTop="0" name="storey_heights_ag_unit"/>
-    <field labelOnTop="0" name="storey_heights_below_ground"/>
-    <field labelOnTop="0" name="storey_heights_bg_unit"/>
-    <field labelOnTop="0" name="storeys_above_ground"/>
-    <field labelOnTop="0" name="storeys_below_ground"/>
-    <field labelOnTop="0" name="termination_date"/>
-    <field labelOnTop="0" name="updating_person"/>
-    <field labelOnTop="0" name="usage"/>
-    <field labelOnTop="0" name="usage_codespace"/>
-    <field labelOnTop="0" name="year_of_construction"/>
-    <field labelOnTop="0" name="year_of_demolition"/>
+    <field name="building_parent_id" labelOnTop="0"/>
+    <field name="building_root_id" labelOnTop="0"/>
+    <field name="class" labelOnTop="0"/>
+    <field name="class_codespace" labelOnTop="0"/>
+    <field name="creation_date" labelOnTop="0"/>
+    <field name="description" labelOnTop="0"/>
+    <field name="function" labelOnTop="0"/>
+    <field name="function_codespace" labelOnTop="0"/>
+    <field name="gmlid" labelOnTop="0"/>
+    <field name="gmlid_codespace" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="last_modification_date" labelOnTop="0"/>
+    <field name="lineage" labelOnTop="0"/>
+    <field name="measured_height" labelOnTop="0"/>
+    <field name="measured_height_unit" labelOnTop="0"/>
+    <field name="name" labelOnTop="0"/>
+    <field name="name_codespace" labelOnTop="0"/>
+    <field name="reason_for_update" labelOnTop="0"/>
+    <field name="relative_to_terrain" labelOnTop="0"/>
+    <field name="relative_to_water" labelOnTop="0"/>
+    <field name="roof_type" labelOnTop="0"/>
+    <field name="roof_type_codespace" labelOnTop="0"/>
+    <field name="storey_heights_above_ground" labelOnTop="0"/>
+    <field name="storey_heights_ag_unit" labelOnTop="0"/>
+    <field name="storey_heights_below_ground" labelOnTop="0"/>
+    <field name="storey_heights_bg_unit" labelOnTop="0"/>
+    <field name="storeys_above_ground" labelOnTop="0"/>
+    <field name="storeys_below_ground" labelOnTop="0"/>
+    <field name="termination_date" labelOnTop="0"/>
+    <field name="updating_person" labelOnTop="0"/>
+    <field name="usage" labelOnTop="0"/>
+    <field name="usage_codespace" labelOnTop="0"/>
+    <field name="year_of_construction" labelOnTop="0"/>
+    <field name="year_of_demolition" labelOnTop="0"/>
   </labelOnTop>
   <reuseLastValue>
-    <field reuseLastValue="0" name="building_parent_id"/>
-    <field reuseLastValue="0" name="building_root_id"/>
-    <field reuseLastValue="0" name="class"/>
-    <field reuseLastValue="0" name="class_codespace"/>
-    <field reuseLastValue="0" name="creation_date"/>
-    <field reuseLastValue="0" name="description"/>
-    <field reuseLastValue="0" name="function"/>
-    <field reuseLastValue="0" name="function_codespace"/>
-    <field reuseLastValue="0" name="gmlid"/>
-    <field reuseLastValue="1" name="gmlid_codespace"/>
-    <field reuseLastValue="0" name="id"/>
-    <field reuseLastValue="0" name="last_modification_date"/>
-    <field reuseLastValue="0" name="lineage"/>
-    <field reuseLastValue="0" name="measured_height"/>
-    <field reuseLastValue="0" name="measured_height_unit"/>
-    <field reuseLastValue="0" name="name"/>
-    <field reuseLastValue="0" name="name_codespace"/>
-    <field reuseLastValue="0" name="reason_for_update"/>
-    <field reuseLastValue="0" name="relative_to_terrain"/>
-    <field reuseLastValue="0" name="relative_to_water"/>
-    <field reuseLastValue="0" name="roof_type"/>
-    <field reuseLastValue="0" name="roof_type_codespace"/>
-    <field reuseLastValue="0" name="storey_heights_above_ground"/>
-    <field reuseLastValue="0" name="storey_heights_ag_unit"/>
-    <field reuseLastValue="0" name="storey_heights_below_ground"/>
-    <field reuseLastValue="0" name="storey_heights_bg_unit"/>
-    <field reuseLastValue="0" name="storeys_above_ground"/>
-    <field reuseLastValue="0" name="storeys_below_ground"/>
-    <field reuseLastValue="0" name="termination_date"/>
-    <field reuseLastValue="0" name="updating_person"/>
-    <field reuseLastValue="0" name="usage"/>
-    <field reuseLastValue="0" name="usage_codespace"/>
-    <field reuseLastValue="0" name="year_of_construction"/>
-    <field reuseLastValue="0" name="year_of_demolition"/>
+    <field name="building_parent_id" reuseLastValue="0"/>
+    <field name="building_root_id" reuseLastValue="0"/>
+    <field name="class" reuseLastValue="0"/>
+    <field name="class_codespace" reuseLastValue="0"/>
+    <field name="creation_date" reuseLastValue="0"/>
+    <field name="description" reuseLastValue="0"/>
+    <field name="function" reuseLastValue="0"/>
+    <field name="function_codespace" reuseLastValue="0"/>
+    <field name="gmlid" reuseLastValue="0"/>
+    <field name="gmlid_codespace" reuseLastValue="1"/>
+    <field name="id" reuseLastValue="0"/>
+    <field name="last_modification_date" reuseLastValue="0"/>
+    <field name="lineage" reuseLastValue="0"/>
+    <field name="measured_height" reuseLastValue="0"/>
+    <field name="measured_height_unit" reuseLastValue="0"/>
+    <field name="name" reuseLastValue="0"/>
+    <field name="name_codespace" reuseLastValue="0"/>
+    <field name="reason_for_update" reuseLastValue="0"/>
+    <field name="relative_to_terrain" reuseLastValue="0"/>
+    <field name="relative_to_water" reuseLastValue="0"/>
+    <field name="roof_type" reuseLastValue="0"/>
+    <field name="roof_type_codespace" reuseLastValue="0"/>
+    <field name="storey_heights_above_ground" reuseLastValue="0"/>
+    <field name="storey_heights_ag_unit" reuseLastValue="0"/>
+    <field name="storey_heights_below_ground" reuseLastValue="0"/>
+    <field name="storey_heights_bg_unit" reuseLastValue="0"/>
+    <field name="storeys_above_ground" reuseLastValue="0"/>
+    <field name="storeys_below_ground" reuseLastValue="0"/>
+    <field name="termination_date" reuseLastValue="0"/>
+    <field name="updating_person" reuseLastValue="0"/>
+    <field name="usage" reuseLastValue="0"/>
+    <field name="usage_codespace" reuseLastValue="0"/>
+    <field name="year_of_construction" reuseLastValue="0"/>
+    <field name="year_of_demolition" reuseLastValue="0"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>

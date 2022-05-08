@@ -44,4 +44,5 @@ def fill_schema_box(dbLoader, schemas: tuple) -> None:
     dbLoader.dlg.cbxSchema.clear()
 
     for schema in schemas:
-        dbLoader.dlg.cbxSchema.addItem(schema, True)
+        if not sql.exec_table_is_empty(dbLoader,schema,"cityobject"):
+            dbLoader.dlg.cbxSchema.addItem(schema, True)

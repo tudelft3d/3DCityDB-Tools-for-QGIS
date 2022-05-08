@@ -1,30 +1,14 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc">
+  <renderer-3d type="vector" layer="citydb_bdg_room_lod4_caebba34_0e53_4266_8857_53921cff55ea">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="polygon" material_type="phong">
       <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
-      <material specular="255,255,255,255" diffuse="179,179,179,255" ambient="25,25,25,255" shininess="0">
+      <material specular="255,255,255,255" diffuse="186,124,125,255" ambient="25,25,25,255" shininess="0">
         <data-defined-properties>
           <Option type="Map">
             <Option name="name" type="QString" value=""/>
-            <Option name="properties" type="Map">
-              <Option name="ambient" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-              <Option name="diffuse" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-              <Option name="specular" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-            </Option>
+            <Option name="properties"/>
             <Option name="type" type="QString" value="collection"/>
           </Option>
         </data-defined-properties>
@@ -52,43 +36,182 @@
         <layer pass="0" enabled="1" class="SimpleFill" locked="0">
           <Option type="Map">
             <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
-            <Option name="color" type="QString" value="0,0,0,255"/>
+            <Option name="color" type="QString" value="186,124,125,255"/>
             <Option name="joinstyle" type="QString" value="bevel"/>
             <Option name="offset" type="QString" value="0,0"/>
             <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
             <Option name="offset_unit" type="QString" value="MM"/>
-            <Option name="outline_color" type="QString" value="35,35,35,255"/>
+            <Option name="outline_color" type="QString" value="0,0,0,255"/>
             <Option name="outline_style" type="QString" value="solid"/>
             <Option name="outline_width" type="QString" value="0.26"/>
             <Option name="outline_width_unit" type="QString" value="MM"/>
             <Option name="style" type="QString" value="solid"/>
           </Option>
           <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="color" v="0,0,0,255"/>
+          <prop k="color" v="186,124,125,255"/>
           <prop k="joinstyle" v="bevel"/>
           <prop k="offset" v="0,0"/>
           <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
           <prop k="offset_unit" v="MM"/>
-          <prop k="outline_color" v="35,35,35,255"/>
+          <prop k="outline_color" v="0,0,0,255"/>
           <prop k="outline_style" v="solid"/>
           <prop k="outline_width" v="0.26"/>
           <prop k="outline_width_unit" v="MM"/>
           <prop k="style" v="solid"/>
+          <effect type="effectStack" enabled="0">
+            <effect type="dropShadow">
+              <Option type="Map">
+                <Option name="blend_mode" type="QString" value="13"/>
+                <Option name="blur_level" type="QString" value="2.645"/>
+                <Option name="blur_unit" type="QString" value="MM"/>
+                <Option name="blur_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="color" type="QString" value="0,0,0,255"/>
+                <Option name="draw_mode" type="QString" value="2"/>
+                <Option name="enabled" type="QString" value="0"/>
+                <Option name="offset_angle" type="QString" value="135"/>
+                <Option name="offset_distance" type="QString" value="2"/>
+                <Option name="offset_unit" type="QString" value="MM"/>
+                <Option name="offset_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="opacity" type="QString" value="1"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
+            </effect>
+            <effect type="outerGlow">
+              <Option type="Map">
+                <Option name="blend_mode" type="QString" value="0"/>
+                <Option name="blur_level" type="QString" value="0.7935"/>
+                <Option name="blur_unit" type="QString" value="MM"/>
+                <Option name="blur_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="color1" type="QString" value="0,0,255,255"/>
+                <Option name="color2" type="QString" value="0,255,0,255"/>
+                <Option name="color_type" type="QString" value="0"/>
+                <Option name="discrete" type="QString" value="0"/>
+                <Option name="draw_mode" type="QString" value="2"/>
+                <Option name="enabled" type="QString" value="0"/>
+                <Option name="opacity" type="QString" value="0.5"/>
+                <Option name="rampType" type="QString" value="gradient"/>
+                <Option name="single_color" type="QString" value="255,255,255,255"/>
+                <Option name="spread" type="QString" value="2"/>
+                <Option name="spread_unit" type="QString" value="MM"/>
+                <Option name="spread_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="0.7935"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
+            </effect>
+            <effect type="blur">
+              <Option type="Map">
+                <Option name="blend_mode" type="QString" value="0"/>
+                <Option name="blur_level" type="QString" value="2.645"/>
+                <Option name="blur_method" type="QString" value="0"/>
+                <Option name="blur_unit" type="QString" value="MM"/>
+                <Option name="blur_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="draw_mode" type="QString" value="2"/>
+                <Option name="enabled" type="QString" value="1"/>
+                <Option name="opacity" type="QString" value="1"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_method" v="0"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="opacity" v="1"/>
+            </effect>
+            <effect type="innerShadow">
+              <Option type="Map">
+                <Option name="blend_mode" type="QString" value="13"/>
+                <Option name="blur_level" type="QString" value="2.645"/>
+                <Option name="blur_unit" type="QString" value="MM"/>
+                <Option name="blur_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="color" type="QString" value="0,0,0,255"/>
+                <Option name="draw_mode" type="QString" value="2"/>
+                <Option name="enabled" type="QString" value="0"/>
+                <Option name="offset_angle" type="QString" value="135"/>
+                <Option name="offset_distance" type="QString" value="2"/>
+                <Option name="offset_unit" type="QString" value="MM"/>
+                <Option name="offset_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="opacity" type="QString" value="1"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
+            </effect>
+            <effect type="innerGlow">
+              <Option type="Map">
+                <Option name="blend_mode" type="QString" value="0"/>
+                <Option name="blur_level" type="QString" value="0.7935"/>
+                <Option name="blur_unit" type="QString" value="MM"/>
+                <Option name="blur_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="color1" type="QString" value="0,0,255,255"/>
+                <Option name="color2" type="QString" value="0,255,0,255"/>
+                <Option name="color_type" type="QString" value="0"/>
+                <Option name="discrete" type="QString" value="0"/>
+                <Option name="draw_mode" type="QString" value="2"/>
+                <Option name="enabled" type="QString" value="0"/>
+                <Option name="opacity" type="QString" value="0.5"/>
+                <Option name="rampType" type="QString" value="gradient"/>
+                <Option name="single_color" type="QString" value="255,255,255,255"/>
+                <Option name="spread" type="QString" value="2"/>
+                <Option name="spread_unit" type="QString" value="MM"/>
+                <Option name="spread_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="0.7935"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
+            </effect>
+          </effect>
           <data_defined_properties>
             <Option type="Map">
               <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="enabled" type="Map">
-                  <Option name="active" type="bool" value="false"/>
-                  <Option name="expression" type="QString" value=""/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-                <Option name="fillColor" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
+              <Option name="properties"/>
               <Option name="type" type="QString" value="collection"/>
             </Option>
           </data_defined_properties>
@@ -264,10 +387,73 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_id" configurationFlags="None">
-      <editWidget type="Range">
+    <field name="class" configurationFlags="None">
+      <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="class_codespace" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="function" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="function_codespace" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="usage" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="usage_codespace" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="building_id" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -287,7 +473,13 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_id" index="14"/>
+    <alias name="Class" field="class" index="14"/>
+    <alias name="Class codespace" field="class_codespace" index="15"/>
+    <alias name="Function" field="function" index="16"/>
+    <alias name="Function codespace" field="function_codespace" index="17"/>
+    <alias name="Usage" field="usage" index="18"/>
+    <alias name="Usage codespace" field="usage_codespace" index="19"/>
+    <alias name="Building ID" field="building_id" index="20"/>
   </aliases>
   <defaults>
     <default field="id" expression="" applyOnUpdate="0"/>
@@ -304,6 +496,12 @@
     <default field="updating_person" expression="" applyOnUpdate="0"/>
     <default field="reason_for_update" expression="" applyOnUpdate="0"/>
     <default field="lineage" expression="" applyOnUpdate="0"/>
+    <default field="class" expression="" applyOnUpdate="0"/>
+    <default field="class_codespace" expression="" applyOnUpdate="0"/>
+    <default field="function" expression="" applyOnUpdate="0"/>
+    <default field="function_codespace" expression="" applyOnUpdate="0"/>
+    <default field="usage" expression="" applyOnUpdate="0"/>
+    <default field="usage_codespace" expression="" applyOnUpdate="0"/>
     <default field="building_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
@@ -321,6 +519,12 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage_codespace" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_id" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
@@ -338,6 +542,12 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
+    <constraint desc="" field="class" exp=""/>
+    <constraint desc="" field="class_codespace" exp=""/>
+    <constraint desc="" field="function" exp=""/>
+    <constraint desc="" field="function_codespace" exp=""/>
+    <constraint desc="" field="usage" exp=""/>
+    <constraint desc="" field="usage_codespace" exp=""/>
     <constraint desc="" field="building_id" exp=""/>
   </constraintExpressions>
   <expressionfields/>
@@ -388,9 +598,26 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" relationWidgetTypeId="">
-        <editor_configuration/>
+      <attributeEditorRelation name="" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="" relationWidgetTypeId="">
+        <editor_configuration type="Map">
+          <Option name="buttons" type="QString" value="AllButtons"/>
+        </editor_configuration>
       </attributeEditorRelation>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Room Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="building_id" showLabel="1" index="20"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Class" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="class" showLabel="1" index="14"/>
+      <attributeEditorField name="class_codespace" showLabel="1" index="15"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Function" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="function" showLabel="1" index="16"/>
+      <attributeEditorField name="function_codespace" showLabel="1" index="17"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Usage" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="usage" showLabel="1" index="18"/>
+      <attributeEditorField name="usage_codespace" showLabel="1" index="19"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>

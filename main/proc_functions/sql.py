@@ -170,6 +170,24 @@ def exec_list_cdb_schemas(dbLoader) -> tuple:
             error=error)
         dbLoader.conn.rollback()
 
+def exec_table_is_empty(dbLoader,schema, table) -> bool:
+    try:
+        with dbLoader.conn.cursor() as cur:
+            #Get all schemas
+            cur.callproc(f"{c.MAIN_PKG_NAME}.table_is_empty",[schema,table])
+            is_empty = cur.fetchone()[0] # trailing comma
+        return is_empty
+
+    except (Exception, psycopg2.Error) as error:
+        # Send error to QGIS Message Log panel.
+        c.critical_log(func=exec_table_is_empty,
+            location=FILE_LOCATION,
+            header="Checking if {schema}.{table} is empty.",
+            error=error)
+        dbLoader.conn.rollback()
+
+
+    
 def exec_list_qgis_pkg_usrgroup_members(dbLoader) -> tuple:
     """SQL function thar reads and retrieves the database's
     data schemas. (citydb)

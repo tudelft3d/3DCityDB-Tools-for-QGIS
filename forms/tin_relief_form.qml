@@ -1,275 +1,348 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.22.3-Białowieża" styleCategories="Fields|Forms">
+<qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
+  <renderer-3d type="vector" layer="citydb_tin_relief_lod1_5f237088_b5cf_4e5c_824c_ac93fc1711c8">
+    <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
+    <symbol type="polygon" material_type="phong">
+      <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
+      <material specular="255,255,255,255" diffuse="120,61,30,255" ambient="25,25,25,255" shininess="0">
+        <data-defined-properties>
+          <Option type="Map">
+            <Option name="name" type="QString" value=""/>
+            <Option name="properties"/>
+            <Option name="type" type="QString" value="collection"/>
+          </Option>
+        </data-defined-properties>
+      </material>
+      <data-defined-properties>
+        <Option type="Map">
+          <Option name="name" type="QString" value=""/>
+          <Option name="properties"/>
+          <Option name="type" type="QString" value="collection"/>
+        </Option>
+      </data-defined-properties>
+      <edges color="0,0,0,255" width="1" enabled="0"/>
+    </symbol>
+  </renderer-3d>
+  <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0" referencescale="-1">
+    <symbols>
+      <symbol name="0" alpha="1" type="fill" clip_to_extent="1" force_rhr="0">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" type="QString" value=""/>
+            <Option name="properties"/>
+            <Option name="type" type="QString" value="collection"/>
+          </Option>
+        </data_defined_properties>
+        <layer pass="0" enabled="1" class="SimpleFill" locked="0">
+          <Option type="Map">
+            <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+            <Option name="color" type="QString" value="120,61,30,255"/>
+            <Option name="joinstyle" type="QString" value="bevel"/>
+            <Option name="offset" type="QString" value="0,0"/>
+            <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+            <Option name="offset_unit" type="QString" value="MM"/>
+            <Option name="outline_color" type="QString" value="0,0,0,255"/>
+            <Option name="outline_style" type="QString" value="solid"/>
+            <Option name="outline_width" type="QString" value="0.26"/>
+            <Option name="outline_width_unit" type="QString" value="MM"/>
+            <Option name="style" type="QString" value="solid"/>
+          </Option>
+          <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="color" v="120,61,30,255"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="0,0,0,255"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0.26"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="style" v="solid"/>
+          <data_defined_properties>
+            <Option type="Map">
+              <Option name="name" type="QString" value=""/>
+              <Option name="properties"/>
+              <Option name="type" type="QString" value="collection"/>
+            </Option>
+          </data_defined_properties>
+        </layer>
+      </symbol>
+    </symbols>
+    <rotation/>
+    <sizescale/>
+  </renderer-v2>
+  <blendMode>0</blendMode>
+  <featureBlendMode>0</featureBlendMode>
   <fieldConfiguration>
-    <field configurationFlags="None" name="id">
+    <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="gmlid">
+    <field name="gmlid" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="gmlid_codespace">
+    <field name="gmlid_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="name">
+    <field name="name" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="name_codespace">
+    <field name="name_codespace" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="description">
+    <field name="description" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="creation_date">
+    <field name="creation_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="termination_date">
+    <field name="termination_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="relative_to_terrain">
+    <field name="relative_to_terrain" configurationFlags="None">
       <editWidget type="ValueRelation">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="1" name="NofColumns"/>
-            <Option type="bool" value="false" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
+            <Option name="AllowMulti" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
+            <Option name="Key" type="QString" value="value"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <Option name="NofColumns" type="int" value="1"/>
+            <Option name="OrderByValue" type="bool" value="false"/>
+            <Option name="UseCompleter" type="bool" value="false"/>
+            <Option name="Value" type="QString" value="description"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="relative_to_water">
+    <field name="relative_to_water" configurationFlags="None">
       <editWidget type="ValueRelation">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="AllowMulti"/>
-            <Option type="bool" value="true" name="AllowNull"/>
-            <Option type="QString" value="" name="FilterExpression"/>
-            <Option type="QString" value="code_value" name="Key"/>
-            <Option type="QString" value="" name="Layer"/>
-            <Option type="int" value="1" name="NofColumns"/>
-            <Option type="bool" value="false" name="OrderByValue"/>
-            <Option type="bool" value="false" name="UseCompleter"/>
-            <Option type="QString" value="code_name" name="Value"/>
+            <Option name="AllowMulti" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="FilterExpression" type="QString" value="name = 'RelativeToWaterType'"/>
+            <Option name="Key" type="QString" value="value"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <Option name="NofColumns" type="int" value="1"/>
+            <Option name="OrderByValue" type="bool" value="false"/>
+            <Option name="UseCompleter" type="bool" value="false"/>
+            <Option name="Value" type="QString" value="description"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="last_modification_date">
+    <field name="last_modification_date" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
           <Option type="Map">
-            <Option type="bool" value="true" name="allow_null"/>
-            <Option type="bool" value="true" name="calendar_popup"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="display_format"/>
-            <Option type="QString" value="dd-MM-yyyy HH:mm:ss" name="field_format"/>
-            <Option type="bool" value="false" name="field_iso_format"/>
+            <Option name="allow_null" type="bool" value="true"/>
+            <Option name="calendar_popup" type="bool" value="true"/>
+            <Option name="display_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_format" type="QString" value="dd-MM-yyyy HH:mm:ss"/>
+            <Option name="field_iso_format" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="updating_person">
+    <field name="updating_person" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="reason_for_update">
+    <field name="reason_for_update" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="lineage">
+    <field name="lineage" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="lod">
+    <field name="lod" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="max_length">
+    <field name="max_length" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="max_length_unit">
+    <field name="max_length_unit" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option type="bool" value="false" name="IsMultiline"/>
-            <Option type="bool" value="false" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias field="id" index="0" name="ID"/>
-    <alias field="gmlid" index="1" name="GML ID"/>
-    <alias field="gmlid_codespace" index="2" name="GML codespace"/>
-    <alias field="name" index="3" name="Name"/>
-    <alias field="name_codespace" index="4" name="Name codespace"/>
-    <alias field="description" index="5" name="Description"/>
-    <alias field="creation_date" index="6" name="Creation Date"/>
-    <alias field="termination_date" index="7" name="Termination Date"/>
-    <alias field="relative_to_terrain" index="8" name="Relative to Terrain"/>
-    <alias field="relative_to_water" index="9" name="Relative to Water"/>
-    <alias field="last_modification_date" index="10" name="Latest Modification"/>
-    <alias field="updating_person" index="11" name="Updating person"/>
-    <alias field="reason_for_update" index="12" name="Updating Reason"/>
-    <alias field="lineage" index="13" name="Lineage"/>
-    <alias field="lod" index="14" name=""/>
-    <alias field="max_length" index="15" name=""/>
-    <alias field="max_length_unit" index="16" name=""/>
+    <alias name="ID" field="id" index="0"/>
+    <alias name="GML ID" field="gmlid" index="1"/>
+    <alias name="GML codespace" field="gmlid_codespace" index="2"/>
+    <alias name="Name" field="name" index="3"/>
+    <alias name="Name codespace" field="name_codespace" index="4"/>
+    <alias name="Description" field="description" index="5"/>
+    <alias name="Creation Date" field="creation_date" index="6"/>
+    <alias name="Termination Date" field="termination_date" index="7"/>
+    <alias name="Relative to Terrain" field="relative_to_terrain" index="8"/>
+    <alias name="Relative to Water" field="relative_to_water" index="9"/>
+    <alias name="Latest Modification" field="last_modification_date" index="10"/>
+    <alias name="Updating person" field="updating_person" index="11"/>
+    <alias name="Updating Reason" field="reason_for_update" index="12"/>
+    <alias name="Lineage" field="lineage" index="13"/>
+    <alias name="" field="lod" index="14"/>
+    <alias name="" field="max_length" index="15"/>
+    <alias name="" field="max_length_unit" index="16"/>
   </aliases>
   <defaults>
-    <default expression="" field="id" applyOnUpdate="0"/>
-    <default expression="" field="gmlid" applyOnUpdate="0"/>
-    <default expression="" field="gmlid_codespace" applyOnUpdate="0"/>
-    <default expression="" field="name" applyOnUpdate="0"/>
-    <default expression="" field="name_codespace" applyOnUpdate="0"/>
-    <default expression="" field="description" applyOnUpdate="0"/>
-    <default expression="" field="creation_date" applyOnUpdate="0"/>
-    <default expression="" field="termination_date" applyOnUpdate="0"/>
-    <default expression="" field="relative_to_terrain" applyOnUpdate="0"/>
-    <default expression="" field="relative_to_water" applyOnUpdate="0"/>
-    <default expression="" field="last_modification_date" applyOnUpdate="0"/>
-    <default expression="" field="updating_person" applyOnUpdate="0"/>
-    <default expression="" field="reason_for_update" applyOnUpdate="0"/>
-    <default expression="" field="lineage" applyOnUpdate="0"/>
-    <default expression="" field="lod" applyOnUpdate="0"/>
-    <default expression="" field="max_length" applyOnUpdate="0"/>
-    <default expression="" field="max_length_unit" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
+    <default field="gmlid" expression="" applyOnUpdate="0"/>
+    <default field="gmlid_codespace" expression="" applyOnUpdate="0"/>
+    <default field="name" expression="" applyOnUpdate="0"/>
+    <default field="name_codespace" expression="" applyOnUpdate="0"/>
+    <default field="description" expression="" applyOnUpdate="0"/>
+    <default field="creation_date" expression="" applyOnUpdate="0"/>
+    <default field="termination_date" expression="" applyOnUpdate="0"/>
+    <default field="relative_to_terrain" expression="" applyOnUpdate="0"/>
+    <default field="relative_to_water" expression="" applyOnUpdate="0"/>
+    <default field="last_modification_date" expression="" applyOnUpdate="0"/>
+    <default field="updating_person" expression="" applyOnUpdate="0"/>
+    <default field="reason_for_update" expression="" applyOnUpdate="0"/>
+    <default field="lineage" expression="" applyOnUpdate="0"/>
+    <default field="lod" expression="" applyOnUpdate="0"/>
+    <default field="max_length" expression="" applyOnUpdate="0"/>
+    <default field="max_length_unit" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint constraints="3" field="id" notnull_strength="1" unique_strength="1" exp_strength="0"/>
-    <constraint constraints="0" field="gmlid" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="gmlid_codespace" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="name" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="name_codespace" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="description" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="creation_date" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="termination_date" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="relative_to_terrain" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="relative_to_water" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="last_modification_date" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="updating_person" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="reason_for_update" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="lineage" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="lod" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="max_length" notnull_strength="0" unique_strength="0" exp_strength="0"/>
-    <constraint constraints="0" field="max_length_unit" notnull_strength="0" unique_strength="0" exp_strength="0"/>
+    <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name_codespace" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="description" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="creation_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="termination_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_terrain" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_water" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="last_modification_date" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lod" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="max_length" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="max_length_unit" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint field="id" exp="" desc=""/>
-    <constraint field="gmlid" exp="" desc=""/>
-    <constraint field="gmlid_codespace" exp="" desc=""/>
-    <constraint field="name" exp="" desc=""/>
-    <constraint field="name_codespace" exp="" desc=""/>
-    <constraint field="description" exp="" desc=""/>
-    <constraint field="creation_date" exp="" desc=""/>
-    <constraint field="termination_date" exp="" desc=""/>
-    <constraint field="relative_to_terrain" exp="" desc=""/>
-    <constraint field="relative_to_water" exp="" desc=""/>
-    <constraint field="last_modification_date" exp="" desc=""/>
-    <constraint field="updating_person" exp="" desc=""/>
-    <constraint field="reason_for_update" exp="" desc=""/>
-    <constraint field="lineage" exp="" desc=""/>
-    <constraint field="lod" exp="" desc=""/>
-    <constraint field="max_length" exp="" desc=""/>
-    <constraint field="max_length_unit" exp="" desc=""/>
+    <constraint desc="" field="id" exp=""/>
+    <constraint desc="" field="gmlid" exp=""/>
+    <constraint desc="" field="gmlid_codespace" exp=""/>
+    <constraint desc="" field="name" exp=""/>
+    <constraint desc="" field="name_codespace" exp=""/>
+    <constraint desc="" field="description" exp=""/>
+    <constraint desc="" field="creation_date" exp=""/>
+    <constraint desc="" field="termination_date" exp=""/>
+    <constraint desc="" field="relative_to_terrain" exp=""/>
+    <constraint desc="" field="relative_to_water" exp=""/>
+    <constraint desc="" field="last_modification_date" exp=""/>
+    <constraint desc="" field="updating_person" exp=""/>
+    <constraint desc="" field="reason_for_update" exp=""/>
+    <constraint desc="" field="lineage" exp=""/>
+    <constraint desc="" field="lod" exp=""/>
+    <constraint desc="" field="max_length" exp=""/>
+    <constraint desc="" field="max_length_unit" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -296,149 +369,149 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer columnCount="1" groupBox="0" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Main Info">
-      <attributeEditorField showLabel="1" index="0" name="id"/>
-      <attributeEditorField showLabel="1" index="1" name="gmlid"/>
-      <attributeEditorField showLabel="1" index="2" name="gmlid_codespace"/>
-      <attributeEditorField showLabel="1" index="3" name="name"/>
-      <attributeEditorField showLabel="1" index="4" name="name_codespace"/>
-      <attributeEditorField showLabel="1" index="5" name="description"/>
+    <attributeEditorContainer name="Main Info" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="id" showLabel="1" index="0"/>
+      <attributeEditorField name="gmlid" showLabel="1" index="1"/>
+      <attributeEditorField name="gmlid_codespace" showLabel="1" index="2"/>
+      <attributeEditorField name="name" showLabel="1" index="3"/>
+      <attributeEditorField name="name_codespace" showLabel="1" index="4"/>
+      <attributeEditorField name="description" showLabel="1" index="5"/>
     </attributeEditorContainer>
-    <attributeEditorContainer columnCount="1" groupBox="0" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Database Info">
-      <attributeEditorField showLabel="1" index="6" name="creation_date"/>
-      <attributeEditorField showLabel="1" index="7" name="termination_date"/>
-      <attributeEditorField showLabel="1" index="10" name="last_modification_date"/>
-      <attributeEditorField showLabel="1" index="11" name="updating_person"/>
-      <attributeEditorField showLabel="1" index="12" name="reason_for_update"/>
-      <attributeEditorField showLabel="1" index="13" name="lineage"/>
+    <attributeEditorContainer name="Database Info" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="creation_date" showLabel="1" index="6"/>
+      <attributeEditorField name="termination_date" showLabel="1" index="7"/>
+      <attributeEditorField name="last_modification_date" showLabel="1" index="10"/>
+      <attributeEditorField name="updating_person" showLabel="1" index="11"/>
+      <attributeEditorField name="reason_for_update" showLabel="1" index="12"/>
+      <attributeEditorField name="lineage" showLabel="1" index="13"/>
     </attributeEditorContainer>
-    <attributeEditorContainer columnCount="1" groupBox="0" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Other">
-      <attributeEditorContainer columnCount="1" groupBox="1" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Surface Relation">
-        <attributeEditorField showLabel="1" index="8" name="relative_to_terrain"/>
-        <attributeEditorField showLabel="1" index="9" name="relative_to_water"/>
+    <attributeEditorContainer name="Other" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorContainer name="Surface Relation" visibilityExpression="" columnCount="1" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+        <attributeEditorField name="relative_to_terrain" showLabel="1" index="8"/>
+        <attributeEditorField name="relative_to_water" showLabel="1" index="9"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
-    <attributeEditorContainer columnCount="1" groupBox="0" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Generic Attributes">
-      <attributeEditorRelation nmRelationId="" label="Generic Attributes" showLabel="0" relation="cityobject_genericattrib_77e328cd_0e4c_41a3_b8c5_e3bcc57dac8e_cityobject_id_citydb_tin_relief_lod1_6cc5c446_95e9_4945_b4a9_d5f97edce08e_id" forceSuppressFormPopup="0" relationWidgetTypeId="" name="cityobject_genericattrib_77e328cd_0e4c_41a3_b8c5_e3bcc57dac8e_cityobject_id_citydb_tin_relief_lod1_6cc5c446_95e9_4945_b4a9_d5f97edce08e_id">
+    <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_tin_relief_lod1_5f237088_b5cf_4e5c_824c_ac93fc1711c8_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_tin_relief_lod1_5f237088_b5cf_4e5c_824c_ac93fc1711c8_id" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
-    <attributeEditorContainer columnCount="2" groupBox="1" showLabel="1" visibilityExpressionEnabled="0" visibilityExpression="" name="Tin Relief Attributes">
-      <attributeEditorField showLabel="1" index="15" name="max_length"/>
-      <attributeEditorField showLabel="1" index="16" name="max_length_unit"/>
-      <attributeEditorField showLabel="1" index="14" name="lod"/>
+    <attributeEditorContainer name="Tin Relief Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="max_length" showLabel="1" index="15"/>
+      <attributeEditorField name="max_length_unit" showLabel="1" index="16"/>
+      <attributeEditorField name="lod" showLabel="1" index="14"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="class"/>
-    <field editable="1" name="class_codespace"/>
-    <field editable="0" name="creation_date"/>
-    <field editable="1" name="description"/>
-    <field editable="1" name="function"/>
-    <field editable="1" name="function_codespace"/>
-    <field editable="0" name="gmlid"/>
-    <field editable="1" name="gmlid_codespace"/>
-    <field editable="0" name="id"/>
-    <field editable="1" name="last_modification_date"/>
-    <field editable="1" name="lineage"/>
-    <field editable="1" name="lod"/>
-    <field editable="1" name="max_length"/>
-    <field editable="1" name="max_length_unit"/>
-    <field editable="1" name="measured_height"/>
-    <field editable="1" name="measured_height_unit"/>
-    <field editable="1" name="name"/>
-    <field editable="1" name="name_codespace"/>
-    <field editable="1" name="reason_for_update"/>
-    <field editable="1" name="relative_to_terrain"/>
-    <field editable="1" name="relative_to_water"/>
-    <field editable="1" name="roof_type"/>
-    <field editable="1" name="roof_type_codespace"/>
-    <field editable="1" name="storey_heights_above_ground"/>
-    <field editable="1" name="storey_heights_ag_unit"/>
-    <field editable="1" name="storey_heights_below_ground"/>
-    <field editable="1" name="storey_heights_bg_unit"/>
-    <field editable="1" name="storeys_above_ground"/>
-    <field editable="1" name="storeys_below_ground"/>
-    <field editable="0" name="termination_date"/>
-    <field editable="1" name="updating_person"/>
-    <field editable="1" name="usage"/>
-    <field editable="1" name="usage_codespace"/>
-    <field editable="1" name="year_of_construction"/>
-    <field editable="1" name="year_of_demolition"/>
+    <field name="class" editable="1"/>
+    <field name="class_codespace" editable="1"/>
+    <field name="creation_date" editable="0"/>
+    <field name="description" editable="1"/>
+    <field name="function" editable="1"/>
+    <field name="function_codespace" editable="1"/>
+    <field name="gmlid" editable="0"/>
+    <field name="gmlid_codespace" editable="1"/>
+    <field name="id" editable="0"/>
+    <field name="last_modification_date" editable="1"/>
+    <field name="lineage" editable="1"/>
+    <field name="lod" editable="1"/>
+    <field name="max_length" editable="1"/>
+    <field name="max_length_unit" editable="1"/>
+    <field name="measured_height" editable="1"/>
+    <field name="measured_height_unit" editable="1"/>
+    <field name="name" editable="1"/>
+    <field name="name_codespace" editable="1"/>
+    <field name="reason_for_update" editable="1"/>
+    <field name="relative_to_terrain" editable="1"/>
+    <field name="relative_to_water" editable="1"/>
+    <field name="roof_type" editable="1"/>
+    <field name="roof_type_codespace" editable="1"/>
+    <field name="storey_heights_above_ground" editable="1"/>
+    <field name="storey_heights_ag_unit" editable="1"/>
+    <field name="storey_heights_below_ground" editable="1"/>
+    <field name="storey_heights_bg_unit" editable="1"/>
+    <field name="storeys_above_ground" editable="1"/>
+    <field name="storeys_below_ground" editable="1"/>
+    <field name="termination_date" editable="0"/>
+    <field name="updating_person" editable="1"/>
+    <field name="usage" editable="1"/>
+    <field name="usage_codespace" editable="1"/>
+    <field name="year_of_construction" editable="1"/>
+    <field name="year_of_demolition" editable="1"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="class"/>
-    <field labelOnTop="0" name="class_codespace"/>
-    <field labelOnTop="0" name="creation_date"/>
-    <field labelOnTop="0" name="description"/>
-    <field labelOnTop="0" name="function"/>
-    <field labelOnTop="0" name="function_codespace"/>
-    <field labelOnTop="0" name="gmlid"/>
-    <field labelOnTop="0" name="gmlid_codespace"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="last_modification_date"/>
-    <field labelOnTop="0" name="lineage"/>
-    <field labelOnTop="0" name="lod"/>
-    <field labelOnTop="0" name="max_length"/>
-    <field labelOnTop="0" name="max_length_unit"/>
-    <field labelOnTop="0" name="measured_height"/>
-    <field labelOnTop="0" name="measured_height_unit"/>
-    <field labelOnTop="0" name="name"/>
-    <field labelOnTop="0" name="name_codespace"/>
-    <field labelOnTop="0" name="reason_for_update"/>
-    <field labelOnTop="0" name="relative_to_terrain"/>
-    <field labelOnTop="0" name="relative_to_water"/>
-    <field labelOnTop="0" name="roof_type"/>
-    <field labelOnTop="0" name="roof_type_codespace"/>
-    <field labelOnTop="0" name="storey_heights_above_ground"/>
-    <field labelOnTop="0" name="storey_heights_ag_unit"/>
-    <field labelOnTop="0" name="storey_heights_below_ground"/>
-    <field labelOnTop="0" name="storey_heights_bg_unit"/>
-    <field labelOnTop="0" name="storeys_above_ground"/>
-    <field labelOnTop="0" name="storeys_below_ground"/>
-    <field labelOnTop="0" name="termination_date"/>
-    <field labelOnTop="0" name="updating_person"/>
-    <field labelOnTop="0" name="usage"/>
-    <field labelOnTop="0" name="usage_codespace"/>
-    <field labelOnTop="0" name="year_of_construction"/>
-    <field labelOnTop="0" name="year_of_demolition"/>
+    <field name="class" labelOnTop="0"/>
+    <field name="class_codespace" labelOnTop="0"/>
+    <field name="creation_date" labelOnTop="0"/>
+    <field name="description" labelOnTop="0"/>
+    <field name="function" labelOnTop="0"/>
+    <field name="function_codespace" labelOnTop="0"/>
+    <field name="gmlid" labelOnTop="0"/>
+    <field name="gmlid_codespace" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="last_modification_date" labelOnTop="0"/>
+    <field name="lineage" labelOnTop="0"/>
+    <field name="lod" labelOnTop="0"/>
+    <field name="max_length" labelOnTop="0"/>
+    <field name="max_length_unit" labelOnTop="0"/>
+    <field name="measured_height" labelOnTop="0"/>
+    <field name="measured_height_unit" labelOnTop="0"/>
+    <field name="name" labelOnTop="0"/>
+    <field name="name_codespace" labelOnTop="0"/>
+    <field name="reason_for_update" labelOnTop="0"/>
+    <field name="relative_to_terrain" labelOnTop="0"/>
+    <field name="relative_to_water" labelOnTop="0"/>
+    <field name="roof_type" labelOnTop="0"/>
+    <field name="roof_type_codespace" labelOnTop="0"/>
+    <field name="storey_heights_above_ground" labelOnTop="0"/>
+    <field name="storey_heights_ag_unit" labelOnTop="0"/>
+    <field name="storey_heights_below_ground" labelOnTop="0"/>
+    <field name="storey_heights_bg_unit" labelOnTop="0"/>
+    <field name="storeys_above_ground" labelOnTop="0"/>
+    <field name="storeys_below_ground" labelOnTop="0"/>
+    <field name="termination_date" labelOnTop="0"/>
+    <field name="updating_person" labelOnTop="0"/>
+    <field name="usage" labelOnTop="0"/>
+    <field name="usage_codespace" labelOnTop="0"/>
+    <field name="year_of_construction" labelOnTop="0"/>
+    <field name="year_of_demolition" labelOnTop="0"/>
   </labelOnTop>
   <reuseLastValue>
-    <field reuseLastValue="0" name="class"/>
-    <field reuseLastValue="0" name="class_codespace"/>
-    <field reuseLastValue="0" name="creation_date"/>
-    <field reuseLastValue="0" name="description"/>
-    <field reuseLastValue="0" name="function"/>
-    <field reuseLastValue="0" name="function_codespace"/>
-    <field reuseLastValue="0" name="gmlid"/>
-    <field reuseLastValue="1" name="gmlid_codespace"/>
-    <field reuseLastValue="0" name="id"/>
-    <field reuseLastValue="0" name="last_modification_date"/>
-    <field reuseLastValue="0" name="lineage"/>
-    <field reuseLastValue="0" name="lod"/>
-    <field reuseLastValue="0" name="max_length"/>
-    <field reuseLastValue="0" name="max_length_unit"/>
-    <field reuseLastValue="0" name="measured_height"/>
-    <field reuseLastValue="0" name="measured_height_unit"/>
-    <field reuseLastValue="0" name="name"/>
-    <field reuseLastValue="0" name="name_codespace"/>
-    <field reuseLastValue="0" name="reason_for_update"/>
-    <field reuseLastValue="0" name="relative_to_terrain"/>
-    <field reuseLastValue="0" name="relative_to_water"/>
-    <field reuseLastValue="0" name="roof_type"/>
-    <field reuseLastValue="0" name="roof_type_codespace"/>
-    <field reuseLastValue="0" name="storey_heights_above_ground"/>
-    <field reuseLastValue="0" name="storey_heights_ag_unit"/>
-    <field reuseLastValue="0" name="storey_heights_below_ground"/>
-    <field reuseLastValue="0" name="storey_heights_bg_unit"/>
-    <field reuseLastValue="0" name="storeys_above_ground"/>
-    <field reuseLastValue="0" name="storeys_below_ground"/>
-    <field reuseLastValue="0" name="termination_date"/>
-    <field reuseLastValue="0" name="updating_person"/>
-    <field reuseLastValue="0" name="usage"/>
-    <field reuseLastValue="0" name="usage_codespace"/>
-    <field reuseLastValue="0" name="year_of_construction"/>
-    <field reuseLastValue="0" name="year_of_demolition"/>
+    <field name="class" reuseLastValue="0"/>
+    <field name="class_codespace" reuseLastValue="0"/>
+    <field name="creation_date" reuseLastValue="0"/>
+    <field name="description" reuseLastValue="0"/>
+    <field name="function" reuseLastValue="0"/>
+    <field name="function_codespace" reuseLastValue="0"/>
+    <field name="gmlid" reuseLastValue="0"/>
+    <field name="gmlid_codespace" reuseLastValue="1"/>
+    <field name="id" reuseLastValue="0"/>
+    <field name="last_modification_date" reuseLastValue="0"/>
+    <field name="lineage" reuseLastValue="0"/>
+    <field name="lod" reuseLastValue="0"/>
+    <field name="max_length" reuseLastValue="0"/>
+    <field name="max_length_unit" reuseLastValue="0"/>
+    <field name="measured_height" reuseLastValue="0"/>
+    <field name="measured_height_unit" reuseLastValue="0"/>
+    <field name="name" reuseLastValue="0"/>
+    <field name="name_codespace" reuseLastValue="0"/>
+    <field name="reason_for_update" reuseLastValue="0"/>
+    <field name="relative_to_terrain" reuseLastValue="0"/>
+    <field name="relative_to_water" reuseLastValue="0"/>
+    <field name="roof_type" reuseLastValue="0"/>
+    <field name="roof_type_codespace" reuseLastValue="0"/>
+    <field name="storey_heights_above_ground" reuseLastValue="0"/>
+    <field name="storey_heights_ag_unit" reuseLastValue="0"/>
+    <field name="storey_heights_below_ground" reuseLastValue="0"/>
+    <field name="storey_heights_bg_unit" reuseLastValue="0"/>
+    <field name="storeys_above_ground" reuseLastValue="0"/>
+    <field name="storeys_below_ground" reuseLastValue="0"/>
+    <field name="termination_date" reuseLastValue="0"/>
+    <field name="updating_person" reuseLastValue="0"/>
+    <field name="usage" reuseLastValue="0"/>
+    <field name="usage_codespace" reuseLastValue="0"/>
+    <field name="year_of_construction" reuseLastValue="0"/>
+    <field name="year_of_demolition" reuseLastValue="0"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>

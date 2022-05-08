@@ -1,6 +1,6 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc">
+  <renderer-3d type="vector" layer="citydb_bdg_door_lod3_49e25ca9_f5bb_40c7_a59e_8c91e14ea2f7">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="polygon" material_type="phong">
       <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
@@ -11,17 +11,17 @@
             <Option name="properties" type="Map">
               <Option name="ambient" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%window%' THEN '#a9e3ff'&#xa;WHEN @layer_name LIKE '%door%' THEN '#a9a7ff'&#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
               <Option name="diffuse" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%window%' THEN '#a9e3ff'&#xa;WHEN @layer_name LIKE '%door%' THEN '#a9a7ff'&#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
               <Option name="specular" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%window%' THEN '#a9e3ff'&#xa;WHEN @layer_name LIKE '%door%' THEN '#a9a7ff'&#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
             </Option>
@@ -85,7 +85,7 @@
                 </Option>
                 <Option name="fillColor" type="Map">
                   <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%window%' THEN '#a9e3ff'&#xa;WHEN @layer_name LIKE '%door%' THEN '#a9a7ff'&#xa;END"/>
                   <Option name="type" type="int" value="3"/>
                 </Option>
               </Option>
@@ -264,10 +264,13 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_id" configurationFlags="None">
-      <editWidget type="Range">
+    <field name="thematic_surface_id" configurationFlags="None">
+      <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -287,7 +290,7 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_id" index="14"/>
+    <alias name="Thematic Surface ID" field="thematic_surface_id" index="14"/>
   </aliases>
   <defaults>
     <default field="id" expression="" applyOnUpdate="0"/>
@@ -304,7 +307,7 @@
     <default field="updating_person" expression="" applyOnUpdate="0"/>
     <default field="reason_for_update" expression="" applyOnUpdate="0"/>
     <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="building_id" expression="" applyOnUpdate="0"/>
+    <default field="thematic_surface_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
@@ -321,7 +324,7 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="thematic_surface_id" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="id" exp=""/>
@@ -338,7 +341,7 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
-    <constraint desc="" field="building_id" exp=""/>
+    <constraint desc="" field="thematic_surface_id" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -388,9 +391,14 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" relationWidgetTypeId="">
-        <editor_configuration/>
+      <attributeEditorRelation name="" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="" relationWidgetTypeId="">
+        <editor_configuration type="Map">
+          <Option name="buttons" type="QString" value="AllButtons"/>
+        </editor_configuration>
       </attributeEditorRelation>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Opening Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="thematic_surface_id" showLabel="1" index="14"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -422,6 +430,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" editable="1"/>
     <field name="storeys_below_ground" editable="1"/>
     <field name="termination_date" editable="0"/>
+    <field name="thematic_surface_id" editable="1"/>
     <field name="updating_person" editable="1"/>
     <field name="usage" editable="1"/>
     <field name="usage_codespace" editable="1"/>
@@ -457,6 +466,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" labelOnTop="0"/>
     <field name="storeys_below_ground" labelOnTop="0"/>
     <field name="termination_date" labelOnTop="0"/>
+    <field name="thematic_surface_id" labelOnTop="0"/>
     <field name="updating_person" labelOnTop="0"/>
     <field name="usage" labelOnTop="0"/>
     <field name="usage_codespace" labelOnTop="0"/>
@@ -492,6 +502,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" reuseLastValue="0"/>
     <field name="storeys_below_ground" reuseLastValue="0"/>
     <field name="termination_date" reuseLastValue="0"/>
+    <field name="thematic_surface_id" reuseLastValue="0"/>
     <field name="updating_person" reuseLastValue="0"/>
     <field name="usage" reuseLastValue="0"/>
     <field name="usage_codespace" reuseLastValue="0"/>

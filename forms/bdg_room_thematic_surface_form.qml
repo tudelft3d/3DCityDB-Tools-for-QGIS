@@ -1,6 +1,6 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc">
+  <renderer-3d type="vector" layer="citydb_bdg_room_lod4_ceilingsurf_bcf27e55_6a5a_43a6_acb8_82c7c0a0e42e">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="polygon" material_type="phong">
       <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
@@ -11,17 +11,17 @@
             <Option name="properties" type="Map">
               <Option name="ambient" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ceiling%' THEN '#ff7301'&#xa;WHEN @layer_name LIKE '%intwall%' THEN '#7eaaaa' &#xa;WHEN @layer_name LIKE '%floor%' THEN '#ddb169' &#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
               <Option name="diffuse" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ceiling%' THEN '#ff7301'&#xa;WHEN @layer_name LIKE '%intwall%' THEN '#7eaaaa' &#xa;WHEN @layer_name LIKE '%floor%' THEN '#ddb169' &#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
               <Option name="specular" type="Map">
                 <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ceiling%' THEN '#ff7301'&#xa;WHEN @layer_name LIKE '%intwall%' THEN '#7eaaaa' &#xa;WHEN @layer_name LIKE '%floor%' THEN '#ddb169' &#xa;END"/>
                 <Option name="type" type="int" value="3"/>
               </Option>
             </Option>
@@ -78,14 +78,9 @@
             <Option type="Map">
               <Option name="name" type="QString" value=""/>
               <Option name="properties" type="Map">
-                <Option name="enabled" type="Map">
-                  <Option name="active" type="bool" value="false"/>
-                  <Option name="expression" type="QString" value=""/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
                 <Option name="fillColor" type="Map">
                   <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
+                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ceiling%' THEN '#ff7301'&#xa;WHEN @layer_name LIKE '%intwall%' THEN '#7eaaaa' &#xa;WHEN @layer_name LIKE '%floor%' THEN '#ddb169' &#xa;END"/>
                   <Option name="type" type="int" value="3"/>
                 </Option>
               </Option>
@@ -195,7 +190,7 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -212,7 +207,7 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToWaterType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -264,10 +259,13 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_id" configurationFlags="None">
-      <editWidget type="Range">
+    <field name="room_id" configurationFlags="None">
+      <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -287,7 +285,7 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_id" index="14"/>
+    <alias name="Room ID" field="room_id" index="14"/>
   </aliases>
   <defaults>
     <default field="id" expression="" applyOnUpdate="0"/>
@@ -304,7 +302,7 @@
     <default field="updating_person" expression="" applyOnUpdate="0"/>
     <default field="reason_for_update" expression="" applyOnUpdate="0"/>
     <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="building_id" expression="" applyOnUpdate="0"/>
+    <default field="room_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
@@ -321,7 +319,7 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="room_id" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="id" exp=""/>
@@ -338,7 +336,7 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
-    <constraint desc="" field="building_id" exp=""/>
+    <constraint desc="" field="room_id" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -388,9 +386,14 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" relationWidgetTypeId="">
-        <editor_configuration/>
+      <attributeEditorRelation name="" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="" relationWidgetTypeId="">
+        <editor_configuration type="Map">
+          <Option name="buttons" type="QString" value="AllButtons"/>
+        </editor_configuration>
       </attributeEditorRelation>
+    </attributeEditorContainer>
+    <attributeEditorContainer name="Room Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="room_id" showLabel="1" index="14"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -415,6 +418,7 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" editable="1"/>
     <field name="roof_type" editable="1"/>
     <field name="roof_type_codespace" editable="1"/>
+    <field name="room_id" editable="1"/>
     <field name="storey_heights_above_ground" editable="1"/>
     <field name="storey_heights_ag_unit" editable="1"/>
     <field name="storey_heights_below_ground" editable="1"/>
@@ -450,6 +454,7 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" labelOnTop="0"/>
     <field name="roof_type" labelOnTop="0"/>
     <field name="roof_type_codespace" labelOnTop="0"/>
+    <field name="room_id" labelOnTop="0"/>
     <field name="storey_heights_above_ground" labelOnTop="0"/>
     <field name="storey_heights_ag_unit" labelOnTop="0"/>
     <field name="storey_heights_below_ground" labelOnTop="0"/>
@@ -485,6 +490,7 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" reuseLastValue="0"/>
     <field name="roof_type" reuseLastValue="0"/>
     <field name="roof_type_codespace" reuseLastValue="0"/>
+    <field name="room_id" reuseLastValue="0"/>
     <field name="storey_heights_above_ground" reuseLastValue="0"/>
     <field name="storey_heights_ag_unit" reuseLastValue="0"/>
     <field name="storey_heights_below_ground" reuseLastValue="0"/>
@@ -499,6 +505,13 @@ def my_form_open(dialog, layer, feature):
     <field name="year_of_demolition" reuseLastValue="0"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
-  <widgets/>
+  <widgets>
+    <widget name="cityobject_genericattrib_7e721641_790c_4931_bfb4_f1401d8abdd8_cityobject_id_citydb_a2_bdg_part_lod2_groundsurf_67b076ed_786a_44f6_ac81_1289f62aa882_id">
+      <config type="Map">
+        <Option name="force-suppress-popup" type="bool" value="false"/>
+        <Option name="nm-rel" type="invalid"/>
+      </config>
+    </widget>
+  </widgets>
   <layerGeometryType>2</layerGeometryType>
 </qgis>

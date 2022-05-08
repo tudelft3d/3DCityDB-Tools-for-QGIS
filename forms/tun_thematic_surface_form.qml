@@ -1,6 +1,6 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc">
+  <renderer-3d type="vector" layer="rail_tun_lod3_closuresurf_79fd9ba5_a00f_4062_9fa3_fd9c3170d7c6">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="polygon" material_type="phong">
       <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
@@ -264,10 +264,17 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_id" configurationFlags="None">
+    <field name="tunnel_id" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="int" value="2147483647"/>
+            <Option name="Min" type="int" value="-2147483648"/>
+            <Option name="Precision" type="int" value="0"/>
+            <Option name="Step" type="int" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -287,7 +294,7 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_id" index="14"/>
+    <alias name="" field="tunnel_id" index="14"/>
   </aliases>
   <defaults>
     <default field="id" expression="" applyOnUpdate="0"/>
@@ -304,7 +311,7 @@
     <default field="updating_person" expression="" applyOnUpdate="0"/>
     <default field="reason_for_update" expression="" applyOnUpdate="0"/>
     <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="building_id" expression="" applyOnUpdate="0"/>
+    <default field="tunnel_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
@@ -321,7 +328,7 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="tunnel_id" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="id" exp=""/>
@@ -338,7 +345,7 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
-    <constraint desc="" field="building_id" exp=""/>
+    <constraint desc="" field="tunnel_id" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -388,8 +395,10 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" relationWidgetTypeId="">
-        <editor_configuration/>
+      <attributeEditorRelation name="" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="" relationWidgetTypeId="">
+        <editor_configuration type="Map">
+          <Option name="buttons" type="QString" value="AllButtons"/>
+        </editor_configuration>
       </attributeEditorRelation>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -422,6 +431,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" editable="1"/>
     <field name="storeys_below_ground" editable="1"/>
     <field name="termination_date" editable="0"/>
+    <field name="tunnel_id" editable="1"/>
     <field name="updating_person" editable="1"/>
     <field name="usage" editable="1"/>
     <field name="usage_codespace" editable="1"/>
@@ -457,6 +467,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" labelOnTop="0"/>
     <field name="storeys_below_ground" labelOnTop="0"/>
     <field name="termination_date" labelOnTop="0"/>
+    <field name="tunnel_id" labelOnTop="0"/>
     <field name="updating_person" labelOnTop="0"/>
     <field name="usage" labelOnTop="0"/>
     <field name="usage_codespace" labelOnTop="0"/>
@@ -492,6 +503,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" reuseLastValue="0"/>
     <field name="storeys_below_ground" reuseLastValue="0"/>
     <field name="termination_date" reuseLastValue="0"/>
+    <field name="tunnel_id" reuseLastValue="0"/>
     <field name="updating_person" reuseLastValue="0"/>
     <field name="usage" reuseLastValue="0"/>
     <field name="usage_codespace" reuseLastValue="0"/>

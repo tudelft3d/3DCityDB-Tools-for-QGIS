@@ -320,7 +320,7 @@ def import_lookups(dbLoader) -> None:
     """Function to import the look-up table into the qgis project."""
 
     # Add look-up tables into their own group in ToC.
-    root= QgsProject.instance().layerTreeRoot().findGroup(dbLoader.SCHEMA)
+    root= QgsProject.instance().layerTreeRoot().findGroup("@".join([dbLoader.DB.username,dbLoader.SCHEMA]))
     lookups_node = add_node_ToC(parent_node=root,
         child_name="Look-up tables")
 
@@ -362,7 +362,7 @@ def import_generics(dbLoader) -> None:
 
 
     # Add generics tables into their own group in ToC.
-    root = QgsProject.instance().layerTreeRoot().findGroup(cdb_schema)
+    root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username,cdb_schema]))
     generics_node = add_node_ToC(parent_node=root,
         child_name=c.generics_alias)
 
@@ -526,7 +526,7 @@ def build_ToC(dbLoader,view: c.View) -> QgsLayerTreeGroup:
 
     # Schema group (e.g. citydb)
     node_schema = add_node_ToC(parent_node=db_node,
-        child_name=view.cdb_schema)
+        child_name="@".join([dbLoader.DB.username,view.cdb_schema]))
 
     # FeatureType group (e.g. Building)
     node_FeatureType = add_node_ToC(parent_node=node_schema,

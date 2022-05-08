@@ -1,30 +1,14 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc">
+  <renderer-3d type="vector" layer="citydb_relief_feat_lod1_ed5529a5_6945_4841_abb9_d81767b43253">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="polygon" material_type="phong">
       <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
-      <material specular="255,255,255,255" diffuse="179,179,179,255" ambient="25,25,25,255" shininess="0">
+      <material specular="255,255,255,255" diffuse="213,178,160,255" ambient="25,25,25,255" shininess="0">
         <data-defined-properties>
           <Option type="Map">
             <Option name="name" type="QString" value=""/>
-            <Option name="properties" type="Map">
-              <Option name="ambient" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-              <Option name="diffuse" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-              <Option name="specular" type="Map">
-                <Option name="active" type="bool" value="true"/>
-                <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                <Option name="type" type="int" value="3"/>
-              </Option>
-            </Option>
+            <Option name="properties"/>
             <Option name="type" type="QString" value="collection"/>
           </Option>
         </data-defined-properties>
@@ -52,24 +36,24 @@
         <layer pass="0" enabled="1" class="SimpleFill" locked="0">
           <Option type="Map">
             <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
-            <Option name="color" type="QString" value="0,0,0,255"/>
+            <Option name="color" type="QString" value="213,178,160,255"/>
             <Option name="joinstyle" type="QString" value="bevel"/>
             <Option name="offset" type="QString" value="0,0"/>
             <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
             <Option name="offset_unit" type="QString" value="MM"/>
-            <Option name="outline_color" type="QString" value="35,35,35,255"/>
+            <Option name="outline_color" type="QString" value="0,0,0,255"/>
             <Option name="outline_style" type="QString" value="solid"/>
             <Option name="outline_width" type="QString" value="0.26"/>
             <Option name="outline_width_unit" type="QString" value="MM"/>
             <Option name="style" type="QString" value="solid"/>
           </Option>
           <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="color" v="0,0,0,255"/>
+          <prop k="color" v="213,178,160,255"/>
           <prop k="joinstyle" v="bevel"/>
           <prop k="offset" v="0,0"/>
           <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
           <prop k="offset_unit" v="MM"/>
-          <prop k="outline_color" v="35,35,35,255"/>
+          <prop k="outline_color" v="0,0,0,255"/>
           <prop k="outline_style" v="solid"/>
           <prop k="outline_width" v="0.26"/>
           <prop k="outline_width_unit" v="MM"/>
@@ -77,18 +61,7 @@
           <data_defined_properties>
             <Option type="Map">
               <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="enabled" type="Map">
-                  <Option name="active" type="bool" value="false"/>
-                  <Option name="expression" type="QString" value=""/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-                <Option name="fillColor" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="CASE &#xa;WHEN @layer_name LIKE '%ground%' THEN '#8d5c00'&#xa;WHEN @layer_name LIKE '%wall%' THEN '#cdcdcd' &#xa;WHEN @layer_name LIKE '%roof%' THEN '#e41a1c' &#xa;WHEN @layer_name LIKE '%outerceiling%' THEN '#8d1012' &#xa;WHEN @layer_name LIKE '%outerfloor%' THEN '#664200' &#xa;WHEN @layer_name LIKE '%closure%' THEN '#aabfcd'&#xa;END"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
+              <Option name="properties"/>
               <Option name="type" type="QString" value="collection"/>
             </Option>
           </data_defined_properties>
@@ -264,10 +237,13 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_id" configurationFlags="None">
-      <editWidget type="Range">
+    <field name="lod" configurationFlags="None">
+      <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -287,7 +263,7 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_id" index="14"/>
+    <alias name="" field="lod" index="14"/>
   </aliases>
   <defaults>
     <default field="id" expression="" applyOnUpdate="0"/>
@@ -304,7 +280,7 @@
     <default field="updating_person" expression="" applyOnUpdate="0"/>
     <default field="reason_for_update" expression="" applyOnUpdate="0"/>
     <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="building_id" expression="" applyOnUpdate="0"/>
+    <default field="lod" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
@@ -321,7 +297,7 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_id" exp_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lod" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="id" exp=""/>
@@ -338,7 +314,7 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
-    <constraint desc="" field="building_id" exp=""/>
+    <constraint desc="" field="lod" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -388,24 +364,31 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod2_closuresurf_c6f696b7_bd89_4621_a592_6346ff66e1cc_id" relationWidgetTypeId="">
+      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_relief_feat_lod1_ed5529a5_6945_4841_abb9_d81767b43253_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_relief_feat_lod1_ed5529a5_6945_4841_abb9_d81767b43253_id" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
+    <attributeEditorContainer name="Relief Feature Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="lod" showLabel="1" index="14"/>
+    </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field name="building_id" editable="1"/>
     <field name="class" editable="1"/>
     <field name="class_codespace" editable="1"/>
     <field name="creation_date" editable="0"/>
+    <field name="crown_diameter" editable="1"/>
+    <field name="crown_diameter_unit" editable="1"/>
     <field name="description" editable="1"/>
     <field name="function" editable="1"/>
     <field name="function_codespace" editable="1"/>
     <field name="gmlid" editable="0"/>
     <field name="gmlid_codespace" editable="1"/>
+    <field name="height" editable="1"/>
+    <field name="height_unit" editable="1"/>
     <field name="id" editable="0"/>
     <field name="last_modification_date" editable="1"/>
     <field name="lineage" editable="1"/>
+    <field name="lod" editable="1"/>
     <field name="measured_height" editable="1"/>
     <field name="measured_height_unit" editable="1"/>
     <field name="name" editable="1"/>
@@ -415,6 +398,8 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" editable="1"/>
     <field name="roof_type" editable="1"/>
     <field name="roof_type_codespace" editable="1"/>
+    <field name="species" editable="1"/>
+    <field name="species_codespace" editable="1"/>
     <field name="storey_heights_above_ground" editable="1"/>
     <field name="storey_heights_ag_unit" editable="1"/>
     <field name="storey_heights_below_ground" editable="1"/>
@@ -422,6 +407,8 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" editable="1"/>
     <field name="storeys_below_ground" editable="1"/>
     <field name="termination_date" editable="0"/>
+    <field name="trunk_diameter" editable="1"/>
+    <field name="trunk_diameter_unit" editable="1"/>
     <field name="updating_person" editable="1"/>
     <field name="usage" editable="1"/>
     <field name="usage_codespace" editable="1"/>
@@ -429,18 +416,22 @@ def my_form_open(dialog, layer, feature):
     <field name="year_of_demolition" editable="1"/>
   </editable>
   <labelOnTop>
-    <field name="building_id" labelOnTop="0"/>
     <field name="class" labelOnTop="0"/>
     <field name="class_codespace" labelOnTop="0"/>
     <field name="creation_date" labelOnTop="0"/>
+    <field name="crown_diameter" labelOnTop="0"/>
+    <field name="crown_diameter_unit" labelOnTop="0"/>
     <field name="description" labelOnTop="0"/>
     <field name="function" labelOnTop="0"/>
     <field name="function_codespace" labelOnTop="0"/>
     <field name="gmlid" labelOnTop="0"/>
     <field name="gmlid_codespace" labelOnTop="0"/>
+    <field name="height" labelOnTop="0"/>
+    <field name="height_unit" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
     <field name="last_modification_date" labelOnTop="0"/>
     <field name="lineage" labelOnTop="0"/>
+    <field name="lod" labelOnTop="0"/>
     <field name="measured_height" labelOnTop="0"/>
     <field name="measured_height_unit" labelOnTop="0"/>
     <field name="name" labelOnTop="0"/>
@@ -450,6 +441,8 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" labelOnTop="0"/>
     <field name="roof_type" labelOnTop="0"/>
     <field name="roof_type_codespace" labelOnTop="0"/>
+    <field name="species" labelOnTop="0"/>
+    <field name="species_codespace" labelOnTop="0"/>
     <field name="storey_heights_above_ground" labelOnTop="0"/>
     <field name="storey_heights_ag_unit" labelOnTop="0"/>
     <field name="storey_heights_below_ground" labelOnTop="0"/>
@@ -457,6 +450,8 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" labelOnTop="0"/>
     <field name="storeys_below_ground" labelOnTop="0"/>
     <field name="termination_date" labelOnTop="0"/>
+    <field name="trunk_diameter" labelOnTop="0"/>
+    <field name="trunk_diameter_unit" labelOnTop="0"/>
     <field name="updating_person" labelOnTop="0"/>
     <field name="usage" labelOnTop="0"/>
     <field name="usage_codespace" labelOnTop="0"/>
@@ -464,18 +459,22 @@ def my_form_open(dialog, layer, feature):
     <field name="year_of_demolition" labelOnTop="0"/>
   </labelOnTop>
   <reuseLastValue>
-    <field name="building_id" reuseLastValue="0"/>
     <field name="class" reuseLastValue="0"/>
     <field name="class_codespace" reuseLastValue="0"/>
     <field name="creation_date" reuseLastValue="0"/>
+    <field name="crown_diameter" reuseLastValue="0"/>
+    <field name="crown_diameter_unit" reuseLastValue="0"/>
     <field name="description" reuseLastValue="0"/>
     <field name="function" reuseLastValue="0"/>
     <field name="function_codespace" reuseLastValue="0"/>
     <field name="gmlid" reuseLastValue="0"/>
     <field name="gmlid_codespace" reuseLastValue="1"/>
+    <field name="height" reuseLastValue="0"/>
+    <field name="height_unit" reuseLastValue="0"/>
     <field name="id" reuseLastValue="0"/>
     <field name="last_modification_date" reuseLastValue="0"/>
     <field name="lineage" reuseLastValue="0"/>
+    <field name="lod" reuseLastValue="0"/>
     <field name="measured_height" reuseLastValue="0"/>
     <field name="measured_height_unit" reuseLastValue="0"/>
     <field name="name" reuseLastValue="0"/>
@@ -485,6 +484,8 @@ def my_form_open(dialog, layer, feature):
     <field name="relative_to_water" reuseLastValue="0"/>
     <field name="roof_type" reuseLastValue="0"/>
     <field name="roof_type_codespace" reuseLastValue="0"/>
+    <field name="species" reuseLastValue="0"/>
+    <field name="species_codespace" reuseLastValue="0"/>
     <field name="storey_heights_above_ground" reuseLastValue="0"/>
     <field name="storey_heights_ag_unit" reuseLastValue="0"/>
     <field name="storey_heights_below_ground" reuseLastValue="0"/>
@@ -492,6 +493,8 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" reuseLastValue="0"/>
     <field name="storeys_below_ground" reuseLastValue="0"/>
     <field name="termination_date" reuseLastValue="0"/>
+    <field name="trunk_diameter" reuseLastValue="0"/>
+    <field name="trunk_diameter_unit" reuseLastValue="0"/>
     <field name="updating_person" reuseLastValue="0"/>
     <field name="usage" reuseLastValue="0"/>
     <field name="usage_codespace" reuseLastValue="0"/>

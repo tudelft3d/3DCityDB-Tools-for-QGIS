@@ -71,10 +71,10 @@ def uninstallation_query(dbLoader, message: str, uninst_type: str) -> None:
             schemas = sql.exec_list_usr_schemas(dbLoader)
             # Drop both main and user schemas.
             sql.drop_package(dbLoader, c.MAIN_PKG_NAME, False)
-            for s in schemas:
-                sql.drop_package(dbLoader, s, False)
-
-            return True
+            if schemas:
+                for s in schemas:
+                    sql.drop_package(dbLoader, s, False)
+                return True
         return False
     elif uninst_type == "user":
         #message = message.format(pkg=c.USER_PKG_NAME)

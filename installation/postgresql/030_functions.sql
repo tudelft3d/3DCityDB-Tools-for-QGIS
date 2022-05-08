@@ -186,6 +186,35 @@ COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas() IS 'List all schemas containing 
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.TABLE_IS_EMPTY
+----------------------------------------------------------------
+-- Check if a given table of a given schema is eempty.
+DROP FUNCTION IF EXISTS    qgis_pkg.table_is_empty(varchar,varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.table_is_empty(
+	schema_n varchar,
+	table_n	varchar)
+RETURNS bool
+AS $$
+DECLARE
+empty_t 	bool := false;
+
+BEGIN
+
+EXECUTE FORMAT('SELECT NOT EXISTS(SELECT 1 FROM %I.%I)',schema_n,table_n) INTO empty_t;
+RETURN empty_t;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.table_is_empty(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.table_is_empty(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas() IS 'Checks if a table of a schema is empty.';
+
+
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_USR_SCHEMAS
 ----------------------------------------------------------------
 -- List all usr schemas of qgis pkg users in the current database
