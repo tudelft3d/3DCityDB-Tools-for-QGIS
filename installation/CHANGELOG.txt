@@ -3,6 +3,13 @@
 TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-05-10
+----------
+Version 0.6.2
+Script 030:
+	Function [qgis_pkg.list_cdb_schemas()]: added argument to optionally output only non-empty cdb_schemas
+	Function [qgis_pkg.create_qgis_user_schema()] solved problem with sequences not being updated to currval
+
 2022-04-16
 ----------
 Version 0.6.1

@@ -75,9 +75,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 6;
-minor_revision := 1;
-code_name      := 'Easter bunny';
-release_date   := '2022-04-16'::date;
+minor_revision := 2;
+code_name      := 'May tulip';
+release_date   := '2022-05-10'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -135,15 +135,17 @@ COMMENT ON FUNCTION qgis_pkg.list_qgis_pkg_usrgroup_members() IS 'List all datab
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS
 ----------------------------------------------------------------
--- List all schemas containing citydb tables in the current database
-DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas() CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas()
+-- List all schemas containing citydb tables in the current database and picks only the non-empty ones
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas(boolean) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas(
+only_non_empty boolean DEFAULT FALSE)
 RETURNS TABLE (
-cdb_schema varchar
+cdb_schema 		varchar
 )
 AS $$
 DECLARE
 cdb_name CONSTANT varchar := current_database()::varchar;
+co_number integer;
 r RECORD;
 BEGIN
 
@@ -156,7 +158,7 @@ FOR r IN
 		AND i.catalog_name <> 'citydb_pkg'
 	ORDER BY i.schema_name ASC
 LOOP
-	IF
+	IF -- check that it is indeed a citydb schema
 		EXISTS(SELECT version FROM citydb_pkg.citydb_version())
 			AND
 		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'cityobject')
@@ -166,9 +168,18 @@ LOOP
 		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'surface_geometry')	
 			AND
 		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'appearance')
-	THEN
-		cdb_schema := r.schema_name::varchar;
-		RETURN NEXT;
+	THEN 
+		IF only_non_empty IS NULL OR only_non_empty IS FALSE THEN
+			cdb_schema := r.schema_name::varchar;
+			RETURN NEXT;		
+		ELSE -- now check that it is not empty
+			co_number := NULL;
+			EXECUTE format('SELECT count(id) FROM %I.cityobject', r.schema_name) INTO co_number;
+			IF co_number > 0 THEN
+				cdb_schema := r.schema_name::varchar;
+				RETURN NEXT;
+			END IF;
+		END IF;
 	END IF;
 END LOOP;
 
@@ -179,11 +190,12 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.list_cdb_schemas(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas() IS 'List all schemas containing citydb tables in the current database';
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
 
 -- Example:
 --SELECT cdb_schema FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
+--SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas(TRUE);
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.TABLE_IS_EMPTY
@@ -210,8 +222,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.table_is_empty(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas() IS 'Checks if a table of a schema is empty.';
-
+COMMENT ON FUNCTION qgis_pkg.table_is_empty(varchar,varchar) IS 'Checks if a table of a schema is empty.';
 
 
 ----------------------------------------------------------------
@@ -476,7 +487,10 @@ usr_name	varchar
 RETURNS varchar
 AS $$
 DECLARE
+tb_names_array	varchar[] := ARRAY['codelist', 'codelist_value', 'enumeration', 'enumeration_value', 'extents'];
+tb_name 	varchar;
 usr_schema	varchar;
+seq_name	varchar;
 
 BEGIN
 IF usr_name IS NULL OR NOT EXISTS(SELECT 1 FROM information_schema.enabled_roles AS i WHERE i.role_name::varchar = usr_name) THEN
@@ -544,6 +558,20 @@ INSERT INTO %I.codelist_value SELECT * FROM qgis_pkg.codelist_value_template ORD
 ',
 usr_schema,usr_schema,usr_schema,usr_schema,usr_schema
 );
+
+-- Refresh/Update the associated sequence values
+FOREACH tb_name IN ARRAY tb_names_array LOOP
+	seq_name := concat(quote_ident(usr_schema),'.',tb_name,'_id_seq');
+	RAISE NOTICE 'seq_name %', seq_name;
+	EXECUTE format('
+		WITH s AS (SELECT max(t.id) AS max_id FROM %I.%I AS t)
+		SELECT CASE WHEN s.max_id IS NULL     THEN setval(%L::regclass, 1, false)
+		            WHEN s.max_id IS NOT NULL THEN setval(%L::regclass, s.max_id, true) END
+		FROM s',
+	usr_schema, tb_name,
+	seq_name,
+	seq_name);
+END LOOP;
 
 --Create views for codelists and enumerations
 EXECUTE format('

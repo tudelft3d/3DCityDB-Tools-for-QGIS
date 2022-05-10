@@ -1132,6 +1132,6 @@ COMMENT ON TYPE qgis_pkg.obj_waterboundary_surface IS 'This object (type) corres
 --**************************
 DO $MAINBODY$
 BEGIN
-RAISE NOTICE E'Done\n\n';
+RAISE NOTICE E'\n\nDone\n\n';
 END $MAINBODY$;
 --**************************
