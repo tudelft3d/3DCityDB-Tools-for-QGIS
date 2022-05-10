@@ -688,7 +688,7 @@ def drop_package(dbLoader, schema: str, close_connection:bool = True) -> None:
 
     try:
         with dbLoader.conn.cursor() as cur:
-            cur.execute(f"""DROP SCHEMA IF EXISTS {schema} CASCADE;""")
+            cur.execute(f"""DROP SCHEMA IF EXISTS "{schema}" CASCADE;""")
         dbLoader.conn.commit()
 
         if close_connection:
