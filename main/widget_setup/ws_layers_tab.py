@@ -1,5 +1,5 @@
 
-from qgis.core import Qgis,QgsMessageLog, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
+from qgis.core import Qgis,QgsMessageLog, QgsGeometry, QgsRectangle, QgsProject
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 import psycopg2
@@ -268,6 +268,9 @@ def btnImport_setup(dbLoader) -> None:
     db_group = lrs_tab.get_node_database(dbLoader)
     lrs_tab.sort_ToC(db_group)
     lrs_tab.send_to_top_ToC(db_group)
+
+    #At last bring the Relief, Feature type at the bottom of the ToC.
+    lrs_tab.send_to_bottom_ToC(QgsProject.instance().layerTreeRoot())
 
     # A final success message.
     QgsMessageLog.logMessage(message="",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)

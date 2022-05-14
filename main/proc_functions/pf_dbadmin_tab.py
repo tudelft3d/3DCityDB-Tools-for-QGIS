@@ -3,6 +3,9 @@ from qgis.PyQt.QtGui import QIcon
 
 def fill_users_box(dbLoader, users: tuple) -> None:
 
+    # Clean combo box from leftovers.
+    dbLoader.dlg_admin.cbxUser.clear()
+    
     #super_icon = QIcon(":/plugins/citydb_loader/icons/superuser.svg")
     user_icon = QIcon(":/plugins/citydb_loader/icons/user.svg")
     for user in users:

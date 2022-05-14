@@ -83,7 +83,7 @@ INST_FAIL_MSG = "{pkg} is not installed!"
 SCHEMA_SUPP_FAIL_MSG = "Layers need to be created for {sch}!"
 REFR_LAYERS_FAIL_MSG = "Layers need to be refreshed!"
 REFR_LAYERS_MSG = "Last refresh: {date}"
-SCHEMA_SUPP_MSG = "Layers already exist in {sch}!"
+SCHEMA_SUPP_MSG = "Layers already exist for {sch}!"
 INST_MSG = "{pkg} is already installed!"
 
 INST_QUERY = "Any existing installation of '{pkg}' is going to be replaced! Do you want to proceed?"

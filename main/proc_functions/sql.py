@@ -74,7 +74,7 @@ def fetch_extents(dbLoader, from_schema: str, for_schema:str, ext_type: str) -> 
             # Get db_schema extents from server as WKT.
             cur.execute(query= f"""
                                 SELECT ST_AsText(envelope) 
-                                FROM {from_schema}.extents 
+                                FROM "{from_schema}".extents 
                                 WHERE cdb_schema = '{for_schema}'
                                 AND bbox_type = '{ext_type}';
                                 """)
@@ -107,7 +107,7 @@ def fetch_crs(dbLoader) -> int:
             # Get database srid.
             cur.execute(query= f"""
                                 SELECT srid 
-                                FROM {dbLoader.SCHEMA}.database_srs 
+                                FROM "{dbLoader.SCHEMA}".database_srs 
                                 LIMIT 1;
                                 """)
             srid = cur.fetchone()[0] # Tuple has trailing comma.
@@ -156,7 +156,7 @@ def exec_list_cdb_schemas(dbLoader) -> tuple:
     try:
         with dbLoader.conn.cursor() as cur:
             #Get all schemas
-            cur.callproc(f"{c.MAIN_PKG_NAME}.list_cdb_schemas",[])
+            cur.callproc(f"{c.MAIN_PKG_NAME}.list_cdb_schemas",[True])
             schemas = cur.fetchall()
         schemas = tuple(zip(*schemas))[0] # trailing comma
         dbLoader.conn.commit()
@@ -169,24 +169,6 @@ def exec_list_cdb_schemas(dbLoader) -> tuple:
             header="Fetching data schemas",
             error=error)
         dbLoader.conn.rollback()
-
-def exec_table_is_empty(dbLoader,schema, table) -> bool:
-    try:
-        with dbLoader.conn.cursor() as cur:
-            #Get all schemas
-            cur.callproc(f"{c.MAIN_PKG_NAME}.table_is_empty",[schema,table])
-            is_empty = cur.fetchone()[0] # trailing comma
-        return is_empty
-
-    except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
-        c.critical_log(func=exec_table_is_empty,
-            location=FILE_LOCATION,
-            header="Checking if {schema}.{table} is empty.",
-            error=error)
-        dbLoader.conn.rollback()
-
-
     
 def exec_list_qgis_pkg_usrgroup_members(dbLoader) -> tuple:
     """SQL function thar reads and retrieves the database's
@@ -257,7 +239,7 @@ def fetch_layer_metadata(dbLoader, from_schema, for_schema, cols = "*") -> tuple
     try:
         with dbLoader.conn.cursor() as cur:
             cur.execute(f"""
-                        SELECT {cols} FROM {from_schema}.layer_metadata
+                        SELECT {cols} FROM "{from_schema}".layer_metadata
                         WHERE cdb_schema = '{for_schema}'
                         ORDER BY feature_type, lod, root_class, layer_name;
                         """)
@@ -306,7 +288,7 @@ def fetch_lookup_tables(dbLoader) -> tuple:
             error=error)
         dbLoader.conn.rollback()
 
-def fetch_codelist_id(dbLoader,root_class: str, lu_type: str) -> int:
+def fetch_codelist_id(dbLoader,root_class: str, lu_type: str) -> int: #NOTE: not used?
     """SQL query thar reads and retrieves the id from codelist
     table for a specifc class and type.
 
@@ -366,42 +348,6 @@ def exec_compute_schema_extents(dbLoader) -> None:
             error=error)
         dbLoader.conn.rollback()
 
-def exec_create_mview(dbLoader) -> None:
-    """SQL qgis_pkg function that creates the schema's
-    materialised views.
-    """
-    try:
-        with dbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents
-            cur.callproc("qgis_pkg.create_mview",[dbLoader.SCHEMA])
-        dbLoader.conn.commit()
-
-    except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
-        c.critical_log(func=exec_create_mview,
-            location=FILE_LOCATION,
-            header="Creating mat views",
-            error=error)
-        dbLoader.conn.rollback()
-
-def exec_create_updatable_views(dbLoader) -> None:
-    """SQL qgis_pkg function that creates the schema's
-    updatable views.
-    """
-    try:
-        with dbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents.
-            cur.callproc("qgis_pkg.create_updatable_views",[dbLoader.SCHEMA])
-        dbLoader.conn.commit()
-
-    except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
-        c.critical_log(func=exec_create_updatable_views,
-            location=FILE_LOCATION,
-            header="Creating upd views",
-            error=error)
-        dbLoader.conn.rollback()
-
 def exec_view_counter(dbLoader, view: c.View) -> int:
     """SQL qgis_pkg function that computes the number of
     geometry objects found in selecte extents.
@@ -429,34 +375,6 @@ def exec_view_counter(dbLoader, view: c.View) -> int:
         c.critical_log(func=exec_view_counter,
             location=FILE_LOCATION,
             header=f"Coutning view {view.mv_name}",
-            error=error)
-        dbLoader.conn.rollback()
-
-def exec_get_table_privileges(dbLoader) -> dict:
-    """SQL qgis_pkg function that reads and retrieves the current schema's table
-    privileges.
-    Note!: This functions is probably wont be used at all, as it requires that
-    qgis_pkg is already installed, but the approach requires its execution
-    before checking whether the qgis_pkg is installed or not.
-    *   :returns: Table privileges
-
-        :rtype: dict{str:bool}
-    """
-    try:
-        with dbLoader.conn.cursor() as cur:
-            # Execute server function to get the citydb schemas.
-            cur.callproc("qgis_pkg.get_table_privileges")
-            privileges_bool = cur.fetchone()
-            colnames = [desc[0] for desc in cur.description]
-            privileges_dict= dict(zip([col.upper() for col in colnames],privileges_bool))
-        dbLoader.conn.commit()
-        return privileges_dict
-
-    except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
-        c.critical_log(func=exec_get_table_privileges,
-            location=FILE_LOCATION,
-            header="Getting privileges",
             error=error)
         dbLoader.conn.rollback()
 
@@ -509,12 +427,13 @@ def exec_upsert_extents(dbLoader, usr_schema, cdb_schema, bbox_type, extents) ->
         dbLoader.conn.rollback()
     
 def exec_create_qgis_usr_schema(dbLoader) -> None:
-    """SQL qgis_pkg function that creates the user's schema."""
+    """SQL qgis_pkg function that creates the schema for a selected user."""
 
+    user = dbLoader.dlg_admin.cbxUser.currentText()
     try:
         with dbLoader.conn.cursor() as cur:
             # Execute server function to compute the schema's extents
-            cur.callproc(f"{c.MAIN_PKG_NAME}.create_qgis_usr_schema",[dbLoader.DB.username])
+            cur.callproc(f"{c.MAIN_PKG_NAME}.create_qgis_usr_schema",[user])
         dbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
@@ -587,7 +506,7 @@ def refresh_mat_view(dbLoader,connection, m_view):
                                 REFRESH MATERIALIZED VIEW "{dbLoader.USER_SCHEMA}"."{m_view}";
                                 """)
             cur.execute(query= f"""
-                                UPDATE {dbLoader.USER_SCHEMA}.layer_metadata
+                                UPDATE "{dbLoader.USER_SCHEMA}".layer_metadata
                                 SET refresh_date = clock_timestamp()
                                 WHERE mv_name = '{m_view}'""")
 
@@ -701,72 +620,3 @@ def drop_package(dbLoader, schema: str, close_connection:bool = True) -> None:
             header="Dropping package",
             error=error)
         dbLoader.conn.rollback()
-
-# def schema_has_features(dbLoader, schema: str) -> bool: #NOTE: TO be deleted
-#     """SQL query that searches schema for CityGML features.
-
-#     *   :param schema: Schema to check if it has CityGML feature tables
-
-#         :type schema: str
-
-#     *   :returns: Search result
-
-#         :rtype: bool
-#     """
-
-#     try:
-#         # Create cursor.
-#         with dbLoader.conn.cursor() as cur:
-#             # Get package name from database
-#             cur.execute(f"""
-#                         SELECT table_name FROM information_schema.tables
-#                         WHERE table_schema = '{schema}'
-#                         AND table_name SIMILAR TO '{c.get_postgres_array(c.features_tables)}'
-#                         ORDER BY table_name ASC
-#                         """)
-#             feature_response= cur.fetchall() #All tables relevant to the thematic surfaces
-#         dbLoader.conn.commit()
-
-#         if feature_response:
-#             return True
-#         return False
-
-#     except (Exception, psycopg2.Error) as error:
-#         # Send error to QGIS Message Log panel.
-#         c.critical_log(func=schema_has_features,
-#             location=FILE_LOCATION,
-#             header="Getting schema features",
-#             error=error)
-#         dbLoader.conn.rollback()
-
-# def fetch_users(dbLoader) -> dict: NOTE: TO BE DELETED
-#     """SQL query thar reads and retrieves the current database's
-#     users accompanied with their superuser status
-#     *   :returns: Database users with user name as keys and
-#             superuser as value.
-
-#         :rtype: dict{str,bool}
-#     """
-
-#     try:
-#         with dbLoader.conn.cursor() as cur:
-#             # Get database srid.
-#             cur.execute(query=  """
-#                                 SELECT usename, usesuper
-#                                 FROM pg_catalog.pg_user;
-#                                 """)
-#             users = cur.fetchall()
-#             users, status = list(zip(*users))
-#             users = dict(zip(users,status))
-
-#         dbLoader.conn.commit()
-
-#         return users
-
-#     except (Exception, psycopg2.Error) as error:
-#         # Send error to QGIS Message Log panel.
-#         c.critical_log(func=fetch_users,
-#             location=FILE_LOCATION,
-#             header="Fetching users",
-#             error=error)
-#         dbLoader.conn.rollback()

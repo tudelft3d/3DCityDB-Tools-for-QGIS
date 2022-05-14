@@ -323,7 +323,7 @@ class DBLoader:
             # 'Connection' group box signals (in 'Database Admin' tab)
             self.dlg_admin.cbxExistingConn.currentIndexChanged.connect(
                 self.evt_cbxExistingConn_changed)
-            self.dlg_admin.btnNewConn.clicked.connect(self.evt_btnNewConnC_clicked)
+            self.dlg_admin.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
             self.dlg_admin.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
 
 
@@ -348,8 +348,8 @@ class DBLoader:
     #-SIGNALS--################################################################
     #--(end)---################################################################
 
-            # Get existing connections from QGIS profile settings.
-            connection.get_postgres_conn(self) # Stored in self.conn
+        # Get existing connections from QGIS profile settings.
+        connection.get_postgres_conn(self) # Stored in self.conn
 
         # When this dialogue is open, inputs in any other windows are blocked.
         self.dlg_admin.setWindowModality(2)
@@ -463,8 +463,7 @@ class DBLoader:
 
             print("Initial start > This should be printed ONLY once")
 
-            # Get existing connections from QGIS profile settings.
-            connection.get_postgres_conn(self) # Stored in self.conn
+
 
             #self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget()
 
@@ -485,6 +484,9 @@ class DBLoader:
 
             #print(self.CANVAS, self.dlg.gvCanvas)
             #print(self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget())
+
+        # Get existing connections from QGIS profile settings.
+        connection.get_postgres_conn(self) # Stored in self.conn
 
         # Show the dialog
         self.dlg.show()
@@ -515,9 +517,6 @@ class DBLoader:
 
         Resposible to add VALID new connection to the 'Existing connections'.
         """
-        if self.dlg_admin: # Bypass the input blockade for the connector dialogue
-            self.dlg_admin.setWindowModality(1)
-
 
         # Create/Show/Execture additional dialog for the new connection
         dlgConnector = connection.DlgConnector()
@@ -530,13 +529,7 @@ class DBLoader:
             self.dlg.cbxExistingConnC.addItem(
                 f"{dlgConnector.new_connection.connection_name}",
                 dlgConnector.new_connection)
-            self.dlg_admin.cbxExistingConn.addItem(
-                f"{dlgConnector.new_connection.connection_name}",
-                dlgConnector.new_connection)
 #            dlgConnector.close()
-
-        if self.dlg_admin: # Reinstage the input blockage.
-            self.dlg_admin.setWindowModality(2)
 
     # 'Database' group box events (in 'Connection' tab)
     def evt_btnConnectToDbC_clicked(self) -> None:
@@ -722,6 +715,31 @@ class DBLoader:
 
         dba_setup.cbxExistingConn_setup(self)
         
+    def evt_btnNewConn_clicked(self) -> None:
+        """Event that is called when the 'New Connection' pushButton
+        (btnNewConn) is pressed.
+
+        Resposible to add VALID new connection to the 'Existing connections'.
+        """
+        # Bypass the input blockade for the connector dialogue.
+        self.dlg_admin.setWindowModality(1)
+
+
+        # Create/Show/Execture additional dialog for the new connection
+        dlgConnector = connection.DlgConnector()
+        dlgConnector.setWindowModality(2)
+        dlgConnector.show()
+        dlgConnector.exec_()
+
+        # Add new connection to the Existing connections
+        if dlgConnector.new_connection:
+            self.dlg_admin.cbxExistingConn.addItem(
+                f"{dlgConnector.new_connection.connection_name}",
+                dlgConnector.new_connection)
+#            dlgConnector.close()
+
+        # Reinstage the input blockage.
+        self.dlg_admin.setWindowModality(2)
 
     def evt_btnConnectToDb_clicked(self) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
