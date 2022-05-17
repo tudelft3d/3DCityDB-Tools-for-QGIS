@@ -191,7 +191,6 @@ def get_postgres_conn(dbLoader) -> None:
         connectionInstance.username = qsettings.value('username')
         connectionInstance.password = qsettings.value('password')
 
-        print(conn)
         # For 'User Connection' tab.
         if dbLoader.dlg:
             dbLoader.dlg.cbxExistingConnC.addItem(f'{conn}',connectionInstance)

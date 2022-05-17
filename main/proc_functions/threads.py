@@ -314,11 +314,13 @@ def drop_layers_thread(dbLoader) -> None:
     by braching a new Worker thread to execute the operation on.
     """
 
+    # The sole purpose of the loop here is to find the widget's index in
+    # the layout, in order to put the progress bar just below it.
     for index in range(dbLoader.dlg.vLayoutUserConn.count()):
         widget = dbLoader.dlg.vLayoutUserConn.itemAt(index).widget()
         if widget is None: continue
         if widget.objectName() == "btnDropLayers":
-            # Add a new progress bar to follow the installation procedure.
+            # Add a new progress bar to follow the dropping procedure.
             create_progress_bar(dialog=dbLoader.dlg,
                 layout=dbLoader.dlg.vLayoutUserConn,
                 position=index+1)
@@ -426,9 +428,9 @@ def install_pkg_thread(dbLoader, path: str, pkg: str) -> None:
 
         :type path: str
     
-    *   :param path: The package (schema) name that's installed
+    *   :param pkg: The package (schema) name that's installed
 
-        :type path: str
+        :type pkg: str
     """
 
     if pkg == c.MAIN_PKG_NAME:
@@ -470,6 +472,273 @@ def install_pkg_thread(dbLoader, path: str, pkg: str) -> None:
     # Initiate worker thread
     dbLoader.thread.start()
 
+
+class PkgUnInstallationWorker(QObject):
+
+
+    # Create custom signals.
+    finished = pyqtSignal()
+    progress = pyqtSignal(str,int,str)
+    success = pyqtSignal()
+    fail = pyqtSignal()
+
+    def __init__(self,dbLoader):
+        super().__init__()
+        self.plg = dbLoader
+
+    def uninstall_thread(self):
+        """Execution method that uninstalls the plugin package for
+        support of the default schema.
+        """
+        # Flag to help us break from a failing installation.
+        fail_flag = False
+
+        # Get users
+        users = sql.exec_list_qgis_pkg_usrgroup_members(self.plg)
+        cdb_schemas = sql.exec_list_cdb_schemas(self.plg)
+
+        # Set progress bar goal:
+        # revoke privileges - 1 actions
+        # drop layers - 10 actions
+        # drop schema - 1 actions
+        # kick user from user group - 1 actions
+        # drop default users - 2 actions
+        # drop user group - 1 actions
+        # drop 'qgis_pkg' - 1 actions
+
+        steps_no = (((len(cdb_schemas) * (1 + len(c.drop_layers_funcs)))) + (1 + 1) ) * len(users) + 1 + 1 #+ len(c.def_users)
+        self.plg.dlg_admin.bar.setMaximum(steps_no)
+        try:
+            curr_step=0
+            for user in users:
+                for schema in cdb_schemas:
+                    # Revoke privileges of user for schema. 1
+                    sql.exec_revoke_qgis_usr_privileges(self.plg, user, schema)
+                    # Update progress bar with current step and script.
+                    text = " ".join(["Revoking privieleges of user:",user,"for schema:",schema])
+                    curr_step+=1
+                    self.progress.emit("admin",curr_step,text)
+
+                    # Drop layers: 10
+                    with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Dropping Layers)") as conn:
+                        for module_func in c.drop_layers_funcs:
+                            # Attempt direct sql injection.
+                            with conn.cursor() as cursor:
+                                cursor.callproc(f"{c.MAIN_PKG_NAME}.{module_func}",[user, schema])
+                            conn.commit()
+                            # Update progress bar with current step and script.
+                            text = " ".join(["Dropping layers:",module_func])
+                            curr_step+=1
+                            self.progress.emit("admin",curr_step,text)
+                
+                # Drop user schema: 1
+                usr_schema = sql.exec_create_qgis_usr_schema_name(self.plg, user)
+                sql.drop_package(self.plg, usr_schema, False)
+                # Update progress bar with current step and script.
+                text = " ".join(["Dropping user schema:",usr_schema])
+                curr_step+=1
+                self.progress.emit("admin",curr_step,text)
+
+                # Kick user from qgis_pkg_usrgroup:
+                sql.exec_revoke_qgis_usr_privileges(self.plg, user, None)
+                # Update progress bar with current step and script.
+                text = " ".join(["Removing user:",user,"from qgis_pkg_usrgroup."])
+                curr_step+=1
+                self.progress.emit("admin",curr_step,text)
+
+            # Drop default users: 2
+            # for def_user in c.def_users:
+            #     sql.drop_user(self.plg, def_user)
+            #     # Update progress bar with current step and script.
+            #     text = " ".join(["Dropping default user:",def_user])
+            #     curr_step+=1
+            #     self.progress.emit("admin",curr_step,text)
+            
+            # Drop user group: 1
+            sql.drop_user_group(self.plg,c.def_usr_group)
+            # Update progress bar with current step and script.
+            text = " ".join(["Dropping user group:",c.def_usr_group])
+            curr_step+=1
+            self.progress.emit("admin",curr_step,text)
+
+            #Drop "qgis_pkg" 1
+            sql.drop_package(self.plg, c.MAIN_PKG_NAME, False)
+            # Update progress bar with current step and script.
+            text = " ".join(["Dropping main schema:",c.MAIN_PKG_NAME])
+            curr_step+=1
+            self.progress.emit("admin",curr_step,text)
+
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            fail_flag = True
+            conn.rollback()
+            self.fail.emit()
+        # No FAIL = SUCCESS
+        if not fail_flag:
+            self.success.emit()
+        self.finished.emit()
+
+def uninstall_pkg_thread(dbLoader) -> None:
+    """Function that uninstalls the plugin package (qgis_pkg) from the database
+    by braching a new Worker thread to execute the operation on.
+    """
+
+
+    # Add a new progress bar to follow the installation procedure.
+    create_progress_bar(dialog=dbLoader.dlg_admin,
+        layout=dbLoader.dlg_admin.vLayoutMainInst,
+        position=-1)
+
+    # Create new thread object.
+    dbLoader.thread = QThread()
+    # Instantiate worker object for the operation.
+    dbLoader.worker = PkgUnInstallationWorker(dbLoader)
+    # Move worker object to the be executed on the new thread.
+    dbLoader.worker.moveToThread(dbLoader.thread)
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #-(start)--################################################################
+
+    # Execute worker's 'run' method.
+    dbLoader.thread.started.connect(dbLoader.worker.uninstall_thread)
+
+    # Capture progress to show in bar.
+    dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
+
+    # Get rid of worker and thread objects.
+    dbLoader.worker.finished.connect(dbLoader.thread.quit)
+    dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
+    dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
+
+    # On installation status
+    dbLoader.worker.success.connect(lambda: uninstall_success(dbLoader))
+    dbLoader.worker.fail.connect(lambda: uninstall_fail(dbLoader))
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #--(end)---################################################################
+
+    # Initiate worker thread
+    dbLoader.thread.start()
+
+class DropUserSchemaWorker(QObject):
+
+    # Create custom signals.
+    finished = pyqtSignal()
+    progress = pyqtSignal(str,int,str)
+    success = pyqtSignal()
+    fail = pyqtSignal()
+
+    def __init__(self,dbLoader):
+        super().__init__()
+        self.plg = dbLoader
+
+    def drop_thread(self):
+        """Execution method that uninstalls the plugin package for
+        support of the default schema.
+        """
+        # Flag to help us break from a failing installation.
+        fail_flag = False
+
+        user_name = self.plg.dlg_admin.cbxUser.currentText()
+        usr_schema = self.plg.USER_SCHEMA
+        cdb_schemas = sql.exec_list_cdb_schemas(self.plg)
+
+        # Set progress bar goal:
+        # revoke privileges - 1 actions
+        # drop layers - 10 actions
+        # drop schema - 1 actions
+
+
+        steps_no = (1 + len(c.drop_layers_funcs)) * len(cdb_schemas)
+        self.plg.dlg_admin.bar.setMaximum(steps_no)
+        try:
+            curr_step=0
+
+            for schema in cdb_schemas:
+                # Revoke privileges of user for schema. 1
+                sql.exec_revoke_qgis_usr_privileges(self.plg, user_name, schema)
+                # Update progress bar with current step and script.
+                text = " ".join(["Revoking privieleges of user:",user_name,"for schema:",schema])
+                curr_step+=1
+                self.progress.emit("admin",curr_step,text)
+
+                # Drop layers: 10
+                with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Dropping Layers)") as conn:
+                    for module_func in c.drop_layers_funcs:
+                        # Attempt direct sql injection.
+                        with conn.cursor() as cursor:
+                            cursor.callproc(f"{c.MAIN_PKG_NAME}.{module_func}",[user_name, schema])
+                        conn.commit()
+                        # Update progress bar with current step and script.
+                        text = " ".join(["Dropping layers:",module_func])
+                        curr_step+=1
+                        self.progress.emit("admin",curr_step,text)
+
+            #Drop user schema 1
+            sql.drop_package(self.plg, usr_schema, False)
+            # Update progress bar with current step and script.
+            text = " ".join(["Dropping user schema:",usr_schema])
+            curr_step+=1
+            self.progress.emit("admin",curr_step,text)
+
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            fail_flag = True
+            conn.rollback()
+            self.fail.emit()
+
+        # No FAIL = SUCCESS
+        if not fail_flag:
+            self.success.emit()
+        self.finished.emit()
+
+def drop_usr_sch_thread(dbLoader) -> None:
+    """Function that uninstalls the plugin package (qgis_pkg) from the database
+    by braching a new Worker thread to execute the operation on.
+    """
+
+    # Add a new progress bar to follow the installation procedure.
+    create_progress_bar(dialog=dbLoader.dlg_admin,
+        layout=dbLoader.dlg_admin.vLayoutUsrInst,
+        position=-1)
+
+    # Create new thread object.
+    dbLoader.thread = QThread()
+    # Instantiate worker object for the operation.
+    dbLoader.worker = DropUserSchemaWorker(dbLoader)
+    # Move worker object to the be executed on the new thread.
+    dbLoader.worker.moveToThread(dbLoader.thread)
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #-(start)--################################################################
+
+    # Execute worker's 'run' method.
+    dbLoader.thread.started.connect(dbLoader.worker.drop_thread)
+
+    # Capture progress to show in bar.
+    dbLoader.worker.progress.connect(dbLoader.evt_update_bar)
+
+    # Get rid of worker and thread objects.
+    dbLoader.worker.finished.connect(dbLoader.thread.quit)
+    dbLoader.worker.finished.connect(dbLoader.worker.deleteLater)
+    dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
+
+    # On installation status
+    dbLoader.worker.success.connect(lambda: drop_success(dbLoader))
+    dbLoader.worker.fail.connect(lambda: drop_fail(dbLoader))
+
+    #----------################################################################
+    #-SIGNALS--################################################################
+    #--(end)---################################################################
+
+    # Initiate worker thread
+    dbLoader.thread.start()
+
 #----------################################################################
 #--EVENTS--################################################################
 #-(start)--################################################################
@@ -490,7 +759,6 @@ def refresh_success(dbLoader) -> None:
     refresh_date = sql.fetch_layer_metadata(dbLoader, from_schema=dbLoader.USER_SCHEMA,for_schema=dbLoader.SCHEMA,cols="refresh_date")
     # Extract a date.
     date =list(set(refresh_date[1]))[0][0]
-    print(date)
     if date:
 
         # Replace with Success msg.
@@ -540,6 +808,8 @@ def install_success(dbLoader, pkg: str) -> None:
                 level=Qgis.Success,
                 notifyUser=True)
     
+        dbLoader.dlg_admin.btnMainUninst.setDisabled(False)
+
         # Get users from database.
         users = sql.exec_list_qgis_pkg_usrgroup_members(dbLoader)
         dba_tab.fill_users_box(dbLoader,users)
@@ -575,6 +845,119 @@ def install_fail(dbLoader, pkg: str) -> None:
 
     # Drop corrupted installation.
     sql.drop_package(dbLoader,schema=c.MAIN_PKG_NAME, close_connection=False)
+    dbLoader.dlg_admin.btnMainUninst.setDisabled(True)
+
+def uninstall_success(dbLoader) -> None:
+    """Event that is called when the thread executing the uninstallation
+    finishes successfuly.
+
+    Shows success message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows success message in Connection Status groupbox
+    Shows success message in QgsMessageLog
+    """
+
+
+    # Remove progress bar
+    dbLoader.dlg_admin.msg_bar.clearWidgets()
+
+    pkg = c.MAIN_PKG_NAME
+
+    if not sql.has_main_pkg(dbLoader):
+        # Replace with Success msg.
+        msg= dbLoader.dlg_admin.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=pkg))
+        dbLoader.dlg_admin.msg_bar.pushWidget(msg, Qgis.Success, 5)
+
+        # Inform user
+        dbLoader.dlg_admin.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=pkg)))
+        QgsMessageLog.logMessage(message=c.UNINST_SUCC_MSG.format(pkg=pkg),
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
+    
+        dbLoader.dlg_admin.btnMainUninst.setDisabled(True)
+
+        widget_reset.reset_gbxUserInst(dbLoader)
+    else:
+        uninstall_fail(dbLoader, pkg)
+
+def uninstall_fail(dbLoader,error='error') -> None:
+    """Event that is called when the thread executing the uninstallation
+    emits a fail signal meaning that something went wront with uninstallation.
+
+
+    Shows fail message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows fail message in Connection Status groupbox
+    Shows fail message in QgsMessageLog
+    """
+
+    # Remove progress bar
+    dbLoader.dlg_admin.msg_bar.clearWidgets()
+
+    # Replace with Failure msg.
+    msg= dbLoader.dlg_admin.msg_bar.createMessage(error)
+    dbLoader.dlg_admin.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+
+    # Inform user
+    dbLoader.dlg_admin.lblMainInst_out.setText(error)
+    QgsMessageLog.logMessage(message=error,
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+
+def drop_success(dbLoader) -> None:
+    """Event that is called when the thread executing the uninstallation
+    finishes successfuly.
+
+    Shows success message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows success message in Connection Status groupbox
+    Shows success message in QgsMessageLog
+    """
+
+
+    # Remove progress bar
+    dbLoader.dlg_admin.msg_bar.clearWidgets()
+
+    usr_schema = dbLoader.USER_SCHEMA
+
+    if not sql.has_user_pkg(dbLoader):
+        # Replace with Success msg.
+        msg= dbLoader.dlg_admin.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=usr_schema))
+        dbLoader.dlg_admin.msg_bar.pushWidget(msg, Qgis.Success, 5)
+
+        # Inform user
+        dbLoader.dlg_admin.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=usr_schema)))
+        QgsMessageLog.logMessage(message=c.UNINST_SUCC_MSG.format(pkg=usr_schema),
+                tag="3DCityDB-Loader",
+                level=Qgis.Success,
+                notifyUser=True)
+        dbLoader.dlg_admin.btnUsrUninst.setDisabled(True)
+    else:
+        drop_fail(dbLoader, usr_schema)
+
+def drop_fail(dbLoader,error='error') -> None:
+    """Event that is called when the thread executing the uninstallation
+    emits a fail signal meaning that something went wront with uninstallation.
+
+
+    Shows fail message at dbLoader.dlg.msg_bar: QgsMessageBar
+    Shows fail message in Connection Status groupbox
+    Shows fail message in QgsMessageLog
+    """
+
+    # Remove progress bar
+    dbLoader.dlg_admin.msg_bar.clearWidgets()
+
+    # Replace with Failure msg.
+    msg= dbLoader.dlg_admin.msg_bar.createMessage(error)
+    dbLoader.dlg_admin.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+
+    # Inform user
+    dbLoader.dlg_admin.lblUserInst_out.setText(error)
+    QgsMessageLog.logMessage(message=error,
+            tag="3DCityDB-Loader",
+            level=Qgis.Critical,
+            notifyUser=True)
+    dbLoader.dlg_admin.btnUsrUninst.setDisabled(False)
 
 def layers_success(dbLoader) -> None:
     """Event that is called when the thread executing the layer
@@ -710,7 +1093,7 @@ def create_progress_bar(dialog, layout: QVBoxLayout, position: int) -> None:
         :type position: int
 
     """
-    print('position:',position)
+
     # Create QgsMessageBar instance.
     dialog.msg_bar = QgsMessageBar()
 

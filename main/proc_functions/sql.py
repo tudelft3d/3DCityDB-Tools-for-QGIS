@@ -456,6 +456,7 @@ def exec_create_qgis_usr_schema_name(dbLoader, usr_name = None) -> None:
             usr_schema = cur.fetchone()[0] # Trailing comma
         dbLoader.USER_SCHEMA = usr_schema
         dbLoader.conn.commit()
+        return usr_schema
 
     except (Exception, psycopg2.Error) as error:
         # Send error to QGIS Message Log panel.
@@ -464,7 +465,23 @@ def exec_create_qgis_usr_schema_name(dbLoader, usr_name = None) -> None:
             header=f"Creating user schema name for {usr_name}",
             error=error)
         dbLoader.conn.rollback()
-    
+
+def exec_revoke_qgis_usr_privileges(dbLoader, usr_name, cdb_schema) -> None:
+
+    try:
+        with dbLoader.conn.cursor() as cur:
+            # Execute server function to compute the schema's extents
+            cur.callproc(f"{c.MAIN_PKG_NAME}.revoke_qgis_usr_privileges",[usr_name,cdb_schema])
+        dbLoader.conn.commit()
+
+    except (Exception, psycopg2.Error) as error:
+        # Send error to QGIS Message Log panel.
+        c.critical_log(func=exec_revoke_qgis_usr_privileges,
+            location=FILE_LOCATION,
+            header=f"Revoking privileges of user: {usr_name} for schema: {cdb_schema}.",
+            error=error)
+        dbLoader.conn.rollback()
+
 def fetch_mat_views(dbLoader) -> list:
     """SQL query thar reads and retrieves the current schema's
     materialised views from pg_matviews
@@ -565,7 +582,6 @@ def has_user_pkg(dbLoader) -> bool:
     """
 
     try:
-
         # Create cursor.
         with dbLoader.conn.cursor() as cur:
             # Get package name from database
@@ -620,3 +636,34 @@ def drop_package(dbLoader, schema: str, close_connection:bool = True) -> None:
             header="Dropping package",
             error=error)
         dbLoader.conn.rollback()
+
+def drop_user(dbLoader, user):
+    try:
+        with dbLoader.conn.cursor() as cur:
+            cur.execute(f"""DROP USER IF EXISTS "{user}" CASCADE;""")
+        dbLoader.conn.commit()
+
+
+    except (Exception, psycopg2.Error) as error:
+        # Send error to QGIS Message Log panel.
+        c.critical_log(func=drop_user,
+            location=FILE_LOCATION,
+            header=f"Dropping user: {user}",
+            error=error)
+        dbLoader.conn.rollback()
+
+def drop_user_group(dbLoader, group_name):
+    try:
+        with dbLoader.conn.cursor() as cur:
+            cur.execute(f"""DROP GROUP IF EXISTS "{group_name}";""")
+        dbLoader.conn.commit()
+
+
+    except (Exception, psycopg2.Error) as error:
+        # Send error to QGIS Message Log panel.
+        c.critical_log(func=drop_user_group,
+            location=FILE_LOCATION,
+            header=f"Dropping user group: {group_name}",
+            error=error)
+        dbLoader.conn.rollback()
+

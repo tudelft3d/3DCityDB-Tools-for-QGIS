@@ -101,11 +101,13 @@ def btnConnectToDb_setup(dbLoader) -> None:
                     # Get qgis_pkg version.
                     full_version = f"(v.{sql.exec_qgis_pkg_version(dbLoader)})"
                     dlg.lblMainInst_out.setText(c.success_html.format(text=" ".join([c.INST_MSG,full_version]).format(pkg=c.MAIN_PKG_NAME)))
+                    dlg.btnMainUninst.setDisabled(False)
 
                     # Get users from database.
                     users = sql.exec_list_qgis_pkg_usrgroup_members(dbLoader)
                     dba_tab.fill_users_box(dbLoader,users)
                 else:
+                    dlg.btnMainUninst.setDisabled(True)
                     dlg.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=c.MAIN_PKG_NAME)))
             else:
                 dlg.lbl3DCityDBInst_out.setText(c.crit_warning_html.format(
@@ -157,10 +159,11 @@ def cbxUser_setup(dbLoader) -> None:
         dlg.lblUserInst_out.setText(
             c.success_html.format(text=c.INST_MSG.format(
                 pkg=dbLoader.USER_SCHEMA)))
+        dlg.btnUsrUninst.setDisabled(False)
     else:
         dlg.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(
                 pkg=dbLoader.USER_SCHEMA)))
-
+        dlg.btnUsrUninst.setDisabled(True)
 
 # def btnRefreshLayers_setup(dbLoader) -> None: #NOTE: to be deleted? 
 #     """Function to setup the gui after a click signal is emitted from
@@ -203,37 +206,6 @@ def btnMainUninst_setup(dbLoader) -> None:
     """
 
     installation.uninstallation_query(dbLoader, c.UNINST_QUERY.format(pkg=c.MAIN_PKG_NAME), "main")
-
-    # Create QgsMessageBar instance.
-    dbLoader.dlg_admin.msg_bar = QgsMessageBar()
-    # Add the message bar into the input layer and position.
-    dbLoader.dlg_admin.vLayoutMainInst.insertWidget(-1,dbLoader.dlg_admin.msg_bar)
-
-    has_main_pkg = sql.has_main_pkg(dbLoader)
-    has_user_pkg = sql.has_user_pkg(dbLoader)
-
-    if not has_main_pkg:
-        dbLoader.dlg_admin.msg_bar.pushMessage(c.UNINST_SUCC_MSG.format(pkg=c.MAIN_PKG_NAME), level = Qgis.Success)
-        # Update status.
-        dbLoader.dlg_admin.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=c.MAIN_PKG_NAME)))
-    elif has_main_pkg:
-        dbLoader.dlg_admin.msg_bar.pushMessage(c.INST_ERROR_MSG.format(pkg=c.MAIN_PKG_NAME), level = Qgis.Success)
-        # Update status.
-        dbLoader.dlg_admin.lblMainInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=c.MAIN_PKG_NAME)))
-
-    if not has_user_pkg:
-        dbLoader.dlg_admin.msg_bar.pushMessage(c.UNINST_SUCC_MSG.format(pkg=dbLoader.USER_SCHEMA), level = Qgis.Success)
-        # Update status.
-        dbLoader.dlg_admin.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=dbLoader.USER_SCHEMA)))
-    elif has_user_pkg:
-        dbLoader.dlg_admin.msg_bar.pushMessage(c.INST_ERROR_MSG.format(pkg=dbLoader.USER_SCHEMA), level = Qgis.Success)
-        # Update status.
-        dbLoader.dlg_admin.lblUserInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=dbLoader.USER_SCHEMA)))
-
-
-    #widget_reset.reset_tabConnection(dbLoader)
-    #widget_reset.reset_tabLayers(dbLoader)
-    widget_reset.reset_gbxUserInst(dbLoader)
 
 
 def btnUsrInst_setup(dbLoader) -> None:
@@ -298,29 +270,3 @@ def btnUsrUninst_setup(dbLoader) -> None:
     res = installation.uninstallation_query(dbLoader, c.UNINST_QUERY.format(pkg=dbLoader.USER_SCHEMA), "user")
     if not res: # Query was canceled by user, or error occured.
         return None
-
-    # Create QgsMessageBar instance.
-    dbLoader.dlg_admin.msg_bar = QgsMessageBar()
-    # Add the message bar into the input layer and position.
-    dbLoader.dlg_admin.vLayoutUsrInst.insertWidget(-1,dbLoader.dlg_admin.msg_bar)
-
-    if not sql.has_user_pkg(dbLoader): # Successful schema drop.
-
-        dbLoader.dlg_admin.msg_bar.pushMessage(c.UNINST_SUCC_MSG.format(pkg=dbLoader.USER_SCHEMA), level = Qgis.Success)
-        # Update status.
-        dbLoader.dlg_admin.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=dbLoader.USER_SCHEMA)))
-    else: # Unsuccessful schema drop.
-        # Replace with Failure msg.
-        msg = dbLoader.dlg_admin.msg_bar.createMessage(c.UNINST_ERROR_MSG.format(pkg=dbLoader.USER_SCHEMA))
-        dbLoader.dlg_admin.msg_bar.pushWidget(msg, Qgis.Critical, 5)
-
-        # Inform user.
-        dbLoader.dlg_admin.lblUserInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=dbLoader.USER_SCHEMA)))
-        QgsMessageLog.logMessage(message=c.UNINST_ERROR_MSG.format(pkg=dbLoader.USER_SCHEMA),
-                tag="3DCityDB-Loader",
-                level=Qgis.Critical,
-                notifyUser=True)
-
-    #widget_reset.reset_tabConnection(dbLoader)
-    #widget_reset.reset_tabLayers(dbLoader)
-    

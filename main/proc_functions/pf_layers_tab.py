@@ -451,19 +451,19 @@ def send_to_bottom_ToC(node: QgsLayerTreeGroup) -> None:
     group= None
     names = [ch.name() for ch in node.children()]
     if 'FeatureType: Relief' in names:
-        print(names)
+
         for c,i in enumerate(node.children()):
-            print(node.name(),c,i.name())
+
             if 'FeatureType: Relief' == i.name():
                 group = i
                 break
         if group:
             idx=len(node.children())-2
-            print(idx)
+
             move_group =  group.clone()
             node.insertChildNode(idx, move_group)
             node.removeChildNode(group)
-        print(node.children())
+
         return None
     
     for child in node.children():

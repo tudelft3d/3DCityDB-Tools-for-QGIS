@@ -41,9 +41,10 @@ def installation_query(dbLoader, message: str, inst_type: str) -> None:
         #message = message.format(usr=c.USER_PKG_NAME.format(user=dbLoader.DB.username))
         res= QMessageBox.question(dbLoader.dlg_admin,"Installation", message)
         if res == 16384: #YES
-            # Run scripts
             sql.exec_create_qgis_usr_schema(dbLoader)
+            dbLoader.dlg_admin.btnUsrUninst.setDisabled(False)
             return True
+        dbLoader.dlg_admin.btnUsrUninst.setDisabled(True)
         return False
     else:
         QMessageBox.critical(dbLoader.dlg_admin,"Installation", "Unrecognised inst type!")
@@ -62,27 +63,21 @@ def uninstallation_query(dbLoader, message: str, uninst_type: str) -> None:
         :param inst_type: str (main|user)
 
     """
-
     if uninst_type == "main":
         #message = message.format(pkg=c.MAIN_PKG_NAME)
         res= QMessageBox.question(dbLoader.dlg_admin,"Uninstallation", message)
         if res == 16384: #YES
-            # Get user schemas.
-            schemas = sql.exec_list_usr_schemas(dbLoader)
-            # Drop both main and user schemas.
-            sql.drop_package(dbLoader, c.MAIN_PKG_NAME, False)
-            if schemas:
-                for s in schemas:
-                    sql.drop_package(dbLoader, s, False)
-                return True
-        return False
-    elif uninst_type == "user":
-        #message = message.format(pkg=c.USER_PKG_NAME)
-        res= QMessageBox.question(dbLoader.dlg_admin,"Uninstallation", message)
-        if res == 16384: #YES
-            sql.drop_package(dbLoader, dbLoader.USER_SCHEMA, False)
+            th.uninstall_pkg_thread(dbLoader)
             return True
         return False
-    else: 
+    elif uninst_type == "user":
+        #message = message.format(usr=c.USER_PKG_NAME.format(user=dbLoader.DB.username))
+        res= QMessageBox.question(dbLoader.dlg_admin,"Uninstallation", message)
+        if res == 16384: #YES
+            # Run scripts
+            th.drop_usr_sch_thread(dbLoader)
+            return True
+        return False
+    else:
         QMessageBox.critical(dbLoader.dlg_admin,"Uninstallation", "Unrecognised uninst type!")
         return False

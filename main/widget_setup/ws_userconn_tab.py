@@ -289,7 +289,6 @@ def gbxBasemapC_setup(dbLoader,canvas_widget) ->  None:
                 # Store extents into plugin variables.
                 dbLoader.EXTENTS = QgsRectangle.fromWkt(extents)
                 dbLoader.SCHEMA_EXTENTS = QgsRectangle.fromWkt(extents)
-                print(f'sch: {dbLoader.SCHEMA_EXTENTS}')
 
                 # # Draw the extents in the canvas
                 # # Create polygon rubber band corespoding to the extents
@@ -313,7 +312,6 @@ def gbxBasemapC_setup(dbLoader,canvas_widget) ->  None:
             
             else: # Compute the extents.
                 sql.exec_compute_schema_extents(dbLoader)
-                print(dbLoader.USER_SCHEMA,dbLoader.SCHEMA,c.SCHEMA_EXT_TYPE)
                 if not sql.fetch_extents(dbLoader,
                     from_schema=dbLoader.USER_SCHEMA,
                     for_schema=dbLoader.SCHEMA,
@@ -438,7 +436,9 @@ def btnCreateLayers_setup(dbLoader) -> None:
 
 def btnRefreshLayers_setup(dbLoader) -> None:
 
-    threads.refresh_views_thread(dbLoader)
+    res= QMessageBox.question(dbLoader.dlg,"Layer Refresh", c.REFRESH_QUERY)
+    if res == 16384: #YES
+        threads.refresh_views_thread(dbLoader)
 
 
 def btnDropLayers_setup(dbLoader) -> None:

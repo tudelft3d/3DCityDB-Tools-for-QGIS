@@ -86,8 +86,10 @@ REFR_LAYERS_MSG = "Last refresh: {date}"
 SCHEMA_SUPP_MSG = "Layers already exist for {sch}!"
 INST_MSG = "{pkg} is already installed!"
 
+# Pop-up messages
 INST_QUERY = "Any existing installation of '{pkg}' is going to be replaced! Do you want to proceed?"
 UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
+REFRESH_QUERY = "Refreshing layers is computationally expesive.\nDo you want to proceed?"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDbC_t = "Connect to {db}"
@@ -107,6 +109,7 @@ btnUsrInst_t = "  Create schema for user {usr}"
 btnUsrUninst_t = "  Drop schema for user {usr}"
 
 # Options dafault Parameters
+# For simplify geometries function
 DEC_PREC = 3
 MIN_AREA = 0.0001
 
@@ -122,6 +125,14 @@ generics_alias = "Generic Attributes"
 SCHEMA_EXT_TYPE = "db_schema"
 MAT_VIEW_EXT_TYPE = "m_view"
 QGIS_EXT_TYPE = "qgis"
+
+# default "qgis_pkg" users
+def_users = ["qgis_user_ro",
+    "qgis_user_rw", 
+    ]
+
+# default user group name
+def_usr_group = "qgis_pkg_usrgroup"
 
 features_tables = [
     "cityobject",

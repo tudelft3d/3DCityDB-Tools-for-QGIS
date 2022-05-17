@@ -461,8 +461,6 @@ class DBLoader:
     #--(end)---################################################################
 
 
-            print("Initial start > This should be printed ONLY once")
-
 
 
             #self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget()

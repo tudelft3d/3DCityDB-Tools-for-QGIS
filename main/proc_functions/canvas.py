@@ -48,7 +48,6 @@ def canvas_setup(dbLoader,
     canvas.setExtent(extents)
     if clear:
         # Clear map registry from old OSM layers.
-        print(registryOSM_id)
         QgsProject.instance().removeMapLayers(registryOSM_id)
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
