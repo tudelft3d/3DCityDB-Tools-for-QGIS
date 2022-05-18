@@ -61,7 +61,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_bridge(
 	usr_name             := usr_name, 
@@ -274,7 +274,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_building(
 	usr_name             := usr_name, 
@@ -487,7 +487,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_cityfurniture(
 	usr_name             := usr_name, 
@@ -700,7 +700,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_generics(
 	usr_name             := usr_name, 
@@ -913,7 +913,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_landuse(
 	usr_name             := usr_name, 
@@ -1126,7 +1126,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_relief(
 	usr_name             := usr_name, 
@@ -1339,7 +1339,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_transportation(
 	usr_name             := usr_name, 
@@ -1552,7 +1552,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_tunnel(
 	usr_name             := usr_name, 
@@ -1765,7 +1765,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_vegetation(
 	usr_name             := usr_name, 
@@ -1978,7 +1978,7 @@ sql_statement 	text := NULL;
 mview_bbox 		geometry(Polygon) := NULL;
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_layers_waterbody(
 	usr_name             := usr_name, 
@@ -2337,7 +2337,7 @@ mview_bbox    geometry(Polygon) := NULL;
 
 BEGIN
 
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
 
 sql_statement := qgis_pkg.generate_sql_create_layers(
 	usr_name             := usr_name, 
