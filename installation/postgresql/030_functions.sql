@@ -1212,7 +1212,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_matview_header(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_header() FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_header(varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_MATVIEW_FOOTER
@@ -1251,7 +1251,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_matview_footer(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_footer() FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_footer(varchar,varchar,varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_VIEW_HEADER
@@ -1283,7 +1283,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_view_header(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_view_header() FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_view_header(varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_MATVIEW_ELSE
@@ -1315,7 +1315,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_matview_else(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_else() FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_else(varchar,varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_TRIGGERS
@@ -1377,7 +1377,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_triggers(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers() FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers(varchar, varchar, varchar, varchar) FROM public;
 
 /* --- TEMPLATE FOR FUNCTIONS
 ----------------------------------------------------------------
