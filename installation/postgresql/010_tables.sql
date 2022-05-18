@@ -67,7 +67,7 @@ END IF;
 -- Add per default the postgres user to the current group
 GRANT qgis_pkg_usrgroup TO postgres;
 
--- If the admin user is different from postgres, add it too to the group, too
+-- If the database superuser is different from postgres, add it too to the group, too
 IF current_user <> 'postgres' THEN
 	GRANT qgis_pkg_usrgroup TO current_user;
 END IF;
