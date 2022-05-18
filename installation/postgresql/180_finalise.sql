@@ -33,9 +33,6 @@
 --
 -- ***********************************************************************
 
--- Make functions in schema qgis_pkg non available to everybody
---REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA qgis_pkg FROM public;
-
 -- Add user group and template table(s)
 DO $MAINBODY$
 DECLARE
