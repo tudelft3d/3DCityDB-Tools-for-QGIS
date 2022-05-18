@@ -733,6 +733,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) IS 'Searches for cdb_schema name into the view names of the usr_schema to determine if it supports the input cdb_schema.';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) FROM public;
 
+/*
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.VIEW_COUNTER
 ----------------------------------------------------------------
@@ -779,19 +780,21 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) IS 'Counts records in the selected materialized view';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) FROM public;
+*/
 
-/*
+
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.VIEW_COUNTER
 ----------------------------------------------------------------
 -- Counts records in the selected materialized view
 -- This function can be run providing only the name of the view,
 -- OR, alternatively, also the extents.
-DROP FUNCTION IF EXISTS    qgis_pkg.view_counter(varchar, varchar, varchar) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.view_counter(varchar, varchar, varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.view_counter(
 usr_schema	varchar,
+cdb_schema	varchar,
 mview_name	varchar, 				-- Materialised view name
-extents		varchar DEFAULT NULL	-- PostGIS polygon as ST_MakeEnvelope(229234, 476749, 230334, 479932, srid)
+extents		varchar DEFAULT NULL	-- PostGIS polygon as ST_MakeEnvelope(229234, 476749, 230334, 479932)
 )
 RETURNS integer
 AS $$
@@ -802,15 +805,14 @@ query_geom	geometry(Polygon);
 query_bbox	box2d;
 
 BEGIN
-IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname = usr_schema AND mv.ispopulated IS TRUE) THEN
+IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname::varchar = usr_schema AND mv.ispopulated IS TRUE) THEN
 	IF extents IS NULL THEN
-		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, mview_name)
-			INTO counter;
+		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, mview_name) INTO counter;
 	ELSE
-		query_bbox := ST_Extent(extents);
-
-		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom', usr_schema, mview_name, query_bbox)
-			USING query_bbox INTO counter;
+		EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO db_srid;
+		query_geom := ST_GeomFromText(extents,db_srid);
+		query_bbox := ST_Extent(query_geom);
+		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom', usr_schema, mview_name, query_bbox) USING query_bbox INTO counter;
 	END IF;
 ELSE
 	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, mview_name;	
@@ -823,13 +825,12 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.view_counter(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) IS 'Counts records in the selected materialized view';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar, varchar) IS 'Counts records in the selected materialized view';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar, varchar) FROM public;
 
 -- Example: 
---SELECT qgis_pkg.view_counter('citydb_bdg_lod0_footprint', NULL);
---SELECT qgis_pkg.view_counter('citydb_bdg_lod0_footprint', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
-*/
+--SELECT qgis_pkg.view_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', NULL);
+--SELECT qgis_pkg.view_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.COMPUTE_GA_INDICES
