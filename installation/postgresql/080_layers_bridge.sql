@@ -50,10 +50,10 @@ RETURNS text AS $$
 DECLARE
 feature_type CONSTANT varchar := 'Bridge';
 usr_schema      	varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
-srid_id         	integer := (SELECT srid FROM citydb.database_srs LIMIT 1);
 usr_names_array     varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
 usr_schemas_array 	varchar[] := (SELECT array_agg(s.usr_schema) FROM qgis_pkg.list_usr_schemas() AS s);
 cdb_schemas_array 	varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+srid_id         	integer;
 qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
@@ -95,7 +95,6 @@ sql_cfu_atts varchar := '
   string_to_array(o.usage_codespace, ''--/\--'')::varchar[] AS usage_codespace,';
 
 BEGIN
-
 -- Check if the usr_name exists AND is group of the "qgis_pkg_usrgroup";
 -- The check to avoid if it is null has been already carried out by 
 -- function qgis_pkg.create_qgis_usr_schema_name(usr_name) during DECLARE
@@ -129,6 +128,10 @@ INSERT INTO ',qi_usr_schema,'.layer_metadata
 (n_features, cdb_schema, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name)
 VALUES');
 
+-- Get the srid from the cdb_schema
+EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid_id;
+
+-- Check that the srid is the same if the mview_box
 IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid_id THEN
 	sql_where := NULL;
 ELSE
