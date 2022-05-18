@@ -1770,6 +1770,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_bridge(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module Bridge';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_bridge(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
 
 --Example:
 --SELECT qgis_pkg.create_layers_bridge(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',

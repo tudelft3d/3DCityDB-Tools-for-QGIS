@@ -346,7 +346,8 @@ EXCEPTION
 		RAISE EXCEPTION 'qgis_pkg.generate_sql_layers_relief(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module LandUse';
+COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module Relief';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
 
 --SELECT qgis_pkg.create_layers_relief(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',
 --	cdb_schema         := 'citydb3',

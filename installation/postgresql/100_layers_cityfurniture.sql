@@ -290,6 +290,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_cityfurniture(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module CityFurniture';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_cityfurniture(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
 
 --SELECT qgis_pkg.create_layers_cityfurniture(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',
 --	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
