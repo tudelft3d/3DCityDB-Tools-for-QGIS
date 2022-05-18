@@ -156,10 +156,10 @@ FOR r IN
 	SELECT i.schema_name 
 	FROM information_schema.schemata AS i
 	WHERE 
-		i.catalog_name = cdb_name
-		AND i.catalog_name::varchar NOT LIKE 'pg_%'
-		AND i.catalog_name::varchar <> 'citydb_pkg'
-		AND i.catalog_name::varchar NOT LIKE 'qgis_%'
+		i.catalog_name::varchar = cdb_name
+		AND i.schema_name::varchar NOT LIKE 'pg_%'
+		AND i.schema_name::varchar NOT IN ('information_schema', 'public', 'citydb_pkg')
+		AND i.schema_name::varchar NOT LIKE 'qgis_%'
 	ORDER BY i.schema_name ASC
 LOOP
 	IF -- check that it is indeed a citydb schema
