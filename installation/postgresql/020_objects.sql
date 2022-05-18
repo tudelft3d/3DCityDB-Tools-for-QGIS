@@ -463,7 +463,6 @@ CREATE TYPE         qgis_pkg.obj_cityobject AS (
 );
 COMMENT ON TYPE qgis_pkg.obj_cityobject IS 'This object (type) corresponds to table CITYOBJECT';
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobjectgroup
 ----------------------------------------------------------------
@@ -482,7 +481,6 @@ CREATE TYPE         qgis_pkg.obj_cityobjectgroup AS (
  parent_cityobject_id bigint
 );
 COMMENT ON TYPE qgis_pkg.obj_cityobjectgroup IS 'This object (type) corresponds to table CITYOBJECTGROUP';
-*/
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobject_genericattrib
