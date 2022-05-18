@@ -48,6 +48,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_address IS '(Blocks) inserting record in table ADDRESS';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_address FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_ADDRESS
@@ -65,6 +66,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_address IS 'Deletes record in table ADDRESS';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_address FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_APPEARANCE
@@ -82,6 +84,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_appearance IS '(Blocks) inserting record in table APPEARANCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_appearance FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_APPEARANCE
@@ -99,6 +102,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_appearance IS 'Deletes record in table APPEARANCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_appearance FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BREAKLINE_RELIEF
@@ -116,6 +120,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_breakline_relief IS '(Blocks) inserting record in table BREAKLINE_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_breakline_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BREAKLINE_RELIEF
@@ -133,6 +138,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_breakline_relief IS 'Deletes record in table BREAKLINE_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_breakline_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE
@@ -150,6 +156,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge IS '(Blocks) inserting record in table BRIDGE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE
@@ -167,6 +174,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge IS 'Deletes record in table BRIDGE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_CONSTR_ELEMENT
@@ -184,6 +192,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_constr_element IS '(Blocks) inserting record in table BRIDGE_CONSTR_ELEMENT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_constr_element FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_CONSTR_ELEMENT
@@ -201,6 +210,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_constr_element IS 'Deletes record in table BRIDGE_CONSTR_ELEMENT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_constr_element FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_FURNITURE
@@ -218,6 +228,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_furniture IS '(Blocks) inserting record in table BRIDGE_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_FURNITURE
@@ -235,6 +246,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_furniture IS 'Deletes record in table BRIDGE_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_INSTALLATION
@@ -252,6 +264,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_installation IS '(Blocks) inserting record in table BRIDGE_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_INSTALLATION
@@ -269,6 +282,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_installation IS 'Deletes record in table BRIDGE_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_OPENING
@@ -286,6 +300,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_opening IS '(Blocks) inserting record in table BRIDGE_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_OPENING
@@ -303,6 +318,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_opening IS 'Deletes record in table BRIDGE_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_ROOM
@@ -320,6 +336,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_room IS '(Blocks) inserting record in table BRIDGE_ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_ROOM
@@ -337,6 +354,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_room IS 'Deletes record in table BRIDGE_ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BRIDGE_THEMATIC_SURFACE
@@ -354,6 +372,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_thematic_surface IS '(Blocks) inserting record in table BRIDGE_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_bridge_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BRIDGE_THEMATIC_SURFACE
@@ -371,6 +390,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_bridge_thematic_surface IS 'Deletes record in table BRIDGE_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_bridge_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING
@@ -388,6 +408,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building IS '(Blocks) inserting record in table BUILDING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_building FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING
@@ -405,6 +426,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building IS 'Deletes record in table BUILDING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_building FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING_FURNITURE
@@ -422,6 +444,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building_furniture IS '(Blocks) inserting record in table BUILDING_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_building_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING_FURNITURE
@@ -439,6 +462,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building_furniture IS 'Deletes record in table BUILDING_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_building_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_BUILDING_INSTALLATION
@@ -456,6 +480,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building_installation IS '(Blocks) inserting record in table BUILDING_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_building_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_BUILDING_INSTALLATION
@@ -473,6 +498,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_building_installation IS 'Deletes record in table BUILDING_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_building_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_CITY_FURNITURE
@@ -490,6 +516,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_city_furniture IS '(Blocks) inserting record in table CITY_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_city_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_CITY_FURNITURE
@@ -507,6 +534,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_city_furniture IS 'Deletes record in table CITY_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_city_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_CITYOBJECT_GENERICATTRIB
@@ -524,6 +552,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_cityobject_genericattrib IS '(Blocks) inserting record in table CITYOBJECT_GENERICATTRIB';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_cityobject_genericattrib FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_CITYOBJECT_GENERICATTRIB
@@ -541,6 +570,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_cityobject_genericattrib IS 'Deletes record in table CITYOBJECT_GENERICATTRIB';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_cityobject_genericattrib FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_CITYOBJECTGROUP
@@ -558,6 +588,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_cityobjectgroup IS '(Blocks) inserting record in table CITYOBJECTGROUP';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_cityobjectgroup FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_CITYOBJECTGROUP
@@ -575,6 +606,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_cityobjectgroup IS 'Deletes record in table CITYOBJECTGROUP';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_cityobjectgroup FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_EXTERNAL_REFERENCE
@@ -592,6 +624,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_external_reference IS '(Blocks) inserting record in table EXTERNAL_REFERENCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_external_reference FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_EXTERNAL_REFERENCE
@@ -609,6 +642,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_external_reference IS 'Deletes record in table EXTERNAL_REFERENCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_external_reference FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_GENERIC_CITYOBJECT
@@ -626,6 +660,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_generic_cityobject IS '(Blocks) inserting record in table GENERIC_CITYOBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_generic_cityobject FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_GENERIC_CITYOBJECT
@@ -643,6 +678,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_generic_cityobject IS 'Deletes record in table GENERIC_CITYOBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_generic_cityobject FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_LAND_USE
@@ -660,6 +696,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_land_use IS '(Blocks) inserting record in table LAND_USE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_land_use FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_LAND_USE
@@ -677,6 +714,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_land_use IS 'Deletes record in table LAND_USE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_land_use FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_MASSPOINT_RELIEF
@@ -694,6 +732,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_masspoint_relief IS '(Blocks) inserting record in table MASSPOINT_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_masspoint_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_MASSPOINT_RELIEF
@@ -711,6 +750,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_masspoint_relief IS 'Deletes record in table MASSPOINT_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_masspoint_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_OPENING
@@ -728,6 +768,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_opening IS '(Blocks) inserting record in table OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_OPENING
@@ -745,6 +786,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_opening IS 'Deletes record in table OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_PLANT_COVER
@@ -762,6 +804,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_plant_cover IS '(Blocks) inserting record in table PLANT_COVER';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_plant_cover FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_PLANT_COVER
@@ -779,6 +822,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_plant_cover IS 'Deletes record in table PLANT_COVER';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_plant_cover FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_RASTER_RELIEF
@@ -796,6 +840,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_raster_relief IS '(Blocks) inserting record in table RASTER_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_raster_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_RASTER_RELIEF
@@ -813,6 +858,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_raster_relief IS 'Deletes record in table RASTER_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_raster_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_RELIEF_FEATURE
@@ -830,6 +876,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_relief_feature IS '(Blocks) inserting record in table RELIEF_FEATURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_relief_feature FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_RELIEF_FEATURE
@@ -847,6 +894,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_relief_feature IS 'Deletes record in table RELIEF_FEATURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_relief_feature FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_ROOM
@@ -864,6 +912,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_room IS '(Blocks) inserting record in table ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_ROOM
@@ -881,6 +930,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_room IS 'Deletes record in table ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_SOLITARY_VEGETAT_OBJECT
@@ -898,6 +948,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_solitary_vegetat_object IS '(Blocks) inserting record in table SOLITARY_VEGETAT_OBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_solitary_vegetat_object FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_SOLITARY_VEGETAT_OBJECT
@@ -915,6 +966,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_solitary_vegetat_object IS 'Deletes record in table SOLITARY_VEGETAT_OBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_solitary_vegetat_object FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_SURFACE_DATA
@@ -932,6 +984,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_surface_data IS '(Blocks) inserting record in table SURFACE_DATA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_surface_data FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_SURFACE_DATA
@@ -949,6 +1002,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_surface_data IS 'Deletes record in table SURFACE_DATA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_surface_data FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_THEMATIC_SURFACE
@@ -966,6 +1020,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_thematic_surface IS '(Blocks) inserting record in table THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_THEMATIC_SURFACE
@@ -983,6 +1038,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_thematic_surface IS 'Deletes record in table THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TIN_RELIEF
@@ -1000,6 +1056,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tin_relief IS '(Blocks) inserting record in table TIN_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tin_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TIN_RELIEF
@@ -1017,6 +1074,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tin_relief IS 'Deletes record in table TIN_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tin_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TRAFFIC_AREA
@@ -1034,6 +1092,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_traffic_area IS '(Blocks) inserting record in table TRAFFIC_AREA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_traffic_area FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TRAFFIC_AREA
@@ -1051,6 +1110,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_traffic_area IS 'Deletes record in table TRAFFIC_AREA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_traffic_area FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TRANSPORTATION_COMPLEX
@@ -1068,6 +1128,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_transportation_complex IS '(Blocks) inserting record in table TRANSPORTATION_COMPLEX';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_transportation_complex FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TRANSPORTATION_COMPLEX
@@ -1085,6 +1146,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_transportation_complex IS 'Deletes record in table TRANSPORTATION_COMPLEX';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_transportation_complex FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL
@@ -1102,6 +1164,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel IS '(Blocks) inserting record in table TUNNEL';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL
@@ -1119,6 +1182,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel IS 'Deletes record in table TUNNEL';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL_FURNITURE
@@ -1136,6 +1200,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_furniture IS '(Blocks) inserting record in table TUNNEL_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL_FURNITURE
@@ -1153,6 +1218,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_furniture IS 'Deletes record in table TUNNEL_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL_HOLLOW_SPACE
@@ -1170,6 +1236,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_hollow_space IS '(Blocks) inserting record in table TUNNEL_HOLLOW_SPACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel_hollow_space FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL_HOLLOW_SPACE
@@ -1187,6 +1254,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_hollow_space IS 'Deletes record in table TUNNEL_HOLLOW_SPACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel_hollow_space FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL_INSTALLATION
@@ -1204,6 +1272,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_installation IS '(Blocks) inserting record in table TUNNEL_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL_INSTALLATION
@@ -1221,6 +1290,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_installation IS 'Deletes record in table TUNNEL_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL_OPENING
@@ -1238,6 +1308,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_opening IS '(Blocks) inserting record in table TUNNEL_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL_OPENING
@@ -1255,6 +1326,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_opening IS 'Deletes record in table TUNNEL_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_TUNNEL_THEMATIC_SURFACE
@@ -1272,6 +1344,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_thematic_surface IS '(Blocks) inserting record in table TUNNEL_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_tunnel_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_TUNNEL_THEMATIC_SURFACE
@@ -1289,6 +1362,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_tunnel_thematic_surface IS 'Deletes record in table TUNNEL_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_tunnel_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_WATERBODY
@@ -1306,6 +1380,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterbody IS '(Blocks) inserting record in table WATERBODY';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_waterbody FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_WATERBODY
@@ -1323,6 +1398,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterbody IS 'Deletes record in table WATERBODY';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_waterbody FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_WATERBOUNDARY_SURFACE
@@ -1340,6 +1416,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface IS '(Blocks) inserting record in table WATERBOUNDARY_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_WATERBOUNDARY_SURFACE
@@ -1357,6 +1434,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface IS 'Deletes record in table WATERBOUNDARY_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_waterboundary_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_INS_WATERBOUNDARY_SURFACE_WATERSURFACE
@@ -1374,6 +1452,7 @@ END;
 
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface IS '(Blocks) inserting record in table WATERBOUNDARY_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_DEL_WATERBOUNDARY_SURFACE_WATERSURFACE
@@ -1391,6 +1470,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_ins_waterboundary_surface_watersurface IS 'Deletes record in table WATERBOUNDARY_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_del_waterboundary_surface_watersurface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_ADDRESS
@@ -1421,6 +1501,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_address IS 'Updates record in table ADDRESS';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_address FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_APPEARANCE
@@ -1447,6 +1528,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_appearance IS 'Updates record in table APPEARANCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_appearance FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BREAKLINE_RELIEF
@@ -1485,6 +1567,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_breakline_relief IS 'Updates record in table BREAKLINE_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_breakline_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE
@@ -1531,6 +1614,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge IS 'Updates record in table BRIDGE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_CONSTR_ELEMENT
@@ -1573,6 +1657,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_constr_element IS 'Updates record in table BRIDGE_CONSTR_ELEMENT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_constr_element FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_FURNITURE
@@ -1615,6 +1700,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_furniture IS 'Updates record in table BRIDGE_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_INSTALLATION
@@ -1657,6 +1743,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_installation IS 'Updates record in table BRIDGE_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_OPENING
@@ -1691,6 +1778,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_opening IS 'Updates record in table BRIDGE_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_ROOM
@@ -1733,6 +1821,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_room IS 'Updates record in table BRIDGE_ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BRIDGE_THEMATIC_SURFACE
@@ -1767,6 +1856,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_bridge_thematic_surface IS 'Updates record in table BRIDGE_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_bridge_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BUILDING
@@ -1822,6 +1912,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_building IS 'Updates record in table BUILDING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_building FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BUILDING_FURNITURE
@@ -1864,6 +1955,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_building_furniture IS 'Updates record in table BUILDING_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_building_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_BUILDING_INSTALLATION
@@ -1906,6 +1998,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_building_installation IS 'Updates record in table BUILDING_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_building_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_CITY_FURNITURE
@@ -1948,6 +2041,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_city_furniture IS 'Updates record in table CITY_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_city_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_CITYOBJECT_GENERICATTRIB
@@ -1978,6 +2072,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_cityobject_genericattrib IS 'Updates record in table CITYOBJECT_GENERICATTRIB';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_cityobject_genericattrib FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_CITYOBJECTGROUP
@@ -2020,6 +2115,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_cityobjectgroup IS 'Updates record in table CITYOBJECTGROUP';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_cityobjectgroup FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_EXTERNAL_REFERENCE
@@ -2044,6 +2140,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_external_reference IS 'Updates record in table EXTERNAL_REFERENCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_external_reference FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_GENERIC_CITYOBJECT
@@ -2086,6 +2183,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_generic_cityobject IS 'Updates record in table GENERIC_CITYOBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_generic_cityobject FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_LAND_USE
@@ -2128,6 +2226,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_land_use IS 'Updates record in table LAND_USE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_land_use FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_MASSPOINT_RELIEF
@@ -2166,6 +2265,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_masspoint_relief IS 'Updates record in table MASSPOINT_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_masspoint_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_OPENING
@@ -2200,6 +2300,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_opening IS 'Updates record in table OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_PLANT_COVER
@@ -2245,6 +2346,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_plant_cover IS 'Updates record in table PLANT_COVER';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_plant_cover FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_RASTER_RELIEF
@@ -2285,6 +2387,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_raster_relief IS 'Updates record in table RASTER_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_raster_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_RELIEF_FEATURE
@@ -2323,6 +2426,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_relief_feature IS 'Updates record in table RELIEF_FEATURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_relief_feature FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_ROOM
@@ -2365,6 +2469,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_room IS 'Updates record in table ROOM';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_room FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_SOLITARY_VEGETAT_OBJECT
@@ -2416,6 +2521,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_solitary_vegetat_object IS 'Updates record in table SOLITARY_VEGETAT_OBJECT';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_solitary_vegetat_object FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_SURFACE_DATA
@@ -2455,6 +2561,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_surface_data IS 'Updates record in table SURFACE_DATA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_surface_data FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_THEMATIC_SURFACE
@@ -2489,6 +2596,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_thematic_surface IS 'Updates record in table THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TIN_RELIEF
@@ -2531,6 +2639,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tin_relief IS 'Updates record in table TIN_RELIEF';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tin_relief FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TRAFFIC_AREA
@@ -2576,6 +2685,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_traffic_area IS 'Updates record in table TRAFFIC_AREA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_traffic_area FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TRANSPORTATION_COMPLEX
@@ -2618,6 +2728,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_transportation_complex IS 'Updates record in table TRANSPORTATION_COMPLEX';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_transportation_complex FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL
@@ -2663,6 +2774,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel IS 'Updates record in table TUNNEL';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL_FURNITURE
@@ -2705,6 +2817,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel_furniture IS 'Updates record in table TUNNEL_FURNITURE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel_furniture FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL_HOLLOW_SPACE
@@ -2747,6 +2860,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel_hollow_space IS 'Updates record in table TUNNEL_HOLLOW_SPACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel_hollow_space FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL_INSTALLATION
@@ -2789,6 +2903,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel_installation IS 'Updates record in table TUNNEL_INSTALLATION';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel_installation FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL_OPENING
@@ -2823,6 +2938,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel_opening IS 'Updates record in table TUNNEL_OPENING';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel_opening FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_TUNNEL_THEMATIC_SURFACE
@@ -2857,6 +2973,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_tunnel_thematic_surface IS 'Updates record in table TUNNEL_THEMATIC_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_tunnel_thematic_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_WATERBODY
@@ -2899,6 +3016,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_waterbody IS 'Updates record in table WATERBODY';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_waterbody FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_WATERBOUNDARY_SURFACE
@@ -2933,6 +3051,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_waterboundary_surface IS 'Updates record in table WATERBOUNDARY_SURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_waterboundary_surface FROM public;
 
 ----------------------------------------------------------------
 -- Create trigger FUNCTION QGIS_PKG.TR_UPD_WATERBOUNDARY_SURFACE_WATERSURFACE
@@ -2972,6 +3091,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.tr_upd_waterboundary_surface_watersurface IS 'Updates record in table WATERBOUNDARY_SURFACE_WATERSURFACE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.tr_upd_waterboundary_surface_watersurface FROM public;
 
 --**************************
 DO $MAINBODY$

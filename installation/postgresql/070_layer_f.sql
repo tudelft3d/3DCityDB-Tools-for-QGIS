@@ -85,6 +85,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Bridge" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_BRIDGE
@@ -151,6 +152,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_bridge(varchar, varchar) IS 'Genereate SQL to drop "Bridge" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_bridge(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_BRIDGE
@@ -181,6 +183,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_bridge(varchar, varchar) IS 'Drop "Bridge" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_bridge(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_BRIDGE
@@ -250,6 +253,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_bridge(varchar, varchar) IS 'Refresh "Bridge" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_bridge(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_BUILDING
@@ -294,6 +298,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Building" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_BUILDING
@@ -360,6 +365,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_building(varchar, varchar) IS 'Genereate SQL to drop "Building" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_building(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_BUILDING
@@ -390,6 +396,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_building(varchar, varchar) IS 'Drop "Building" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_building(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_BUILDING
@@ -459,6 +466,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_building(varchar, varchar) IS 'Refresh "Building" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_building(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_CITYFURNITURE
@@ -503,6 +511,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "CityFurniture" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_CITYFURNITURE
@@ -569,6 +578,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_cityfurniture(varchar, varchar) IS 'Genereate SQL to drop "CityFurniture" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_cityfurniture(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_CITYFURNITURE
@@ -599,6 +609,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_cityfurniture(varchar, varchar) IS 'Drop "CityFurniture" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_cityfurniture(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_CITYFURNITURE
@@ -668,6 +679,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_cityfurniture(varchar, varchar) IS 'Refresh "CityFurniture" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_cityfurniture(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_GENERICS
@@ -712,6 +724,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Generics" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_GENERICS
@@ -778,6 +791,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_generics(varchar, varchar) IS 'Genereate SQL to drop "Generics" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_generics(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_GENERICS
@@ -808,6 +822,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_generics(varchar, varchar) IS 'Drop "Generics" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_generics(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_GENERICS
@@ -877,6 +892,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_generics(varchar, varchar) IS 'Refresh "Generics" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_generics(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_LANDUSE
@@ -921,6 +937,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "LandUse" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_LANDUSE
@@ -987,6 +1004,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_landuse(varchar, varchar) IS 'Genereate SQL to drop "LandUse" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_landuse(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_LANDUSE
@@ -1017,6 +1035,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_landuse(varchar, varchar) IS 'Drop "LandUse" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_landuse(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_LANDUSE
@@ -1086,6 +1105,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_landuse(varchar, varchar) IS 'Refresh "LandUse" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_landuse(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_RELIEF
@@ -1130,6 +1150,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Relief" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_RELIEF
@@ -1196,6 +1217,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_relief(varchar, varchar) IS 'Genereate SQL to drop "Relief" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_relief(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_RELIEF
@@ -1226,6 +1248,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_relief(varchar, varchar) IS 'Drop "Relief" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_relief(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_RELIEF
@@ -1295,6 +1318,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_relief(varchar, varchar) IS 'Refresh "Relief" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_relief(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_TRANSPORTATION
@@ -1339,6 +1363,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Transportation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_TRANSPORTATION
@@ -1405,6 +1430,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_transportation(varchar, varchar) IS 'Genereate SQL to drop "Transportation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_transportation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_TRANSPORTATION
@@ -1435,6 +1461,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_transportation(varchar, varchar) IS 'Drop "Transportation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_transportation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_TRANSPORTATION
@@ -1504,6 +1531,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_transportation(varchar, varchar) IS 'Refresh "Transportation" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_transportation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_TUNNEL
@@ -1548,6 +1576,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Tunnel" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_TUNNEL
@@ -1614,6 +1643,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_tunnel(varchar, varchar) IS 'Genereate SQL to drop "Tunnel" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_tunnel(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_TUNNEL
@@ -1644,6 +1674,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_tunnel(varchar, varchar) IS 'Drop "Tunnel" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_tunnel(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_TUNNEL
@@ -1713,6 +1744,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_tunnel(varchar, varchar) IS 'Refresh "Tunnel" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_tunnel(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_VEGETATION
@@ -1757,6 +1789,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Vegetation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_VEGETATION
@@ -1823,6 +1856,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_vegetation(varchar, varchar) IS 'Genereate SQL to drop "Vegetation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_vegetation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_VEGETATION
@@ -1853,6 +1887,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_vegetation(varchar, varchar) IS 'Drop "Vegetation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_vegetation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_VEGETATION
@@ -1922,6 +1957,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_vegetation(varchar, varchar) IS 'Refresh "Vegetation" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_vegetation(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_WATERBODY
@@ -1966,6 +2002,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "WaterBody" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_WATERBODY
@@ -2032,6 +2069,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers_waterbody(varchar, varchar) IS 'Genereate SQL to drop "WaterBody" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers_waterbody(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS_WATERBODY
@@ -2062,6 +2100,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers_waterbody(varchar, varchar) IS 'Drop "WaterBody" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers_waterbody(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS_WATERBODY
@@ -2131,6 +2170,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews_waterbody(varchar, varchar) IS 'Refresh "WaterBody" materialized views (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews_waterbody(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_CREATE_LAYERS
@@ -2273,6 +2313,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_create_layers(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Genereate SQL to create layers in selected usr_schema associated to given cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_create_layers(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS
@@ -2320,6 +2361,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create all layers in selected usr_schema associated to given cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_MVIEWS
@@ -2384,6 +2426,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.refresh_mviews(varchar, varchar) IS 'Refresh materialized views in usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_mviews(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS
@@ -2445,6 +2488,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_drop_layers(varchar, varchar) IS 'Genereates SQL to drops layers in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_drop_layers(varchar, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.DROP_LAYERS
@@ -2475,6 +2519,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_layers(varchar, varchar) IS 'Drops layers in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_layers(varchar, varchar) FROM public;
 
 --**************************
 DO $MAINBODY$
