@@ -52,6 +52,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) IS 'Update attributes of table ADDRESS';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_APPEARANCE_ATTS
@@ -72,6 +73,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) IS 'Update attributes of table APPEARANCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_CITYOBJECT_GENERICATTRIB_ATTS
@@ -92,6 +94,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) IS 'Update attributes of table CITYOBJECT_GENERICATTRIB';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_EXTERNAL_REFERENCE_ATTS
@@ -112,6 +115,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) IS 'Update attributes of table EXTERNAL_REFERENCE';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_SURFACE_DATA_ATTS
@@ -132,6 +136,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) IS 'Update attributes of table SURFACE_DATA';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_OPENING_ATTS
@@ -152,6 +157,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table BRIDGE_OPENING (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_opening_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_THEMATIC_SURFACE_ATTS
@@ -172,6 +178,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table BRIDGE_THEMATIC_SURFACE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_OPENING_ATTS
@@ -192,6 +199,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table OPENING (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_opening_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_THEMATIC_SURFACE_ATTS
@@ -212,6 +220,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table THEMATIC_SURFACE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_OPENING_ATTS
@@ -232,6 +241,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_opening_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table TUNNEL_OPENING (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_opening_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_THEMATIC_SURFACE_ATTS
@@ -252,6 +262,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table TUNNEL_THEMATIC_SURFACE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_thematic_surface_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_ATTS
@@ -272,6 +283,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_atts(qgis_pkg.obj_cityobject, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_waterboundary_surface_atts(qgis_pkg.obj_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_ATTS
@@ -296,6 +308,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge, varchar) IS 'Update attributes of table BRIDGE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_CONSTR_ELEMENT_ATTS
@@ -320,6 +333,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_constr_element_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_constr_element, varchar) IS 'Update attributes of table BRIDGE_CONSTR_ELEMENT (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_constr_element_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_constr_element, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_FURNITURE_ATTS
@@ -344,6 +358,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_furniture, varchar) IS 'Update attributes of table BRIDGE_FURNITURE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_furniture, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_INSTALLATION_ATTS
@@ -368,6 +383,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_installation, varchar) IS 'Update attributes of table BRIDGE_INSTALLATION (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_installation, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_ROOM_ATTS
@@ -392,6 +408,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_bridge_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_room, varchar) IS 'Update attributes of table BRIDGE_ROOM (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_bridge_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_bridge_room, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BUILDING_ATTS
@@ -416,6 +433,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) IS 'Update attributes of table BUILDING (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_building_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BUILDING_FURNITURE_ATTS
@@ -440,6 +458,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_building_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_furniture, varchar) IS 'Update attributes of table BUILDING_FURNITURE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_building_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_furniture, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BUILDING_INSTALLATION_ATTS
@@ -464,6 +483,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) IS 'Update attributes of table BUILDING_INSTALLATION (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_building_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_building_installation, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_CITY_FURNITURE_ATTS
@@ -488,6 +508,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_city_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_city_furniture, varchar) IS 'Update attributes of table CITY_FURNITURE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_city_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_city_furniture, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_CITYOBJECTGROUP_ATTS
@@ -512,6 +533,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_cityobjectgroup_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_cityobjectgroup, varchar) IS 'Update attributes of table CITYOBJECTGROUP (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_cityobjectgroup_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_cityobjectgroup, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_GENERIC_CITYOBJECT_ATTS
@@ -536,6 +558,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_generic_cityobject_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_generic_cityobject, varchar) IS 'Update attributes of table GENERIC_CITYOBJECT (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_generic_cityobject_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_generic_cityobject, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_LAND_USE_ATTS
@@ -560,6 +583,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_land_use_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_land_use, varchar) IS 'Update attributes of table LAND_USE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_land_use_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_land_use, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_PLANT_COVER_ATTS
@@ -584,6 +608,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_plant_cover_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_plant_cover, varchar) IS 'Update attributes of table PLANT_COVER (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_plant_cover_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_plant_cover, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_RELIEF_FEATURE_ATTS
@@ -608,6 +633,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) IS 'Update attributes of table RELIEF_FEATURE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_relief_feature_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_feature, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_ROOM_ATTS
@@ -632,6 +658,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_room, varchar) IS 'Update attributes of table ROOM (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_room_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_room, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_SOLITARY_VEGETAT_OBJECT_ATTS
@@ -656,6 +683,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) IS 'Update attributes of table SOLITARY_VEGETAT_OBJECT (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_solitary_vegetat_object_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_solitary_vegetat_object, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TRAFFIC_AREA_ATTS
@@ -680,6 +708,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_traffic_area_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_traffic_area, varchar) IS 'Update attributes of table TRAFFIC_AREA (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_traffic_area_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_traffic_area, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TRANSPORTATION_COMPLEX_ATTS
@@ -704,6 +733,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_transportation_complex_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_transportation_complex, varchar) IS 'Update attributes of table TRANSPORTATION_COMPLEX (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_transportation_complex_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_transportation_complex, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_ATTS
@@ -728,6 +758,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel, varchar) IS 'Update attributes of table TUNNEL (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_FURNITURE_ATTS
@@ -752,6 +783,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_furniture, varchar) IS 'Update attributes of table TUNNEL_FURNITURE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_furniture_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_furniture, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_HOLLOW_SPACE_ATTS
@@ -776,6 +808,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_hollow_space_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_hollow_space, varchar) IS 'Update attributes of table TUNNEL_HOLLOW_SPACE (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_hollow_space_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_hollow_space, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TUNNEL_INSTALLATION_ATTS
@@ -800,6 +833,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tunnel_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_installation, varchar) IS 'Update attributes of table TUNNEL_INSTALLATION (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tunnel_installation_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_tunnel_installation, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_WATERBODY_ATTS
@@ -824,6 +858,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterbody, varchar) IS 'Update attributes of table WATERBODY (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterbody, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_TIN_RELIEF_ATTS
@@ -850,6 +885,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) IS 'Update attributes of table TIN_RELIEF (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_RASTER_RELIEF_ATTS
@@ -876,6 +912,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) IS 'Update attributes of table RASTER_RELIEF (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERBODY_ATTS
@@ -900,10 +937,11 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) FROM public;
 
 --**************************
-DO $$
+DO $MAINBODY$
 BEGIN
 RAISE NOTICE E'\n\nDone\n\n';
-END $$;
+END $MAINBODY$;
 --**************************
