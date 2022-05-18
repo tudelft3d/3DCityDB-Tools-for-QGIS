@@ -204,6 +204,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas(TRUE);
 
+/*
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.TABLE_IS_EMPTY
 ----------------------------------------------------------------
@@ -232,6 +233,8 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.table_is_empty(varchar,varchar) IS 'Checks if a table of a schema is empty.';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.table_is_empty(varchar,varchar) FROM public;
+*/
+
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_USR_SCHEMAS
@@ -416,12 +419,12 @@ IF cdb_schema IS NULL THEN
 	EXECUTE format('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM %I;', usr_name);
 	EXECUTE format('REVOKE USAGE ON SCHEMA public FROM %I;', usr_name);	
 	EXECUTE format('REVOKE CONNECT, TEMP ON DATABASE %I FROM %I;', cdb_name, usr_name);
-	EXECUTE format('REVOKE qgis_pkg_usrgroup FROM %I;', usr_name);
-	RAISE NOTICE 'Revoked access to database "%" and membership in group "qgis_pkg_usrgroup" from user "%"', cdb_name, usr_name;
+	--EXECUTE format('REVOKE qgis_pkg_usrgroup FROM %I;', usr_name);
+	RAISE NOTICE 'Revoked access to database "%" from user "%"', cdb_name, usr_name;
 
 ELSIF cdb_schema = ANY(cdb_schemas_array) THEN 
 
-	-- Grant privileges only for the selected cdb_schema.
+	-- revoke privileges only for the selected cdb_schema.
 	EXECUTE format('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I FROM %I;', cdb_schema, usr_name);
 	EXECUTE format('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %I FROM %I;', cdb_schema, usr_name);
 	EXECUTE format('REVOKE ALL PRIVILEGES ON SCHEMA %I FROM %I;', cdb_schema, usr_name);
@@ -693,8 +696,8 @@ COMMENT ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) IS 'Cr
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) FROM public;
 
 -- Example:
---SELECT qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := ARRAY[220177, 481471, 220755, 482133]);
---SELECT qgis_pkg.generate_mview_bbox_poly(bbox_corners_array := '{220177, 481471, 220755, 482133}');
+--SELECT qgis_pkg.generate_mview_bbox_poly('citydb', ARRAY[220177, 481471, 220755, 482133]);
+--SELECT qgis_pkg.generate_mview_bbox_poly('citydb', '{220177, 481471, 220755, 482133}');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.SUPPORT_FOR_SCHEMA
@@ -794,13 +797,13 @@ CREATE OR REPLACE FUNCTION qgis_pkg.view_counter(
 usr_schema	varchar,
 cdb_schema	varchar,
 mview_name	varchar, 				-- Materialised view name
-extents		varchar DEFAULT NULL	-- PostGIS polygon as ST_MakeEnvelope(229234, 476749, 230334, 479932)
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
 )
 RETURNS integer
 AS $$
 DECLARE
 counter		integer := 0;
-db_srid		integer := ST_Srid(extents);
+db_srid		integer;
 query_geom	geometry(Polygon);
 query_bbox	box2d;
 
@@ -1175,7 +1178,7 @@ EXCEPTION
 	WHEN OTHERS THEN
 		RAISE EXCEPTION 'qgis_pkg.st_snap_poly_to_grid(): %', SQLERRM;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql IMMUTABLE;
 COMMENT ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) IS 'Snaps 3D polygon to grid and drops it if it is smaller than the minimum area threshold';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) FROM public;
 
