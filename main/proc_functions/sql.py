@@ -289,7 +289,7 @@ def fetch_lookup_tables(dbLoader) -> tuple:
         dbLoader.conn.rollback()
 
 def fetch_codelist_id(dbLoader,root_class: str, lu_type: str) -> int: #NOTE: not used?
-    """SQL query thar reads and retrieves the id from codelist
+    """SQL query that reads and retrieves the id from codelist
     table for a specifc class and type.
 
     *   :param root_class: Class name to filter out the id
@@ -362,7 +362,7 @@ def exec_view_counter(dbLoader, view: c.View) -> int:
         extents = dbLoader.EXTENTS.asWktPolygon()
         with dbLoader.conn.cursor() as cur:
             # Execute server function to get the number of objects in extents.
-            cur.callproc(f"{c.MAIN_PKG_NAME}.view_counter",[dbLoader.USER_SCHEMA,view.mv_name,extents])
+            cur.callproc(f"{c.MAIN_PKG_NAME}.view_counter",[dbLoader.USER_SCHEMA, dbLoader.SCHEMA, view.mv_name, extents])
             count = cur.fetchone()[0] # Tuple has trailing comma.
         dbLoader.conn.commit()
 
