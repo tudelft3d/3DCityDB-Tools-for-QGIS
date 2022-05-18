@@ -3,6 +3,12 @@
 TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-05-18
+----------
+Version 0.6.3
+Readded REVOKE statements to all functions
+Read SRID from selected cdb_schema instead of citydb
+
 2022-05-10
 ----------
 Version 0.6.2
