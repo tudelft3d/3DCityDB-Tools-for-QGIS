@@ -97,6 +97,45 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.qgis_pkg_version() FROM public;
 -- SELECT version, major_version, minor_version, minor_revision FROM qgis_pkg.qgis_pkg_version();
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.IS_SUPERUSER
+----------------------------------------------------------------
+-- Checks if the provided user (or the current user) is a superuser or not
+DROP FUNCTION IF EXISTS    qgis_pkg.is_superuser(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.is_superuser(
+usr_name	varchar
+)
+RETURNS boolean
+AS $$
+DECLARE
+BEGIN
+IF usr_name IS NULL THEN 
+	usr_name := current_user;
+END IF;
+
+IF EXISTS (SELECT 1 FROM pg_user WHERE usesuper IS TRUE AND usename = usr_name) THEN
+	RAISE NOTICE 'User "%" is a superuser',usr_name;
+	RETURN TRUE;
+ELSE
+	RAISE NOTICE 'User "%" is NOT a superuser',usr_name;
+	RETURN FALSE;
+END IF;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.is_superuser(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.is_superuser(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.is_superuser(varchar) IS 'Check if the current user is a database superuser';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.is_superuser(varchar) FROM public;
+
+--Example:
+-- SELECT qgis_pkg.is_superuser(NULL);
+-- SELECT qgis_pkg.is_superuser('postgres');
+-- SELECT qgis_pkg.is_superuser('qgis_user_ro');
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_QGIS_PKG_URSGROUP_MEMBERS
 ----------------------------------------------------------------
 -- Lists all users that are part of the qgis_pkg_usrgroup role (group)
@@ -203,38 +242,6 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 --SELECT cdb_schema FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas(TRUE);
-
-/*
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.TABLE_IS_EMPTY
-----------------------------------------------------------------
--- Check if a given table of a given schema is empty.
-DROP FUNCTION IF EXISTS    qgis_pkg.table_is_empty(varchar,varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.table_is_empty(
-schema_n	varchar,
-table_n		varchar
-)
-RETURNS bool
-AS $$
-DECLARE
-empty_t 	bool := false;
-
-BEGIN
-
-EXECUTE FORMAT('SELECT NOT EXISTS(SELECT 1 FROM %I.%I)',schema_n,table_n) INTO empty_t;
-RETURN empty_t;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.table_is_empty(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.table_is_empty(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.table_is_empty(varchar,varchar) IS 'Checks if a table of a schema is empty.';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.table_is_empty(varchar,varchar) FROM public;
-*/
-
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_USR_SCHEMAS
@@ -891,28 +898,32 @@ upserted_id	integer
 AS $$
 DECLARE
 cdb_envelope	geometry(Polygon) := NULL;
-
+ext_label 		varchar;
 BEGIN
 
 EXECUTE format('SELECT ST_Envelope(ST_Collect(co.envelope)) FROM %I.cityobject AS co', cdb_schema) INTO cdb_envelope;
 
 IF cdb_envelope IS NOT NULL THEN
-	srid_id := ST_SRID(cdb_envelope);
-	x_min   :=   floor(ST_Xmin(cdb_envelope));
-	x_max   := ceiling(ST_Xmax(cdb_envelope));
-	y_min   :=   floor(ST_Ymin(cdb_envelope));
-	y_max   := ceiling(ST_Ymax(cdb_envelope));
+	ext_label    := concat(cdb_schema, '-bbox_extents');
+	srid_id      := ST_Srid(cdb_envelope);
+	x_min        :=   floor(ST_Xmin(cdb_envelope));
+	x_max        := ceiling(ST_Xmax(cdb_envelope));
+	y_min        :=   floor(ST_Ymin(cdb_envelope));
+	y_max        := ceiling(ST_Ymax(cdb_envelope));
 	cdb_envelope := ST_MakeEnvelope(x_min, y_min, x_max, y_max, srid_id);
 
 	-- upsert statement for table envelope in in usr_schema
 	EXECUTE format('
-		INSERT INTO %I.extents AS e (cdb_schema, bbox_type, envelope, creation_date)
-		VALUES (%L, ''db_schema'', %L, clock_timestamp())
+		INSERT INTO %I.extents AS e (cdb_schema, bbox_type, label, envelope, creation_date)
+		VALUES (%L, ''db_schema'', %L, %L, clock_timestamp())
 		ON CONFLICT ON CONSTRAINT extents_cdb_schema_bbox_type_key DO
 			UPDATE SET envelope = %L, creation_date = clock_timestamp()
 			WHERE e.cdb_schema = %L AND e.bbox_type = ''db_schema''
 			RETURNING id',
-		usr_schema,	cdb_schema, cdb_envelope, cdb_envelope, cdb_schema)
+		usr_schema,
+		cdb_schema, ext_label, cdb_envelope, 
+		cdb_envelope, 
+		cdb_schema)
 	INTO STRICT upserted_id;
 	RETURN NEXT;
 END IF;
@@ -1381,6 +1392,11 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers(varchar, varchar, varchar, varchar) FROM public;
+
+
+
+
+
 
 /* --- TEMPLATE FOR FUNCTIONS
 ----------------------------------------------------------------

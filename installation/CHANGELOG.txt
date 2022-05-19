@@ -7,7 +7,11 @@ Test whether it makes sense to add "hard-coded" bbox filter also to views.
 ----------
 Version 0.6.3
 Readded REVOKE statements to all functions
-Read SRID from selected cdb_schema instead of citydb
+Read SRID from selected cdb_schema instead of default citydb
+Script 030:
+	- Added function [qgis_pkg.is_superuser()]
+	- Improved function [qgis_pkg.view_counter()]
+Minor bug fixes
 
 2022-05-10
 ----------
