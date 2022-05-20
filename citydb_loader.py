@@ -483,14 +483,16 @@ class DBLoader:
             #print(self.CANVAS, self.dlg.gvCanvas)
             #print(self.dlg.gLayoutBasemapC.itemAtPosition(1,1).widget())
 
-        # Get existing connections from QGIS profile settings.
-        connection.get_postgres_conn(self) # Stored in self.conn
+            # Get existing connections from QGIS profile settings.
+            connection.get_postgres_conn(self) # Stored in self.conn
 
         # Show the dialog
         self.dlg.show()
 
         # Run the dialog event loop.
-        self.dlg.exec_()
+        res = self.dlg.exec_()
+        if not res:
+            return None
 
     #----------################################################################
     #--EVENTS--################################################################
@@ -780,14 +782,6 @@ class DBLoader:
         (btnUsrUninst) is pressed.
         """
         dba_setup.btnUsrUninst_setup(self)   
-
-    # # 'Database' group box events (in 'Database Administration' tab) #NOTE: to be deleted?
-    # def evt_btnRefreshLayers_clicked(self) -> None:
-    #     """Event that is called when the 'Referesh all Views' pushButton
-    #     (btnRefreshLayers) is pressed.
-    #     """
-
-    #     dba_setup.btnRefreshLayers_setup(self)
 
     def evt_btnCloseConn_clicked(self) -> None:
         """Event that is called when the 'Close current connection' pushButton

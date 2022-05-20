@@ -76,6 +76,12 @@ def btnConnectToDb_setup(dbLoader) -> None:
         dlg.lblPostInst_out.setText(c.success_html.format(
             text=dbLoader.DB.s_version))
 
+        # Check that user is an admin.
+        if not sql.is_superuser(dbLoader):
+           QMessageBox.critical(dbLoader.dlg_admin,"User privileges", f"User: '{dbLoader.DB.username}' doesn't have administration privileges!")
+           widget_reset.reset_tabDbAdmin(dbLoader)
+           return None
+
         # Check that database has 3DCityDB installed.
         if usr_tab.is_3dcitydb(dbLoader):
             version_major = int(dbLoader.DB.c_version.split(".")[0])

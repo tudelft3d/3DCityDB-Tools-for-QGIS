@@ -185,10 +185,8 @@ def cbxSchema_setup(dbLoader) -> None:
         dbLoader.dlg.btnCreateLayers.setDisabled(False)
         
 
-
         # Setup the 'Basemap (OSM)' groupbox.
         gbxBasemapC_setup(dbLoader,dbLoader.CANVAS_C)
-        
         # Check if there are precomputed layer extents in the database.
         mview_exts = sql.fetch_extents(dbLoader,
             from_schema=dbLoader.USER_SCHEMA,
@@ -354,6 +352,8 @@ def qgbxExtentsC_setup(dbLoader) -> None:
 
     # Update extents variable with the ones that fired the signal.
     dbLoader.EXTENTS = dbLoader.dlg.qgbxExtentsC.outputExtent()
+    if dbLoader.EXTENTS.isNull() or dbLoader.SCHEMA_EXTENTS.isNull():
+        return None
 
     # Draw the extents in the addtional canvas (basemap)
     canvas.insert_rubber_band(band=dbLoader.RUBBER_LAYERS_C,

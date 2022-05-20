@@ -34,14 +34,15 @@ def canvas_setup(dbLoader,
     """
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
-    
+
     if canvas==dbLoader.CANVAS_C: # in 'User Connection' tab
         # Put extents coordinates into the widget. Singal emitted for qgbxExtentsC.
+        dbLoader.dlg.qgbxExtentsC.setOutputCrs(crs)
         dbLoader.dlg.qgbxExtentsC.setOutputExtentFromUser(extents,crs)
     elif canvas==dbLoader.CANVAS: # in 'Layers' tab
         # Put extents coordinates into the widget. Singal emitted for qgbxExtents.
+        dbLoader.dlg.qgbxExtents.setOutputCrs(crs)
         dbLoader.dlg.qgbxExtents.setOutputExtentFromUser(extents,crs)
-
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)

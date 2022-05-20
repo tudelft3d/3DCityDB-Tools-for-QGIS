@@ -122,6 +122,36 @@ def fetch_crs(dbLoader) -> int:
             error=error)
         dbLoader.conn.rollback()
 
+def is_superuser(dbLoader) -> bool:
+    """SQL query that determines if connecting user
+    has administrations privileges.
+    *   :returns: Admin status
+
+        :rtype: bool
+    """
+    try:
+        with dbLoader.conn.cursor() as cur:
+            # Execute function to find if qgis_pkg supports current schema.
+            cur.execute(query= f"""
+                                SELECT 1 FROM pg_user 
+                                WHERE usesuper IS TRUE 
+                                AND usename = '{dbLoader.DB.username}';
+                                """)
+            result_bool = cur.fetchone() # as (1,) or None
+        dbLoader.conn.commit()
+        if result_bool:
+            return result_bool[0]
+        return None
+
+    except (Exception, psycopg2.Error) as error:
+        # Send error to QGIS Message Log panel.
+        print(error)
+        c.critical_log(func=is_superuser,
+            location=FILE_LOCATION,
+            header=f"Determining if user {dbLoader.DB.username} is admin.",
+            error=error)
+        dbLoader.conn.rollback()    
+
 def exec_qgis_pkg_version(dbLoader) -> str:
     """SQL function thar reads and retrieves the qgis_pkg version
 
@@ -515,7 +545,7 @@ def fetch_mat_views(dbLoader) -> list:
             error=error)
         dbLoader.conn.rollback()
 
-def refresh_mat_view(dbLoader,connection, m_view):
+def refresh_mat_view(dbLoader,connection, m_view) -> None:
     try:
         with connection.cursor() as cur:
             # Get database srid.

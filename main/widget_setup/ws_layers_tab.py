@@ -106,6 +106,8 @@ def qgbxExtents_setup(dbLoader) -> None:
 
     # Update extents variable with the ones that fired the signal.
     dbLoader.EXTENTS = dbLoader.dlg.qgbxExtents.outputExtent()
+    if dbLoader.EXTENTS.isNull() or dbLoader.VIEWS_EXTENTS.isNull():
+        return None
 
     # Draw the extents in the addtional canvas (basemap)
     canvas.insert_rubber_band(band=dbLoader.RUBBER_USER,
@@ -272,6 +274,8 @@ def btnImport_setup(dbLoader) -> None:
     #At last bring the Relief, Feature type at the bottom of the ToC.
     lrs_tab.send_to_bottom_ToC(QgsProject.instance().layerTreeRoot())
 
+    #Set CRS of the project to match the server's.
+    QgsProject.instance().setCrs(dbLoader.CRS)
     # A final success message.
     QgsMessageLog.logMessage(message="",tag="3DCityDB-Loader",level=Qgis.Success,notifyUser=True)
     return None

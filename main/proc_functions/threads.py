@@ -231,6 +231,8 @@ def refresh_views_thread(dbLoader) -> None:
 
     # Disable widgets to avoid queuing signals.
     dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnRefreshLayers.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnCreateLayers.setDisabled(True))
+    dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnDropLayers.setDisabled(True))
     dbLoader.thread.started.connect(lambda: dbLoader.dlg.tabLayers.setDisabled(True))
 
     # Execute worker's 'run' method.
@@ -245,7 +247,9 @@ def refresh_views_thread(dbLoader) -> None:
     dbLoader.thread.finished.connect(dbLoader.thread.deleteLater)
 
     # Enable widgets.
-    dbLoader.thread.started.connect(lambda: dbLoader.dlg.btnRefreshLayers.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.btnRefreshLayers.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.btnCreateLayers.setDisabled(False))
+    dbLoader.thread.finished.connect(lambda: dbLoader.dlg.btnDropLayers.setDisabled(False))
     dbLoader.thread.finished.connect(lambda: dbLoader.dlg.tabLayers.setDisabled(False))
 
     dbLoader.worker.finished.connect(lambda: refresh_success(dbLoader))
@@ -506,7 +510,7 @@ class PkgUnInstallationWorker(QObject):
         # drop user group - 1 actions
         # drop 'qgis_pkg' - 1 actions
 
-        steps_no = (((len(cdb_schemas) * (1 + len(c.drop_layers_funcs)))) + (1 + 1) ) * len(users) + 1 + 1 #+ len(c.def_users)
+        steps_no = (((len(cdb_schemas) * (1 + len(c.drop_layers_funcs)))) + 1 ) * len(users) + 1 #+ 1 #+ len(c.def_users)
         self.plg.dlg_admin.bar.setMaximum(steps_no)
         try:
             curr_step=0
@@ -539,12 +543,12 @@ class PkgUnInstallationWorker(QObject):
                 curr_step+=1
                 self.progress.emit("admin",curr_step,text)
 
-                # Kick user from qgis_pkg_usrgroup:
-                sql.exec_revoke_qgis_usr_privileges(self.plg, user, None)
-                # Update progress bar with current step and script.
-                text = " ".join(["Removing user:",user,"from qgis_pkg_usrgroup."])
-                curr_step+=1
-                self.progress.emit("admin",curr_step,text)
+                # # Kick user from qgis_pkg_usrgroup:
+                # sql.exec_revoke_qgis_usr_privileges(self.plg, user, None)
+                # # Update progress bar with current step and script.
+                # text = " ".join(["Removing user:",user,"from qgis_pkg_usrgroup."])
+                # curr_step+=1
+                # self.progress.emit("admin",curr_step,text)
 
             # Drop default users: 2
             # for def_user in c.def_users:
@@ -554,12 +558,12 @@ class PkgUnInstallationWorker(QObject):
             #     curr_step+=1
             #     self.progress.emit("admin",curr_step,text)
             
-            # Drop user group: 1
-            sql.drop_user_group(self.plg,c.def_usr_group)
-            # Update progress bar with current step and script.
-            text = " ".join(["Dropping user group:",c.def_usr_group])
-            curr_step+=1
-            self.progress.emit("admin",curr_step,text)
+            # # Drop user group: 1
+            # sql.drop_user_group(self.plg,c.def_usr_group)
+            # # Update progress bar with current step and script.
+            # text = " ".join(["Dropping user group:",c.def_usr_group])
+            # curr_step+=1
+            # self.progress.emit("admin",curr_step,text)
 
             #Drop "qgis_pkg" 1
             sql.drop_package(self.plg, c.MAIN_PKG_NAME, False)
@@ -875,6 +879,8 @@ def uninstall_success(dbLoader) -> None:
                 notifyUser=True)
     
         dbLoader.dlg_admin.btnMainUninst.setDisabled(True)
+
+        dbLoader.dlg_admin.lblUserInst_out.clear()
 
         widget_reset.reset_gbxUserInst(dbLoader)
     else:
