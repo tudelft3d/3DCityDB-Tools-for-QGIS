@@ -75,9 +75,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 6;
-minor_revision := 3;
+minor_revision := 4;
 code_name      := 'May tulip';
-release_date   := '2022-05-18'::date;
+release_date   := '2022-05-25'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -268,8 +268,6 @@ FOR r IN
 	ORDER BY i.schema_name ASC
 LOOP
 	IF
-		--EXISTS(SELECT version FROM citydb_pkg.qgis_pkg_version())  -- checks that the qgis_pkg is installed in this database
-			--AND
 		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name::varchar = 'extents')
 			AND
 		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name::varchar = 'layer_metadata')		
@@ -312,7 +310,7 @@ AS $$
 DECLARE
 cdb_name 			CONSTANT varchar := current_database()::varchar;
 priv_types_array 	CONSTANT varchar[] :=  ARRAY['ro', 'rw'];
-cdb_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+cdb_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas(FALSE) AS s); 
 sch_name 			varchar;
 sql_priv_type 		varchar;
 
@@ -399,7 +397,7 @@ RETURNS void
 AS $$
 DECLARE
 cdb_name 			CONSTANT varchar := current_database()::varchar;
-cdb_schemas_array	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+cdb_schemas_array	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas(FALSE) AS s); 
 sch_name varchar;
 r RECORD;
 
@@ -426,7 +424,6 @@ IF cdb_schema IS NULL THEN
 	EXECUTE format('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM %I;', usr_name);
 	EXECUTE format('REVOKE USAGE ON SCHEMA public FROM %I;', usr_name);	
 	EXECUTE format('REVOKE CONNECT, TEMP ON DATABASE %I FROM %I;', cdb_name, usr_name);
-	--EXECUTE format('REVOKE qgis_pkg_usrgroup FROM %I;', usr_name);
 	RAISE NOTICE 'Revoked access to database "%" from user "%"', cdb_name, usr_name;
 
 ELSIF cdb_schema = ANY(cdb_schemas_array) THEN 
@@ -494,7 +491,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.create_qgis_usr_schema_name(varchar) FROM pu
 
 --Example (works also with "crazy" user names using special (but legal) characters:
 --SELECT qgis_pkg.create_qgis_usr_schema_name('giorgio');
---SELECT qgis_pkg.create_qgis_usr_schema_name('giorgio@tudelft.nl');
+--SELECT qgis_pkg.create_qgis_usr_schema_name('g.a@nl');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.CREATE_QGIS_USR_SCHEMA
@@ -582,7 +579,6 @@ usr_schema,usr_schema,usr_schema,usr_schema,usr_schema
 -- Refresh/Update the associated sequence values
 FOREACH tb_name IN ARRAY tb_names_array LOOP
 	seq_name := concat(quote_ident(usr_schema),'.',tb_name,'_id_seq');
-	--RAISE NOTICE 'seq_name %', seq_name;
 	EXECUTE format('
 		WITH s AS (SELECT max(t.id) AS max_id FROM %I.%I AS t)
 		SELECT CASE WHEN s.max_id IS NULL     THEN setval(%L::regclass, 1, false)
@@ -742,56 +738,6 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) IS 'Searches for cdb_schema name into the view names of the usr_schema to determine if it supports the input cdb_schema.';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) FROM public;
-
-/*
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.VIEW_COUNTER
-----------------------------------------------------------------
--- Counts records in the selected materialized view
--- This function can be run providing only the name of the view,
--- OR, alternatively, also the extents.
-DROP FUNCTION IF EXISTS    qgis_pkg.view_counter(varchar, varchar, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.view_counter(
-usr_schema	varchar,
-mview_name	varchar, 				-- Materialised view name
-extents		varchar DEFAULT NULL	-- PostGIS polygon as ST_MakeEnvelope(229234, 476749, 230334, 479932)
-)
-RETURNS integer
-AS $$
-DECLARE
-counter		integer := 0;
-db_srid		integer;
-query_geom	geometry(Polygon);
-query_bbox	box2d;
-
-BEGIN
-IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname = usr_schema AND mv.ispopulated IS TRUE) THEN
-	IF extents IS NULL THEN
-		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, mview_name)
-			INTO counter;
-	ELSE
-		db_srid := (SELECT srid FROM citydb.database_srs LIMIT 1);
-		query_geom := ST_GeomFromText(extents,db_srid);
-		query_bbox := ST_Extent(query_geom);
-
-		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom', usr_schema, mview_name, query_bbox)
-			USING query_bbox INTO counter;
-	END IF;
-ELSE
-	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, mview_name;	
-END IF;
-RETURN counter;
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.view_counter(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.view_counter(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) IS 'Counts records in the selected materialized view';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar) FROM public;
-*/
-
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.VIEW_COUNTER
@@ -1393,12 +1339,7 @@ END;
 $$ LANGUAGE plpgsql;
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers(varchar, varchar, varchar, varchar) FROM public;
 
-
-
-
-
-
-/* --- TEMPLATE FOR FUNCTIONS
+/* --- TEMPLATE FOR ADDITIONAL FUNCTIONS
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.XX_FUNCNAME_XX
 ----------------------------------------------------------------
