@@ -31,6 +31,7 @@
 -- This script installs a set of functions into the qgis_pkg schema, such as:
 --
 -- qgis_pkg.qgis_pkg_version()
+-- qgis_pkg.is_superuser(...)
 -- qgis_pkg.list_qgis_pkg_usrgroup_members()
 -- qgis_pkg.list_cdb_schemas()
 -- qgis_pkg.list_usr_schemas()
