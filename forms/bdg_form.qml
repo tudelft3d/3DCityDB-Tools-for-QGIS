@@ -318,7 +318,8 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <!-- <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/> -->
+            <Option name="Layer" type="QString" value="_xx_placeholder_for_v_enumeration_value_xx_"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -335,7 +336,7 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToWaterType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/>
+            <Option name="Layer" type="QString" value="_xx_placeholder_for_v_enumeration_value_xx_"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -609,38 +610,38 @@
     <alias name="Storey height below ground UoM" field="storey_heights_bg_unit" index="31"/>
   </aliases>
   <defaults>
-    <default field="id" expression="" applyOnUpdate="0"/>
-    <default field="gmlid" expression="" applyOnUpdate="0"/>
-    <default field="gmlid_codespace" expression="" applyOnUpdate="0"/>
-    <default field="name" expression="" applyOnUpdate="0"/>
-    <default field="name_codespace" expression="" applyOnUpdate="0"/>
-    <default field="description" expression="" applyOnUpdate="0"/>
-    <default field="creation_date" expression="" applyOnUpdate="0"/>
-    <default field="termination_date" expression="" applyOnUpdate="0"/>
-    <default field="relative_to_terrain" expression="" applyOnUpdate="0"/>
-    <default field="relative_to_water" expression="" applyOnUpdate="0"/>
-    <default field="last_modification_date" expression="" applyOnUpdate="0"/>
-    <default field="updating_person" expression="" applyOnUpdate="0"/>
-    <default field="reason_for_update" expression="" applyOnUpdate="0"/>
-    <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="class" expression="" applyOnUpdate="0"/>
-    <default field="class_codespace" expression="" applyOnUpdate="0"/>
-    <default field="function" expression="" applyOnUpdate="0"/>
-    <default field="function_codespace" expression="" applyOnUpdate="0"/>
-    <default field="usage" expression="" applyOnUpdate="0"/>
-    <default field="usage_codespace" expression="" applyOnUpdate="0"/>
-    <default field="year_of_construction" expression="" applyOnUpdate="0"/>
-    <default field="year_of_demolition" expression="" applyOnUpdate="0"/>
-    <default field="roof_type" expression="" applyOnUpdate="0"/>
-    <default field="roof_type_codespace" expression="" applyOnUpdate="0"/>
-    <default field="measured_height" expression="" applyOnUpdate="0"/>
-    <default field="measured_height_unit" expression="" applyOnUpdate="0"/>
-    <default field="storeys_above_ground" expression="" applyOnUpdate="0"/>
-    <default field="storeys_below_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_above_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_ag_unit" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_below_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_bg_unit" expression="" applyOnUpdate="0"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="gmlid"/>
+    <default expression="" applyOnUpdate="0" field="gmlid_codespace"/>
+    <default expression="" applyOnUpdate="0" field="name"/>
+    <default expression="" applyOnUpdate="0" field="name_codespace"/>
+    <default expression="" applyOnUpdate="0" field="description"/>
+    <default expression="" applyOnUpdate="0" field="creation_date"/>
+    <default expression="" applyOnUpdate="0" field="termination_date"/>
+    <default expression="" applyOnUpdate="0" field="relative_to_terrain"/>
+    <default expression="" applyOnUpdate="0" field="relative_to_water"/>
+    <default expression="" applyOnUpdate="0" field="last_modification_date"/>
+    <default expression="" applyOnUpdate="0" field="updating_person"/>
+    <default expression="" applyOnUpdate="0" field="reason_for_update"/>
+    <default expression="" applyOnUpdate="0" field="lineage"/>
+    <default expression="" applyOnUpdate="0" field="class"/>
+    <default expression="" applyOnUpdate="0" field="class_codespace"/>
+    <default expression="" applyOnUpdate="0" field="function"/>
+    <default expression="" applyOnUpdate="0" field="function_codespace"/>
+    <default expression="" applyOnUpdate="0" field="usage"/>
+    <default expression="" applyOnUpdate="0" field="usage_codespace"/>
+    <default expression="" applyOnUpdate="0" field="year_of_construction"/>
+    <default expression="" applyOnUpdate="0" field="year_of_demolition"/>
+    <default expression="" applyOnUpdate="0" field="roof_type"/>
+    <default expression="" applyOnUpdate="0" field="roof_type_codespace"/>
+    <default expression="" applyOnUpdate="0" field="measured_height"/>
+    <default expression="" applyOnUpdate="0" field="measured_height_unit"/>
+    <default expression="" applyOnUpdate="0" field="storeys_above_ground"/>
+    <default expression="" applyOnUpdate="0" field="storeys_below_ground"/>
+    <default expression="" applyOnUpdate="0" field="storey_heights_above_ground"/>
+    <default expression="" applyOnUpdate="0" field="storey_heights_ag_unit"/>
+    <default expression="" applyOnUpdate="0" field="storey_heights_below_ground"/>
+    <default expression="" applyOnUpdate="0" field="storey_heights_bg_unit"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
@@ -667,14 +668,14 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="year_of_demolition" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height_unit" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_above_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_below_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit" exp_strength="0"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="measured_height" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="measured_height_unit" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storeys_above_ground" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storeys_below_ground" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground" exp_strength="1"/>
+    <constraint constraints="4" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit" exp_strength="1"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="id" exp=""/>
@@ -701,14 +702,15 @@
     <constraint desc="" field="year_of_demolition" exp=""/>
     <constraint desc="" field="roof_type" exp=""/>
     <constraint desc="" field="roof_type_codespace" exp=""/>
-    <constraint desc="" field="measured_height" exp=""/>
-    <constraint desc="" field="measured_height_unit" exp=""/>
-    <constraint desc="" field="storeys_above_ground" exp=""/>
-    <constraint desc="" field="storeys_below_ground" exp=""/>
-    <constraint desc="" field="storey_heights_above_ground" exp=""/>
-    <constraint desc="" field="storey_heights_ag_unit" exp=""/>
-    <constraint desc="" field="storey_heights_below_ground" exp=""/>
-    <constraint desc="" field="storey_heights_bg_unit" exp=""/>
+    <constraint desc="" field="measured_height" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
+    <constraint desc="" field="measured_height_unit" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
+    <constraint desc="" field="storeys_above_ground" exp="(&quot;storeys_above_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_above_ground&quot; >= 0)"/>
+    <constraint desc="" field="storeys_below_ground" exp="(&quot;storeys_below_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_below_ground&quot; >= 0)"/>
+    <constraint desc="" field="storey_heights_above_ground" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
+    <constraint desc="" field="storey_heights_ag_unit" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
+    <constraint desc="" field="storey_heights_below_ground" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
+    <constraint desc="" field="storey_heights_bg_unit" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
+
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -797,10 +799,10 @@ def my_form_open(dialog, layer, feature):
     <field name="function" editable="1"/>
     <field name="function_codespace" editable="1"/>
     <field name="gmlid" editable="0"/>
-    <field name="gmlid_codespace" editable="1"/>
+    <field name="gmlid_codespace" editable="0"/>
     <field name="id" editable="0"/>
-    <field name="last_modification_date" editable="1"/>
-    <field name="lineage" editable="1"/>
+    <field name="last_modification_date" editable="0"/>
+    <field name="lineage" editable="0"/>
     <field name="measured_height" editable="1"/>
     <field name="measured_height_unit" editable="1"/>
     <field name="name" editable="1"/>
@@ -817,7 +819,7 @@ def my_form_open(dialog, layer, feature):
     <field name="storeys_above_ground" editable="1"/>
     <field name="storeys_below_ground" editable="1"/>
     <field name="termination_date" editable="0"/>
-    <field name="updating_person" editable="1"/>
+    <field name="updating_person" editable="0"/>
     <field name="usage" editable="1"/>
     <field name="usage_codespace" editable="1"/>
     <field name="year_of_construction" editable="1"/>
