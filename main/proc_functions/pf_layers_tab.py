@@ -635,4 +635,7 @@ def import_layers(dbLoader, layers: list) -> bool:
         # Setup the relation for this layer.
         create_relations(layer=vlayer)
 
+        # Deactivate 3D renderer to avoid crashes.
+        vlayer.setRenderer3D(None)
+
     return True # All went well
