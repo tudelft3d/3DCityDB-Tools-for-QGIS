@@ -19,7 +19,7 @@ from . import sql
 
 
 def has_matviews(dbLoader) -> bool:
-    """Function that checks the existance of materilised
+    """Function that checks the existence of materialised
     views in the database.
 
     *   :returns: Whether the database has populated mat views.
@@ -37,8 +37,8 @@ def has_matviews(dbLoader) -> bool:
 
 def fill_FeatureType_box(dbLoader) -> None:
     """Function that fills out the 'Feature Types' combo box.
-    Uses the 'layer_metadata' table in qgis_pkg to instantiate
-    usefull python objects
+    Uses the 'layer_metadata' table in usr_schema to instantiate
+    useful python objects
     class: FeatureType and
     class: View
     """
@@ -57,8 +57,8 @@ def fill_FeatureType_box(dbLoader) -> None:
                 break # We need only one view to have > 0 features.
 
 def instantiate_objects(dbLoader) -> None:
-    """Function to instantiate usefull python objects from the 'layer_metadata'
-    table in qgis_pkg.
+    """Function to instantiate useful python objects from the 'layer_metadata'
+    table in the usr_schema.
     class: FeatureType and
     class: View
     """
@@ -178,7 +178,7 @@ def value_rel_widget(AllowMulti: bool = False,
 
 def get_attForm_child(container: QgsAttributeEditorContainer,
         child_name: str) -> QgsAttributeEditorElement:
-    """Function that searches to retrieve a child ojbect from
+    """Function that searches to retrieve a child object from
     an 'attribute form' container.
 
     *   :param container: An attribute form container object.
@@ -224,11 +224,11 @@ def create_lookup_relations(layer: QgsVectorLayer) -> None:
         if field_name == 'relative_to_terrain':
             target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value') # NOTE: hardcoded view name and values
             assert target_layer, assertion_msg.format('v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = 'RelativeToTerrainType'"))
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
         elif field_name == 'relative_to_water':
             target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value')
             assert target_layer, assertion_msg.format('v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="name = 'RelativeToWaterType'"))
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
         
 
 def create_relations(layer: QgsVectorLayer) -> None:
@@ -296,7 +296,7 @@ def create_relations(layer: QgsVectorLayer) -> None:
     create_lookup_relations(layer)
 
 def group_has_layer(group: QgsLayerTreeGroup, layer_name: str) -> bool:
-    """Function that check wherther a specific group
+    """Function that checks wherther a specific group
     has a specific underlying layer (by name).
 
     *   :param group: Node object to check for layer existence.
