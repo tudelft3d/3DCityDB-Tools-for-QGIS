@@ -175,7 +175,7 @@ def exec_qgis_pkg_version(dbLoader) -> str:
             error=error)
         dbLoader.conn.rollback()
 
-def exec_list_cdb_schemas(dbLoader) -> tuple:
+def exec_list_cdb_schemas(dbLoader,not_empty=True) -> tuple:
     """SQL function thar reads and retrieves the database's
     data schemas. (citydb)
 
@@ -186,7 +186,7 @@ def exec_list_cdb_schemas(dbLoader) -> tuple:
     try:
         with dbLoader.conn.cursor() as cur:
             #Get all schemas
-            cur.callproc(f"{c.MAIN_PKG_NAME}.list_cdb_schemas",[True])
+            cur.callproc(f"{c.MAIN_PKG_NAME}.list_cdb_schemas",[not_empty])
             schemas = cur.fetchall()
         schemas = tuple(zip(*schemas))[0] # trailing comma
         dbLoader.conn.commit()

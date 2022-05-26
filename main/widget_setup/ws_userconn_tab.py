@@ -119,7 +119,7 @@ def btnConnectToDbC_setup(dbLoader) -> None:
 
             # Get 3DCityDB schemas from database
             #schemas = sql.exec_get_feature_schemas(dbLoader)
-            schemas = sql.exec_list_cdb_schemas(dbLoader)
+            schemas = sql.exec_list_cdb_schemas(dbLoader,True)
 
             # Fill schema combo box
             usr_tab.fill_schema_box(dbLoader, schemas=schemas)

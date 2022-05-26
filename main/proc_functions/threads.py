@@ -497,75 +497,53 @@ class PkgUnInstallationWorker(QObject):
         # Flag to help us break from a failing installation.
         fail_flag = False
 
-        # Get users
+        # Get users and cdb schemas
         users = sql.exec_list_qgis_pkg_usrgroup_members(self.plg)
-        cdb_schemas = sql.exec_list_cdb_schemas(self.plg)
+        cdb_schemas = sql.exec_list_cdb_schemas(self.plg,False)
 
         # Set progress bar goal:
-        # revoke privileges - 1 actions
-        # drop layers - 10 actions
-        # drop schema - 1 actions
-        # kick user from user group - 1 actions
-        # drop default users - 2 actions
-        # drop user group - 1 actions
+        # revoke privileges - 1 x users_num actions
+        # drop layers - users_num x modules_num x cdbschemas_num actions
+        # drop usr schemas - 1 x users_num actions
         # drop 'qgis_pkg' - 1 actions
 
-        steps_no = (((len(cdb_schemas) * (1 + len(c.drop_layers_funcs)))) + 1 ) * len(users) + 1 #+ 1 #+ len(c.def_users)
+        steps_no = (len(users) * (1 + 1)) + (len(users) * len(c.drop_layers_funcs) * len(cdb_schemas)) + 1
         self.plg.dlg_admin.bar.setMaximum(steps_no)
         try:
             curr_step=0
-            for user in users:
-                for schema in cdb_schemas:
-                    # Revoke privileges of user for schema. 1
-                    sql.exec_revoke_qgis_usr_privileges(self.plg, user, schema)
-                    # Update progress bar with current step and script.
-                    text = " ".join(["Revoking privieleges of user:",user,"for schema:",schema])
-                    curr_step+=1
-                    self.progress.emit("admin",curr_step,text)
+            for user_name in users:
+                # Get current user's schema
+                usr_schema = sql.exec_create_qgis_usr_schema_name(self.plg,user_name)
 
+                #NOTE: duplicate code (see DropUserSchemaWorker)
+                # Revoke privileges from ALL cdb_schemas, (also the empty ones)
+                sql.exec_revoke_qgis_usr_privileges(self.plg, user_name, None)
+                # Update progress bar with current step and script.
+                text = " ".join(["Revoking privieleges from user:",user_name])
+                curr_step+=1
+                self.progress.emit("admin",curr_step,text)
+
+                for schema in cdb_schemas:
                     # Drop layers: 10
                     with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Dropping Layers)") as conn:
                         for module_func in c.drop_layers_funcs:
                             # Attempt direct sql injection.
                             with conn.cursor() as cursor:
-                                cursor.callproc(f"{c.MAIN_PKG_NAME}.{module_func}",[user, schema])
+                                cursor.callproc(f"{c.MAIN_PKG_NAME}.{module_func}",[user_name, schema])
                             conn.commit()
                             # Update progress bar with current step and script.
                             text = " ".join(["Dropping layers:",module_func])
                             curr_step+=1
                             self.progress.emit("admin",curr_step,text)
-                
-                # Drop user schema: 1
-                usr_schema = sql.exec_create_qgis_usr_schema_name(self.plg, user)
+
+                #Drop user schema
                 sql.drop_package(self.plg, usr_schema, False)
                 # Update progress bar with current step and script.
                 text = " ".join(["Dropping user schema:",usr_schema])
                 curr_step+=1
                 self.progress.emit("admin",curr_step,text)
 
-                # # Kick user from qgis_pkg_usrgroup:
-                # sql.exec_revoke_qgis_usr_privileges(self.plg, user, None)
-                # # Update progress bar with current step and script.
-                # text = " ".join(["Removing user:",user,"from qgis_pkg_usrgroup."])
-                # curr_step+=1
-                # self.progress.emit("admin",curr_step,text)
-
-            # Drop default users: 2
-            # for def_user in c.def_users:
-            #     sql.drop_user(self.plg, def_user)
-            #     # Update progress bar with current step and script.
-            #     text = " ".join(["Dropping default user:",def_user])
-            #     curr_step+=1
-            #     self.progress.emit("admin",curr_step,text)
-            
-            # # Drop user group: 1
-            # sql.drop_user_group(self.plg,c.def_usr_group)
-            # # Update progress bar with current step and script.
-            # text = " ".join(["Dropping user group:",c.def_usr_group])
-            # curr_step+=1
-            # self.progress.emit("admin",curr_step,text)
-
-            #Drop "qgis_pkg" 1
+            #Drop "qgis_pkg"
             sql.drop_package(self.plg, c.MAIN_PKG_NAME, False)
             # Update progress bar with current step and script.
             text = " ".join(["Dropping main schema:",c.MAIN_PKG_NAME])
@@ -648,27 +626,30 @@ class DropUserSchemaWorker(QObject):
 
         user_name = self.plg.dlg_admin.cbxUser.currentText()
         usr_schema = self.plg.USER_SCHEMA
-        cdb_schemas = sql.exec_list_cdb_schemas(self.plg)
+        cdb_schemas = sql.exec_list_cdb_schemas(self.plg,False)
 
         # Set progress bar goal:
         # revoke privileges - 1 actions
-        # drop layers - 10 actions
-        # drop schema - 1 actions
+        # drop layers - modules_num x cdbschemas_num actions
+        # drop usr schema - 1 actions
+        
 
 
-        steps_no = (1 + len(c.drop_layers_funcs)) * len(cdb_schemas)
+        steps_no = 1 + (len(c.drop_layers_funcs) * len(cdb_schemas)) + 1
         self.plg.dlg_admin.bar.setMaximum(steps_no)
         try:
             curr_step=0
+            
+            #NOTE: duplicate code (see PkgUnInstallationWorker)
+
+            # Revoke privileges from ALL cdb_schemas, (also the empty ones)
+            sql.exec_revoke_qgis_usr_privileges(self.plg, user_name, None)
+            # Update progress bar with current step and script.
+            text = " ".join(["Revoking privieleges from user:",user_name])
+            curr_step+=1
+            self.progress.emit("admin",curr_step,text)
 
             for schema in cdb_schemas:
-                # Revoke privileges of user for schema. 1
-                sql.exec_revoke_qgis_usr_privileges(self.plg, user_name, schema)
-                # Update progress bar with current step and script.
-                text = " ".join(["Revoking privieleges of user:",user_name,"for schema:",schema])
-                curr_step+=1
-                self.progress.emit("admin",curr_step,text)
-
                 # Drop layers: 10
                 with connect(db=self.plg.DB,app_name=f"{connect.__defaults__[0]} (Dropping Layers)") as conn:
                     for module_func in c.drop_layers_funcs:
@@ -681,7 +662,7 @@ class DropUserSchemaWorker(QObject):
                         curr_step+=1
                         self.progress.emit("admin",curr_step,text)
 
-            #Drop user schema 1
+            #Drop user schema
             sql.drop_package(self.plg, usr_schema, False)
             # Update progress bar with current step and script.
             text = " ".join(["Dropping user schema:",usr_schema])
