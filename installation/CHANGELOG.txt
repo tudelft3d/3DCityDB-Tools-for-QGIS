@@ -3,6 +3,12 @@
 TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-05-27
+----------
+Version 0.6.5
+Added Foreing Key constraints to enumeration and codelists tables
+Added codelists values for Dutch BAG (building functions)
+
 2022-05-25
 ----------
 Version 0.6.4

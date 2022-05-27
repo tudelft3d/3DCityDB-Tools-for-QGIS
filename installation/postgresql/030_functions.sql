@@ -76,9 +76,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 6;
-minor_revision := 4;
+minor_revision := 5;
 code_name      := 'May tulip';
-release_date   := '2022-05-25'::date;
+release_date   := '2022-05-27'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -561,8 +561,10 @@ ALTER TABLE %I.codelist_value OWNER TO %I;
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
+
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
+
 usr_schema,usr_schema,usr_schema,usr_name
 );
 
@@ -575,6 +577,15 @@ INSERT INTO %I.codelist SELECT * FROM qgis_pkg.codelist_template ORDER BY id;
 INSERT INTO %I.codelist_value SELECT * FROM qgis_pkg.codelist_value_template ORDER BY id;
 ',
 usr_schema,usr_schema,usr_schema,usr_schema,usr_schema
+);
+
+-- Add foreign keys for enumeration and codelist tables
+EXECUTE format('
+ALTER TABLE %I.codelist_value ADD CONSTRAINT cl_to_cl_value_fk FOREIGN KEY (code_id) REFERENCES %I.codelist (id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE %I.enumeration_value ADD CONSTRAINT en_to_en_value_fk FOREIGN KEY (enum_id) REFERENCES %I.enumeration  (id) ON UPDATE CASCADE ON DELETE CASCADE;
+',
+usr_schema,usr_schema,
+usr_schema,usr_schema
 );
 
 -- Refresh/Update the associated sequence values
