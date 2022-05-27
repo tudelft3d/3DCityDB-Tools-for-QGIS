@@ -2182,20 +2182,28 @@ SELECT em.id, v.value, v.description FROM em, (VALUES
 (9999, 'Unknown')
 ) AS v(value, description);
 
-
-/* -- TEMPLATE
-
-WITH em AS (SELECT id FROM qgis_pkg.codelist_template WHERE
-	data_model = 'CityGML 2.0'
-	AND
-	name = 'xxxxxClassFunctionUsage'
-) INSERT INTO qgis_pkg.codelist_value_template (code_id, value, description) 
-SELECT em.id, v.value, v.description FROM em, (VALUES
-
-
+-- Add NL BAG Gebruiksdoel for building function/usage
+WITH cl AS (
+    INSERT INTO qgis_pkg.codelist_template (data_model, name, name_space, description)
+    VALUES
+    ('TUD-3DGeoinfo',  'BAG_gebruiksdoel',  'https://3dcities.bk.tudelft.nl/codelists/citygml/BAG_gebruiksdoel.xml',  'Values of building functions according to the Dutch "Basisregistratie Adressen en Gebouwen" (BAG))')
+    RETURNING id)
+INSERT INTO qgis_pkg.codelist_value_template (code_id, value, description)
+SELECT cl.id, v.value, v.description FROM cl, (VALUES  
+('woonfunctie'            ,'Gebruiksfunctie voor het wonen'),
+('bijeenkomstfunctie'     ,'Gebruiksfunctie voor het samenkomen van personen voor kunst, cultuur, godsdienst, communicatie, kinderopvang, het verstrekken van consumpties voor het gebruik ter plaatse of het aanschouwen van sport'),
+('celfunctie'             ,'Gebruiksfunctie voor het dwangverblijf van personen'),
+('gezondheidszorgfunctie' ,'Gebruiksfunctie voor medisch onderzoek, verpleging, verzorging of behandeling'),
+('industriefunctie'       ,'Gebruiksfunctie voor het bedrijfsmatig bewerken of opslaan van materialen en goederen, of voor agrarische doeleinden'),
+('kantoorfunctie'         ,'Gebruiksfunctie voor administratie'),
+('logiesfunctie'          ,'Gebruiksfunctie voor het bieden van recreatief verblijf of tijdelijk onderdak aan personen'),
+('onderwijsfunctie'       ,'Gebruiksfunctie voor het geven van onderwijs'),
+('sportfunctie'           ,'Gebruiksfunctie voor het beoefenen van sport'),
+('winkelfunctie'          ,'Gebruiksfunctie voor het verhandelen van materialen, goederen of diensten'),
+('overige gebruiksfunctie','Niet in dit lid benoemde gebruiksfunctie voor activiteiten waarbij het verblijven van personen een ondergeschikte rol speelt')
 ) AS v(value, description);
 
-*/ --- END TEMPLATE
+
 
 --**************************
 DO $$
