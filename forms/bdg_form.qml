@@ -224,6 +224,7 @@
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
   <fieldConfiguration>
+<!-- CityObject attributes -->  
     <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
@@ -318,7 +319,6 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <!-- <Option name="Layer" type="QString" value="v_enumeration_value_5be4fe02_ee51_4aee_83a9_2e6c3954d54e"/> -->
             <Option name="Layer" type="QString" value="_xx_placeholder_for_v_enumeration_value_xx_"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
@@ -388,6 +388,7 @@
         </config>
       </editWidget>
     </field>
+<!-- Up to here, all CityObject attributes -->
     <field name="class" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
@@ -409,11 +410,11 @@
       </editWidget>
     </field>
     <field name="function" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="List">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option type="bool" name="EmptyIsEmptyArray" value="false"/>
+            <Option type="bool" name="EmptyIsNull" value="true"/>
           </Option>
         </config>
       </editWidget>
@@ -429,11 +430,11 @@
       </editWidget>
     </field>
     <field name="usage" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="List">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option type="bool" name="EmptyIsEmptyArray" value="false"/>
+            <Option type="bool" name="EmptyIsNull" value="true"/>
           </Option>
         </config>
       </editWidget>
@@ -590,6 +591,7 @@
     <alias name="Updating person" field="updating_person" index="11"/>
     <alias name="Updating Reason" field="reason_for_update" index="12"/>
     <alias name="Lineage" field="lineage" index="13"/>
+<!-- End of CityObject attributes -->
     <alias name="Class" field="class" index="14"/>
     <alias name="Class codespace" field="class_codespace" index="15"/>
     <alias name="Function" field="function" index="16"/>
@@ -658,6 +660,7 @@
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
+<!-- End of CityObject attributes -->	
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class_codespace" exp_strength="0"/>
     <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function" exp_strength="0"/>
@@ -692,6 +695,7 @@
     <constraint desc="" field="updating_person" exp=""/>
     <constraint desc="" field="reason_for_update" exp=""/>
     <constraint desc="" field="lineage" exp=""/>
+<!-- End of CityObject attributes -->		
     <constraint desc="" field="class" exp=""/>
     <constraint desc="" field="class_codespace" exp=""/>
     <constraint desc="" field="function" exp=""/>
@@ -710,7 +714,6 @@
     <constraint desc="" field="storey_heights_ag_unit" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
     <constraint desc="" field="storey_heights_below_ground" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
     <constraint desc="" field="storey_heights_bg_unit" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
-
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
@@ -760,7 +763,7 @@ def my_form_open(dialog, layer, feature):
       </attributeEditorContainer>
     </attributeEditorContainer>
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod1_efdd67ad_0d37_4f9a_bd6c_8ebf33758fd3_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_b6a28383_1622_4c51_bb21_290d61f06c78_cityobject_id_citydb_bdg_lod1_efdd67ad_0d37_4f9a_bd6c_8ebf33758fd3_id" relationWidgetTypeId="">
+      <attributeEditorRelation name="__cityobject_genericattrib_placeholder_id__" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="__relation_placeholder_id__" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
@@ -792,38 +795,40 @@ def my_form_open(dialog, layer, feature):
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field name="class" editable="1"/>
-    <field name="class_codespace" editable="1"/>
-    <field name="creation_date" editable="0"/>
-    <field name="description" editable="1"/>
-    <field name="function" editable="1"/>
-    <field name="function_codespace" editable="1"/>
+    <field name="id" editable="0"/>
     <field name="gmlid" editable="0"/>
     <field name="gmlid_codespace" editable="0"/>
-    <field name="id" editable="0"/>
-    <field name="last_modification_date" editable="0"/>
-    <field name="lineage" editable="0"/>
-    <field name="measured_height" editable="1"/>
-    <field name="measured_height_unit" editable="1"/>
     <field name="name" editable="1"/>
     <field name="name_codespace" editable="1"/>
-    <field name="reason_for_update" editable="1"/>
+    <field name="description" editable="1"/>
     <field name="relative_to_terrain" editable="1"/>
     <field name="relative_to_water" editable="1"/>
+    <field name="creation_date" editable="0"/>	
+    <field name="termination_date" editable="0"/>
+    <field name="last_modification_date" editable="0"/>
+    <field name="updating_person" editable="0"/>
+    <field name="reason_for_update" editable="1"/>
+    <field name="lineage" editable="0"/>
+<!-- End of CityObject attributes -->	
+	<field name="class" editable="1"/>
+    <field name="class_codespace" editable="0"/>
+    <field name="function" editable="1"/>
+    <field name="function_codespace" editable="0"/>
+    <field name="usage" editable="1"/>
+    <field name="usage_codespace" editable="0"/>
+<!-- End of cfu attributes -->	
+    <field name="year_of_construction" editable="1"/>
+    <field name="year_of_demolition" editable="1"/>
     <field name="roof_type" editable="1"/>
     <field name="roof_type_codespace" editable="1"/>
+    <field name="measured_height" editable="1"/>
+    <field name="measured_height_unit" editable="1"/>
     <field name="storey_heights_above_ground" editable="1"/>
     <field name="storey_heights_ag_unit" editable="1"/>
     <field name="storey_heights_below_ground" editable="1"/>
     <field name="storey_heights_bg_unit" editable="1"/>
     <field name="storeys_above_ground" editable="1"/>
     <field name="storeys_below_ground" editable="1"/>
-    <field name="termination_date" editable="0"/>
-    <field name="updating_person" editable="0"/>
-    <field name="usage" editable="1"/>
-    <field name="usage_codespace" editable="1"/>
-    <field name="year_of_construction" editable="1"/>
-    <field name="year_of_demolition" editable="1"/>
   </editable>
   <labelOnTop>
     <field name="class" labelOnTop="0"/>
@@ -867,7 +872,7 @@ def my_form_open(dialog, layer, feature):
     <field name="function" reuseLastValue="0"/>
     <field name="function_codespace" reuseLastValue="0"/>
     <field name="gmlid" reuseLastValue="0"/>
-    <field name="gmlid_codespace" reuseLastValue="1"/>
+    <field name="gmlid_codespace" reuseLastValue="0"/>
     <field name="id" reuseLastValue="0"/>
     <field name="last_modification_date" reuseLastValue="0"/>
     <field name="lineage" reuseLastValue="0"/>
