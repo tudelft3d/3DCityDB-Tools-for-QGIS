@@ -1,79 +1,30 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.3-Białowieża">
-  <renderer-3d type="vector" layer="citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b">
-    <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
+<qgis styleCategories="Symbology|Symbology3D|Fields|Forms" version="3.22.7-Białowieża">
+  <renderer-3d layer="_xx_layer_id_placeholder_xx_" type="vector">
+    <vector-layer-3d-tiling show-bounding-boxes="0" zoom-levels-count="3"/>
     <symbol type="polygon" material_type="phong">
-      <data rendered-facade="3" alt-binding="centroid" height="0" add-back-faces="0" invert-normals="0" alt-clamping="relative" culling-mode="no-culling" extrusion-height="0"/>
-      <material specular="255,255,255,255" diffuse="168,19,21,255" ambient="25,25,25,255" shininess="0">
-        <data-defined-properties>
-          <Option type="Map">
-            <Option name="name" type="QString" value=""/>
-            <Option name="properties"/>
-            <Option name="type" type="QString" value="collection"/>
-          </Option>
-        </data-defined-properties>
+      <data alt-clamping="relative" alt-binding="centroid" culling-mode="no-culling" invert-normals="0" height="0" add-back-faces="1" rendered-facade="3" extrusion-height="0"/>
+      <material shininess="0" ambient="255,255,255,255" specular="255,255,255,255" diffuse="255,0,0,255">
       </material>
-      <data-defined-properties>
-        <Option type="Map">
-          <Option name="name" type="QString" value=""/>
-          <Option name="properties"/>
-          <Option name="type" type="QString" value="collection"/>
-        </Option>
-      </data-defined-properties>
-      <edges color="0,0,0,255" width="1" enabled="0"/>
+      <edges width="1" color="0,0,0,255" enabled="1"/>
     </symbol>
   </renderer-3d>
-  <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0" referencescale="-1">
+  <renderer-v2 symbollevels="0" forceraster="0" type="singleSymbol" referencescale="-1" enableorderby="0">
     <symbols>
-      <symbol name="0" alpha="1" type="fill" clip_to_extent="1" force_rhr="0">
-        <data_defined_properties>
+      <symbol force_rhr="0" clip_to_extent="1" type="fill" name="0" alpha="1">
+        <layer pass="0" locked="0" enabled="1" class="SimpleFill">
           <Option type="Map">
-            <Option name="name" type="QString" value=""/>
-            <Option name="properties"/>
-            <Option name="type" type="QString" value="collection"/>
+            <Option type="QString" name="color" value="255,0,0,255"/>
+            <Option type="QString" name="style" value="solid"/>
           </Option>
-        </data_defined_properties>
-        <layer pass="0" enabled="1" class="SimpleFill" locked="0">
-          <Option type="Map">
-            <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
-            <Option name="color" type="QString" value="168,19,21,255"/>
-            <Option name="joinstyle" type="QString" value="bevel"/>
-            <Option name="offset" type="QString" value="0,0"/>
-            <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
-            <Option name="offset_unit" type="QString" value="MM"/>
-            <Option name="outline_color" type="QString" value="35,35,35,255"/>
-            <Option name="outline_style" type="QString" value="solid"/>
-            <Option name="outline_width" type="QString" value="0.26"/>
-            <Option name="outline_width_unit" type="QString" value="MM"/>
-            <Option name="style" type="QString" value="solid"/>
-          </Option>
-          <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="color" v="168,19,21,255"/>
-          <prop k="joinstyle" v="bevel"/>
-          <prop k="offset" v="0,0"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="outline_color" v="35,35,35,255"/>
-          <prop k="outline_style" v="solid"/>
-          <prop k="outline_width" v="0.26"/>
-          <prop k="outline_width_unit" v="MM"/>
-          <prop k="style" v="solid"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties"/>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
     </symbols>
-    <rotation/>
-    <sizescale/>
   </renderer-v2>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
   <fieldConfiguration>
+<!-- CityObject attributes -->  
     <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
@@ -168,7 +119,7 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToTerrainType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
+            <Option name="Layer" type="QString" value="_xx_placeholder_for_v_enumeration_value_xx_"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -185,7 +136,7 @@
             <Option name="AllowNull" type="bool" value="true"/>
             <Option name="FilterExpression" type="QString" value="name = 'RelativeToWaterType'"/>
             <Option name="Key" type="QString" value="value"/>
-            <Option name="Layer" type="QString" value="v_enumeration_value_48fedb7d_7eca_4fc2_b36c_d12ee2054ce5"/>
+            <Option name="Layer" type="QString" value="_xx_placeholder_for_v_enumeration_value_xx_"/>
             <Option name="NofColumns" type="int" value="1"/>
             <Option name="OrderByValue" type="bool" value="false"/>
             <Option name="UseCompleter" type="bool" value="false"/>
@@ -237,20 +188,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="building_parent_id" configurationFlags="None">
-      <editWidget type="Range">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="building_root_id" configurationFlags="None">
-      <editWidget type="Range">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
+<!-- Up to here, all CityObject attributes -->
     <field name="class" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
@@ -272,11 +210,11 @@
       </editWidget>
     </field>
     <field name="function" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="List">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option type="bool" name="EmptyIsEmptyArray" value="false"/>
+            <Option type="bool" name="EmptyIsNull" value="true"/>
           </Option>
         </config>
       </editWidget>
@@ -292,11 +230,11 @@
       </editWidget>
     </field>
     <field name="usage" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="List">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option type="bool" name="EmptyIsEmptyArray" value="false"/>
+            <Option type="bool" name="EmptyIsNull" value="true"/>
           </Option>
         </config>
       </editWidget>
@@ -311,6 +249,7 @@
         </config>
       </editWidget>
     </field>
+<!-- Up to here, cfu attributes -->
     <field name="year_of_construction" configurationFlags="None">
       <editWidget type="DateTime">
         <config>
@@ -437,176 +376,104 @@
         </config>
       </editWidget>
     </field>
+<!-- Added for parts -->
+    <field name="building_parent_id" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="building_root_id" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+<!-- Added for parts -->
   </fieldConfiguration>
   <aliases>
-    <alias name="ID" field="id" index="0"/>
-    <alias name="GML ID" field="gmlid" index="1"/>
-    <alias name="GML codespace" field="gmlid_codespace" index="2"/>
-    <alias name="Name" field="name" index="3"/>
-    <alias name="Name codespace" field="name_codespace" index="4"/>
-    <alias name="Description" field="description" index="5"/>
-    <alias name="Creation Date" field="creation_date" index="6"/>
-    <alias name="Termination Date" field="termination_date" index="7"/>
-    <alias name="Relative to Terrain" field="relative_to_terrain" index="8"/>
-    <alias name="Relative to Water" field="relative_to_water" index="9"/>
-    <alias name="Latest Modification" field="last_modification_date" index="10"/>
-    <alias name="Updating person" field="updating_person" index="11"/>
-    <alias name="Updating Reason" field="reason_for_update" index="12"/>
-    <alias name="Lineage" field="lineage" index="13"/>
-    <alias name="" field="building_parent_id" index="14"/>
-    <alias name="" field="building_root_id" index="15"/>
-    <alias name="Class" field="class" index="16"/>
-    <alias name="Class codespace" field="class_codespace" index="17"/>
-    <alias name="Function" field="function" index="18"/>
-    <alias name="Function codespace" field="function_codespace" index="19"/>
-    <alias name="Usage" field="usage" index="20"/>
-    <alias name="Usage codespace" field="usage_codespace" index="21"/>
-    <alias name="Year of Construction" field="year_of_construction" index="22"/>
-    <alias name="Year of Demolition" field="year_of_demolition" index="23"/>
-    <alias name="Roof Type" field="roof_type" index="24"/>
-    <alias name="Roof Type codespace" field="roof_type_codespace" index="25"/>
-    <alias name="Height" field="measured_height" index="26"/>
-    <alias name="Height UoM" field="measured_height_unit" index="27"/>
-    <alias name="Storeys above ground" field="storeys_above_ground" index="28"/>
-    <alias name="Storeys below ground" field="storeys_below_ground" index="29"/>
-    <alias name="Storey height above ground" field="storey_heights_above_ground" index="30"/>
-    <alias name="Storey height above ground UoM" field="storey_heights_ag_unit" index="31"/>
-    <alias name="Storey height below ground" field="storey_heights_below_ground" index="32"/>
-    <alias name="Storey height below ground UoM" field="storey_heights_bg_unit" index="33"/>
+    <alias index="0"  name="Database ID" field="id"/>
+    <alias index="1"  name="GML ID" field="gmlid"/>
+    <alias index="2"  name="GML codespace" field="gmlid_codespace"/>
+    <alias index="3"  name="Name" field="name"/>
+    <alias index="4"  name="Name codespace" field="name_codespace"/>
+    <alias index="5"  name="Description" field="description"/>
+    <alias index="6"  name="Creation date" field="creation_date"/>
+    <alias index="7"  name="Termination date" field="termination_date"/>
+    <alias index="8"  name="Relative to terrain" field="relative_to_terrain"/>
+    <alias index="9"  name="Relative to water" field="relative_to_water"/>
+    <alias index="10" name="Last modification" field="last_modification_date"/>
+    <alias index="11" name="Updating person" field="updating_person"/>
+    <alias index="12" name="Reason for update" field="reason_for_update"/>
+    <alias index="13" name="Lineage" field="lineage"/>
+<!-- End of CityObject attributes -->
+    <alias index="14" name="Class" field="class"/>
+    <alias index="15" name="Class codespace" field="class_codespace"/>
+    <alias index="16" name="Function" field="function"/>
+    <alias index="17" name="Function codespace" field="function_codespace"/>
+    <alias index="18" name="Usage" field="usage"/>
+    <alias index="19" name="Usage codespace" field="usage_codespace"/>
+<!-- End of cfu attributes -->
+    <alias index="20" name="Year of construction" field="year_of_construction"/>
+    <alias index="21" name="Year of demolition" field="year_of_demolition"/>
+    <alias index="22" name="Roof type" field="roof_type"/>
+    <alias index="23" name="Roof type codespace" field="roof_type_codespace"/>
+    <alias index="24" name="Height" field="measured_height"/>
+    <alias index="25" name="UoM" field="measured_height_unit"/>
+    <alias index="26" name="Storeys above ground" field="storeys_above_ground"/>
+    <alias index="27" name="Storeys below ground" field="storeys_below_ground"/>
+    <alias index="28" name="Storey height above ground&lt;&#47;b&gt;" field="storey_heights_above_ground"/>
+    <alias index="29" name="UoM" field="storey_heights_ag_unit"/>
+    <alias index="30" name="Storey height below ground" field="storey_heights_below_ground"/>
+    <alias index="31" name="UoM" field="storey_heights_bg_unit"/>
+<!-- Added for parts -->
+    <alias index="101" name="Database parent ID" field="building_parent_id"/>
+    <alias index="102" name="Database root ID" field="building_root_id"/>
+<!-- Added for parts -->
   </aliases>
-  <defaults>
-    <default field="id" expression="" applyOnUpdate="0"/>
-    <default field="gmlid" expression="" applyOnUpdate="0"/>
-    <default field="gmlid_codespace" expression="" applyOnUpdate="0"/>
-    <default field="name" expression="" applyOnUpdate="0"/>
-    <default field="name_codespace" expression="" applyOnUpdate="0"/>
-    <default field="description" expression="" applyOnUpdate="0"/>
-    <default field="creation_date" expression="" applyOnUpdate="0"/>
-    <default field="termination_date" expression="" applyOnUpdate="0"/>
-    <default field="relative_to_terrain" expression="" applyOnUpdate="0"/>
-    <default field="relative_to_water" expression="" applyOnUpdate="0"/>
-    <default field="last_modification_date" expression="" applyOnUpdate="0"/>
-    <default field="updating_person" expression="" applyOnUpdate="0"/>
-    <default field="reason_for_update" expression="" applyOnUpdate="0"/>
-    <default field="lineage" expression="" applyOnUpdate="0"/>
-    <default field="building_parent_id" expression="" applyOnUpdate="0"/>
-    <default field="building_root_id" expression="" applyOnUpdate="0"/>
-    <default field="class" expression="" applyOnUpdate="0"/>
-    <default field="class_codespace" expression="" applyOnUpdate="0"/>
-    <default field="function" expression="" applyOnUpdate="0"/>
-    <default field="function_codespace" expression="" applyOnUpdate="0"/>
-    <default field="usage" expression="" applyOnUpdate="0"/>
-    <default field="usage_codespace" expression="" applyOnUpdate="0"/>
-    <default field="year_of_construction" expression="" applyOnUpdate="0"/>
-    <default field="year_of_demolition" expression="" applyOnUpdate="0"/>
-    <default field="roof_type" expression="" applyOnUpdate="0"/>
-    <default field="roof_type_codespace" expression="" applyOnUpdate="0"/>
-    <default field="measured_height" expression="" applyOnUpdate="0"/>
-    <default field="measured_height_unit" expression="" applyOnUpdate="0"/>
-    <default field="storeys_above_ground" expression="" applyOnUpdate="0"/>
-    <default field="storeys_below_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_above_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_ag_unit" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_below_ground" expression="" applyOnUpdate="0"/>
-    <default field="storey_heights_bg_unit" expression="" applyOnUpdate="0"/>
-  </defaults>
   <constraints>
-    <constraint constraints="3" notnull_strength="1" unique_strength="1" field="id" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="gmlid_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="name_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="description" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="creation_date" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="termination_date" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_terrain" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="relative_to_water" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="last_modification_date" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="updating_person" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="reason_for_update" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="lineage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_parent_id" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="building_root_id" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="class_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="function_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="usage_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="year_of_construction" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="year_of_demolition" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="roof_type_codespace" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="measured_height_unit" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_above_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storeys_below_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground" exp_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit" exp_strength="0"/>
+    <constraint constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1" field="id"/>
+<!-- End of CityObject attributes -->	
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="measured_height"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="measured_height_unit"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storeys_above_ground"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storeys_below_ground"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground"/>
+    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit"/>
   </constraints>
   <constraintExpressions>
-    <constraint desc="" field="id" exp=""/>
-    <constraint desc="" field="gmlid" exp=""/>
-    <constraint desc="" field="gmlid_codespace" exp=""/>
-    <constraint desc="" field="name" exp=""/>
-    <constraint desc="" field="name_codespace" exp=""/>
-    <constraint desc="" field="description" exp=""/>
-    <constraint desc="" field="creation_date" exp=""/>
-    <constraint desc="" field="termination_date" exp=""/>
-    <constraint desc="" field="relative_to_terrain" exp=""/>
-    <constraint desc="" field="relative_to_water" exp=""/>
-    <constraint desc="" field="last_modification_date" exp=""/>
-    <constraint desc="" field="updating_person" exp=""/>
-    <constraint desc="" field="reason_for_update" exp=""/>
-    <constraint desc="" field="lineage" exp=""/>
-    <constraint desc="" field="building_parent_id" exp=""/>
-    <constraint desc="" field="building_root_id" exp=""/>
-    <constraint desc="" field="class" exp=""/>
-    <constraint desc="" field="class_codespace" exp=""/>
-    <constraint desc="" field="function" exp=""/>
-    <constraint desc="" field="function_codespace" exp=""/>
-    <constraint desc="" field="usage" exp=""/>
-    <constraint desc="" field="usage_codespace" exp=""/>
-    <constraint desc="" field="year_of_construction" exp=""/>
-    <constraint desc="" field="year_of_demolition" exp=""/>
-    <constraint desc="" field="roof_type" exp=""/>
-    <constraint desc="" field="roof_type_codespace" exp=""/>
-    <constraint desc="" field="measured_height" exp=""/>
-    <constraint desc="" field="measured_height_unit" exp=""/>
-    <constraint desc="" field="storeys_above_ground" exp=""/>
-    <constraint desc="" field="storeys_below_ground" exp=""/>
-    <constraint desc="" field="storey_heights_above_ground" exp=""/>
-    <constraint desc="" field="storey_heights_ag_unit" exp=""/>
-    <constraint desc="" field="storey_heights_below_ground" exp=""/>
-    <constraint desc="" field="storey_heights_bg_unit" exp=""/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="measured_height" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="measured_height_unit" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
+    <constraint desc="Number must be >= 0" field="storeys_above_ground" exp="(&quot;storeys_above_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_above_ground&quot; >= 0)"/>
+    <constraint desc="Number must be >= 0" field="storeys_below_ground" exp="(&quot;storeys_below_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_below_ground&quot; >= 0)"/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="storey_heights_above_ground" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="storey_heights_ag_unit" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="storey_heights_below_ground" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
+    <constraint desc="BOTH values must be either NULL or not NULL" field="storey_heights_bg_unit" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>
-  <editforminitfilepath></editforminitfilepath>
-  <editforminitcode><![CDATA[# -*- coding: utf-8 -*-
-"""
-QGIS forms can have a Python function that is called when the form is
-opened.
-Use this function to add extra logic to your forms.
-Enter the name of the function in the "Python Init function"
-field.
-An example follows:
-"""
-from qgis.PyQt.QtWidgets import QWidget
-
-def my_form_open(dialog, layer, feature):
-	geom = feature.geometry()
-	control = dialog.findChild(QWidget, "MyLineEdit")
-]]></editforminitcode>
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
     <attributeEditorContainer name="Main Info" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
       <attributeEditorField name="id" showLabel="1" index="0"/>
+<!-- Add here parent and root with parts -->
+      <attributeEditorField name="building_parent_id" showLabel="1" index="101"/>
+      <attributeEditorField name="building_root_id" showLabel="1" index="102"/>
+<!--  -->	
       <attributeEditorField name="gmlid" showLabel="1" index="1"/>
       <attributeEditorField name="gmlid_codespace" showLabel="1" index="2"/>
       <attributeEditorField name="name" showLabel="1" index="3"/>
@@ -621,152 +488,83 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField name="reason_for_update" showLabel="1" index="12"/>
       <attributeEditorField name="lineage" showLabel="1" index="13"/>
     </attributeEditorContainer>
-    <attributeEditorContainer name="Other" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorContainer name="Surface Relation" visibilityExpression="" columnCount="1" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="relative_to_terrain" showLabel="1" index="8"/>
-        <attributeEditorField name="relative_to_water" showLabel="1" index="9"/>
-      </attributeEditorContainer>
+    <attributeEditorContainer name="Relation to surface" visibilityExpression="" columnCount="1" showLabel="0" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorField name="relative_to_terrain" showLabel="1" index="8"/>
+      <attributeEditorField name="relative_to_water" showLabel="1" index="9"/>
     </attributeEditorContainer>
+<!--     <attributeEditorContainer name="External references" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorRelation name="_xx_external_reference_placeholder_id_xx_" nmRelationId="" showLabel="0" label="External References" forceSuppressFormPopup="0" relation="_xx_rel_eternaal_references_placeholder_id_xx_" relationWidgetTypeId="">
+        <editor_configuration/>
+      </attributeEditorRelation>
+    </attributeEditorContainer> -->
     <attributeEditorContainer name="Generic Attributes" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorRelation name="cityobject_genericattrib_67bf3eec_4b48_4d52_bfe9_484db0afb3ee_cityobject_id_citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b_id" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="cityobject_genericattrib_67bf3eec_4b48_4d52_bfe9_484db0afb3ee_cityobject_id_citydb_a2_bdg_part_lod2_33031333_842e_4353_a5f4_1ef473278d9b_id" relationWidgetTypeId="">
+      <attributeEditorRelation name="_xx_cityobject_genericattrib_placeholder_id_xx_" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="_xx_relation_generic_attributes_placeholder_id_xx_" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
-    <attributeEditorContainer name="Building Part Attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
-      <attributeEditorField name="measured_height" showLabel="1" index="26"/>
-      <attributeEditorField name="measured_height_unit" showLabel="1" index="27"/>
-      <attributeEditorField name="storey_heights_above_ground" showLabel="1" index="30"/>
-      <attributeEditorField name="storey_heights_ag_unit" showLabel="1" index="31"/>
-      <attributeEditorField name="storey_heights_below_ground" showLabel="1" index="32"/>
-      <attributeEditorField name="storey_heights_bg_unit" showLabel="1" index="33"/>
-      <attributeEditorField name="storeys_above_ground" showLabel="1" index="28"/>
-      <attributeEditorField name="storeys_below_ground" showLabel="1" index="29"/>
-      <attributeEditorField name="year_of_construction" showLabel="1" index="22"/>
-      <attributeEditorField name="year_of_demolition" showLabel="1" index="23"/>
-      <attributeEditorField name="roof_type" showLabel="1" index="24"/>
-      <attributeEditorField name="roof_type_codespace" showLabel="1" index="25"/>
-    </attributeEditorContainer>
+<!--     <attributeEditorContainer name="Address(es)" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+      <attributeEditorRelation name="_xx_addresses_placeholder_id_xx_" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="_xx_relation_addresses_placeholder_id_xx_" relationWidgetTypeId="">
+        <editor_configuration/>
+      </attributeEditorRelation>
+    </attributeEditorContainer> -->
+<!-- just a separator -->
+     <attributeEditorQmlElement showLabel="0" name="QmlWidget"></attributeEditorQmlElement>
+<!--  -->
     <attributeEditorContainer name="Class" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField name="class" showLabel="1" index="16"/>
-      <attributeEditorField name="class_codespace" showLabel="1" index="17"/>
+      <attributeEditorField name="class" showLabel="1" index="14"/>
+      <attributeEditorField name="class_codespace" showLabel="1" index="15"/>
     </attributeEditorContainer>
+
     <attributeEditorContainer name="Function" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField name="function" showLabel="1" index="18"/>
-      <attributeEditorField name="function_codespace" showLabel="1" index="19"/>
+      <attributeEditorField name="function" showLabel="1" index="16"/>
+      <attributeEditorField name="function_codespace" showLabel="1" index="17"/>
     </attributeEditorContainer>
+
     <attributeEditorContainer name="Usage" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField name="usage" showLabel="1" index="20"/>
-      <attributeEditorField name="usage_codespace" showLabel="1" index="21"/>
+      <attributeEditorField name="usage" showLabel="1" index="18"/>
+      <attributeEditorField name="usage_codespace" showLabel="1" index="19"/>
+    </attributeEditorContainer>	
+<!-- just a separator -->
+    <attributeEditorQmlElement showLabel="0" name="QmlWidget"></attributeEditorQmlElement>
+<!--  -->
+    <attributeEditorContainer name="Feature-specific attributes" visibilityExpression="" columnCount="2" showLabel="1" groupBox="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="year_of_construction" showLabel="1" index="20"/>
+      <attributeEditorField name="year_of_demolition" showLabel="1" index="21"/>
+      <attributeEditorField name="storeys_above_ground" showLabel="1" index="26"/>
+      <attributeEditorField name="storeys_below_ground" showLabel="1" index="27"/>
+      <attributeEditorField name="measured_height" showLabel="1" index="24"/>
+      <attributeEditorField name="measured_height_unit" showLabel="1" index="25"/>
+      <attributeEditorField name="storey_heights_above_ground" showLabel="1" index="28"/>
+      <attributeEditorField name="storey_heights_ag_unit" showLabel="1" index="29"/>
+      <attributeEditorField name="storey_heights_below_ground" showLabel="1" index="30"/>
+      <attributeEditorField name="storey_heights_bg_unit" showLabel="1" index="31"/>
+      <attributeEditorField name="roof_type" showLabel="1" index="22"/>
+      <attributeEditorField name="roof_type_codespace" showLabel="1" index="23"/>
     </attributeEditorContainer>
+
   </attributeEditorForm>
   <editable>
-    <field name="building_parent_id" editable="1"/>
-    <field name="building_root_id" editable="1"/>
-    <field name="class" editable="1"/>
-    <field name="class_codespace" editable="1"/>
-    <field name="creation_date" editable="0"/>
-    <field name="description" editable="1"/>
-    <field name="function" editable="1"/>
-    <field name="function_codespace" editable="1"/>
-    <field name="gmlid" editable="0"/>
-    <field name="gmlid_codespace" editable="1"/>
-    <field name="id" editable="0"/>
-    <field name="last_modification_date" editable="1"/>
-    <field name="lineage" editable="1"/>
-    <field name="measured_height" editable="1"/>
-    <field name="measured_height_unit" editable="1"/>
-    <field name="name" editable="1"/>
-    <field name="name_codespace" editable="1"/>
-    <field name="reason_for_update" editable="1"/>
-    <field name="relative_to_terrain" editable="1"/>
-    <field name="relative_to_water" editable="1"/>
-    <field name="roof_type" editable="1"/>
-    <field name="roof_type_codespace" editable="1"/>
-    <field name="storey_heights_above_ground" editable="1"/>
-    <field name="storey_heights_ag_unit" editable="1"/>
-    <field name="storey_heights_below_ground" editable="1"/>
-    <field name="storey_heights_bg_unit" editable="1"/>
-    <field name="storeys_above_ground" editable="1"/>
-    <field name="storeys_below_ground" editable="1"/>
-    <field name="termination_date" editable="0"/>
-    <field name="updating_person" editable="1"/>
-    <field name="usage" editable="1"/>
-    <field name="usage_codespace" editable="1"/>
-    <field name="year_of_construction" editable="1"/>
-    <field name="year_of_demolition" editable="1"/>
+<!-- Default is editable, you can add only the non-editable ones   -->
+    <field editable="0" name="id"/>
+    <field editable="0" name="gmlid"/>
+    <field editable="0" name="gmlid_codespace"/>
+    <field editable="0" name="name_codespace"/>
+    <field editable="0" name="creation_date"/>	
+    <field editable="0" name="termination_date"/>
+    <field editable="0" name="last_modification_date"/>
+    <field editable="0" name="updating_person"/>
+    <field editable="0" name="lineage"/>
+<!-- End of CityObject attributes -->
+    <field editable="0" name="class_codespace"/>
+    <field editable="0" name="function_codespace"/>
+    <field editable="0" name="usage_codespace"/>
+<!-- End of cfu attributes -->
+    <field editable="0" name="roof_type_codespace"/>
+<!-- Add here parent and root with parts -->
+    <field editable="0" name="building_root_id"/>
+    <field editable="0" name="building_parent_id"/>
+<!--  -->
   </editable>
-  <labelOnTop>
-    <field name="building_parent_id" labelOnTop="0"/>
-    <field name="building_root_id" labelOnTop="0"/>
-    <field name="class" labelOnTop="0"/>
-    <field name="class_codespace" labelOnTop="0"/>
-    <field name="creation_date" labelOnTop="0"/>
-    <field name="description" labelOnTop="0"/>
-    <field name="function" labelOnTop="0"/>
-    <field name="function_codespace" labelOnTop="0"/>
-    <field name="gmlid" labelOnTop="0"/>
-    <field name="gmlid_codespace" labelOnTop="0"/>
-    <field name="id" labelOnTop="0"/>
-    <field name="last_modification_date" labelOnTop="0"/>
-    <field name="lineage" labelOnTop="0"/>
-    <field name="measured_height" labelOnTop="0"/>
-    <field name="measured_height_unit" labelOnTop="0"/>
-    <field name="name" labelOnTop="0"/>
-    <field name="name_codespace" labelOnTop="0"/>
-    <field name="reason_for_update" labelOnTop="0"/>
-    <field name="relative_to_terrain" labelOnTop="0"/>
-    <field name="relative_to_water" labelOnTop="0"/>
-    <field name="roof_type" labelOnTop="0"/>
-    <field name="roof_type_codespace" labelOnTop="0"/>
-    <field name="storey_heights_above_ground" labelOnTop="0"/>
-    <field name="storey_heights_ag_unit" labelOnTop="0"/>
-    <field name="storey_heights_below_ground" labelOnTop="0"/>
-    <field name="storey_heights_bg_unit" labelOnTop="0"/>
-    <field name="storeys_above_ground" labelOnTop="0"/>
-    <field name="storeys_below_ground" labelOnTop="0"/>
-    <field name="termination_date" labelOnTop="0"/>
-    <field name="updating_person" labelOnTop="0"/>
-    <field name="usage" labelOnTop="0"/>
-    <field name="usage_codespace" labelOnTop="0"/>
-    <field name="year_of_construction" labelOnTop="0"/>
-    <field name="year_of_demolition" labelOnTop="0"/>
-  </labelOnTop>
-  <reuseLastValue>
-    <field name="building_parent_id" reuseLastValue="0"/>
-    <field name="building_root_id" reuseLastValue="0"/>
-    <field name="class" reuseLastValue="0"/>
-    <field name="class_codespace" reuseLastValue="0"/>
-    <field name="creation_date" reuseLastValue="0"/>
-    <field name="description" reuseLastValue="0"/>
-    <field name="function" reuseLastValue="0"/>
-    <field name="function_codespace" reuseLastValue="0"/>
-    <field name="gmlid" reuseLastValue="0"/>
-    <field name="gmlid_codespace" reuseLastValue="1"/>
-    <field name="id" reuseLastValue="0"/>
-    <field name="last_modification_date" reuseLastValue="0"/>
-    <field name="lineage" reuseLastValue="0"/>
-    <field name="measured_height" reuseLastValue="0"/>
-    <field name="measured_height_unit" reuseLastValue="0"/>
-    <field name="name" reuseLastValue="0"/>
-    <field name="name_codespace" reuseLastValue="0"/>
-    <field name="reason_for_update" reuseLastValue="0"/>
-    <field name="relative_to_terrain" reuseLastValue="0"/>
-    <field name="relative_to_water" reuseLastValue="0"/>
-    <field name="roof_type" reuseLastValue="0"/>
-    <field name="roof_type_codespace" reuseLastValue="0"/>
-    <field name="storey_heights_above_ground" reuseLastValue="0"/>
-    <field name="storey_heights_ag_unit" reuseLastValue="0"/>
-    <field name="storey_heights_below_ground" reuseLastValue="0"/>
-    <field name="storey_heights_bg_unit" reuseLastValue="0"/>
-    <field name="storeys_above_ground" reuseLastValue="0"/>
-    <field name="storeys_below_ground" reuseLastValue="0"/>
-    <field name="termination_date" reuseLastValue="0"/>
-    <field name="updating_person" reuseLastValue="0"/>
-    <field name="usage" reuseLastValue="0"/>
-    <field name="usage_codespace" reuseLastValue="0"/>
-    <field name="year_of_construction" reuseLastValue="0"/>
-    <field name="year_of_demolition" reuseLastValue="0"/>
-  </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
   <layerGeometryType>2</layerGeometryType>
