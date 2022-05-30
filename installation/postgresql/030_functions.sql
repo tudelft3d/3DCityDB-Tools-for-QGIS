@@ -908,13 +908,14 @@ CREATE OR REPLACE FUNCTION qgis_pkg.upsert_extents(
 usr_schema		varchar,
 cdb_schema		varchar,
 cdb_bbox_type	varchar,  -- A value in (''db_schema'', ''m_view'', ''qgis''))
-cdb_envelope	geometry(Polygon) DEFAULT NULL
+cdb_envelope	geometry(Polygon) DEFAULT NULL -- this is a geometry WITHOUT SRID!
 )
 RETURNS integer AS $$
 DECLARE
 cdb_bbox_type_array CONSTANT varchar[] := ARRAY['db_schema', 'm_view', 'qgis'];
 ext_label	varchar;
 upserted_id	integer := NULL;
+sr_id integer;
 
 BEGIN 
 
@@ -923,11 +924,15 @@ IF cdb_bbox_type IS NULL OR NOT (cdb_bbox_type = ANY (cdb_bbox_type_array)) THEN
 	RAISE EXCEPTION 'cdb_bbox_type value is invalid. It must be one of (''db_schema'', ''m_view'', ''qgis'')';
 END IF;
 
+-- Get the srid from the current csb_schema
+EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO sr_id;
+
 CASE
 	WHEN cdb_bbox_type = 'db_schema' THEN
 		upserted_id := (SELECT f.upserted_id FROM qgis_pkg.compute_schema_extents(usr_schema, cdb_schema) AS f);
 	WHEN cdb_bbox_type IN ('m_view', 'qgis') THEN
 		IF cdb_envelope IS NOT NULL THEN
+            cdb_envelope := ST_SetSrid(cdb_envelope, sr_id);
 			IF cdb_bbox_type = 'm_view' THEN
 				ext_label := concat(cdb_schema,'-mview_bbox_extents');
 			ELSE
