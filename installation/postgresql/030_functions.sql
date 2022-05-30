@@ -76,7 +76,7 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 6;
-minor_revision := 5;
+minor_revision := 6;
 code_name      := 'May tulip';
 release_date   := '2022-05-27'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
