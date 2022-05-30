@@ -925,7 +925,7 @@ END IF;
 
 CASE
 	WHEN cdb_bbox_type = 'db_schema' THEN
-		upserted_id := (SELECT f.upserted_id FROM qgis_pkg.compute_schema_extents(cdb_schema) AS f);
+		upserted_id := (SELECT f.upserted_id FROM qgis_pkg.compute_schema_extents(usr_schema, cdb_schema) AS f);
 	WHEN cdb_bbox_type IN ('m_view', 'qgis') THEN
 		IF cdb_envelope IS NOT NULL THEN
 			IF cdb_bbox_type = 'm_view' THEN
