@@ -3,6 +3,11 @@
 TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-05-30
+----------
+Version 0.6.6
+Fixed bug in function to upsert extents
+
 2022-05-27
 ----------
 Version 0.6.5
