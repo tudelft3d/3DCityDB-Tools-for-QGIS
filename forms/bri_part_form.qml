@@ -5,7 +5,7 @@
     <symbol type="polygon" material_type="phong">
       <data alt-clamping="relative" alt-binding="centroid" culling-mode="no-culling" invert-normals="0" height="0" add-back-faces="1" rendered-facade="3" extrusion-height="0"/>
 <!-- Set the (diffuse) colour of the 3D geometries -->
-       <material shininess="0" ambient="255,255,255,255" specular="255,255,255,255" diffuse="255,0,0,255">
+       <material shininess="0" ambient="255,255,255,255" specular="255,255,255,255" diffuse="150,150,150,255">
       </material>
       <edges width="1" color="0,0,0,255" enabled="1"/>
     </symbol>
@@ -16,7 +16,7 @@
         <layer pass="0" locked="0" enabled="1" class="SimpleFill">
           <Option type="Map">
 <!-- Set the colour of the 2D geometries -->
-            <Option type="QString" name="color" value="255,0,0,255"/>
+            <Option type="QString" name="color" value="150,150,150,255"/>
             <Option type="QString" name="style" value="solid"/>
           </Option>
         </layer>
@@ -186,41 +186,30 @@
         </config>
 	  </editWidget>
     </field>
-    <field configurationFlags="None" name="roof_type">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="roof_type_codespace">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="measured_height">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="measured_height_unit">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storeys_above_ground">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storeys_below_ground">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storey_heights_above_ground">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storey_heights_ag_unit">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storey_heights_below_ground">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="storey_heights_bg_unit">
-      <editWidget type="TextEdit"></editWidget>
+    <field configurationFlags="None" name="is_movable">
+      <editWidget type="ValueMap">
+        <config>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option value="0" name="False" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option value="1" name="True" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" name="Unknown" type="QString"/>
+              </Option>
+            </Option>
+          </Option>
+        </config>
+      </editWidget>
     </field>
 <!-- root/parent attributes -->
-    <field name="building_parent_id" configurationFlags="None">
+    <field configurationFlags="None" name="bridge_parent_id">
       <editWidget type="TextEdit"></editWidget>
     </field>
-    <field name="building_root_id" configurationFlags="None">
+    <field configurationFlags="None" name="bridge_root_id">
       <editWidget type="TextEdit"></editWidget>
     </field>
   </fieldConfiguration>
@@ -249,43 +238,16 @@
 <!-- other attributes -->
     <alias index="20" name="Year of construction" field="year_of_construction"/>
     <alias index="21" name="Year of demolition" field="year_of_demolition"/>
-    <alias index="22" name="Roof type" field="roof_type"/>
-    <alias index="23" name="Codespace" field="roof_type_codespace"/>
-    <alias index="24" name="Height" field="measured_height"/>
-    <alias index="25" name="UoM" field="measured_height_unit"/>
-    <alias index="26" name="Storeys above ground" field="storeys_above_ground"/>
-    <alias index="27" name="Storeys below ground" field="storeys_below_ground"/>
-    <alias index="28" name="Storey height above ground" field="storey_heights_above_ground"/>
-    <alias index="29" name="UoM" field="storey_heights_ag_unit"/>
-    <alias index="30" name="Storey height below ground" field="storey_heights_below_ground"/>
-    <alias index="31" name="UoM" field="storey_heights_bg_unit"/>
+    <alias index="22" name="Is movable?" field="is_movable"/>
 <!-- parent/root attributes -->
-    <alias index="101" name="Database parent ID" field="building_parent_id"/>
-    <alias index="102" name="Database root ID" field="building_root_id"/>
+    <alias index="101" name="Database parent ID" field="bridge_parent_id"/>
+    <alias index="102" name="Database root ID" field="bridge_root_id"/>
   </aliases>
   <defaults></defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1" field="id"/>
-<!-- other attributes -->	
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="measured_height"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="measured_height_unit"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storeys_above_ground"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storeys_below_ground"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_above_ground"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_ag_unit"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_below_ground"/>
-    <constraint constraints="4" exp_strength="1" notnull_strength="0" unique_strength="0" field="storey_heights_bg_unit"/>
   </constraints>
-  <constraintExpressions>
-    <constraint field="measured_height" desc="BOTH values must be either NULL or not NULL" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
-    <constraint field="measured_height_unit" desc="BOTH values must be either NULL or not NULL" exp="(&quot;measured_height&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;measured_height&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;measured_height_unit&quot; IS NULL)"/>
-    <constraint field="storeys_above_ground" desc="Number must be >= 0" exp="(&quot;storeys_above_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_above_ground&quot; >= 0)"/>
-    <constraint field="storeys_below_ground" desc="Number must be >= 0" exp="(&quot;storeys_below_ground&quot; IS NULL) OR&#xd;&#xa;(&quot;storeys_below_ground&quot; >= 0)"/>
-    <constraint field="storey_heights_above_ground" desc="BOTH values must be either NULL or not NULL" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
-    <constraint field="storey_heights_ag_unit" desc="BOTH values must be either NULL or not NULL" exp="(&quot;storey_heights_above_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_ag_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_above_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_ag_unit&quot; IS NULL)"/>
-    <constraint field="storey_heights_below_ground" desc="BOTH values must be either NULL or not NULL" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
-    <constraint field="storey_heights_bg_unit" desc="BOTH values must be either NULL or not NULL" exp="(&quot;storey_heights_below_ground&quot; IS NOT NULL&#xd;&#xa;AND&#xd;&#xa; &quot;storey_heights_bg_unit&quot;  IS NOT NULL)&#xd;&#xa;OR&#xd;&#xa;(&quot;storey_heights_below_ground&quot; IS NULL&#xd;&#xa;AND&#xd;&#xa;&quot;storey_heights_bg_unit&quot; IS NULL)"/>
-  </constraintExpressions>
+  <constraintExpressions></constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
   <editforminit/>
@@ -299,9 +261,9 @@
     <attributeEditorContainer visibilityExpression="" groupBox="0" name="Main Info" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField name="id" showLabel="1" index="0"/>
 <!-- Parent/root attributes BEGIN -->
-      <attributeEditorField name="building_parent_id" showLabel="1" index="101"/>
-      <attributeEditorField name="building_root_id" showLabel="1" index="102"/>
-<!-- Parent/root attributes END -->	  
+      <attributeEditorField name="bridge_parent_id" showLabel="1" index="101"/>
+      <attributeEditorField name="bridge_root_id" showLabel="1" index="102"/>
+<!-- Parent/root attributes END -->		  
       <attributeEditorField name="gmlid" showLabel="1" index="1"/>
       <attributeEditorField name="gmlid_codespace" showLabel="1" index="2"/>
       <attributeEditorField name="name" showLabel="1" index="3"/>
@@ -356,16 +318,7 @@
     <attributeEditorContainer visibilityExpression="" groupBox="1" name="Feature-specific attributes" columnCount="2" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField name="year_of_construction" showLabel="1" index="20"/>
       <attributeEditorField name="year_of_demolition" showLabel="1" index="21"/>
-      <attributeEditorField name="storeys_above_ground" showLabel="1" index="26"/>
-      <attributeEditorField name="storeys_below_ground" showLabel="1" index="27"/>
-      <attributeEditorField name="measured_height" showLabel="1" index="24"/>
-      <attributeEditorField name="measured_height_unit" showLabel="1" index="25"/>
-      <attributeEditorField name="storey_heights_above_ground" showLabel="1" index="28"/>
-      <attributeEditorField name="storey_heights_ag_unit" showLabel="1" index="29"/>
-      <attributeEditorField name="storey_heights_below_ground" showLabel="1" index="30"/>
-      <attributeEditorField name="storey_heights_bg_unit" showLabel="1" index="31"/>
-      <attributeEditorField name="roof_type" showLabel="1" index="22"/>
-      <attributeEditorField name="roof_type_codespace" showLabel="1" index="23"/>
+      <attributeEditorField name="is_movable" showLabel="1" index="22"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -382,11 +335,9 @@
     <field editable="0" name="class_codespace"/>
     <field editable="0" name="function_codespace"/>
     <field editable="0" name="usage_codespace"/>
-<!-- other attributes -->
-    <field editable="0" name="roof_type_codespace"/>
 <!-- parent and root attributes -->
-    <field editable="0" name="building_root_id"/>
-    <field editable="0" name="building_parent_id"/>
+    <field editable="0" name="bridge_root_id"/>
+    <field editable="0" name="bridge_parent_id"/>
   </editable>
   <labelOnTop></labelOnTop>
   <reuseLastValue></reuseLastValue>

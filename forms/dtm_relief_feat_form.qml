@@ -5,7 +5,7 @@
     <symbol type="polygon" material_type="phong">
       <data alt-clamping="relative" alt-binding="centroid" culling-mode="no-culling" invert-normals="0" height="0" add-back-faces="1" rendered-facade="3" extrusion-height="0"/>
 <!-- Set the (diffuse) colour of the 3D geometries -->
-       <material shininess="0" ambient="255,255,255,255" specular="255,255,255,255" diffuse="155,60,37,255">
+       <material shininess="0" ambient="255,255,255,255" specular="255,255,255,255" diffuse="23,102,38,127">
       </material>
       <edges width="1" color="0,0,0,255" enabled="1"/>
     </symbol>
@@ -16,7 +16,7 @@
         <layer pass="0" locked="0" enabled="1" class="SimpleFill">
           <Option type="Map">
 <!-- Set the colour of the 2D geometries -->
-            <Option type="QString" name="color" value="155,60,37,255"/>
+            <Option type="QString" name="color" value="23,102,38,127"/>
             <Option type="QString" name="style" value="solid"/>
           </Option>
         </layer>
@@ -125,46 +125,20 @@
     <field configurationFlags="None" name="lineage">
       <editWidget type="TextEdit"></editWidget>
     </field>
-<!-- cfu attributes -->
-    <field configurationFlags="None" name="class">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="class_codespace">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="function">
-      <editWidget type="List">
+<!-- other attributes -->
+    <field name="lod" configurationFlags="None">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="EmptyIsEmptyArray" value="false" type="bool"/>
-            <Option name="EmptyIsNull" value="true" type="bool"/>
+            <Option value="true" type="bool" name="AllowNull"/>
+            <Option value="4" type="int" name="Max"/>
+            <Option value="1" type="int" name="Min"/>
+            <Option value="0" type="int" name="Precision"/>
+            <Option value="1" type="int" name="Step"/>
+            <Option value="SpinBox" type="QString" name="Style"/>
           </Option>
         </config>
-	  </editWidget>
-    </field>
-    <field configurationFlags="None" name="function_codespace">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field configurationFlags="None" name="usage">
-      <editWidget type="List">
-        <config>
-          <Option type="Map">
-            <Option name="EmptyIsEmptyArray" value="false" type="bool"/>
-            <Option name="EmptyIsNull" value="true" type="bool"/>
-          </Option>
-        </config>
-	  </editWidget>
-    </field>
-    <field configurationFlags="None" name="usage_codespace">
-      <editWidget type="TextEdit">
-	  </editWidget>
-    </field>
-<!-- root/parent attributes -->
-    <field name="building_id" configurationFlags="None">
-      <editWidget type="TextEdit"></editWidget>
-    </field>
-    <field name="room_id" configurationFlags="None">
-      <editWidget type="TextEdit"></editWidget>
+      </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
@@ -182,21 +156,14 @@
     <alias index="11" name="Updating person" field="updating_person"/>
     <alias index="12" name="Reason for update" field="reason_for_update"/>
     <alias index="13" name="Lineage" field="lineage"/>
-<!-- cfu attributes -->
-    <alias index="14" name="Class" field="class"/>
-    <alias index="15" name="Codespace" field="class_codespace"/>
-    <alias index="16" name="Function" field="function"/>
-    <alias index="17" name="Codespace" field="function_codespace"/>
-    <alias index="18" name="Usage" field="usage"/>
-    <alias index="19" name="Codespace" field="usage_codespace"/>
-<!-- parent/root attributes -->
-    <alias index="101"  name="Building(Part) ID" field="building_id"/>
-    <alias index="102"  name="Building room ID" field="room_id"/>
+<!-- other attributes -->
+    <alias index="14" name="Level of detail" field="lod"/>
   </aliases>
   <defaults></defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1" field="id"/>
 <!-- other attributes -->	
+    <constraint constraints="1" exp_strength="0" notnull_strength="1" unique_strength="0" field="lod"/>
   </constraints>
   <constraintExpressions></constraintExpressions>
   <expressionfields/>
@@ -211,10 +178,6 @@
 <!-- cityobject tabs with attributes -->  
     <attributeEditorContainer visibilityExpression="" groupBox="0" name="Main Info" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField name="id" showLabel="1" index="0"/>
-<!-- Parent/root attributes BEGIN -->
-      <attributeEditorField name="room_id" showLabel="1" index="102"/>
-      <attributeEditorField name="building_id" showLabel="1" index="101"/>
-<!-- Parent/root attributes END -->	  
       <attributeEditorField name="gmlid" showLabel="1" index="1"/>
       <attributeEditorField name="gmlid_codespace" showLabel="1" index="2"/>
       <attributeEditorField name="name" showLabel="1" index="3"/>
@@ -245,18 +208,9 @@
     </attributeEditorContainer>
 <!-- just an empty line -->
     <attributeEditorQmlElement name="QmlWidget" showLabel="0"></attributeEditorQmlElement>
-<!-- cfu attributes -->
-    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Class" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
-      <attributeEditorField name="class" showLabel="1" index="14"/>
-      <attributeEditorField name="class_codespace" showLabel="1" index="15"/>
-    </attributeEditorContainer>
-    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Function" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
-      <attributeEditorField name="function" showLabel="1" index="16"/>
-      <attributeEditorField name="function_codespace" showLabel="1" index="17"/>
-    </attributeEditorContainer>
-    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Usage" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
-      <attributeEditorField name="usage" showLabel="1" index="18"/>
-      <attributeEditorField name="usage_codespace" showLabel="1" index="19"/>
+<!-- other attributes -->
+    <attributeEditorContainer visibilityExpression="" groupBox="1" name="Feature-specific attributes" columnCount="2" showLabel="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="lod" showLabel="1" index="14"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -269,13 +223,6 @@
     <field editable="0" name="last_modification_date"/>
     <field editable="0" name="updating_person"/>
     <field editable="0" name="lineage"/>
-<!-- cfu attributes -->
-    <field editable="0" name="class_codespace"/>
-    <field editable="0" name="function_codespace"/>
-    <field editable="0" name="usage_codespace"/>
-<!-- parent and root attributes -->
-    <field editable="0" name="building_id"/>
-    <field editable="0" name="room_id"/>
   </editable>
   <labelOnTop></labelOnTop>
   <reuseLastValue></reuseLastValue>
