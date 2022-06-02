@@ -75,10 +75,10 @@ DECLARE
 
 BEGIN
 major_version  := 0;
-minor_version  := 6;
-minor_revision := 6;
-code_name      := 'May tulip';
-release_date   := '2022-05-30'::date;
+minor_version  := 7;
+minor_revision := 0;
+code_name      := 'Digital astronomical Twins';
+release_date   := '2022-06-02'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
