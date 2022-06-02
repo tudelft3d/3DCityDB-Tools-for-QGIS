@@ -172,7 +172,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('dtm_',r.class_label,'_form.qml');
+--qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'relief_feature';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -259,7 +260,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('dtm_',r.class_label,'_form.qml');
+-- qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'tin_relief';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -348,16 +350,6 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module Relief';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
-
---SELECT qgis_pkg.create_layers_relief(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',
---	cdb_schema         := 'citydb3',
---	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
---	bbox_corners_array := ARRAY[220000, 481400, 220900, 482300],
---	bbox_corners_array := '{220177, 481471, 220755, 482133}',
---	force_layer_creation := FALSE);
-
---SELECT qgis_pkg.refresh_mviews_relief(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3'); 
---SELECT qgis_pkg.drop_layers_relief(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3'); 
 
 --**************************
 DO $MAINBODY$

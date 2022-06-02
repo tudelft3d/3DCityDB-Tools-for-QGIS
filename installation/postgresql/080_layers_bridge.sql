@@ -396,7 +396,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_thematic_surface_form.qml');
+qml_file_name  := concat('bri_them_surf_form.qml');
+--qml_file_name  := concat(r.class_label,'_thematic_surface_form.qml');
 trig_f_suffix := 'bridge_thematic_surface';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -496,7 +497,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_out_installation_form.qml');
+qml_file_name  := concat('bri_out_inst_form.qml');
 trig_f_suffix := 'bridge_installation';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -641,7 +642,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_out_installation_thematic_surface_form.qml');
+qml_file_name  := concat('bri_inst_them_surf_form.qml');
 trig_f_suffix  := 'bridge_thematic_surface';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -729,7 +730,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_constr_element_form.qml');
+qml_file_name  := concat('bri_constr_elem_form.qml');
 trig_f_suffix := 'bridge_constr_element';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -860,7 +861,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_constr_element_form.qml');
+qml_file_name  := concat('bri_constr_elem_form.qml');
 trig_f_suffix := 'bridge_constr_element';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1003,7 +1004,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_constr_element_thematic_surface_form.qml');
+qml_file_name  := concat('bri_constr_elem_them_surf_form.qml');
 trig_f_suffix := 'bridge_thematic_surface';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1094,7 +1095,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_opening_form.qml');
+qml_file_name  := concat('bri_',s.class_label,'_form.qml');
 trig_f_suffix  := 'bridge_opening';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1325,7 +1326,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_room_thematic_surface_form.qml');
+qml_file_name  := concat('bri_room_them_surf_form.qml');
 trig_f_suffix := 'bridge_thematic_surface';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1426,7 +1427,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_int_installation_form.qml');
+qml_file_name  := concat('bri_int_inst_form.qml');
 trig_f_suffix := 'bridge_installation';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1573,7 +1574,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_int_inst_thematic_surface_form.qml');
+qml_file_name  := concat('bri_int_inst_them_surf_form.qml');
 trig_f_suffix := 'bridge_thematic_surface';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -1771,16 +1772,6 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_bridge(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module Bridge';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_bridge(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
-
---Example:
---SELECT qgis_pkg.create_layers_bridge(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',
---	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
---	bbox_corners_array := ARRAY[220000, 481400, 220900, 482300],
---	bbox_corners_array := '{220177, 481471, 220755, 482133}',
---	force_layer_creation := FALSE);
-
---SELECT qgis_pkg.refresh_mviews_bridge(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3'); 
---SELECT qgis_pkg.drop_layers_bridge(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3'); 
 
 --**************************
 DO $MAINBODY$

@@ -179,7 +179,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('tran_complex_form.qml');
+--qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'transportation_complex';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -269,7 +270,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('tran_complex_form.qml');
+--qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'transportation_complex';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -368,7 +370,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('tran_',u.class_label,'_form.qml');
+--qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'traffic_area';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -398,6 +401,7 @@ SELECT',
 sql_co_atts,
 sql_cfu_atts,'
   o.surface_material,
+  o.surface_material_codespace,  
   o.transportation_complex_id,
   g.geom::geometry(MultiPolygonZ,',srid_id,')
 FROM
@@ -443,16 +447,6 @@ COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_transportation
 (varchar, varchar, integer, integer, numeric, geometry, boolean) 
 IS 'Create layers for module Transportation';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_transportation(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
-
---SELECT qgis_pkg.create_layers_transportation(usr_name := 'qgis_user_ro', cdb_schema := 'citydb3',
---	cdb_schema         := 'citydb3',
---	bbox_corners_array := NULL,  -- THIS IS THE DEFAULT
---	bbox_corners_array := ARRAY[220000, 481400, 220900, 482300],
---	bbox_corners_array := '{220177, 481471, 220755, 482133}',
---	force_layer_creation := FALSE);
-
---SELECT qgis_pkg.refresh_mviews_transportation(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3'); 
---SELECT qgis_pkg.drop_layers_transportation(usr_schema := 'qgis_user_ro', cdb_schema := 'citydb3');
 
 --**************************
 DO $MAINBODY$
