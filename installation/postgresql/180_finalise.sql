@@ -70,7 +70,7 @@ END IF;
 
 END $MAINBODY$;
 
--- Assign respective ro/rw priviles to the user regarding all existing citydb schemas
+-- Assign respective ro/rw priviles to the user regarding ALL existing citydb schemas
 SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_ro', 'ro');
 SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_rw', 'rw');
 
