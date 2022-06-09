@@ -1,32 +1,42 @@
 # This file contains metadata for your plugin.
+# This file should be included when you package your plugin.
 
-# This file should be included when you package your plugin.# Mandatory items:
+# Mandatory items:
 
 [general]
 name=3DCityDB-Loader
-qgisMinimumVersion=3.16
+qgisMinimumVersion=3.20
 description=This is an experimental plugin for visualization and manipulation of CityGML data stored in the 3D City Database
 version=0.4
 author=Konstantinos Pantelios (client-side), Giorgio Agugiaro (server-side)
 email=konstantinospantelios@yahoo.com, g.agugiaro@tudelft.nl
 
-about=The plugin connects to the 3D City Database (v.4.x) and loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Attributes can be edited and changes are stored back to the database. 
+about=The plugin connects to the 3D City Database (v.4.x) for PostgreSQL/PostGIS and loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited and changes are stored back to the database. 
+
 tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+
 repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+
 # End of mandatory metadata
 
 # Recommended items:
 
 hasProcessingProvider=no
+
 # Uncomment the following line and add your changelog:
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=Python,PostgreSQL,3DCityDB,CityGML
+tags=PostgreSQL,3DCityDB,CityGML,Python
 
 homepage=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+
+# Category of the plugin: Raster, Vector, Database or Web
 category=Database
+
+# Path to the icon file
 icon=icons/plugin_icon.png
+
 # experimental flag
 experimental=True
 
@@ -34,12 +44,8 @@ experimental=True
 deprecated=False
 
 # Since QGIS 3.8, a comma separated list of plugins to be installed
-# (or upgraded) can be specified.
-# Check the documentation for more information.
+# (or upgraded) can be specified. Check the documentation for more information.
 # plugin_dependencies=
-
-Category of the plugin: Raster, Vector, Database or Web
-#category=
 
 # If the plugin can run on QGIS Server.
 server=False
