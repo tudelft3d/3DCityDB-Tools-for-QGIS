@@ -24,8 +24,7 @@
 """
 
 from qgis.gui import QgisInterface
-
-from .citydb_loader import DBLoader
+from .cdb_loader import CDBLoader
 
 def classFactory(iface: QgisInterface):
     """Load DBLoader class from file DBLoader.
@@ -34,5 +33,4 @@ def classFactory(iface: QgisInterface):
 
         :type iface: QgsInterface
     """
-
-    return DBLoader(iface=iface)
+    return CDBLoader(iface=iface)

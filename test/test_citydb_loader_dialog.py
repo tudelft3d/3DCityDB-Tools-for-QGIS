@@ -15,7 +15,7 @@ __copyright__ = 'Copyright 2021, Konstantinos Pantelios'
 import unittest
 from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
 
-from ..citydb_loader_dialog import DBLoaderDialog
+from ..cdb4.usr_gui.cdb4_loader_user_dialog import CDB4LoaderUserDialog
 
 from .utilities import get_qgis_app
 QGIS_APP = get_qgis_app()
@@ -26,7 +26,7 @@ class DBLoaderDialogTest(unittest.TestCase):
 
     def setUp(self):
         """Runs before each test."""
-        self.dialog = DBLoaderDialog(None)
+        self.dialog = CDB4LoaderUserDialog(None)
 
     def tearDown(self):
         """Runs after each test."""
