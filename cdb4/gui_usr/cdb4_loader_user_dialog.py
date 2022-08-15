@@ -98,7 +98,9 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 'Connection' group box signals
         self.cbxExistingConnC.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbLoader))
-        self.btnNewConnC.clicked.connect(self.evt_btnNewConn_clicked)
+        
+        #self.btnNewConnC.clicked.connect(self.evt_btnNewConn_clicked)
+        self.btnNewConnC.clicked.connect(lambda: self.evt_btnNewConn_clicked(cdbLoader))
 
         # 'Database' group box signals
         self.btnConnectToDbC.clicked.connect(lambda: self.evt_btnConnectToDb_clicked(cdbLoader))
@@ -181,7 +183,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             cdbLoader.conn.close()
 
 
-    def evt_btnNewConn_clicked(self) -> None:
+    def evt_btnNewConn_clicked(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the 'New Connection' pushButton
         (btnNewConnC) is pressed.
 
@@ -193,9 +195,12 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlgConnector.show()
         dlgConnector.exec_()
 
+        # Variable to store the plugin main dialog.
+        dlg = cdbLoader.usr_dlg
+
         # Add new connection to the Existing connections
         if dlgConnector.new_connection:
-            self.usr_dlg.cbxExistingConnC.addItem(
+            dlg.cbxExistingConnC.addItem(
                 f"{dlgConnector.new_connection.connection_name}",
                 dlgConnector.new_connection)
                 #dlgConnector.close()
