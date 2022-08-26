@@ -275,7 +275,7 @@ class CDBLoader:
         # User plugin
         # The icon path is set from the compiled resources file (in main dir).
         usr_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
-        adm_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
+        adm_icon_path = ":/plugins/citydb_loader/icons/settings_icon.svg"
 
         self.add_action(
             icon_path=usr_icon_path,
