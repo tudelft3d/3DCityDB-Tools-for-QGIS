@@ -462,8 +462,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         cdb_exts = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS)
 
         # Check validity of user extents relative to the City Model's extents.
-        #if not layer_exts.intersects(cdb_exts):
-        if not layer_exts.within(cdb_exts):        
+        #if not layer_exts.within(cdb_exts): 
+        if not layer_exts.intersects(cdb_exts):
             QMessageBox.critical(
                 cdbLoader.usr_dlg,
                 "Warning",
