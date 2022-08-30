@@ -6,34 +6,37 @@
 [general]
 name=3DCityDB-Loader
 qgisMinimumVersion=3.20
-description=This is an experimental plugin for visualization and manipulation of CityGML data stored in the 3D City Database
+description=Visualization and manipulation of CityGML data stored in the 3D City Database
 version=0.5
 author=Konstantinos Pantelios (client-side), Giorgio Agugiaro (server-side)
 email=konstantinospantelios@yahoo.com, g.agugiaro@tudelft.nl
 
-about=The plugin connects to the 3D City Database (v.4.x) for PostgreSQL/PostGIS and loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited and changes are stored back to the database. 
+about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostGIS and  loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited, changes are stored back directly into the database. 
 
-tracker=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+ Further details can be found in the \user_guide subfolder of the plugin installation directory (see file "3DCityDBLoader_UserGuide.pdf"). 
 
-repository=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+ Some datasets for testing purposes are delivered, too, and are contained in the \test_datasets subfolder. 
+
+tracker=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
+
+repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 
 # End of mandatory metadata
 
 # Recommended items:
-
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog=0.5 major code refactoring
- 0.4 initial public release (Kostantinos' MSc thesis @ TUD)
- 0.3 improved GUI, added ToC
- 0.2 added qgis_pkg backend
- 0.1 first internal test release
+changelog=0.5 major code cleaning and refactoring, moved to TUD GitHub
+ 0.4 first public release (Kostantinos' MSc thesis @ TUD)
+ 0.3 internal release: improved GUI, added dynamic ToC
+ 0.2 internal release: added qgis_pkg backend
+ 0.1 first internal release
 
 # Tags are comma separated with spaces allowed
-tags=PostgreSQL,3DCityDB,CityGML,Python
+tags=PostgreSQL, 3DCityDB, CityGML
 
-homepage=https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader
+homepage=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 
 # Category of the plugin: Raster, Vector, Database or Web
 category=Database
