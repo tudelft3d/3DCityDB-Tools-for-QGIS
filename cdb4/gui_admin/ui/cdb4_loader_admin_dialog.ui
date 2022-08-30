@@ -10,7 +10,6 @@
     <x>0</x>
     <y>0</y>
     <width>405</width>
-    <!-- <width>705</width> -->
     <height>664</height>
    </rect>
   </property>
@@ -23,7 +22,6 @@
   <property name="minimumSize">
    <size>
     <width>405</width>
-    <!-- <width>705</width> -->
     <height>0</height>
    </size>
   </property>
@@ -99,8 +97,7 @@
       </property>
       <attribute name="icon">
        <iconset>
-        <normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</normaloff>:/plugins/citydb_loader/icons/install_icon.svg</iconset>
-        <!-- <normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</iconset> -->
+        <normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</normaloff>:/plugins/citydb_loader/icons/settings_icon.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>QGIS Package</string>
@@ -539,7 +536,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>PostgreSQL installation</string>
+             <string>PostgreSQL installation:</string>
             </property>
            </widget>
           </item>
