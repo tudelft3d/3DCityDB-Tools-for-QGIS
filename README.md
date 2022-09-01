@@ -6,7 +6,7 @@ This repository contains code of a QGIS plugin that facilitates management and v
 
 The plugin allows to connect to local or remote instances of the free and open-source CityGML [3D City Database](https://www.3dcitydb.org)  for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them "as usual", i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D.
 
-Semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases. The main idea behind the development of this plugin is to facilitate access and usage of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the insternational standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL - and spatial databases in general.
+Semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases. The main idea behind the development of this plugin is to facilitate access and usage of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the international standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL - and spatial databases in general.
 
 These are the main features currently available in the plugin:
 - All CityGML modules are supported (Building, Bridge, Tunnel, etc.)
