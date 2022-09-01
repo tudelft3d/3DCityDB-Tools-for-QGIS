@@ -78,7 +78,7 @@
       <number>-1</number>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="iconSize">
       <size>
@@ -241,7 +241,7 @@
           </sizepolicy>
          </property>
          <property name="title">
-          <string>Database</string>
+          <string>3D City Database</string>
          </property>
          <layout class="QGridLayout" name="gLayoutDatabase">
           <item row="0" column="0">
@@ -250,7 +250,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Connect:</string>
+             <string>Database name:</string>
             </property>
            </widget>
           </item>
@@ -317,7 +317,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Select citydb schema:</string>
+             <string>Citydb schema:</string>
             </property>
            </widget>
           </item>
@@ -689,7 +689,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Schema support</string>
+             <string>Schema support:</string>
             </property>
            </widget>
           </item>
@@ -787,7 +787,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>PostgreSQL installation</string>
+             <string>PostgreSQL installation:</string>
             </property>
            </widget>
           </item>
@@ -800,7 +800,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>User installation</string>
+             <string>User installation:</string>
             </property>
            </widget>
           </item>
@@ -1046,7 +1046,7 @@ Current citydb schema: {sch}</string>
           </sizepolicy>
          </property>
          <property name="title">
-          <string>Availiable layers</string>
+          <string>Available layers</string>
          </property>
          <layout class="QVBoxLayout" name="vLayoutAvailableL">
           <item>
