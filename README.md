@@ -1,22 +1,23 @@
 # 3DCityDB-Loader for QGIS
 
-This repository contains code of a QGIS plugin that facilitates management and visualization of data stored in the CityGML 3D City Database.
+This repository contains code of a **QGIS plugin** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB).
 
 # Introduction
 
-The plugin allows to connect to local or remote instances of the free and open-source CityGML [3D City Database](https://www.3dcitydb.org) for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them "as usual", i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D.
+The plugin allows to connect to local or remote instances of the free and open-source CityGML [3D City Database](https://www.3dcitydb.org) for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them as usual, i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D, etc.
 
-Semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases. The main idea behind the development of this plugin is to facilitate access and usage of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the international standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL/Spatial-RDBMSs in general.
+As semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases, the main idea behind the development of this plugin is to facilitate access and use of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the international standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL/Spatial-RDBMSs in general.
+The plugin consists of a server-side part (written in PL/pgSQL) and a client-side part (written in Python). Installation of the server-side part is carried out also via the plugin GUI (for database administrators).
 
 These are the main features currently available in the plugin:
 - All CityGML modules are supported (Building, Bridge, Tunnel, etc.)
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
 - Multiple citydb schemas in the same 3D City Database instance
-- Multiple user support, with different privileges (read-only, read-write)
-- Form-based editing of feature attributes, changes are stored directly into the database
-- In order to tackle possibly very large datasets, different strategies have been implemented to facilitate the user's experience when interacting with the city models via the GUI in QGIS
-- As CityGML natively deals with 3D data, all geometries in the QGIS "layers" are 3D: they can be therefore visualised both in 2D and in 3D, too (Please be aware that 3D visualisation using the QGIS 3D map is still not very stable).
-- The plugin consists of a server-side part (written in PL/pgSQL) and a client-side part (written in Python). Installation of the server-side part is carried out also via the plugin GUI (for database administrators).
+- Multiple user support, with different privileges (i.e. read-only, read-write)
+- User-firendly form-based editing of feature attributes; changes are stored directly into the database
+- Automatically generated, hierarchical layer order in QGIS Layers Panel
+- Server-side and client-side interactive selection of the area extents to load in QGIS, in order to tackle possibly very large datasets
+- All geometries in the QGIS "layers" are 3D: they can be therefore visualised both in 2D and in 3D (Please be aware that 3D visualisation using the QGIS 3D map is still a bit unstable...).
 
 Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
 
@@ -32,7 +33,7 @@ Other than QGIS, only a working instance of the 3D City Database is required. Th
 
 The plugin has been developed by:
 - Kostantinos Pantelios (mainly client-side)
-- Giorgio Agugiaro (mainly server-side)
+- [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side)
 
 With kind suggestions, contributions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
