@@ -603,8 +603,14 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         layer_exts = QgsGeometry.fromRect(cdbLoader.LAYER_EXTENTS)
 
         # Check validity of user extents relative to the City Model's extents.
-        if layer_exts.equals(qgis_exts) or layer_exts.contains(qgis_exts):
+        if layer_exts.equals(qgis_exts) or layer_exts.intersects(qgis_exts):
             cdbLoader.QGIS_EXTENTS = cdbLoader.CURRENT_EXTENTS
+        elif qgis_exts.equals(QgsGeometry.fromRect(QgsRectangle(0,0,0,0))):
+            # When the basemap is initialized (the first time),
+            # the current extents are 0,0,0,0 and are compared against the extents 
+            # of the layers which are coming from the DB.
+            # This causes the "else" to pass which we don't want.  
+            pass #NOTE: this solution is temporary KP 01/09/22
         else:
             QMessageBox.critical(
                 cdbLoader.usr_dlg,
