@@ -32,7 +32,7 @@ Other than QGIS, only a working instance of the 3D City Database is required. Th
 # Developers
 
 The plugin has been developed by:
-- Kostantinos Pantelios (mainly client-side)
+- [Kostantinos Pantelios](konstantinospantelios@yahoo.com) (mainly client-side)
 - [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side)
 
 With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
