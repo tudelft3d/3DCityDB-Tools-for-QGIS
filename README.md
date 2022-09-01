@@ -3,7 +3,7 @@
 This repository contains code of a QGIS plugin that facilitates management and visualization of data stored in the CityGML 3D City Database.
 
 # Introduction
-The plugin allows to connect to local or remote instances of the free and open-source CityGML [3D City Database]() (v. 4.x) for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them "as usual", i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D.
+The plugin allows to connect to local or remote instances of the free and open-source CityGML [3D City Database](https://www.3dcitydb.org)  for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them "as usual", i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D.
 
 Semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases. The main idea behind the development of this plugin is to facilitate access and usage of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the insternational standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL - and spatial databases in general.
 
@@ -14,10 +14,10 @@ These are the main features currently available in the plugin:
 - Multiple user support, with different privileges (read-only, read-write)
 - Form-based editing of feature attributes, changes are stored directly into the database
 - In order to tackle possibly very large datasets, different strategies have been implemented to facilitate the user's experience when interacting with the city models via the GUI in QGIS
-- As CityGML natively deals with 3D data, all geometries in the QGIS "layers" are 3D: they can be therefore visualised both in 2D and (with currently some limitations) in 3D, too.
-- The plugin consists of a server-side part (written in PG/pgSQL) and a client-side part (written in Python). Installation of the server-side part is possible via the plugin GUI (for database administrators)
+- As CityGML natively deals with 3D data, all geometries in the QGIS "layers" are 3D: they can be therefore visualised both in 2D and (with currently some limitations) in 3D, too
+- The plugin consists of a server-side part (written in PG/pgSQL) and a client-side part (written in Python). Installation of the server-side part is possible via the plugin GUI (for database administrators).
 
-Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "3DCityDBLoader_UserGuide.pdf").
+Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
