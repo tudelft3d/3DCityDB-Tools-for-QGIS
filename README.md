@@ -35,7 +35,7 @@ The plugin has been developed by:
 - Kostantinos Pantelios (mainly client-side)
 - [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side)
 
-With kind suggestions, contributions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
+With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
 # Disclaimer
-This work started as a TU Delft MSc Thesis in Geomatics by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The 3D Geoinformation group at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
+This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
