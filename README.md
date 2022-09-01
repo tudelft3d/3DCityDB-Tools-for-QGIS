@@ -15,10 +15,10 @@ These are the main features currently available in the plugin:
 - Multiple citydb schemas in the same 3D City Database instance
 - Multiple user support, with different privileges (i.e. read-only, read-write)
 - User-friendly form-based editing of feature attributes; changes are stored directly into the database
-- Automatically generated, hierarchical layer order in QGIS Layers Panel
-- Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle possibly very large datasets
-- Smart layer management: generates layers only for existing data, allows to choose layers only for data within AOI extents
-- All geometries in the QGIS layers are 3D: they can be therefore visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
+- Automatically generated, hierarchical layer order in the QGIS Layers Panel
+- Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
+- Smart layer management: layers are generated only for existing data, only layers with data within the AOI extents can be selected
+- All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
 Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
 
