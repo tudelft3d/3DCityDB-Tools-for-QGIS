@@ -18,6 +18,7 @@ These are the main features currently available in the plugin:
 - Automatically generated, hierarchical layer order in the QGIS Layers Panel
 - Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
 - Smart layer management: layers are generated only for existing data, only layers with data within the AOI extents can be selected
+- Support for CityGML enumerations and codelists
 - All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
 Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
@@ -42,7 +43,7 @@ With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as, for example:
 - Overall GUI improvements
-- Richer GUI, e.g. with more options for database administrators, and better CodeLists management/settings 
+- Richer GUI, e.g. with more options for database administrators, and better codelists management/settings 
 - Support of ADEs (e.g. the Energy ADE, to start with)
 - Support for appearances (at least for X3D Materials, if possible)
 - Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Instersection Curves)
