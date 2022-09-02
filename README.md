@@ -12,8 +12,8 @@ The plugin consists of a server-side part (written in PL/pgSQL) and a client-sid
 These are the main features currently available in the plugin:
 - All CityGML modules are supported (Building, Bridge, Tunnel, etc.)
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
-- Multiple citydb schemas in the same 3D City Database instance
-- Multiple user support, with different privileges (i.e. read-only, read-write)
+- Support for multiple citydb schemas in the same 3D City Database instance
+- Support for multiple users with different privileges (i.e. read-only, read-write)
 - User-friendly form-based editing of feature attributes; changes are stored directly into the database
 - Automatically generated, hierarchical layer order in the QGIS Layers Panel
 - Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
