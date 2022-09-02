@@ -51,5 +51,4 @@ Besides further testing and debugging, there are a number of improvements that w
 - ...the sky is the limit...
 
 # Disclaimer
-
 This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
