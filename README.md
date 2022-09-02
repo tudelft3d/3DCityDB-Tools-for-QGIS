@@ -1,6 +1,6 @@
 # 3DCityDB-Loader for QGIS
 
-This repository contains code of a **QGIS plugin** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB).
+This repository contains code of a **QGIS plugin** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB), wich currently supports CityGML v. 1.0 and 2.0.
 
 # Introduction
 
@@ -14,10 +14,12 @@ These are the main features currently available in the plugin:
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
 - Multiple citydb schemas in the same 3D City Database instance
 - Multiple user support, with different privileges (i.e. read-only, read-write)
-- User-firendly form-based editing of feature attributes; changes are stored directly into the database
-- Automatically generated, hierarchical layer order in QGIS Layers Panel
-- Server-side and client-side interactive selection of the area extents to load in QGIS, in order to tackle possibly very large datasets
-- All geometries in the QGIS "layers" are 3D: they can be therefore visualised both in 2D and in 3D (Please be aware that 3D visualisation using the QGIS 3D map is still a bit unstable...).
+- User-friendly form-based editing of feature attributes; changes are stored directly into the database
+- Automatically generated, hierarchical layer order in the QGIS Layers Panel
+- Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
+- Smart layer management: layers are generated only for existing data, only layers with data within the AOI extents can be selected
+- Support for CityGML enumerations and codelists
+- All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
 Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
 
@@ -33,9 +35,20 @@ Other than QGIS, only a working instance of the 3D City Database is required. Th
 
 The plugin has been developed by:
 - [Kostantinos Pantelios](konstantinospantelios@yahoo.com) (mainly client-side)
-- [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side)
+- [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side, code refactoring)
 
-With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
+With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
+
+# Future
+
+Besides further testing and debugging, there are a number of improvements that we are thinking of, such as, for example:
+- Overall GUI improvements
+- Richer GUI, e.g. with more options for database administrators, and better codelists management/settings 
+- Support of ADEs (e.g. the Energy ADE, to start with)
+- Support for appearances (at least for X3D Materials, if possible)
+- Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Instersection Curves)
+- Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
+- ...the sky is the limit...
 
 # Disclaimer
 This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
