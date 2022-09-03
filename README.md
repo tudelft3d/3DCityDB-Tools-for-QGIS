@@ -44,11 +44,11 @@ With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as, for example:
 - Overall GUI improvements
 - Richer GUI, e.g. with more options for database administrators, and better codelists management/settings 
-- Support of ADEs (e.g. the Energy ADE, to start with)
+- Support of ADEs (e.g. the [Energy ADE](https://www.citygmlwiki.org/index.php/CityGML_Energy_ADE), to start with)
 - Support for appearances (at least for X3D Materials, if possible)
 - Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Instersection Curves)
-- Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
+- Testing and initial support for the [3DCityDB v. 5.0](https://github.com/3dcitydb/3dcitydb/releases) (and therefore CityGML v. 3.0)
 - ...the sky is the limit...
 
 # Disclaimer
-This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
+This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the [initial GitHub repository](https://github.com/Konstantinos-Pantelios/3DCityDB-QGIS-Loader) to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
