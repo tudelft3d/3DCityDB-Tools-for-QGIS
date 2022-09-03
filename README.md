@@ -25,6 +25,8 @@ Further details, and a simple user guide, can be found in the \user_guide subfol
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
+![Railway dataset example](/images/3dcitydb-loader_01.jpg)
+
 # Requirements
 
 The plugin has been developed using **[QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR** and works best with it. Our tests so far show that it works with any QGIS version >= 3.20. Please note that support und further development will focus only on LTR versions, e.g. the next one will be QGIS 3.28 LTR expected in autumn 2022.
