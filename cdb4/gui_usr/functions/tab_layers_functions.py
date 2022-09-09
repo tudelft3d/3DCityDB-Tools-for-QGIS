@@ -220,14 +220,21 @@ def create_lookup_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None
 
         assertion_msg="ValueRelation Error: layer '{}' doesn\'t exist in project. This layers is also being imported with every layer import (if it doesn\'t already exist)."
 
+        # Isolate the layers' ToC environment to avoid grabbing the first layer 
+        # encountered in the WHOLE ToC.
+        root = QgsProject.instance().layerTreeRoot()
+        db_node = root.findGroup(cdbLoader.DB.database_name)
+        schema_node = db_node.findGroup("@".join([cdbLoader.DB.username,cdbLoader.CDB_SCHEMA]))
+        look_node = schema_node.findGroup("Look-up tables")
+        look_layers = look_node.findLayers()
+        enum_layer_id = [i.layerId() for i in look_layers if c.enumerations_table in i.layerId()][0]
+
         if field_name == 'relative_to_terrain':
-            target_layer = QgsProject.instance().mapLayersByName(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value') # NOTE: hardcoded view name and values
-            assert target_layer, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
+            assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= enum_layer_id, Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
         elif field_name == 'relative_to_water':
-            target_layer = QgsProject.instance().mapLayersByName(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
-            assert target_layer, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
+            assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= enum_layer_id, Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
         
 
 def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
@@ -245,19 +252,24 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
 
     """
 
-    project = QgsProject.instance()
     layer_configuration = layer.editFormConfig()
     layer_root_container = layer_configuration.invisibleRootContainer()
+    
+    # Isolate the layers' ToC environment to avoid grabbing the first layer 
+    # encountered in the WHOLE ToC.
+    root = QgsProject.instance().layerTreeRoot()
+    db_node = root.findGroup(cdbLoader.DB.database_name)
+    schema_node = db_node.findGroup("@".join([cdbLoader.DB.username,cdbLoader.CDB_SCHEMA]))
+    generics_node = schema_node.findGroup("Generic Attributes")
+    genericAtt_layer = generics_node.findLayers()[0]
 
-    curr_layer = project.mapLayersByName(layer.name())[0]
-    genericAtt_layer = project.mapLayersByName(f"{cdbLoader.CDB_SCHEMA}_cityobject_genericattrib")
-    assert genericAtt_layer, f"Layer: '{cdbLoader.CDB_SCHEMA}_cityobject_genericattrib' doesn\'t exist in project. This layers should also being imported with every layer import (if it doesn't already exist). 17-01-2021 It is not imported automatically yet, so DONT DELETE THE LAYER."
+    assert genericAtt_layer, "generic_attributes table doesn\'t exist in project."
 
     # - Generic Attributes relation.
     # Create new relation object (referencing generic attributes)
     rel = QgsRelation()
-    rel.setReferencedLayer(id=curr_layer.id())
-    rel.setReferencingLayer(id=genericAtt_layer[0].id())
+    rel.setReferencedLayer(id=layer.id())
+    rel.setReferencingLayer(id=genericAtt_layer.layerId())
     rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
     rel.generateId()
     rel.setName('re_'+layer.name())
