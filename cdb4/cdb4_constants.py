@@ -54,6 +54,8 @@ id_col = "id" # Primary key column name of db views.
 # 3DCityDB constants
 generics_table = "cityobject_genericattrib"
 generics_alias = "Generic Attributes"
+enumerations_table = "v_enumeration_value"
+codelists_table = "v_codelist_value"
 
 
 features_tables = [
