@@ -9,7 +9,8 @@ from qgis.core import QgsMessageLog, Qgis, QgsRectangle, QgsCoordinateReferenceS
 from .. import main_constants as main_c
 
 
-
+# PostgreSQL Database minimum version supported
+PG_MIN_VERSION = 10
 # 3D City Database minimum version
 CDB_MIN_VERSION = 4
 
@@ -45,7 +46,7 @@ DEC_PREC = 3
 MIN_AREA = 0.0001  # to be expressed in m2
 
 # Max number of features per layer to be importer
-MAX_FEATURES_PER_LAYER = 20000
+MAX_FEATURES_PER_LAYER = 30000
 
 # View constants
 geom_col = "geom" # Geometry column name of db views.
@@ -54,43 +55,44 @@ id_col = "id" # Primary key column name of db views.
 # 3DCityDB constants
 generics_table = "cityobject_genericattrib"
 generics_alias = "Generic Attributes"
-enumerations_table = "v_enumeration_value"
-codelists_table = "v_codelist_value"
 
+# This can be deleted?
+#features_tables = [
+#    "bridge",
+#    "building",
+#    "cityobject",
+#    "city_furniture",
+#    "land_use"
+#    "solitary_vegetat_object",
+#    "tin_relief",
+#    "tunnel",
+#    "waterbody",
+#    ]  #Named after their main corresponding table name from the 3DCityDB.
+# What about land cover?
+     
+# This can be deleted?
+#feature_types = [
+#    "Bridge",
+#    "Building",
+#    "CityFurniture",
+#    "CityObject",  # What is this? CityObjectGroup?
+#    "Generics"
+#    "LandUse",
+#    "Relief",
+#    "Transportation",
+#    "Tunnel",
+#    "Vegetation",
+#    "Waterbody",
+#    ]
 
-features_tables = [
-    "cityobject",
-    "building",
-    "tin_relief",
-    "tunnel",
-    "bridge",
-    "waterbody",
-    "solitary_vegetat_object",
-    "city_furniture",
-    "land_use"
-    ]  #Named after their main corresponding table name from the 3DCityDB.
-
-feature_types = [
-    "CityObject",
-    "Building",
-    "Relief",
-    "Tunnel",
-    "Bridge",
-    "Waterbody",
-    "Vegetation",
-    "CityFurniture",
-    "LandUse",
-    "Transportation",
-    "Generics"
-    ]
-
-lods = [
-    "LoD0",
-    "LoD1",
-    "LoD2",
-    "LoD3",
-    "LoD4"
-    ]
+# This can be deleted?
+#lods = [
+#    "LoD0",
+#    "LoD1",
+#    "LoD2",
+#    "LoD3",
+#    "LoD4"
+#    ]
 
 create_layers_funcs = [
     "create_layers_building",
@@ -166,7 +168,9 @@ LAYER_DR_ERROR_MSG = "Error while removing layers from schema '{sch}'"
 # Connection status messages
 CONN_FAIL_MSG = "Connection failed"
 PG_SERVER_FAIL_MSG = "PostgreSQL server is not responding"
-CDB_FAIL_MSG = "3DCityDB is not installed"
+PG_VERSION_UNSUPPORTED_MSG = "Unsupported PostgreSQL version"
+
+CDB_FAIL_MSG = "3DCityDB is not installed or user with unsufficient privileges"
 INST_MSG = "{pkg} is already installed"
 INST_FAIL_MSG = "{pkg} is not installed"
 
@@ -182,13 +186,13 @@ UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
 REFRESH_QUERY = "Refreshing layers can take long time.\nDo you want to proceed?"
 
 # default "qgis_pkg" users
-def_users = [
-    "qgis_user_ro",
-    "qgis_user_rw", 
-    ]
+#def_users = [
+#    "qgis_user_ro",
+#    "qgis_user_rw", 
+#    ]
 
 # default user group name
-def_usr_group = "qgis_pkg_usrgroup"
+#def_usr_group = "qgis_pkg_usrgroup"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDb  = "Connect to database '{db}'"
@@ -257,10 +261,6 @@ class FeatureType():
     def __init__(self, alias: str):
         self.alias = alias
         self.views = []
-
-
-
-
 
 # Functions
 
