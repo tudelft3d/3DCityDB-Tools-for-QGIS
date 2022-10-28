@@ -171,16 +171,30 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.gbxConnStatus.setDisabled(False)
         dlg.btnCloseConn.setDisabled(False)
 
-        # Attempt to connect to the database
+        # Attempt to connect to the database, return a boolean value
         successful_connection = conn_f.open_connection(cdbLoader, main_c.PLUGIN_NAME_ADMIN)
 
-        if successful_connection and cdbLoader.DB.pg_server_version:
+        if successful_connection:
             # Show database name
-            dlg.lblConnToDb_out.setText(c.success_html.format(
-                text=cdbLoader.DB.database_name))
-            # Show server version
-            dlg.lblPostInst_out.setText(c.success_html.format(
-                text=cdbLoader.DB.pg_server_version))
+            dlg.lblConnToDb_out.setText(c.success_html.format(text=cdbLoader.DB.database_name))
+            
+            # Check that the PosgreSQL version is supported (i.e. >= v. 10.0)
+            postgres_major_version = int(cdbLoader.DB.pg_server_version.split(".")[0])
+            if postgres_major_version >= c.PG_MIN_VERSION:
+                # Show PostgreSQL version in green and continue (all fine)
+                dlg.lblPostInst_out.setText(c.success_html.format(text=cdbLoader.DB.pg_server_version))
+            else:
+                # Unsupported/outdated version of PostgreSQL
+                QgsMessageLog.logMessage(f"You are connecting to PostgreSQL version {cdbLoader.DB.pg_server_version}. \
+                                        This version is not supported, you need v.{c.PG_MIN_VERSION} (or higher)",
+                                        "3DCityDB-Loader", level=Qgis.Critical)
+                dlg.lblPostInst_out.setText(c.failure_html.format(text=c.PG_VERSION_UNSUPPORTED_MSG))
+                QMessageBox.critical(
+                        cdbLoader.admin_dlg,
+                        "Unsupported database version",
+                        f"PostgreSQL v.{cdbLoader.DB.pg_server_version} is not supported by this plugin. You need v.{c.PG_MIN_VERSION} (or higher)")
+                wf.tabDbAdmin_reset(cdbLoader)
+                return None
 
             # Check that user is an admin.
             if not sql.is_superuser(cdbLoader):
