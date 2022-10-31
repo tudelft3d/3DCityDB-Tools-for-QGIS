@@ -1165,7 +1165,8 @@ RETURNS text
 AS $$
 DECLARE
 feature_type			CONSTANT varchar := 'Relief';
-regexp_string			CONSTANT varchar := '^(relief_feat|tin_relief|masspnt_relief|rast_relief|brkln_relief).*';
+regexp_string			CONSTANT varchar := '^(rel).*';
+--regexp_string			CONSTANT varchar := '^(relief_feat|tin_relief|masspnt_relief|rast_relief|brkln_relief).*';
 mv_prefix				CONSTANT varchar := '_g_';
 mv_cdb_schema_pos		CONSTANT integer := length(mv_prefix) + 1;
 mv_feat_type_pos		CONSTANT integer := mv_cdb_schema_pos + length(cdb_schema) + 1;
@@ -1260,7 +1261,7 @@ cdb_schema	varchar
 )
 RETURNS void AS $$
 DECLARE
-regexp_string			CONSTANT varchar := '^(relief_feat|tin_relief|masspnt_relief|rast_relief|brkln_relief).*';
+regexp_string			CONSTANT varchar := '^(rel).*';
 mv_prefix				CONSTANT varchar := '_g_';
 mv_cdb_schema_pos		CONSTANT integer := length(mv_prefix) + 1;
 mv_feat_type_pos		CONSTANT integer := mv_cdb_schema_pos + length(cdb_schema) + 1;
@@ -1378,7 +1379,8 @@ RETURNS text
 AS $$
 DECLARE
 feature_type			CONSTANT varchar := 'Transportation';
-regexp_string			CONSTANT varchar := '^(railway|road|square|track|tran_complex).*';
+regexp_string			CONSTANT varchar := '^(trn).*';
+--regexp_string			CONSTANT varchar := '^(railway|road|square|track|tran_complex).*';
 mv_prefix				CONSTANT varchar := '_g_';
 mv_cdb_schema_pos		CONSTANT integer := length(mv_prefix) + 1;
 mv_feat_type_pos		CONSTANT integer := mv_cdb_schema_pos + length(cdb_schema) + 1;
@@ -1473,7 +1475,7 @@ cdb_schema	varchar
 )
 RETURNS void AS $$
 DECLARE
-regexp_string			CONSTANT varchar := '^(railway|road|square|track|tran_complex).*';
+regexp_string			CONSTANT varchar := '^(trn).*';
 mv_prefix				CONSTANT varchar := '_g_';
 mv_cdb_schema_pos		CONSTANT integer := length(mv_prefix) + 1;
 mv_feat_type_pos		CONSTANT integer := mv_cdb_schema_pos + length(cdb_schema) + 1;

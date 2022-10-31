@@ -50,22 +50,45 @@ cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
+  srid integer;
   updated_id bigint;
 BEGIN
 -- checks
+IF obj.gmlid IS NULL THEN
+	obj.gmlid := concat('Address_UUID_', uuid_generate_v4());
+END IF;
+IF obj.multi_point IS NOT NULL THEN
+	EXECUTE format('SELECT t.srid FROM %I.database_srs AS t LIMIT 1', cdb_schema) INTO srid;
+	IF (ST_SRID(obj.multi_point) IS NULL) OR (ST_SRID(obj.multi_point) <> srid) THEN
+		RAISE EXCEPTION 'srid of (multi)point geometry % is not defined or wrong)', ST_AsEWKT(obj.multi_point);
+	END IF;
+	-- Ensure that geometry is cast in any case to a multi geometry. If it is already, nothing happens.
+	obj.multi_point := ST_Multi(obj.multi_point);
+	-- Check that it is indeed a point geometry
+	IF ST_GeometryType(obj.multi_point) <> 'ST_MultiPoint' THEN
+		RAISE EXCEPTION 'geometry type must be "ST_Multipoint", but is "%"', ST_GeometryType(obj.multi_point);
+	END IF;
+	-- Enforce 3D
+	obj.multi_point := ST_Force3D(obj.multi_point);
+END IF;
 
 EXECUTE format('
 UPDATE %I.address AS t SET
-  gmlid           := $1.gmlid,
-  gmlid_codespace := $1.gmlid_codespace,
-  street          := $1.street,
-  house_number    := $1.house_number,
-  po_box          := $1.po_box,
-  zip_code        := $1.zip_code,
-  city            := $1.city,
-  state           := $1.state,
-  country         := $1.country
+  gmlid           = $1.gmlid,
+  gmlid_codespace = $1.gmlid_codespace,
+  street          = $1.street,
+  house_number    = $1.house_number,
+  po_box          = $1.po_box,
+  zip_code        = $1.zip_code,
+  city            = $1.city,
+  state           = $1.state,
+  country         = $1.country,
+  multi_point     = $1.multi_point,
+  xal_source      = $1.xal_source, 
 WHERE t.id = $1.id RETURNING id', cdb_schema) INTO updated_id USING obj;
+
+-- Take care of the xal_source??
+
 
 RETURN updated_id;
 EXCEPTION
@@ -126,6 +149,9 @@ DECLARE
   updated_id bigint;
 BEGIN
 -- checks
+IF (obj.is_movable IS NOT NULL) AND (obj.is_movable NOT IN (0,1)) THEN
+   RAISE EXCEPTION 'is_movable value "%" must be either NULL, 0, or 1', obj.is_movable; 
+END IF; 
 
 EXECUTE format('
 UPDATE %I.bridge AS t SET
@@ -302,6 +328,18 @@ BEGIN
 IF (obj.storeys_above_ground < 0) OR (obj.storeys_below_ground < 0) THEN
   RAISE EXCEPTION 'Number of storeys above (or below) ground must be an integer value >= 0';	
 END IF;
+IF ((obj.measured_height IS NOT NULL) AND (obj.measured_height_unit IS NULL)) OR
+   ((obj.measured_height IS NULL) AND (obj.measured_height_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (measured_height) must contain both number AND unit of measure';  
+END IF;
+IF ((obj.storey_heights_above_ground IS NOT NULL) AND (obj.storey_heights_ag_unit IS NULL)) OR
+   ((obj.storey_heights_above_ground IS NULL) AND (obj.storey_heights_ag_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (storey_heights_above_ground) must contain both number AND unit of measure';  
+END IF;
+IF ((obj.storey_heights_below_ground IS NOT NULL) AND (obj.storey_heights_bg_unit IS NULL)) OR
+   ((obj.storey_heights_below_ground IS NULL) AND (obj.storey_heights_bg_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (storey_heights_below_ground) must contain both number AND unit of measure';  
+END IF;
 
 EXECUTE format('
 UPDATE %I.building AS t SET
@@ -429,14 +467,13 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_t_city_furniture(qgis_pkg.obj_city_furniture, varchar) IS 'Update attributes of table CITY_FURNITURE';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_t_city_furniture(qgis_pkg.obj_city_furniture, varchar) FROM public;
 
-/*
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG_DEV.UPD_T_CITYMODEL
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_citymodel(qgis_pkg.obj_citymodel, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_citymodel(
 obj         qgis_pkg.obj_citymodel,
-cdb_schema varchar
+cdb_schema  varchar
 )
 RETURNS bigint AS $$
 DECLARE
@@ -472,7 +509,6 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upd_t_citymodel(qgis_pkg.obj_citymodel, varchar) IS 'Update attributes of table CITYMODEL';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_t_citymodel(qgis_pkg.obj_citymodel, varchar) FROM public;
-*/
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG_DEV.UPD_T_CITYOBJECT
@@ -537,23 +573,30 @@ cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
--- enumerations
+  datatype_enum integer[] := ARRAY[1,2,3,4,5,6,7,8,9,10]::integer;
   updated_id bigint;
 BEGIN
 -- checks
+IF obj.attrname IS NULL THEN
+  RAISE EXCEPTION 'attrname value must be NOT NULL';
+END IF;
+IF (obj.datatype IS NULL) OR NOT(obj.datatype = ANY(datatype_enum)) THEN
+  RAISE EXCEPTION 'datatype value must be NOT NULL or one of %', datatype_enum;
+END IF;
 
 -- update query omitting all PK, FK and geometry columns)
 EXECUTE format('
 UPDATE %I.cityobject_genericattrib AS t SET
-  attrname               := $1.attrname,
-  strval                 := $1.strval,
-  intval                 := $1.intval,
-  realval                := $1.realval,
-  urival                 := $1.urival,
-  dateval                := $1.dateval,
-  unit                   := $1.unit,
-  genattribset_codespace := $1.genattribset_codespace,
-  blobval                := $1.blobval
+  attrname               = $1.attrname,
+  datatype               = $1.datatype,
+  strval                 = $1.strval,
+  intval                 = $1.intval,
+  realval                = $1.realval,
+  urival                 = $1.urival,
+  dateval                = $1.dateval,
+  unit                   = $1.unit,
+  genattribset_codespace = $1.genattribset_codespace,
+  blobval                = $1.blobval
 WHERE t.id = $1.id RETURNING id', cdb_schema) INTO updated_id USING obj;
 
 RETURN updated_id;
@@ -609,12 +652,18 @@ DECLARE
   updated_id bigint;
 BEGIN
 -- checks
+IF ((obj.name IS NOT NULL) AND (obj.uri IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Either value of name "%" or uri "%" are allowed at the same time', obj.name, obj.uri;
+END IF;
+IF ((obj.name IS NULL) AND (obj.uri IS NULL)) THEN
+   RAISE EXCEPTION 'At least one of name or uri values must be provided';
+END IF;
 
 EXECUTE format('
 UPDATE %I.external_reference AS t SET
-  infosys       := $1.infosys,
-  name          := $1.name,
-  uri           := $1.uri
+  infosys       = $1.infosys,
+  name          = $1.name,
+  uri           = $1.uri
 WHERE t.id = $1.id RETURNING id', cdb_schema) INTO updated_id USING obj;
 
 RETURN updated_id;
@@ -750,6 +799,11 @@ DECLARE
   updated_id bigint;
 BEGIN
 -- checks
+IF ((obj.average_height IS NOT NULL) AND (obj.average_height_unit IS NULL)) OR
+   ((obj.average_height IS NULL) AND (obj.average_height_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (average_height) must contain both number AND unit of measure';  
+END IF;
+
 
 EXECUTE format('
 UPDATE %I.plant_cover AS t SET
@@ -905,6 +959,18 @@ DECLARE
   updated_id bigint;
 BEGIN
 -- checks
+IF ((obj.height IS NOT NULL) AND (obj.height_unit IS NULL)) OR
+   ((obj.height IS NULL) AND (obj.height_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (height) must contain both number AND unit of measure';  
+END IF;
+IF ((obj.trunk_diameter IS NOT NULL) AND (obj.trunk_diameter_unit IS NULL)) OR
+   ((obj.trunk_diameter IS NULL) AND (obj.trunk_diameter_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (trunk_diameter) must contain both number AND unit of measure';  
+END IF;
+IF ((obj.crown_diameter IS NOT NULL) AND (obj.crown_diameter_unit IS NULL)) OR
+   ((obj.crown_diameter IS NULL) AND (obj.crown_diameter_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (crown_diameter) must contain both number AND unit of measure';  
+END IF;
 
 EXECUTE format('
 UPDATE %I.solitary_vegetat_object AS t SET
@@ -983,10 +1049,38 @@ REVOKE EXECUTE ON FUNCTION  qgis_pkg.upd_t_surface_data(qgis_pkg.obj_surface_dat
 ----------------------------------------------------------------
 -- left out, to be added if needed
 
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG_DEV.UPD_T_TEXTUREPARAM
-----------------------------------------------------------------
--- left out, to be added if needed
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_t_textureparam(qgis_pkg.obj_textureparam, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_t_textureparam(
+obj         qgis_pkg.obj_textureparam,
+cdb_schema varchar
+)
+RETURNS bigint[] AS $$
+DECLARE
+  updated_id bigint[];
+BEGIN
+-- checks
+IF ((obj.surface_geometry_id IS NULL) OR (obj.surface_data_id IS NULL)) THEN
+   RAISE EXCEPTION 'Foreign keys (surface_geometry_id, surface_data_id) must be NOT NULL';  
+END IF;
+
+EXECUTE format('
+UPDATE %I.textureparam AS t SET
+  is_texture_parametrization = $1.is_texture_parametrization,
+  world_to_texure            = $1.world_to_texure,
+  texture_coordinates        = $1.texture_coordinates
+WHERE 
+	t.surface_geometry_id = $1.surface_geometry_id 
+	AND t.surface_data_id = $1.surface_data_id
+RETURNING ARRAY[surface_geometry_id, surface_data_id]', cdb_schema) 
+INTO updated_id USING obj;
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_t_textureparam(surface_geometry_id: %, surface_data_id: %): %', obj.surface_geometry_id, obj.surface_data_id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_t_textureparam(qgis_pkg.obj_textureparam, varchar) IS 'Update attributes of table TEXTUREPARAM';
+REVOKE EXECUTE ON FUNCTION  qgis_pkg.upd_t_textureparam(qgis_pkg.obj_textureparam, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG_DEV.UPD_T_THEMATIC_SURFACE
@@ -1006,7 +1100,11 @@ DECLARE
   updated_id bigint;
 BEGIN
 -- checks
- 
+IF ((obj.length IS NOT NULL) AND (obj.length_unit IS NULL)) OR
+   ((obj.length IS NULL) AND (obj.length_unit IS NOT NULL)) THEN
+   RAISE EXCEPTION 'Measure values (length) must contain both number AND unit of measure';  
+END IF;
+
 EXECUTE format('
 UPDATE %I.tin_relief AS t SET
   max_length      = $1.max_length,

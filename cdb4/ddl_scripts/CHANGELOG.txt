@@ -3,6 +3,18 @@
 TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 
+2022-10-31
+----------
+Version 0.8.0
+Added (for testing) new version of function [qgis_pkg.list_cdb_schemas_new(...)]
+Fixed bug in trigger functions to extract the name of the cdb_schema
+Slightly renamed attribute forms and added news for new features
+Added layer support for
+	- terrain intersection curve (bridge, building, tunnel, generics, city_furniture)
+	- multi_curve (bridge, building, tunnel)
+	- MasspointRelief, BreaklinesRelief
+Minor code clean-up and minor bug fixes
+
 2022-06-02
 ----------
 Version 0.7.0

@@ -148,11 +148,11 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('TransportationComplex'::varchar,	42::integer, 	'tran_complex'::varchar),
-	('Track',							43,				'track'),
-	('Railway',							44,				'railway'),
-	('Road',							45,				'road'),
-	('Square',							46,				'square')	
+	('TransportationComplex'::varchar,	42::integer, 	'trn_complex'::varchar),
+	('Track',							43,				'trn_track'),
+	('Railway',							44,				'trn_railway'),
+	('Road',							45,				'trn_road'),
+	('Square',							46,				'trn_square')	
 	) AS t(class_name, class_id, class_label)
 LOOP
 	FOR t IN 
@@ -179,8 +179,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('tran_complex_form.qml');
 --qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := 'trn_complex_form.qml';
 trig_f_suffix := 'transportation_complex';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -270,8 +270,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('tran_complex_form.qml');
 --qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := 'trn_complex_form.qml';
 trig_f_suffix := 'transportation_complex';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -347,7 +347,7 @@ END IF;
 		FOR u IN 
 			SELECT * FROM (VALUES
 			('TrafficArea'::varchar,	47::integer, 	'traffic_area'::varchar),
-			('AuxiliaryTrafficArea',	48,				'aux_traffic_area')
+			('AuxiliaryTrafficArea',	48,				'traffic_area_aux')
 			) AS t(class_name, class_id, class_label)
 		LOOP
 
@@ -370,8 +370,8 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('tran_',u.class_label,'_form.qml');
 --qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('trn_',u.class_label,'_form.qml');
 trig_f_suffix := 'traffic_area';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN

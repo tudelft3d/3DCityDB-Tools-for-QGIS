@@ -75,10 +75,10 @@ DECLARE
 
 BEGIN
 major_version  := 0;
-minor_version  := 7;
+minor_version  := 8;
 minor_revision := 0;
-code_name      := 'Digital astronomical Twins';
-release_date   := '2022-06-02'::date;
+code_name      := 'Hunt for Red October';
+release_date   := '2022-10-31'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -175,6 +175,76 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_qgis_pkg_usrgroup_members() FROM public
 -- SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s;
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS_new
+----------------------------------------------------------------
+-- List all schemas containing citydb tables in the current database and (optionally) picks only the non-empty ones
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_new(boolean) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_new(
+only_non_empty	boolean DEFAULT FALSE)
+RETURNS TABLE (
+cdb_schema 		varchar,
+co_number		bigint
+)
+AS $$
+DECLARE
+cdb_name CONSTANT varchar := current_database()::varchar;
+r RECORD;
+
+BEGIN
+
+FOR r IN 
+	SELECT i.schema_name 
+	FROM information_schema.schemata AS i
+	WHERE 
+		i.catalog_name::varchar = cdb_name
+		AND i.schema_name::varchar NOT LIKE 'pg_%'
+		AND i.schema_name::varchar NOT IN ('information_schema', 'public', 'citydb_pkg')
+		AND i.schema_name::varchar NOT LIKE 'qgis_%'
+	ORDER BY i.schema_name ASC
+LOOP
+	IF -- check that it is indeed a citydb schema
+		EXISTS(SELECT version FROM citydb_pkg.citydb_version())
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'cityobject')
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'objectclass')		
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'surface_geometry')	
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'appearance')
+	THEN 
+		cdb_schema := r.schema_name::varchar;
+		co_number := NULL;
+		EXECUTE format('SELECT count(id) FROM %I.cityobject', r.schema_name) INTO co_number;
+
+		IF only_non_empty IS NULL OR only_non_empty IS FALSE THEN
+			RETURN NEXT;
+		ELSE		
+			IF co_number > 0 THEN
+				RETURN NEXT;
+			ELSE
+				-- do not return it, it's empty
+			END IF;
+		END IF;
+	END IF;
+END LOOP;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.list_cdb_schemas(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_new(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_new(boolean) FROM public;
+
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas_new(only_non_empty:=FALSE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas_new(only_non_empty:=TRUE) AS a;
+
+
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS
 ----------------------------------------------------------------
 -- List all schemas containing citydb tables in the current database and picks only the non-empty ones
@@ -243,6 +313,10 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 --SELECT cdb_schema FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas(TRUE);
+
+
+
+
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_USR_SCHEMAS
@@ -336,7 +410,7 @@ IF cdb_schema IS NULL THEN
 	EXECUTE format('GRANT CONNECT, TEMP ON DATABASE %I TO %I;', cdb_name, usr_name);
 	RAISE NOTICE 'Granted access to database "%" to user "%"', cdb_name, usr_name;
 	
-	-- Recurvively iterate for each cdb_schema in database
+	-- Recursively iterate for each cdb_schema in database
 	FOREACH sch_name IN ARRAY cdb_schemas_array LOOP
 		EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I;', sch_name, usr_name);
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA %I TO %I;', sql_priv_type, sch_name, usr_name);
