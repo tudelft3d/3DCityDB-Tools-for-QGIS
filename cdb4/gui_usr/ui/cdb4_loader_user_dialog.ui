@@ -349,7 +349,7 @@
           </size>
          </property>
          <property name="title">
-          <string>Basemap (OSM)</string>
+          <string>Basemap (OpenStreetMap)</string>
          </property>
          <property name="flat">
           <bool>false</bool>
@@ -918,7 +918,7 @@ Current citydb schema: {sch}</string>
           </size>
          </property>
          <property name="title">
-          <string>Basemap (OSM)</string>
+          <string>Basemap (OpenStreetMap)</string>
          </property>
          <layout class="QVBoxLayout" name="vLayoutBasemap">
           <property name="sizeConstraint">
