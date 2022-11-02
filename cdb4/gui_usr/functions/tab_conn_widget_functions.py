@@ -144,7 +144,7 @@ def gbxConnStatus_reset(cdbLoader: CDBLoader) -> None:
     cdbLoader.usr_dlg.lbl3DCityDBInstC_out.clear()
     cdbLoader.usr_dlg.lblMainInstC_out.clear()
     cdbLoader.usr_dlg.lblUserInstC_out.clear()
-    cdbLoader.usr_dlg.lblSupport_out.clear()
+    cdbLoader.usr_dlg.lblLayerExist_out.clear()
     cdbLoader.usr_dlg.lblLayerRefr_out.clear()
 
 
