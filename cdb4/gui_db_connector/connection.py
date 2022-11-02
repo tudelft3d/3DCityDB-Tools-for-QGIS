@@ -16,7 +16,7 @@ class Connection:
         self.hex_location = hex(self.id)
 
         self.green_db_conn: bool  = False
-        self.green_post_inst: bool = False
+        self.green_postgis_inst: bool = False
         self.green_citydb_inst: bool = False
         self.green_main_inst: bool = False
         self.green_user_inst: bool = False
@@ -37,7 +37,7 @@ class Connection:
         print(f"to store:{self.store_creds}")
         print('\n')
 
-    def meets_requirements(self) -> bool:
+    def user_meets_requirements(self) -> bool:
         """Method that can be used to check if the connection
         is ready for plugin use.
 
@@ -47,7 +47,7 @@ class Connection:
             :rtype: bool
         """
         if all((self.green_db_conn,
-                self.green_post_inst,
+                self.green_postgis_inst,
                 self.green_citydb_inst,
                 self.green_main_inst,
                 self.green_user_inst,
