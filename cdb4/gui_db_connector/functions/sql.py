@@ -4,6 +4,9 @@ operations.
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
+###### For development only
+#from qgis.core import QgsMessageLog, Qgis
+######
 
 import psycopg2
 from ... import cdb4_constants as c
@@ -12,7 +15,7 @@ FILE_LOCATION = c.get_file_relative_path(__file__)
 
 def fetch_server_version(cdbLoader) -> str:
     """SQL query that reads and retrieves the server version.
-    *   :returns: Server version.
+    *   :returns: PostgreSQL server version as string (e.g. 10.6)
 
         :rtype: str
     """
