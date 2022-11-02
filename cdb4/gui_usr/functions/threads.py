@@ -453,13 +453,13 @@ def ev_layers_success(cdbLoader: CDBLoader) -> None:
     # Remove progress bar
     cdbLoader.usr_dlg.msg_bar.clearWidgets()
 
-    if sql.exec_support_for_schema(cdbLoader):
+    if sql.exec_has_layers_for_cdbschema(cdbLoader):
         # Replace with Success msg.
         msg = cdbLoader.usr_dlg.msg_bar.createMessage(c.LAYER_CR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA))
         cdbLoader.usr_dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
         # Inform user
-        cdbLoader.usr_dlg.lblSupport_out.setText(c.success_html.format(text=c.SCHEMA_SUPP_MSG.format(sch=cdbLoader.USR_SCHEMA)))
+        cdbLoader.usr_dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=cdbLoader.USR_SCHEMA)))
         QgsMessageLog.logMessage(
                 message=c.LAYER_CR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA),
                 tag=main_c.PLUGIN_NAME,
@@ -492,7 +492,7 @@ def ev_layers_fail(cdbLoader: CDBLoader) -> None:
     cdbLoader.usr_dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
     # Inform user
-    cdbLoader.usr_dlg.lblSupport_out.setText(c.failure_html.format(text=c.SCHEMA_SUPP_FAIL_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
+    cdbLoader.usr_dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
     QgsMessageLog.logMessage(
             message=c.LAYER_CR_ERROR_MSG.format(sch=cdbLoader.USR_SCHEMA),
             tag=main_c.PLUGIN_NAME,
@@ -512,13 +512,13 @@ def ev_drop_layers_success(cdbLoader: CDBLoader) -> None:
     # Remove progress bar
     cdbLoader.usr_dlg.msg_bar.clearWidgets()
 
-    if not sql.exec_support_for_schema(cdbLoader):
+    if not sql.exec_has_layers_for_cdbschema(cdbLoader):
         # Replace with Success msg.
         msg = cdbLoader.usr_dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA))
         cdbLoader.usr_dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
         # Inform user that now there aren't any layers in its schema
-        cdbLoader.usr_dlg.lblSupport_out.setText(c.failure_html.format(text=c.SCHEMA_SUPP_FAIL_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
+        cdbLoader.usr_dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
         cdbLoader.usr_dlg.lblLayerRefr_out
         QgsMessageLog.logMessage(
                 message=c.LAYER_DR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA),
@@ -553,7 +553,7 @@ def ev_drop_layers_fail(cdbLoader: CDBLoader) -> None:
     cdbLoader.usr_dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
     # Inform user that the layers are now corrupted.
-    cdbLoader.usr_dlg.lblSupport_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=cdbLoader.USR_SCHEMA)))
+    cdbLoader.usr_dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=cdbLoader.USR_SCHEMA)))
     QgsMessageLog.logMessage(
             message=c.LAYER_DR_ERROR_MSG.format(sch=cdbLoader.USR_SCHEMA),
             tag=main_c.PLUGIN_NAME,
