@@ -1,3 +1,8 @@
+
+###
+#from qgis.core import QgsMessageLog, Qgis
+###
+
 from qgis.core import QgsSettings
 
 import psycopg2
@@ -94,6 +99,7 @@ def open_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) ->
 
         :rtype: bool
     """
+    version = None
 
     try:
         # Open the connection.
@@ -102,7 +108,7 @@ def open_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) ->
 
         # Get server version.
         version = sql.fetch_server_version(cdbLoader)
-        
+
         # Store version into the connection object.
         cdbLoader.DB.pg_server_version = version
 
