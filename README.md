@@ -12,6 +12,7 @@ The plugin consists of a server-side part (written in PL/pgSQL) and a client-sid
 These are the main features currently available in the plugin:
 - All CityGML modules are supported (Building, Bridge, Tunnel, etc.)
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
+- Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Instersection Curves)
 - Multiple citydb schemas in the same 3D City Database instance
 - Multiple user support, with different privileges (i.e. read-only, read-write)
 - User-friendly form-based editing of feature attributes; changes are stored directly into the database
@@ -29,13 +30,15 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.20. Please note that support und further development will focus only on LTR versions, e.g. the next one will be QGIS 3.28 LTR expected in autumn 2022.
 
-Other than QGIS, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily reccommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
+The server-side part of the plugin requires PostgreSQL version >= 10.
+
+Otherwise, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily reccommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
 
 # Developers
 
 The plugin has been developed by:
 - [Kostantinos Pantelios](konstantinospantelios@yahoo.com) (mainly client-side)
-- [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl) (mainly server-side, code refactoring)
+- [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl)
 
 With additional kind suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
