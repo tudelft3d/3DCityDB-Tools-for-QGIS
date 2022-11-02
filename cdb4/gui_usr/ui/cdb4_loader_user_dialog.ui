@@ -689,7 +689,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Schema support:</string>
+             <string>Layers status:</string>
             </property>
            </widget>
           </item>
@@ -730,7 +730,7 @@
            </widget>
           </item>
           <item row="7" column="1">
-           <widget class="QLabel" name="lblSupport_out">
+           <widget class="QLabel" name="lblLayerExist_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
