@@ -238,13 +238,11 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
                         dlg.btnMainUninst.setDisabled(True)
                         dlg.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=cdbLoader.QGIS_PKG_SCHEMA)))
                 else:
-                    dlg.lbl3DCityDBInst_out.setText(c.crit_warning_html.format(
-                        text=f"{cdbLoader.DB.citydb_version} (minimum major version: {c.CDB_MIN_VERSION})"))
+                    dlg.lbl3DCityDBInst_out.setText(c.crit_warning_html.format(text=f"{cdbLoader.DB.citydb_version} (minimum major version: {c.CDB_MIN_VERSION})"))
                     cdbLoader.DB.green_citydb_inst = False
                     return None
             else:
-                dlg.lbl3DCityDBInst_out.setText(c.failure_html.format(
-                    text=c.CDB_FAIL_MSG))
+                dlg.lbl3DCityDBInst_out.setText(c.failure_html.format(text=c.CDB_FAIL_MSG))
 
         else: # Connection failed!
             wf.gbxConnStatus_reset(cdbLoader)
