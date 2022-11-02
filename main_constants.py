@@ -16,4 +16,4 @@ PLUGIN_ROOT_PATH = os.path.split(os.path.dirname(__file__))[0]
 PLUGIN_ROOT_DIR = os.path.split(os.path.dirname(__file__))[1]
 
 CDB4_PLUGIN_DIR = "cdb4"
-CDB5_PLUGIN_DIR = "cdb5"
+#CDB5_PLUGIN_DIR = "cdb5"
