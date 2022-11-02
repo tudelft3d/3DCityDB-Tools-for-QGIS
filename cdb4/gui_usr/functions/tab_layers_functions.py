@@ -40,7 +40,6 @@ def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     class: FeatureType and
     class: View
     """
-
     # Create 'Feature Type' and 'View' objects
     instantiate_objects(cdbLoader)
 
@@ -68,21 +67,20 @@ def instantiate_objects(cdbLoader: CDBLoader) -> None:
     # Instantiate 'FeatureType' objects for each CityGML module
     # into a plugin variable (dict).
     cdbLoader.FeatureType_container = {
-        "Building": c.FeatureType(alias='Building'),
-        "Bridge": c.FeatureType(alias='Bridge'),
-        "Transportation": c.FeatureType(alias='Transportation'),
-        "Tunnel": c.FeatureType(alias='Tunnel'),
-        "Relief": c.FeatureType(alias="Relief"),
+        "Bridge": c.FeatureType(alias="Bridge"),
+        "Building": c.FeatureType(alias="Building"),
         "CityFurniture": c.FeatureType(alias="CityFurniture"),
+        "Generics": c.FeatureType(alias="Generics"),
         "LandUse": c.FeatureType(alias="LandUse"),
-        "WaterBody": c.FeatureType(alias="WaterBody"),
-        "Vegetation": c.FeatureType(alias='Vegetation'),
-        "Generics": c.FeatureType(alias='Generics')
+        "Relief": c.FeatureType(alias="Relief"),
+        "Transportation": c.FeatureType(alias="Transportation"),
+        "Tunnel": c.FeatureType(alias="Tunnel"),
+        "Vegetation": c.FeatureType(alias="Vegetation"),
+        "WaterBody": c.FeatureType(alias="WaterBody")
         }
 
     for metadata_dict in metadata_dict_list:
-        #keys:  id,cdb_schema,feature_type,lod,root_class,layer_name,n_features,
-        #       mv_name, v_name,qml_file,creation_data,refresh_date
+        #keys:  id,cdb_schema,feature_type,lod,root_class,layer_name,n_features,mv_name, v_name,qml_file,creation_data,refresh_date
         if metadata_dict["n_features"]==0:
             continue
         if metadata_dict["refresh_date"] is None:
@@ -99,7 +97,6 @@ def instantiate_objects(cdbLoader: CDBLoader) -> None:
 
         # Count the number of features that the view has in the current extents.
         sql.exec_view_counter(cdbLoader, view) # Stores number in view.n_selected.
-        # NOTE: Takes some time to do this for every view.
 
 def fill_lod_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Geometry Level' combo box (LoD)."""
@@ -198,7 +195,7 @@ def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -
     return None
 
 
-def create_lookup_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
+def create_lookup_relations(layer: QgsVectorLayer) -> None:
     """Function that sets-up the ValueRelation widget
     for the look-up tables.
 
@@ -220,24 +217,17 @@ def create_lookup_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None
 
         assertion_msg="ValueRelation Error: layer '{}' doesn\'t exist in project. This layers is also being imported with every layer import (if it doesn\'t already exist)."
 
-        # Isolate the layers' ToC environment to avoid grabbing the first layer 
-        # encountered in the WHOLE ToC.
-        root = QgsProject.instance().layerTreeRoot()
-        db_node = root.findGroup(cdbLoader.DB.database_name)
-        schema_node = db_node.findGroup("@".join([cdbLoader.DB.username,cdbLoader.CDB_SCHEMA]))
-        look_node = schema_node.findGroup("Look-up tables")
-        look_layers = look_node.findLayers()
-        enum_layer_id = [i.layerId() for i in look_layers if c.enumerations_table in i.layerId()][0]
-
         if field_name == 'relative_to_terrain':
-            assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= enum_layer_id, Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
+            target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value') # NOTE: hardcoded view name and values
+            assert target_layer, assertion_msg.format('v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
         elif field_name == 'relative_to_water':
-            assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
-            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= enum_layer_id, Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
+            target_layer = QgsProject.instance().mapLayersByName('v_enumeration_value')
+            assert target_layer, assertion_msg.format('v_enumeration_value')
+            layer.setEditorWidgetSetup(field_idx,value_rel_widget(Layer= target_layer[0].id(), Key= 'value', Value= 'description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
         
 
-def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
+def create_relations(layer: QgsVectorLayer) -> None:
     """Function to set-up the relation for an input layer.
     - A new relation is created that references the generic attributes.
     - Relations are also set for 'Value Relation' widget.
@@ -252,24 +242,19 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
 
     """
 
+    project = QgsProject.instance()
     layer_configuration = layer.editFormConfig()
     layer_root_container = layer_configuration.invisibleRootContainer()
-    
-    # Isolate the layers' ToC environment to avoid grabbing the first layer 
-    # encountered in the WHOLE ToC.
-    root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(cdbLoader.DB.database_name)
-    schema_node = db_node.findGroup("@".join([cdbLoader.DB.username,cdbLoader.CDB_SCHEMA]))
-    generics_node = schema_node.findGroup("Generic Attributes")
-    genericAtt_layer = generics_node.findLayers()[0]
 
-    assert genericAtt_layer, "generic_attributes table doesn\'t exist in project."
+    curr_layer = project.mapLayersByName(layer.name())[0]
+    genericAtt_layer = project.mapLayersByName("cityobject_genericattrib")
+    assert genericAtt_layer, f"Layer: '{'cityobject_genericattrib'}' doesn\'t exist in project. This layers should also being imported with every layer import (if it doesn't already exist). 17-01-2021 It is not imported automatically yet, so DONT DELETE THE LAYER."
 
     # - Generic Attributes relation.
     # Create new relation object (referencing generic attributes)
     rel = QgsRelation()
-    rel.setReferencedLayer(id=layer.id())
-    rel.setReferencingLayer(id=genericAtt_layer.layerId())
+    rel.setReferencedLayer(id=curr_layer.id())
+    rel.setReferencingLayer(id=genericAtt_layer[0].id())
     rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
     rel.generateId()
     rel.setName('re_'+layer.name())
@@ -304,7 +289,7 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
     layer.setEditFormConfig(layer_configuration)
 
     # - Look-up tables relation
-    create_lookup_relations(cdbLoader, layer)
+    create_lookup_relations(layer)
 
 
 def group_has_layer(group: QgsLayerTreeGroup, layer_name: str) -> bool:
@@ -346,21 +331,21 @@ def import_lookups(cdbLoader: CDBLoader) -> None:
 
     for table in lookups:
         # Create ONLY new layers.
-        if not group_has_layer(group=lookups_node, layer_name=f"{cdbLoader.CDB_SCHEMA}_{table}"):
+        if not group_has_layer(group=lookups_node, layer_name=table):
             uri = QgsDataSourceUri()
             uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
             uri.setDataSource(aSchema=cdbLoader.USR_SCHEMA, aTable=table, aGeometryColumn=None, aKeyColumn="id")
-            layer = QgsVectorLayer(uri.uri(False), f"{cdbLoader.CDB_SCHEMA}_{table}", "postgres")
+            layer = QgsVectorLayer(uri.uri(False), f"{table}", "postgres")
             if layer or layer.isValid(): # Success
                 lookups_node.addLayer(layer)
                 QgsProject.instance().addMapLayer(layer, False)
                 QgsMessageLog.logMessage(
-                    message=f"Look-up table import: {cdbLoader.CDB_SCHEMA}_{table}",
+                    message=f"Look-up table import: {table}",
                     tag="3DCityDB-Loader",
                     level=Qgis.Success, notifyUser=True)
             else: # Fail
                 QgsMessageLog.logMessage(
-                    message=f"Look-up table failed to properly load: {cdbLoader.CDB_SCHEMA}_{table}",
+                    message=f"Look-up table failed to properly load: {table}",
                     tag="3DCityDB-Loader",
                     level=Qgis.Critical, notifyUser=True)
 
@@ -382,14 +367,14 @@ def import_generics(cdbLoader: CDBLoader) -> None:
 
 
     # Add it ONLY if it doesn't already exists.
-    if not group_has_layer(generics_node, f"{cdbLoader.CDB_SCHEMA}_{c.generics_table}"):
+    if not group_has_layer(generics_node, c.generics_table):
         uri = QgsDataSourceUri()
         uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
         uri.setDataSource(aSchema=cdb_schema,
             aTable=c.generics_table,
             aGeometryColumn=None,
             aKeyColumn="")
-        layer = QgsVectorLayer(uri.uri(False), f"{cdbLoader.CDB_SCHEMA}_{c.generics_table}", "postgres")
+        layer = QgsVectorLayer(uri.uri(False), c.generics_table, "postgres")
         if layer or layer.isValid(): # Success
             # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
             # WARNING: hardcoded index (15: cityobject_id)
@@ -399,13 +384,13 @@ def import_generics(cdbLoader: CDBLoader) -> None:
             QgsProject.instance().addMapLayer(layer, False)
 
             QgsMessageLog.logMessage(
-                message=f"Layer import: {cdbLoader.CDB_SCHEMA}_{c.generics_table}",
+                message=f"Layer import: {c.generics_table}",
                 tag="3DCityDB-Loader",
                 level=Qgis.Success,
                 notifyUser=True)
         else:
             QgsMessageLog.logMessage(
-                message=f"Layer failed to properly load: {cdbLoader.CDB_SCHEMA}_{c.generics_table}",
+                message=f"Layer failed to properly load: {c.generics_table}",
                 tag="3DCityDB-Loader",
                 level=Qgis.Critical,
                 notifyUser=True)
@@ -654,7 +639,7 @@ def import_layers(cdbLoader: CDBLoader, layers: list) -> bool:
         vlayer.loadNamedStyle(view.qml_path)
 
         # Setup the relation for this layer.
-        create_relations(cdbLoader, layer=vlayer)
+        create_relations(layer=vlayer)
 
         # Deactivate 3D renderer to avoid crashes.
         vlayer.setRenderer3D(None)
