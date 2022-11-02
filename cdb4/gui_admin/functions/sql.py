@@ -4,8 +4,9 @@ operations.
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
-
+###
 #from qgis.core import QgsMessageLog, Qgis
+###
 
 import psycopg2
 
