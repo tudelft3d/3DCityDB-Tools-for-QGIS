@@ -34,9 +34,10 @@ from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes
 from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand
 import psycopg2
 
+from . import main_constants as main_c
 from .resources import qInitResources
 
-from . import main_constants as main_c
+
 from .cdb4.gui_db_connector import connection as dbconn
 
 class CDBLoader:
@@ -53,6 +54,7 @@ class CDBLoader:
         """
         # Variable referencing to the QGIS interface.
         self.iface: QgisInterface = iface
+
         # Initialize Qt resources from file resources.py.
         qInitResources()
 
@@ -64,7 +66,6 @@ class CDBLoader:
         self.PLUGIN_NAME_ADMIN: str = main_c.PLUGIN_NAME_ADMIN
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
         self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
-        #self.CDB5_PLUGIN_DIR: str = main_c.CDB5_PLUGIN_DIR
 
         # Variable to store the selected {usr_schema} name.
         self.USR_SCHEMA: str = main_c.USR_SCHEMA
@@ -271,12 +272,11 @@ class CDBLoader:
 
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        # User plugin
         # The icon path is set from the compiled resources file (in main dir).
         usr_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
         adm_icon_path = ":/plugins/citydb_loader/icons/settings_icon.svg"
 
+        # User plugin
         self.add_action(
             icon_path=usr_icon_path,
             txt=self.tr(self.PLUGIN_NAME),
@@ -290,7 +290,7 @@ class CDBLoader:
             txt=self.tr(self.PLUGIN_NAME_ADMIN),
             callback=self.run_admin,
             parent=self.iface.mainWindow(),
-            add_to_toolbar=False)
+            add_to_toolbar=False) # Default: False (but useful to se it to True in development mode).
 
         # Will be set False in run_user(), run_admin()
         self.first_start_usr = True
@@ -298,13 +298,11 @@ class CDBLoader:
 
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI."""
-
         for action in self.actions:
             self.iface.removeDatabaseToolBarIcon(qAction=action)
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
     
     def run_admin(self) -> None:
-
         from .cdb4.gui_admin.cdb4_loader_admin_dialog import CDB4LoaderAdminDialog # Admin dialog
         from .cdb4.gui_admin.functions import tab_conn_widget_functions as dba_wf
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f
