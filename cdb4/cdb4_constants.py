@@ -24,7 +24,7 @@ PG_SCRIPTS_INST_PATH = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_
 #OR_SCRIPTS_INST_PATH = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.CDB4_PLUGIN_SUBDIR, SQL_SCRIPTS_SUBDIR, OR_SCRIPTS_SUBDIR)
 
 #QgsMessageLog.logMessage(f"************** forms path {PG_SCRIPTS_INST_PATH} ", "3DCityDB-Loader", level=Qgis.Info)
-#QgsMessageLog.logMessage(f"************** SQL scripts path {PG_SCRIPTS_INST_PATH} ", "3DCityDB-Loader", level=Qgis.Info)
+
 
 # Extent type names
 CDB_SCHEMA_EXT_TYPE = "db_schema"
@@ -40,12 +40,11 @@ OSM_INIT_EXTS = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS = QgsCoordinateReferenceSystem("EPSG:3857")
 OSM_NAME = "OSM Basemap"
 
-# Options default Parameters
-# For simplify geometries function
-DEC_PREC = 3
+# Options default parameters to simplify geometries
+DEC_PREC = 3       # decimal positions after the comma to round coordinates
 MIN_AREA = 0.0001  # to be expressed in m2
 
-# Max number of features per layer to be importer
+# Max number of features per layer to be imported
 MAX_FEATURES_PER_LAYER = 30000
 
 # View constants
@@ -56,66 +55,28 @@ id_col = "id" # Primary key column name of db views.
 generics_table = "cityobject_genericattrib"
 generics_alias = "Generic Attributes"
 
-# This can be deleted?
-#features_tables = [
-#    "bridge",
-#    "building",
-#    "cityobject",
-#    "city_furniture",
-#    "land_use"
-#    "solitary_vegetat_object",
-#    "tin_relief",
-#    "tunnel",
-#    "waterbody",
-#    ]  #Named after their main corresponding table name from the 3DCityDB.
-# What about land cover?
-     
-# This can be deleted?
-#feature_types = [
-#    "Bridge",
-#    "Building",
-#    "CityFurniture",
-#    "CityObject",  # What is this? CityObjectGroup?
-#    "Generics"
-#    "LandUse",
-#    "Relief",
-#    "Transportation",
-#    "Tunnel",
-#    "Vegetation",
-#    "Waterbody",
-#    ]
-
-# This can be deleted?
-#lods = [
-#    "LoD0",
-#    "LoD1",
-#    "LoD2",
-#    "LoD3",
-#    "LoD4"
-#    ]
-
 create_layers_funcs = [
-    "create_layers_building",
     "create_layers_bridge",
+    "create_layers_building",
     "create_layers_cityfurniture",
     "create_layers_generics",
-    "create_layers_tunnel",
-    "create_layers_transportation",
     "create_layers_landuse",
     "create_layers_relief",
+    "create_layers_transportation",
+    "create_layers_tunnel",
     "create_layers_vegetation",
     "create_layers_waterbody",
     ]
 
 drop_layers_funcs = [
-    "drop_layers_building",
     "drop_layers_bridge",
+    "drop_layers_building",
     "drop_layers_cityfurniture",
     "drop_layers_generics",
-    "drop_layers_tunnel",
-    "drop_layers_transportation",
     "drop_layers_landuse",
     "drop_layers_relief",
+    "drop_layers_transportation",
+    "drop_layers_tunnel",
     "drop_layers_vegetation",
     "drop_layers_waterbody",
     ]
@@ -170,13 +131,13 @@ CONN_FAIL_MSG = "Connection failed"
 PG_SERVER_FAIL_MSG = "PostgreSQL server is not responding"
 PG_VERSION_UNSUPPORTED_MSG = "Unsupported PostgreSQL version"
 
-CDB_FAIL_MSG = "3DCityDB is not installed or user with unsufficient privileges"
-INST_MSG = "{pkg} is already installed"
-INST_FAIL_MSG = "{pkg} is not installed"
+CDB_FAIL_MSG = "3DCityDB is not installed"
+INST_MSG = "Schema '{pkg}' is already installed"
+INST_FAIL_MSG = "Required schema '{pkg}' is not installed"
 
-SCHEMA_SUPP_MSG = "Layers for schema '{sch}' already exist"
-SCHEMA_SUPP_FAIL_MSG = "Layers need to be created for schema '{sch}'"
-REFR_LAYERS_MSG = "Last refresh: {date}"
+SCHEMA_LAYER_MSG = "Layers for citydb schema '{sch}' already exist"
+SCHEMA_LAYER_FAIL_MSG = "Layers need to be created for citydb schema '{sch}'"
+REFR_LAYERS_MSG = "Latest refresh: {date}"
 REFR_LAYERS_FAIL_MSG = "Layers need to be refreshed"
 
 # Pop-up messages
@@ -184,15 +145,6 @@ INST_QUERY = "Any existing installation of '{pkg}' will be replaced! Do you want
 UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
 
 REFRESH_QUERY = "Refreshing layers can take long time.\nDo you want to proceed?"
-
-# default "qgis_pkg" users
-#def_users = [
-#    "qgis_user_ro",
-#    "qgis_user_rw", 
-#    ]
-
-# default user group name
-#def_usr_group = "qgis_pkg_usrgroup"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDb  = "Connect to database '{db}'"
