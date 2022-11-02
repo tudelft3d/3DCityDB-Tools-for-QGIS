@@ -5,6 +5,9 @@ These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
 
+
+from qgis.core import Qgis,QgsMessageLog
+
 import psycopg2
 
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
@@ -48,8 +51,7 @@ def fetch_3dcitydb_version(cdbLoader: CDBLoader) -> str:
     try:
         with cdbLoader.conn.cursor() as cur:
             cur.execute(query="""
-                                SELECT version
-                                FROM citydb_pkg.citydb_version();
+                                SELECT version FROM citydb_pkg.citydb_version();
                                 """)
             version = cur.fetchone()[0] # Tuple has trailing comma.
         cdbLoader.conn.commit()
@@ -153,10 +155,8 @@ def exec_qgis_pkg_version(cdbLoader: CDBLoader) -> str:
             error=error)
         cdbLoader.conn.rollback()
 
-
-def exec_list_cdb_schemas(cdbLoader: CDBLoader, not_empty=True) -> tuple:
-    """SQL function that reads and retrieves the database
-    cdb_schemas
+def exec_list_cdb_schemas_all(cdbLoader: CDBLoader) -> tuple:
+    """SQL function that reads and retrieves all cdb_schemas, even the empty ones
 
     *   :returns: A list with all cdb_schemas in the database
 
@@ -165,20 +165,20 @@ def exec_list_cdb_schemas(cdbLoader: CDBLoader, not_empty=True) -> tuple:
     try:
         with cdbLoader.conn.cursor() as cur:
             #Get all schemas
-            cur.callproc(f"{main_c.QGIS_PKG_SCHEMA}.list_cdb_schemas", [not_empty])
-            schemas = cur.fetchall()
-        schemas = tuple(zip(*schemas))[0] # trailing comma
+            cur.callproc(f"{main_c.QGIS_PKG_SCHEMA}.list_cdb_schemas_new", [False])
+            result = cur.fetchall()
         cdbLoader.conn.commit()
-        return schemas
+        schema_names = tuple(zip(*result))[0] # trailing comma
+        schema_nums = tuple(zip(*result))[1] # trailing comma        
 
-    except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
-        c.critical_log(
-            func=exec_list_cdb_schemas,
-            location=FILE_LOCATION,
-            header="Retrieving list of available cdb_schemas",
-            error=error)
+    except (Exception, psycopg2.Error):
+        # Send warning to QGIS Message Log panel.
+        QgsMessageLog.logMessage(f"No citydb schemas could be retrieved from the database.","3DCityDB-Loader", level=Qgis.Warning)
         cdbLoader.conn.rollback()
+        schema_names = tuple()
+        schema_nums = tuple()
+
+    return schema_names, schema_nums
 
 
 def exec_list_qgis_pkg_usrgroup_members(cdbLoader: CDBLoader) -> tuple:
@@ -365,7 +365,7 @@ def exec_view_counter(cdbLoader: CDBLoader, view: c.View) -> int:
         cdbLoader.conn.rollback()
 
 
-def exec_support_for_schema(cdbLoader: CDBLoader) -> bool:
+def exec_has_layers_for_cdbschema(cdbLoader: CDBLoader) -> bool:
     """Calls the qgis_pkg function that determines whether the {usr_schema} has views
     regarding the current {cdb_schema}.
     *   :returns: Support status
@@ -383,7 +383,7 @@ def exec_support_for_schema(cdbLoader: CDBLoader) -> bool:
     except (Exception, psycopg2.Error) as error:
         # Send error to QGIS Message Log panel.
         c.critical_log(
-            func=exec_support_for_schema,
+            func=exec_has_layers_for_cdbschema,
             location=FILE_LOCATION,
             header="Checking support for schema",
             error=error)
@@ -425,7 +425,6 @@ def exec_create_qgis_usr_schema_name(cdbLoader: CDBLoader, usr_name: str = None)
 
     try:
         with cdbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents
             cur.callproc(f"{main_c.QGIS_PKG_SCHEMA}.create_qgis_usr_schema_name",[usr_name])
             usr_schema = cur.fetchone()[0] # Trailing comma
         cdbLoader.USR_SCHEMA = usr_schema
