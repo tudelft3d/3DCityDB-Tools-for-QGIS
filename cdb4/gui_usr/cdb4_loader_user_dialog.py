@@ -30,12 +30,13 @@ from qgis.core import (
     QgsProject,
     QgsRectangle, 
     QgsGeometry)
+from qgis.PyQt import (
+    uic,
+    QtWidgets)
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox 
 
 import os
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
 
@@ -229,12 +230,14 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Rework the series of tests to be carried out, most of them are relevant only during installation as admin.
             #
-            # 1) Can I connect to the database
-            # 2) Is my qgis_user schema installed? If yes, continue. This implies that PostGIS and the 3DCityDB are there and correct. No need to check, actually.
-            #    - Therefore, ptionally show server, postgis and citydb version.
-            # 3) Can I connect to at least one non-empty cdb_schema?
+            # 1) Can I connect to the database?
+            # 2) Is my qgis_user schema installed? If yes, continue.
+            # 3) Am I connecting to a version of the QGIS package that is compatible with this version of the plugin? If yes, continue
+            #        This implies that PostGIS and the 3DCityDB are there and also correct. No need to check, actually.
+            #        Therefore, optionally, show server, postgis and citydb version (might be removed in future)
+            # 4) Are there cdb_schemas I am allowed to connect to? If yes, continue
+            # 5) Can I connect to at least one non-empty cdb_schema?
             #       - If yes, continue
-            #       - If no, inform that the database is empty, or at least the schemas I am allowed to connect to.
 
             # Create and set schema name for user in cdbLoader.USR_SCHEMA
             sql.exec_create_qgis_usr_schema_name(cdbLoader)
@@ -242,11 +245,29 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             # Check if user package (usr_schema, e.g. qgis_giorgio) is installed in the database.
             has_user_inst = sql.is_usr_pkg_installed(cdbLoader)
             if has_user_inst:
-                # Get qgis_pkg version.
-                full_version = f"(v.{sql.exec_qgis_pkg_version(cdbLoader)})"
-                # Show message in Connection Status the Qgis Package is installed (and version)
-                dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG,full_version]).format(pkg=main_c.QGIS_PKG_SCHEMA)))
-                cdbLoader.DB.green_main_inst = True
+                # Get the current qgis_pkg version.
+                qgis_pkg_curr_version = sql.exec_qgis_pkg_version(cdbLoader)  # returns a tuple
+                qgis_pkg_curr_version_txt = qgis_pkg_curr_version[0]
+                qgis_pkg_curr_version_major = qgis_pkg_curr_version[2]
+                qgis_pkg_curr_version_minor = qgis_pkg_curr_version[3]
+                qgis_pkg_curr_version_minor_rev = qgis_pkg_curr_version[4]
+
+                # Check that the QGIS Package version is >= than the minimum required for this versin of the plugin (see cdb4_constants.py)
+                if (qgis_pkg_curr_version_major >= c.QGIS_PKG_MIN_VERSION_MAJOR) and \
+                   (qgis_pkg_curr_version_minor >= c.QGIS_PKG_MIN_VERSION_MINOR) and \
+                   (qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV):
+
+                    # Show message in Connection Status the Qgis Package is installed (and version)
+                    dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=main_c.QGIS_PKG_SCHEMA)))
+                    cdbLoader.DB.green_main_inst = True
+                else:
+                    dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
+                    cdbLoader.DB.green_main_inst = False
+                    QgsMessageLog.logMessage(f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore. Please contact your database administrator and update to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher).",
+                                            "3DCityDB-Loader", level=Qgis.Critical)
+                    QMessageBox.warning(dlg, "Unsupported version of QGIS Package", 
+                                            f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher).")
+                    return None
 
                 # Show message in Connection Status the 3DCityDB version if installed
                 cdbLoader.DB.citydb_version = sql.fetch_3dcitydb_version(cdbLoader)
@@ -271,7 +292,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                 schema_nums = tuple(schema_nums)
    
                 if len(schema_names_tot) == 0: # Inform the use that there are no cdb schemas to be chosen from.
-                    QMessageBox.warning(dlg, "No accessible citydb schemas found", "No citydb schemas could be retrieved from the database. You may lack proper privileges to access them. Please contact your database adminsitrator.")
+                    QMessageBox.warning(dlg, "No accessible citydb schemas found", "No citydb schemas could be retrieved from the database. You may lack proper privileges to access them. Please contact your database administrator.")
                     return None
                 else:
                     if len(schema_names) == 0:
@@ -283,11 +304,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                         # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
                         # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
             else:
+                dlg.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbLoader.DB.username}")))
+                cdbLoader.DB.green_user_inst = False
                 QgsMessageLog.logMessage(f"The required user schema 'qgis_{cdbLoader.DB.username}' is missing. Please contact your database administrator to install it",
                                         "3DCityDB-Loader", level=Qgis.Critical)
                 QMessageBox.warning(dlg, "User schema not found", f"The required user schema 'qgis_{cdbLoader.DB.username}' is missing. Please contact your database administrator to install it")
-                dlg.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbLoader.DB.username}")))
-                cdbLoader.DB.green_user_inst = False
                 return None
         else: # Connection failed!
             ct_wf.gbxConnStatus_reset(cdbLoader)
