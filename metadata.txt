@@ -7,7 +7,7 @@
 name=3DCityDB-Loader
 qgisMinimumVersion=3.20
 description=Visualization and manipulation of CityGML data stored in the 3D City Database
-version=0.5.1
+version=0.6.0
 author=Konstantinos Pantelios, Giorgio Agugiaro
 email=konstantinospantelios@yahoo.com, g.agugiaro@tudelft.nl
 
@@ -27,7 +27,7 @@ repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog=
+changelog=0.6 further code cleaning and refactoring, ships with qgis_pkg 0.8
  0.5 major code cleaning and refactoring, moved to TUD GitHub
  0.4 first public release (Kostantinos' MSc thesis @ TUD)
  0.3 internal release: improved GUI, added dynamic ToC
