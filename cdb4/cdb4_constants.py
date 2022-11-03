@@ -8,23 +8,26 @@ from qgis.core import QgsMessageLog, Qgis, QgsRectangle, QgsCoordinateReferenceS
 
 from .. import main_constants as main_c
 
-
 # PostgreSQL Database minimum version supported
-PG_MIN_VERSION = 10
+PG_MIN_VERSION = int(10)
 # 3D City Database minimum version
-CDB_MIN_VERSION = 4
+CDB_MIN_VERSION = int(4)
+# QGIS Package minimum version
+QGIS_PKG_MIN_VERSION_MAJOR     = int(0);
+QGIS_PKG_MIN_VERSION_MINOR     = int(8);
+QGIS_PKG_MIN_VERSION_MINOR_REV = int(0);
+QGIS_PKG_MIN_VERSION_TXT = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
+# Path to forms
 QML_FORMS_DIR = "forms"
 QML_FORMS_PATH = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, QML_FORMS_DIR)
 
+# Path to SQL scripts to install the QGIS Package
 SQL_SCRIPTS_DIR = "ddl_scripts"
 PG_SCRIPTS_DIR = "postgresql"
 PG_SCRIPTS_INST_PATH = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, SQL_SCRIPTS_DIR, PG_SCRIPTS_DIR)
 #OR_SCRIPTS_SUBDIR = "oracle"
 #OR_SCRIPTS_INST_PATH = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.CDB4_PLUGIN_SUBDIR, SQL_SCRIPTS_SUBDIR, OR_SCRIPTS_SUBDIR)
-
-#QgsMessageLog.logMessage(f"************** forms path {PG_SCRIPTS_INST_PATH} ", "3DCityDB-Loader", level=Qgis.Info)
-
 
 # Extent type names
 CDB_SCHEMA_EXT_TYPE = "db_schema"
@@ -134,6 +137,7 @@ PG_VERSION_UNSUPPORTED_MSG = "Unsupported PostgreSQL version"
 CDB_FAIL_MSG = "3DCityDB is not installed"
 INST_MSG = "Schema '{pkg}' is already installed"
 INST_FAIL_MSG = "Required schema '{pkg}' is not installed"
+INST_FAIL_VERSION_MSG = "This version of QGIS Package is not supported"
 
 SCHEMA_LAYER_MSG = "Layers for citydb schema '{sch}' already exist"
 SCHEMA_LAYER_FAIL_MSG = "Layers need to be created for citydb schema '{sch}'"
@@ -143,7 +147,6 @@ REFR_LAYERS_FAIL_MSG = "Layers need to be refreshed"
 # Pop-up messages
 INST_QUERY = "Any existing installation of '{pkg}' will be replaced! Do you want to proceed?"
 UNINST_QUERY = "Uninstalling '{pkg}'! Do you want to proceed?"
-
 REFRESH_QUERY = "Refreshing layers can take long time.\nDo you want to proceed?"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
