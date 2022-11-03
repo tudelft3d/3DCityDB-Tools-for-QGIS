@@ -130,19 +130,17 @@ def fetch_crs(cdbLoader: CDBLoader) -> int:
             error=error)
         cdbLoader.conn.rollback()
  
-
-def exec_qgis_pkg_version(cdbLoader: CDBLoader) -> str:
+def exec_qgis_pkg_version(cdbLoader: CDBLoader) -> tuple:
     """SQL function that reads and retrieves the qgis_pkg version
 
     *   :returns: The qgis_pkg version.
 
-        :rtype: str
+        :rtype: tuple
     """
     try:
         with cdbLoader.conn.cursor() as cur:
-            #Get all schemas
             cur.callproc(f"{main_c.QGIS_PKG_SCHEMA}.qgis_pkg_version", [])
-            full_version = cur.fetchone()[0]
+            full_version = cur.fetchone() # this is a tuple containing: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
         cdbLoader.conn.commit()
         return full_version
 
