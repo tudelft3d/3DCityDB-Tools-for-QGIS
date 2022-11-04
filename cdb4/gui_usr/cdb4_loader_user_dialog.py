@@ -456,7 +456,6 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         cdb_exts = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS)
 
         # Check validity of user extents relative to the City Model's extents.
-        #if not layer_exts.within(cdb_exts): 
         if not layer_exts.intersects(cdb_exts):
             QMessageBox.critical(
                 cdbLoader.usr_dlg,
@@ -606,7 +605,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             # the current extents are 0,0,0,0 and are compared against the extents 
             # of the layers which are coming from the DB.
             # This causes the "else" to pass which we don't want.  
-            pass #NOTE: this solution is temporary KP 01/09/22
+            #NOTE: this solution is temporary KP 01/09/22
+            pass 
         else:
             QMessageBox.critical(dlg, "Warning", f"Pick a region inside the layers extents (red area).")          
             return None
@@ -726,15 +726,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         for view in checked_views:
             counter += view.n_selected
 
-        # Warn user when too many features are to be imported. (Subjective value).
+        # Warn user when too many features are to be imported.
         if counter>c.MAX_FEATURES_PER_LAYER:
-            res = QMessageBox.question(
-                dlg,
-                "Warning",
-                f"Many features ({counter}) within the selected area!\n"
-                "This could reduce QGIS performance and may lead to crashes.\n"
-                "Do you want to continue anyway?")
-            if res == 16384: # YES
+            res = QMessageBox.question(dlg, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
+            if res == 16384: # YES, proceed with importing layers
                 success = l_tf.import_layers(cdbLoader, layers=checked_views)
             else:
                 return None #Import Cancelled
@@ -755,10 +750,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         l_tf.sort_ToC(db_group)
         l_tf.send_to_top_ToC(db_group)
 
-        #At last bring the Relief, Feature type at the bottom of the ToC.
+        # Finally bring the Relief Feature type at the bottom of the ToC.
         l_tf.send_to_bottom_ToC(QgsProject.instance().layerTreeRoot())
 
-        #Set CRS of the project to match the one of the 3DCityDB.
+        # Set CRS of the project to match the one of the 3DCityDB.
         QgsProject.instance().setCrs(cdbLoader.CRS)
         
         # A final success message.
