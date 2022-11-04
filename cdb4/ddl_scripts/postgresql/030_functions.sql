@@ -78,7 +78,7 @@ major_version  := 0;
 minor_version  := 8;
 minor_revision := 0;
 code_name      := 'Hunt for Red October';
-release_date   := '2022-10-31'::date;
+release_date   := '2022-10-30'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
