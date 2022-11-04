@@ -184,7 +184,7 @@ mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
 --qml_file_name  := concat(r.class_label,'_form.qml');
-qml_file_name  := concat('gen_form.qml');
+qml_file_name  := concat('gen_tic_form.qml');
 trig_f_suffix := 'generic_cityobject';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN

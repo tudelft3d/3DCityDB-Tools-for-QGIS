@@ -179,7 +179,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat(r.class_label,'_tic_form.qml');
 trig_f_suffix := 'bridge';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -270,7 +270,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat(r.class_label,'_multicurve_form.qml');
 trig_f_suffix := 'bridge';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -914,7 +914,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bri_constr_elem_form.qml');
+qml_file_name  := concat('bri_constr_elem_tic_form.qml');
 trig_f_suffix := 'bridge_constr_element';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN

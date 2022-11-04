@@ -355,8 +355,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('rel_component_form.qml');
--- qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('rel_masspoint_form.qml');
 trig_f_suffix := 'masspoint_relief';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -442,8 +441,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('rel_component_form.qml');
--- qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('rel_breakline_form.qml');
 trig_f_suffix := 'breakline_relief';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -454,7 +452,7 @@ IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema, qi_mview_name),'
 	SELECT
 		foo.co_id::bigint,
-		ST_Collect(foo.geom)::geometry(MultiLineStringZ,',srid_id,') AS geom
+		ST_Union(foo.geom)::geometry(MultiLineStringZ,',srid_id,') AS geom
 	FROM (
 		SELECT
 			o.id::bigint AS co_id,
@@ -530,7 +528,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('rel_component_form.qml');
+qml_file_name  := concat('rel_breakline_form.qml');
 -- qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'breakline_relief';
 
