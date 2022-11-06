@@ -15,19 +15,18 @@ def fetch_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_ty
     *   :returns: Extents as WKT or None if the entry is empty.
         :rtype: str
     """
-    extents: str
     try:
         with cdbLoader.conn.cursor() as cur:
             # Get db_schema extents from server as WKT.
             cur.execute(query= f"""
-                                SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
-                                WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
+                                   SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
+                                   WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
                                 """)
-            res_extents = cur.fetchone()
-            # res_extents = (None,) when the envelope is Null,
-            # BUT res_extents = None when the query returns NO results.
-            if type(res_extents) == tuple:
-                extents = res_extents[0] # Get the value without trailing comma.
+            extents = cur.fetchone()
+            # extents = (None,) when the envelope is Null,
+            # BUT extents = None when the query returns NO results.
+            if type(extents) == tuple:
+                extents = extents[0] # Get the value without trailing comma.
 
         cdbLoader.conn.commit()
         return extents
@@ -212,7 +211,6 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
 
     try:
         with cdbLoader.conn.cursor() as cur:
-            # Execute function to find if qgis_pkg supports current schema.
             cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents])
         cdbLoader.conn.commit()
 
@@ -232,7 +230,6 @@ def fetch_mat_views(cdbLoader: CDBLoader) -> dict:
     """
     try:
         with cdbLoader.conn.cursor() as cur:
-            # Select the views
             cur.execute(query=f"""SELECT matViewname, ispopulated FROM pg_matviews WHERE schemaname = '{cdbLoader.QGIS_PKG_SCHEMA}';""")
             mat_views = cur.fetchall()
             mat_views, status = list(zip(*mat_views))
