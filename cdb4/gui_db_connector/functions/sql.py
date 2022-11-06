@@ -1,37 +1,33 @@
-"""This module contains functions that relate to the server side
-operations.
+"""This module contains functions that relate to the server side operations.
 
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
-###### For development only
-#from qgis.core import QgsMessageLog, Qgis
-######
+
+from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
 
 import psycopg2
 from ... import cdb4_constants as c
 
 FILE_LOCATION = c.get_file_relative_path(__file__)
 
-def fetch_server_version(cdbLoader) -> str:
+def fetch_posgresql_server_version(cdbLoader: CDBLoader) -> str:
     """SQL query that reads and retrieves the server version.
-    *   :returns: PostgreSQL server version as string (e.g. 10.6)
 
+    *   :returns: PostgreSQL server version as string (e.g. 10.6)
         :rtype: str
     """
+    version: str
     try:
-         # Create cursor.
         with cdbLoader.conn.cursor() as cur:
-            # Get server to fetch its version
-            cur.execute(query="SHOW server_version;")
+            cur.execute(query="""SHOW server_version;""")
             version = cur.fetchone()[0] # Tuple has trailing comma.
         cdbLoader.conn.commit()
         return version
 
     except (Exception, psycopg2.Error) as error:
-        # Send error to QGIS Message Log panel.
         c.critical_log(
-            func=fetch_server_version,
+            func=fetch_posgresql_server_version,
             location=FILE_LOCATION,
             header="Retrieving PostgreSQL server version",
             error=error)

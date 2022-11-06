@@ -66,55 +66,49 @@ def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
     """Open a connection to postgres database.
 
     *   :param db: The connection custom object
-
         :rtype: Connection
  
     *   :param app_name: A name for the session
-
         :rtype: str
 
     *   :returns: The connection psycopg2 object (opened)
-
         :rtype: psycopg2.connection
     """
-
     return psycopg2.connect(
-            dbname=db_connection.database_name,
-            user=db_connection.username,
-            password=db_connection.password,
-            host=db_connection.host,
-            port=db_connection.port,
-            application_name=app_name)
+            dbname           = db_connection.database_name,
+            user             = db_connection.username,
+            password         = db_connection.password,
+            host             = db_connection.host,
+            port             = db_connection.port,
+            application_name = app_name)
 
-def open_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) -> bool:
-    """Opens a connection using the parameters stored in DBLoader.DB
+def open_and_set_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) -> bool:
+    """Opens a connection using the parameters stored in CDBLoader.DB
     and retrieves the server version. The server version is stored
     in 'pg_server_version' attribute of the Connection object.
 
     *   :param app_name: A name for the session
-
         :rtype: str
 
     *   :returns: connection attempt results
-
         :rtype: bool
     """
-    version = None
+    version: str
 
     try:
-        # Open the connection.
-        cdbLoader.conn = connect(cdbLoader.DB, app_name=app_name)
+        # Open and set the connection.
+        cdbLoader.conn = connect(db_connection=cdbLoader.DB, app_name=app_name)
         cdbLoader.conn.commit() # This seems redundant.
 
         # Get server version.
-        version = sql.fetch_server_version(cdbLoader)
+        version = sql.fetch_posgresql_server_version(cdbLoader)
 
         # Store version into the connection object.
         cdbLoader.DB.pg_server_version = version
 
     except (Exception, psycopg2.Error) as error:
         c.critical_log(
-            func=open_connection,
+            func=open_and_set_connection,
             location=FILE_LOCATION,
             header="Attempting connection",
             error=error)

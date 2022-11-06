@@ -21,8 +21,7 @@ FILE_LOCATION = c.get_file_relative_path(__file__)
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
 
 class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
-    """Connector Dialog. This dialog pops up when a user requests
-    to make a new connection.
+    """Connector Dialog. This dialog pops up when a user requests to make a new connection.
     """
 
     def __init__(self, parent=None):

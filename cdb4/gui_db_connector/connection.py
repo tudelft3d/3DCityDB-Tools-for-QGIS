@@ -1,15 +1,16 @@
 class Connection:
-    """Class to store connection information."""
+    """Class to store connection information.
+    """
 
     def __init__(self):
-        self.connection_name = None
-        self.database_name = None
-        self.host = None
-        self.port = None
-        self.username = None
+        self.connection_name: str = None
+        self.database_name: str = None
+        self.host: str = None
+        self.port: int = None
+        self.username: str = None
         self.password = '*****'
-        self.store_creds = False
-        self.is_active = None
+        self.store_creds: bool = False
+        self.is_active: bool = None
         self.pg_server_version: str = None # PostgreSQL server version
         self.citydb_version: str = None # 3DCityDB version
         self.id = id(self)
@@ -43,7 +44,6 @@ class Connection:
 
         *   :returns: The connection's readiness status to work with
                 the plugin.
-
             :rtype: bool
         """
         if all((self.green_db_conn,
