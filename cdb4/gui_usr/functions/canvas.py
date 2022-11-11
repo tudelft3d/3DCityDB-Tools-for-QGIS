@@ -6,8 +6,7 @@ from qgis.PyQt.QtGui import QColor
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from ... import cdb4_constants as c
 
-def canvas_setup(
-        cdbLoader: CDBLoader,
+def canvas_setup(cdbLoader: CDBLoader,
         canvas=QgsMapCanvas(), 
         extents=c.OSM_INIT_EXTS, 
         crs=c.OSM_INIT_CRS,
@@ -45,16 +44,14 @@ def canvas_setup(
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)
     canvas.setExtent(extents)
+
     if clear:
         # Clear map registry from old OSM layers.
         QgsProject.instance().removeMapLayers(registryOSM_id)
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
         # pseudo means that the layer is not going to be added to the legend.
-        rlayer = QgsRasterLayer(
-            c.OSM_URI,
-            baseName=c.OSM_NAME,
-            providerType="wms")
+        rlayer = QgsRasterLayer(c.OSM_URI, baseName=c.OSM_NAME, providerType="wms")
 
         # Make sure that the layer can load properly
         assert rlayer.isValid()
@@ -64,6 +61,7 @@ def canvas_setup(
 
     # OSM layers object
     registryOSM_l = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+
     # Set the map canvas layer set.
     canvas.setLayers(registryOSM_l)
 
@@ -90,15 +88,12 @@ def insert_rubber_band(
     +   Qt.green = qgis extents
 
     *   :param canvas: Canvas to draw the rubber band on.
-
         :type extents: QgsMapCanvas
 
     *   :param extents: Extents to focus the canvas on.
-
         :type extents: QgsRectangle
 
     *   :param color: Color to paint the extents.
-
         :type color: GlobalColor
 
         (in 'User Connection' tab)
@@ -112,3 +107,21 @@ def insert_rubber_band(
     band.setColor(QColor(color))
     band.setWidth(width)
     band.setFillColor(Qt.transparent)
+
+
+def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
+    """Function that zooms to extents provided in the given canvas.
+    This funtion does not cause the passed extents variable to be changed
+    to a larger area - which happens with the native metod canvas.zoomToFeatureExtent().
+
+    *   :param canvas: Canvas to draw the rubber band on.
+        :type extents: QgsMapCanvas
+
+    *   :param extents: Extents to focus the canvas on.
+        :type extents: QgsRectangle
+    """
+    extents_wkt: str = extents.asWktPolygon()
+    rectangle: QgsRectangle = QgsRectangle.fromWkt(extents_wkt)
+    canvas.zoomToFeatureExtent(rectangle)
+
+    return None
