@@ -120,8 +120,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         self.qgbxExtents.setOutputCrs(outputCrs=cdbLoader.CRS)
 
         # 'Extents' groupbox signals (in 'Layers' tab)
-        self.qgbxExtents.extentChanged.connect(lambda: self.evt_qgbxExtents_extChanged(cdbLoader))
-        self.btnCityExtents.clicked.connect(lambda: self.evt_btnCityExtents_clicked(cdbLoader))          
+        self.qgbxExtents.extentChanged.connect(lambda: self.evt_qgbxExtents_ext_changed(cdbLoader))
+        self.btnCityExtents.clicked.connect(lambda: self.evt_btnLayerExtents_clicked(cdbLoader))          
 
         # 'Parameters' groupbox signals (in 'Layers' tab)
         self.cbxFeatureType.currentIndexChanged.connect(lambda: self.evt_cbxFeatureType_changed(cdbLoader))
@@ -184,13 +184,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # Add new connection to the Existing connections
         if dlgConnector.new_connection:
             dlg.cbxExistingConnC.addItem(f"{dlgConnector.new_connection.connection_name}",dlgConnector.new_connection)
-                #dlgConnector.close()
 
     # 'Database' group box events (in 'User Connection' tab)
     def evt_btnConnectToDb_clicked(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
-        (btnConnectToDbC) is pressed.
-        It sets up the GUI after a click signal is emitted.
+        (btnConnectToDbC) is pressed. It sets up the GUI after a click signal is emitted.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
@@ -246,7 +244,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # 2) Can I connect to the qgis_pkg (and access its functions?) If yes, continue.
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_intalled(cdbLoader)
+        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(cdbLoader)
 
         if is_qgis_pkg_installed:
             # I can now access the functions of the qgis_pkg (at least the public ones)
@@ -359,12 +357,14 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def evt_cbxSchema_changed(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema) current index changes.
-        Function to setup the GUI after an 'indexChanged' signal is emitted from
-        the cbxSchema combo box.
-        This function runs every time the selected schema is changed.
-        (in 'User Connection' tab)
+        Function to setup the GUI after an 'indexChanged' signal is emitted from the cbxSchema combo box.
+        This function runs every time the selected schema is changed (in 'User Connection' tab)
         Checks if the connection + schema meet the necessary requirements.
         """
+        # Reset the Layer tab in case it was open from before, with another schema
+        if cdbLoader.CDB_SCHEMA:
+            lt_wf.tabLayers_reset(cdbLoader)
+
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
 
@@ -392,9 +392,9 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.btnCreateLayers.setDisabled(False)
 
         # Setup the 'Basemap (OSM)' groupbox.
-        ct_wf.gbxBasemapC_setup(cdbLoader, cdbLoader.CANVAS_C)
+        ct_wf.gbxBasemapC_setup(cdbLoader)
 
-        mview_exts = sql.fetch_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
+        mview_exts = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
         if mview_exts:
             # Put extents coordinates into the widget. Singal emitted for qgbxExtentsC.
             dlg.qgbxExtentsC.setOutputExtentFromUser(QgsRectangle.fromWkt(mview_exts), cdbLoader.CRS)
@@ -437,7 +437,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.btnCityExtents.setDisabled(False)
             dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text.format(sch="layers extents"))
         
-            lt_wf.gbxBasemap_setup(cdbLoader, cdbLoader.CANVAS)
+            lt_wf.gbxBasemap_setup(cdbLoader)
 
             dlg.tabLayers.setDisabled(False)           
 
@@ -471,52 +471,52 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg = cdbLoader.usr_dlg
 
         # Update extents variable with the ones that fired the signal.
-        cdbLoader.CURRENT_EXTENTS = dlg.qgbxExtentsC.outputExtent()
-        if cdbLoader.CURRENT_EXTENTS.isNull() or cdbLoader.CDB_SCHEMA_EXTENTS.isNull():
+        cdbLoader.CURRENT_EXTENTS: QgsRectangle = dlg.qgbxExtentsC.outputExtent()
+        if cdbLoader.CURRENT_EXTENTS.isNull() or cdbLoader.CDB_SCHEMA_EXTENTS_BLUE.isNull():
             return None
 
         # Draw the extents in the additional canvas (basemap)
-        canvas.insert_rubber_band(
-            band=cdbLoader.RUBBER_LAYERS_C,
-            extents=cdbLoader.CURRENT_EXTENTS,
-            crs=cdbLoader.CRS,
-            width=2,
-            color=Qt.red)
+        canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED_C, extents=cdbLoader.CURRENT_EXTENTS, crs=cdbLoader.CRS, width=2, color=Qt.red)
 
         # Compare original extents with user defined ones.
         layer_exts = QgsGeometry.fromRect(cdbLoader.CURRENT_EXTENTS)
-        cdb_exts = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS)
+        cdb_exts = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
 
-        # Check validity of user extents relative to the City Model's extents.
-        if not layer_exts.intersects(cdb_exts):
-            QMessageBox.critical(cdbLoader.usr_dlg, "Warning", f"Pick a region inside the extents of '{cdbLoader.CDB_SCHEMA}' (blue area).")
-            return None
+        # Check validity of user extents relative to the City Model's cdb_extents.
+        if layer_exts.intersects(cdb_exts):
+            cdbLoader.LAYER_EXTENTS_RED = cdbLoader.CURRENT_EXTENTS           
         else:
-            cdbLoader.LAYER_EXTENTS = cdbLoader.CURRENT_EXTENTS
+            QMessageBox.critical(dlg, "Warning", f"Pick a region intersecting the extents of '{cdbLoader.CDB_SCHEMA}' (blue area).")
+            return None
 
 
     def evt_btnCityExtentsC_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the current 'Calculate from City model'
-        pushButton (btnCityExtentsC) is pressed.
+        """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtentsC) is pressed.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
 
         # Get the extents stored in server (already computed at this point).
-        extents = sql.fetch_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
-        assert extents, "Extents don't exist but should have been already computed!"
+        cdb_extents_str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        assert cdb_extents_str, "Extents don't exist, but they should have been actually already computed!"
 
         # Convert extents format to QgsRectangle object.
-        extents = QgsRectangle.fromWkt(extents)
+        cdb_extents = QgsRectangle.fromWkt(cdb_extents_str)
         # Update extents in plugin variable.
-        cdbLoader.CURRENT_EXTENTS = extents
+        cdbLoader.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents
+        cdbLoader.CURRENT_EXTENTS = cdb_extents
 
         # Put extents coordinates into the widget.
         dlg.qgbxExtentsC.setOutputExtentFromUser(cdbLoader.CURRENT_EXTENTS, cdbLoader.CRS)
         # At this point an extentChanged signal is emitted.
-        
-        # Zoom to these extents.
-        cdbLoader.CANVAS_C.zoomToFeatureExtent(extents)
+
+        # Zoom to layer extents (red box).
+        # PROBLEM: The zoom operation enlarges automatically the size of the extents in the variable passed.
+        # Therefore we decouple it from the global variable by transforming to/from WKT (WORKAROUND)
+        canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
+        #temp_extents_wkt: str = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE.asWktPolygon()
+        #temp_rectangle: QgsRectangle = QgsRectangle.fromWkt(temp_extents_wkt)
+        #cdbLoader.CANVAS_C.zoomToFeatureExtent(temp_rectangle)
 
 
     def evt_btnCreateLayers_clicked(self, cdbLoader: CDBLoader) -> None:
@@ -530,7 +530,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Update the layer extents in the corresponding table in the server.
         sql.exec_upsert_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, 
-                                bbox_type=c.MAT_VIEW_EXT_TYPE, extents=cdbLoader.LAYER_EXTENTS.asWktPolygon())
+                                bbox_type=c.MAT_VIEW_EXT_TYPE, extents=cdbLoader.LAYER_EXTENTS_RED.asWktPolygon())
 
         refresh_date = []
         while not refresh_date: # Loop to allow for 'layer creation' thread to finish. It seems hacky...
@@ -577,12 +577,13 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
     ## Events for User connection tab END
 
+##################################################################################
+
     ## Events for Layer tab BEGIN
 
     # 'Parameters' group box events (in 'Layers' tab)
-    def evt_qgbxExtents_extChanged(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Extents' groubBox (qgbxExtents)
-        extent changes.
+    def evt_qgbxExtents_ext_changed(self, cdbLoader: CDBLoader) -> None:
+        """Event that is called when the 'Extents' groubBox (qgbxExtents) extent changes.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
@@ -600,23 +601,18 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # https://qgis.org/pyqgis/3.16/gui/QgsExtentWidget.html
 
         # Update extents variable with the ones that fired the signal.
-        cdbLoader.CURRENT_EXTENTS = dlg.qgbxExtents.outputExtent()
+        cdbLoader.CURRENT_EXTENTS: QgsRectangle = dlg.qgbxExtents.outputExtent()
 
         # Draw the extents in the addtional canvas (basemap)
-        canvas.insert_rubber_band(
-            band=cdbLoader.RUBBER_USER,
-            extents=cdbLoader.CURRENT_EXTENTS,
-            crs=cdbLoader.CRS,
-            width=2,
-            color=Qt.green)
+        canvas.insert_rubber_band(band=cdbLoader.RUBBER_QGIS_GREEN, extents=cdbLoader.CURRENT_EXTENTS, crs=cdbLoader.CRS, width=2, color=Qt.green)
 
         # Compare original extents with user defined ones.
         qgis_exts = QgsGeometry.fromRect(cdbLoader.CURRENT_EXTENTS)
-        layer_exts = QgsGeometry.fromRect(cdbLoader.LAYER_EXTENTS)
+        layer_exts = QgsGeometry.fromRect(cdbLoader.LAYER_EXTENTS_RED)
 
         # Check validity of user extents relative to the City Model's extents.
         if layer_exts.equals(qgis_exts) or layer_exts.intersects(qgis_exts):
-            cdbLoader.QGIS_EXTENTS = cdbLoader.CURRENT_EXTENTS
+            cdbLoader.QGIS_EXTENTS_GREEN = cdbLoader.CURRENT_EXTENTS
         elif qgis_exts.equals(QgsGeometry.fromRect(QgsRectangle(0,0,0,0))):
             # When the basemap is initialized (the first time),
             # the current extents are 0,0,0,0 and are compared against the extents 
@@ -638,33 +634,32 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnCityExtents_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the current 'Set to layers extents'
-        pushButton (btnCityExtents) is pressed.
+    def evt_btnLayerExtents_clicked(self, cdbLoader: CDBLoader) -> None:
+        """Event that is called when the current 'Set to layers extents' pushButton (btnCityExtents) is pressed.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
 
-        # Get the extents stored in server (already computed at this point).
-        extents = sql.fetch_extents(
-            cdbLoader,
-            usr_schema=cdbLoader.USR_SCHEMA,
-            cdb_schema=cdbLoader.CDB_SCHEMA,
-            ext_type=c.MAT_VIEW_EXT_TYPE)
-        assert extents, "Extents don't exist but should have been already computed!"
+        # Get the layer extents stored in server (already computed at this point).
+        extents_str: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
+        assert extents_str, "Extents don't exist but should have been already computed!"
 
         # Convert extents format to QgsRectangle object.
-        extents = QgsRectangle.fromWkt(extents)
+        extents: QgsRectangle = QgsRectangle.fromWkt(extents_str)
         # Update extents in plugin variable.
         cdbLoader.CURRENT_EXTENTS = extents
-        cdbLoader.QGIS_EXTENTS = extents
+        cdbLoader.QGIS_EXTENTS_GREEN = extents
 
         # Put extents coordinates into the widget.
         dlg.qgbxExtents.setOutputExtentFromUser(cdbLoader.CURRENT_EXTENTS, cdbLoader.CRS)
         # At this point an extentChanged signal is emitted.
 
-        # Zoom to these extents.
-        cdbLoader.CANVAS.zoomToFeatureExtent(extents)
+        # Zoom to layer extents (red box).
+        # PROBLEM: The zoom operation enlarges automatically the size of the extents in the variable passed.
+        # (WORKAROUND: Therefore we decouple it from the global variable by transforming to/from WKT
+        temp_extents_wkt: str = cdbLoader.QGIS_EXTENTS_GREEN.asWktPolygon()
+        temp_rectangle: QgsRectangle = QgsRectangle.fromWkt(temp_extents_wkt)
+        cdbLoader.CANVAS.zoomToFeatureExtent(temp_rectangle)
 
 
     def evt_cbxFeatureType_changed(self, cdbLoader: CDBLoader) -> None:
@@ -747,11 +742,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         if counter > c.MAX_FEATURES_TO_IMPORT:
             res = QMessageBox.question(dlg, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
             if res == 16384: # YES, proceed with importing layers
-                success = l_tf.import_selected_layers(cdbLoader, layers=checked_views)
+                success = l_tf.add_selected_layers_to_ToC(cdbLoader, layers=checked_views)
             else:
                 return None #Import Cancelled
         else:
-            success = l_tf.import_selected_layers(cdbLoader, layers=checked_views)
+            success = l_tf.add_selected_layers_to_ToC(cdbLoader, layers=checked_views)
 
         if not success:
             QgsMessageLog.logMessage(
@@ -760,7 +755,6 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                 level=Qgis.Critical,
                 notifyUser=True)
             return None
-
 
         # Structure 'Table of Contents' tree.
         db_group = l_tf.get_citydb_node(cdbLoader)
@@ -781,7 +775,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                 notifyUser=True)
         return None
 
-        # Here is the final step. Meaning that user did everything and can now close the window to continue working outside the plugin.
+        # This is the final step, meaning that user did everything correct and can now close the window to continue working outside the plugin.
 
 
 #NOTE: extent groupbox doesn't work for manual user input.
