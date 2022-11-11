@@ -1,10 +1,9 @@
-"""This module contains all hardcoded or constant elements that are
-used within the plugin
+"""This module contains constant values that are used within the CDB4plugin
 """
 
 import os.path
 from typing import Callable
-from qgis.core import QgsMessageLog, Qgis, QgsRectangle, QgsCoordinateReferenceSystem
+from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsMessageLog, QgsRectangle
 
 from .. import main_constants as main_c
 
@@ -119,7 +118,7 @@ menu_html: str = icon_msg_core.format(
     addtional_text='{text}')
 
 # Log messages
-log_errors: str = "{type} ERROR at {loc}\n ERROR: "
+#log_errors: str = "{type} ERROR at {loc}\n ERROR: "
 
 INST_SUCC_MSG: str    = "Database schema '{pkg}' successfully installed!"
 INST_ERROR_MSG: str   = "Database schema '{pkg}' installation failed!"
@@ -210,72 +209,3 @@ class FeatureType():
     def __init__(self, alias: str):
         self.alias = alias
         self.views = []
-
-# Functions
-
-# def get_postgres_array(data) -> str:
-#     """Function that formats a collection of data into a PostgreSQL array string.
-
-#     *   :param data: Elements to be converted like a PostgreSQL array.
-#         :param data: tuple,list,dict
-
-#     *   :returns: a PostgreSQL like array to be used in sql queries.
-#         :rtype: str
-#     """
-#     array = ""
-#     for f in data:
-#         array += f
-#         array += '|'
-
-#     array = list(array)
-#     array[-1] = ")"
-#     array.insert(0,"(")
-#     array = ''.join(array)
-#     return array
-
-
-def get_file_relative_path(file: str = __file__) -> str:
-    """Function that retrieves the file path relative to the plugin directory (os independent).
-    Running get_file_relative_path() returns 3dcitydb-loader/constants.py
-
-    *   :param file: absolute path of a file
-        :type file: str
-    """
-    path = os.path.split(file)[0]
-    file_name = os.path.split(file)[1]
-    rel_path = os.path.relpath(path, main_c.PLUGIN_ROOT_PATH)
-    rel_file_path = os.path.join(rel_path, file_name)
-    return rel_file_path
-
-
-def critical_log(func: Callable, location: str, header: str, error: str) -> None:
-    """Function used to form and display an error caught in a critical message
-    into the QGIS Message Log panel.
-
-    *   :param func: The function producing the error.
-        :type func: function
-
-    *   :param location: The relative path (to the plugin directory) of the
-            function's file.
-        :type location: str
-
-    *   :param header: Informative text appended to the location of the error.
-        :type header: str
-
-    *   :param error: Error to be displayed.
-        :type error: str
-    """
-    # Get the location to show in log where an issue happens
-    function_name = func.__name__
-    location = ">".join([location, function_name])
-
-    # Specify in the header the type of error and where it happened.
-    header = log_errors.format(type=header, loc=location)
-
-    # Show the error in the log panel. Should open it even if it is closed.
-    QgsMessageLog.logMessage(
-        message=header + str(error),
-        tag=main_c.PLUGIN_NAME,
-        level=Qgis.Critical,
-        notifyUser=True)
-
