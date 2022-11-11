@@ -175,15 +175,15 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_qgis_pkg_usrgroup_members() FROM public
 -- SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s;
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS_new
+-- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS
 ----------------------------------------------------------------
 -- List all schemas containing citydb tables in the current database and (optionally) picks only the non-empty ones
-DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_new(boolean) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_new(
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas(boolean) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas(
 only_non_empty	boolean DEFAULT FALSE)
 RETURNS TABLE (
-cdb_schema 		varchar,
-co_number		bigint
+cdb_schema 		varchar,  -- name of the citydb schema
+co_number		bigint    -- number of cityobjects stored in that schema
 )
 AS $$
 DECLARE
@@ -236,14 +236,15 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.list_cdb_schemas(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_new(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_new(boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 
---SELECT a.* FROM qgis_pkg.list_cdb_schemas_new(only_non_empty:=FALSE) AS a;
---SELECT a.* FROM qgis_pkg.list_cdb_schemas_new(only_non_empty:=TRUE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=FALSE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=TRUE) AS a;
 
 
 
+/*
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS
 ----------------------------------------------------------------
@@ -313,7 +314,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 --SELECT cdb_schema FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas();
 --SELECT array_agg(cdb_schema) FROM qgis_pkg.list_cdb_schemas(TRUE);
-
+ */
 
 
 
