@@ -1,8 +1,5 @@
-"""This module contains functions that relate to the 'Import Tab'
-(in the GUI look for the plugin logo).
-
-These functions are usually called from widget_setup functions
-relating to child widgets of the 'Import Tab'.
+"""This module contains functions that relate to the 'Import Tab' (in the GUI look for the plugin logo).
+These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
 
 from collections import OrderedDict
@@ -19,8 +16,7 @@ from ... import cdb4_constants as c
 from . import sql
 
 def has_matviews(cdbLoader: CDBLoader) -> bool:
-    """Function that checks the existence of materialised
-    views in the database.
+    """Function that checks the existence of materialised views in the database.
 
     *   :returns: Whether the database has populated mat views.
         :rtype: bool
@@ -35,10 +31,7 @@ def has_matviews(cdbLoader: CDBLoader) -> bool:
 
 def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Feature Types' combo box.
-    Uses the 'layer_metadata' table in usr_schema to instantiate
-    useful python objects
-    class: FeatureType and
-    class: View
+    Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
     """
     # Create 'Feature Type' and 'View' objects
     instantiate_objects(cdbLoader)
@@ -54,18 +47,14 @@ def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
                 break # We need only one view to have > 0 features.
 
 def instantiate_objects(cdbLoader: CDBLoader) -> None:
-    """Function to instantiate python objects from the 'layer_metadata'
-    table in the usr_schema.
-    class: FeatureType and
-    class: View
+    """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
     """
     # Get field names and metadata values from server.
     colnames, metadata = sql.fetch_layer_metadata(cdbLoader, cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA)
     # Format metadata into a list of dictionaries where each element is a layer.
     metadata_dict_list = [dict(zip(colnames, values)) for values in metadata]
 
-    # Instantiate 'FeatureType' objects for each CityGML module
-    # into a plugin variable (dict).
+    # Instantiate 'FeatureType' objects for each CityGML module into a plugin variable (dict).
     cdbLoader.FeatureType_container = {
         "Bridge": c.FeatureType(alias="Bridge"),
         "Building": c.FeatureType(alias="Building"),
@@ -99,8 +88,8 @@ def instantiate_objects(cdbLoader: CDBLoader) -> None:
         sql.exec_view_counter(cdbLoader, view) # Stores number in view.n_selected.
 
 def fill_lod_box(cdbLoader: CDBLoader) -> None:
-    """Function that fills out the 'Geometry Level' combo box (LoD)."""
-
+    """Function that fills out the 'Geometry Level' combo box (LoD).
+    """
     # Get 'FeatureType' object from combo box data.
     selected_FeatureType = cdbLoader.usr_dlg.cbxFeatureType.currentData()
     if not selected_FeatureType:
@@ -112,16 +101,19 @@ def fill_lod_box(cdbLoader: CDBLoader) -> None:
 
     # Add lod string into both text and data holder of combo box.
     for lod in sorted(list(geom_set)):
-        cdbLoader.usr_dlg.cbxLod.addItem(lod, lod)
         # The first LoD string added in 'cbxLod' emits a 'currentIndexChanged' signal.
+        cdbLoader.usr_dlg.cbxLod.addItem(lod, lod)
+
 
 def fill_features_box(cdbLoader: CDBLoader) -> None:
-    """Function that fills the 'Features' checkable combo box."""
+    """Function that fills the 'Features' checkable combo box.
+    """
     # Variable to store the plugin main dialog.
     dlg = cdbLoader.usr_dlg
 
     # Get current 'LoD' from widget.
     selected_lod = dlg.cbxLod.currentText()
+
     # Get current 'Feature Type' from widget.
     selected_FeatureType = dlg.cbxFeatureType.currentData()
 
@@ -149,7 +141,6 @@ def value_rel_widget(
         OrderByValue: bool = False,
         UseCompleter: bool = False) -> QgsEditorWidgetSetup:
     """Function to setup the configuration dictionary for the 'ValueRelation' widget.
-
     .. Note:this function could probably be generalized for all available
     ..      widgets of 'attribute from', but there is not need for this yet.
 
@@ -171,6 +162,7 @@ def value_rel_widget(
 
 def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -> QgsAttributeEditorElement:
     """Function that retrieves a child object from an 'attribute form' container.
+    
     *   :param container: An attribute form container object.
         :type container: QgsAttributeEditorContainer
 
@@ -186,17 +178,12 @@ def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -
     return None
 
 
-def create_lookup_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_lookup_tables(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
     """Function that sets up the ValueRelation widget for the look-up tables.
-
-    .. Note: Currently the look-up table names are hardcoded.
-    .. Additionally enumeration ids for relative to water
-    .. or terrain are also hardcoded.
+    #Note: Currently the look-up table names are hardcoded.
 
     *   :param layer: Layer to search for and set up its 'Value Relation' widget according to the look-up tables.
         :type layer: QgsVectorLayer
-
-    .. The problem of codelists is too dynamic to be solved by this function.
     """
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
@@ -219,14 +206,10 @@ def create_lookup_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None
             layer.setEditorWidgetSetup(field_idx, value_rel_widget(Layer=enum_layer_id, Key='value', Value='description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
 
 
-def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_genericattrib_table(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
     """Function to set up the relation for an input layer (e.g. a view).
     - A new relation object is created that references the generic attributes.
     - Relations are also set for 'Value Relation' widget.
-
-    .. Note:Currently relations are created ONLY for specific hardcoded look-up
-    ..      tables and the Generic Attributes. In the future we need to make
-    ..      space for 'addresses' and other.
 
     *   :param layer: vector layer to set up the relationships for.
         :type layer: QgsVectorLayer
@@ -241,6 +224,7 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
     schema_node = db_node.findGroup("@".join([cdbLoader.DB.username,cdbLoader.CDB_SCHEMA]))
     generics_node = schema_node.findGroup("Generic Attributes")
     genericAtt_layer = generics_node.findLayers()[0]
+
     assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also  imported with every layer (if it doesn\'t already exist)."
     assert genericAtt_layer, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_cityobject_generic_attrib')
 
@@ -251,10 +235,18 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
     rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
     rel.generateId() # i.e. the (QGIS  internal) id of the relation object
     rel.setName('re_' + layer.name())
-    rel.setStrength(0) # integer, 0 is association, 1 composition
 
-    #QgsMessageLog.logMessage(f"The current relation {rel}", "3DCityDB-Loader", level=Qgis.Info)
-    #QgsMessageLog.logMessage(f"The current relation strength {rel.strength()}", "3DCityDB-Loader", level=Qgis.Info)
+    #QgsMessageLog.logMessage(f"QGIS version {cdbLoader.QGIS_VERSION_MAJOR}.{cdbLoader.QGIS_VERSION_MINOR}", cdbLoader.PLUGIN_NAME, level=Qgis.Info)
+
+    ## Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
+    if cdbLoader.QGIS_VERSION_MAJOR == 3 and cdbLoader.QGIS_VERSION_MINOR < 28:
+        rel.setStrength(0) # integer, 0 is association, 1 composition
+    else:
+        rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
+        #print(rel_strength)
+        rel.setStrength(rel_strength)
+
+    #QgsMessageLog.logMessage(f"**** The current relation has strength: {rel.strength()}", cdbLoader.PLUGIN_NAME, level=Qgis.Info)  
 
     if rel.isValid(): # Success
         QgsProject.instance().relationManager().addRelation(rel)
@@ -284,13 +276,14 @@ def create_relations(cdbLoader: CDBLoader, layer: QgsVectorLayer) -> None:
 
     # Commit?
     layer.setEditFormConfig(layer_configuration)
-
-    # Look-up tables relation
-    create_lookup_relations(cdbLoader, layer)
+    # Look-up tables relation --- TO BE REMOVED
+    # Commented out here and added at the end of the add_layer_to_ToC function, which makes more sense.
+    #create_layer_relation_to_lookup_tables(cdbLoader, layer)
 
 
 def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> bool:
     """Function that checks whether a specific group has a specific underlying layer (by name).
+
     *   :param group: Node object to check for layer existence.
         :type group: QgsLayerTreeGroup
 
@@ -305,8 +298,9 @@ def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> 
     return False
 
 
-def import_lookups(cdbLoader: CDBLoader) -> None:
-    """Function to import the look-up tables into the qgis project."""
+def add_lookup_tables_to_ToC(cdbLoader: CDBLoader) -> None:
+    """Function to import the look-up tables into the qgis project.
+    """
     # Just to shorten the variables names.
     db = cdbLoader.DB
     cdb_schema = cdbLoader.CDB_SCHEMA
@@ -315,8 +309,7 @@ def import_lookups(cdbLoader: CDBLoader) -> None:
     # Add look-up tables into their own group in ToC.
     node_cdb_schema = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
 
-
-    lookups_node = add_ToC_node(parent_node=node_cdb_schema, child_name="Look-up tables")
+    lookups_node = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name="Look-up tables")
 
     # Get look-up tables names from the server.
     lookup_tables = sql.fetch_lookup_tables(cdbLoader)
@@ -345,15 +338,16 @@ def import_lookups(cdbLoader: CDBLoader) -> None:
     sort_ToC(lookups_node)
 
 
-def import_generics(cdbLoader: CDBLoader) -> None:
-    """Function to import the 'generic attributes' into the qgis project."""
+def add_genericattrib_table_to_ToC(cdbLoader: CDBLoader) -> None:
+    """Function to import the 'generic attributes' table into the qgis project.
+    """
     # Just to shorten the variables names.
     db = cdbLoader.DB
     cdb_schema = cdbLoader.CDB_SCHEMA
 
     # Add generics tables into their own group in ToC.
     root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
-    generics_node = add_ToC_node(parent_node=root, child_name=c.generics_alias)
+    generics_node = add_group_node_to_ToC(parent_node=root, child_name=c.generics_alias)
 
     # Add it ONLY if it doesn't already exists.
     if not is_layer_already_in_ToC_group(generics_node, f"{cdbLoader.CDB_SCHEMA}_{c.generics_table}"):
@@ -386,9 +380,9 @@ def import_generics(cdbLoader: CDBLoader) -> None:
 
 
 def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVectorLayer:
-    """Function that creates a postgres layer of a server table
-    based on the input layer name. This function is used to import
-    updatable views from usr_schema queried to the selected spatial extents.
+    """Function that creates a PostgreSQL layer based on the input layer name. This function is used to import
+    updatable views from the usr_schema queried to the selected spatial extents.
+
     *   :param v_name: View name to connect to server.
         :type v_name: str
 
@@ -398,7 +392,7 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
     #Just to shorten the variable names.
     db = cdbLoader.DB
     usr_schema = cdbLoader.USR_SCHEMA
-    extents = cdbLoader.QGIS_EXTENTS.asWktPolygon()
+    extents = cdbLoader.QGIS_EXTENTS_GREEN.asWktPolygon()
     crs = cdbLoader.CRS
 
     uri = QgsDataSourceUri()
@@ -409,11 +403,10 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
 
     return new_layer
 
-#NOTE: this function could be generalized to
-# accept ToC index location as a parameter (int).
+
 def send_to_ToC_top(group: QgsLayerTreeGroup) -> None: 
-    """Function that send the input group to the top
-    of the project's 'Table of Contents' tree.
+    """Function that send the input group to the top of the project's 'Table of Contents' tree.
+    #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
     """
     # According to qgis docs, this is the prefered way.
     root = QgsProject.instance().layerTreeRoot()
@@ -422,12 +415,9 @@ def send_to_ToC_top(group: QgsLayerTreeGroup) -> None:
     root.removeChildNode(group)
 
 
-#NOTE: this function could be generalized to 
-# accept ToC index location as a parameter (int).
 def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
-    """Function that send the input group to the bottom
-    of the project's 'Table of Contents' tree.
-
+    """Function that send the input group to the bottom of the project's 'Table of Contents' tree.
+    #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
     """
     group = None
     names = [ch.name() for ch in node.children()]
@@ -483,10 +473,9 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
     return None
 
 
-def add_ToC_node(parent_node: QgsLayerTreeGroup, child_name: str) -> QgsLayerTreeGroup:
-    """Function that adds a node (group) into the qgis
-    project 'Table of Contents' tree (by name). It also checks
-    if the node already exists and returns it.
+def add_group_node_to_ToC(parent_node: QgsLayerTreeGroup, child_name: str) -> QgsLayerTreeGroup:
+    """Function that adds a node (group) into the qgis project 'Table of Contents' tree (by name).
+    It also checks if the node already exists and returns it.
 
     *   :param parent_node: A node on which the new node is going to be added
             (or returned if it already exists).
@@ -510,6 +499,7 @@ def add_ToC_node(parent_node: QgsLayerTreeGroup, child_name: str) -> QgsLayerTre
 
 def add_layer_node_to_ToC(cdbLoader: CDBLoader, layer: c.Layer) -> QgsLayerTreeGroup:
     """Function that populates the project's 'Table of Contents' tree.
+
     *   :param view: The view used to build the ToC.
         :type view: View
 
@@ -518,23 +508,21 @@ def add_layer_node_to_ToC(cdbLoader: CDBLoader, layer: c.Layer) -> QgsLayerTreeG
     """
     root = QgsProject.instance().layerTreeRoot()
     # Database group (e.g. delft)
-    node_cdb = add_ToC_node(parent_node=root, child_name=cdbLoader.DB.database_name)
+    node_cdb = add_group_node_to_ToC(parent_node=root, child_name=cdbLoader.DB.database_name)
     # Schema group (e.g. citydb)
-    node_cdb_schema = add_ToC_node(parent_node=node_cdb, child_name="@".join([cdbLoader.DB.username, layer.cdb_schema]))
+    node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([cdbLoader.DB.username, layer.cdb_schema]))
     # FeatureType group (e.g. Building)
-    node_featureType = add_ToC_node(parent_node=node_cdb_schema, child_name=f"FeatureType: {layer.feature_type}")
+    node_featureType = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=f"FeatureType: {layer.feature_type}")
     # Feature group (e.g. Building Part)
-    node_feature = add_ToC_node(parent_node=node_featureType, child_name=layer.root_class)
+    node_feature = add_group_node_to_ToC(parent_node=node_featureType, child_name=layer.root_class)
     # LoD group (e.g. lod2)
-    node_lod = add_ToC_node(parent_node=node_feature, child_name=layer.lod)
+    node_lod = add_group_node_to_ToC(parent_node=node_feature, child_name=layer.lod)
 
     return node_lod # Node where the view has been added
 
 
 def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
-    """Function to extract the QVariant data from a
-    QgsCheckableComboBox widget.
-
+    """Function to extract the QVariant data from a QgsCheckableComboBox widget.
     Replaces built-in method: checkedItemsData()
     """
     checked_items = []
@@ -544,9 +532,8 @@ def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
     return checked_items
 
 
-def import_selected_layers(cdbLoader: CDBLoader, layers: list) -> bool:
-    """Function to import the selected layer in the user's
-    qgis project.
+def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
+    """Function to imports the selected layer(s) in the user's qgis project.
 
     *   :param layers: A list containing View object that correspond to the server views.
         :type layers: list(View)
@@ -569,11 +556,6 @@ def import_selected_layers(cdbLoader: CDBLoader, layers: list) -> bool:
     genattrib_found: bool = False
     layer_found: bool = False
 
-    # Do not do anything if there are not layers selected!
-    #if len(layers) == 0:
-    #    QgsMessageLog.logMessage(f"No layers selected", main_c.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
-    #    return True # All fine, but nothing to do
-
     if node_cdb:
         node_cdb_schema = root.findGroup("@".join([db.username, cdb_schema]))
         if node_cdb_schema:
@@ -593,23 +575,23 @@ def import_selected_layers(cdbLoader: CDBLoader, layers: list) -> bool:
                     if lu_layer.name() == "_".join([cdb_schema, c.enumerations_table]):
                         lookup_found = True
         else:
-            node_cdb_schema = add_ToC_node(node_cdb, "@".join([db.username, cdb_schema]))
+            node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
     else:
-        node_cdb = add_ToC_node(root, db.database_name)
-        node_cdb_schema = add_ToC_node(node_cdb, "@".join([db.username, cdb_schema]))
+        node_cdb = add_group_node_to_ToC(root, db.database_name)
+        node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
 
     # Get the look-up tables if they are not already loaded 
     if not genattrib_found:
-        node_genatt = add_ToC_node(node_cdb_schema, c.generics_alias) 
-        import_lookups(cdbLoader)
+        node_genatt = add_group_node_to_ToC(node_cdb_schema, c.generics_alias) 
+        add_lookup_tables_to_ToC(cdbLoader)
     else:
         #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", main_c.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Get the generic attributes table if it is not already loaded 
     if not lookup_found:
-        node_lookup = add_ToC_node(node_cdb_schema, "Look-up tables") 
-        import_generics(cdbLoader)
+        node_lookup = add_group_node_to_ToC(node_cdb_schema, "Look-up tables") 
+        add_genericattrib_table_to_ToC(cdbLoader)
     else:
         #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", main_c.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
@@ -659,8 +641,11 @@ def import_selected_layers(cdbLoader: CDBLoader, layers: list) -> bool:
         # Attach 'attribute form' from QML file.
         new_layer.loadNamedStyle(layer.qml_path)
 
-        # Setup the relation for this layer.
-        create_relations(cdbLoader, layer=new_layer)
+        # Setup the relations for this layer to the look-up (enumeration) tables
+        create_layer_relation_to_lookup_tables(cdbLoader, layer=new_layer)
+
+        # Setup the relations for this layer to the generic attributes table
+        create_layer_relation_to_genericattrib_table(cdbLoader, layer=new_layer)
 
         # Deactivate 3D renderer to avoid crashes.
         new_layer.setRenderer3D(None)
