@@ -3,28 +3,24 @@
 #from qgis.core import QgsMessageLog, Qgis
 ###
 
+import psycopg2
 from qgis.core import QgsSettings
 
-import psycopg2
-
-from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
-
 from .... import main_constants as main_c
-from ... import cdb4_constants as c
+from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
+from ...shared.functions import general_functions as gen_f
 from ..connection import Connection
 from . import sql
 
-FILE_LOCATION = c.get_file_relative_path(__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
 def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
-    """Function that reads the QGIS user settings to look for
-    existing connections
+    """Function that reads the QGIS user settings to look for existing connections
 
     All existing connections are stored in a 'Connection'
     objects and can be found and accessed from 'cbxExistingConnC'
     or 'cbxExistingConn' widget
     """
-
     # Clear the contents of the comboBox from previous runs
     if cdbLoader.usr_dlg:
         cdbLoader.usr_dlg.cbxExistingConnC.clear()
@@ -33,13 +29,13 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
 
     qsettings = QgsSettings()
 
-    #Navigate to postgres connection settings
+    # Navigate to PostgreSQL connection settings
     qsettings.beginGroup('PostgreSQL/connections')
 
-    #Get all stored connection names
+    # Get all stored connection names
     stored_connections = qsettings.childGroups()
 
-    #Get database connection settings for every stored connection
+    # Get database connection settings for every stored connection
     for conn in stored_connections:
 
         connectionInstance = Connection()
@@ -93,21 +89,19 @@ def open_and_set_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_
     *   :returns: connection attempt results
         :rtype: bool
     """
-    version: str
-
     try:
         # Open and set the connection.
         cdbLoader.conn = connect(db_connection=cdbLoader.DB, app_name=app_name)
         cdbLoader.conn.commit() # This seems redundant.
 
         # Get server version.
-        version = sql.fetch_posgresql_server_version(cdbLoader)
+        version: str = sql.fetch_posgresql_server_version(cdbLoader)
 
         # Store version into the connection object.
         cdbLoader.DB.pg_server_version = version
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=open_and_set_connection,
             location=FILE_LOCATION,
             header="Attempting connection",
