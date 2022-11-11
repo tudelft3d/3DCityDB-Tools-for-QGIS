@@ -29,17 +29,12 @@
 import os.path
 import typing
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QWidget
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes
-from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand
+from qgis.PyQt.QtWidgets import QAction, QWidget, QProgressBar, QVBoxLayout
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes, Qgis
+from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsMessageBar
 import psycopg2
-
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QProgressBar, QVBoxLayout
-from qgis.gui import QgsMessageBar
-from qgis.core import Qgis
 
 from . import main_constants as main_c
 from .resources import qInitResources
@@ -47,10 +42,11 @@ from .resources import qInitResources
 from .cdb4.gui_db_connector import connection as dbconn
 
 class CDBLoader:
-    """QGIS Plugin Implementation. Main class."""
+    """QGIS Plugin Implementation. Main class.
+    """
 
     def __init__(self, iface: QgisInterface) -> None:
-        """DBLoader class Constructor.
+        """CDBLoader class Constructor.
 
         *   :param iface: An interface instance that will be passed to this
                 class which provides the hook by which you can manipulate the
@@ -68,8 +64,19 @@ class CDBLoader:
         self.PLUGIN_ABS_PATH: str = os.path.normpath(os.path.dirname(__file__))
 
         #Initialize constants
+        # QGIS current version
+        self.QGIS_VERSION_STR: str = Qgis.version() 
+        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
+        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
+        self.QGIS_VERSION_REV: int   = int(self.QGIS_VERSION_STR.split(".")[2].split("-")[0])
+
+        # Read and assign constants from main_constants file (main_c)
         self.PLUGIN_NAME: str = main_c.PLUGIN_NAME
         self.PLUGIN_NAME_ADMIN: str = main_c.PLUGIN_NAME_ADMIN
+        self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
+        self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
+        self.PLUGIN_VERSION_REV: int = main_c.PLUGIN_VERSION_REV
+
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
         self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
 
@@ -89,39 +96,38 @@ class CDBLoader:
         # Variable to store the existing connection object.
         self.DB: dbconn.Connection = None
 
-        # Variable to store the selected extents.
-        self.CURRENT_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
-
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = iface.mapCanvas().mapSettings().destinationCrs()
 
+        # Variable to store the selected extents.
+        self.CURRENT_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
         # Variable to store the extents of the selected {cdb_schema}
-        self.CDB_SCHEMA_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+        self.CDB_SCHEMA_EXTENTS_BLUE: QgsRectangle = iface.mapCanvas().extent()
         # Variable to store the extents of the materialized views .
-        self.LAYER_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+        self.LAYER_EXTENTS_RED: QgsRectangle = iface.mapCanvas().extent()
         # Variable to store the extents of the QGIS layers.
-        self.QGIS_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
+        self.QGIS_EXTENTS_GREEN: QgsRectangle = iface.mapCanvas().extent()
 
-        # Variable to store an additional canvas (to show the extents in the connection tab).
+        # Variable to store an additional canvas (to show the extents in the CONNECTION TAB).
         self.CANVAS_C: QgsMapCanvas = QgsMapCanvas()
         self.CANVAS_C.enableAntiAliasing(True)
         self.CANVAS_C.setMinimumWidth(300)
         self.CANVAS_C.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_SCHEMA_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA_BLUE_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS_RED_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
 
-        # Variable to store an additional canvas (to show the extents in the layers tab).
+        # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
         self.CANVAS: QgsMapCanvas = QgsMapCanvas()
         self.CANVAS.enableAntiAliasing(True)
         self.CANVAS.setMinimumWidth(300)
         self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_USER = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA_BLUE = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS_RED = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_QGIS_GREEN = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
 
         # Variable to store all available FeatureTypes.
         # The availability is defined by the existence of at least one feature.
@@ -208,7 +214,6 @@ class CDBLoader:
                 added to self.actions list.
             :rtype: QAction
         """
-
         # Create icon from referenced path in resources file.
         icon = QIcon(icon_path)
 
@@ -297,6 +302,12 @@ class CDBLoader:
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
     
     def run_admin(self) -> None:
+        """Run main method that performs all the real work.
+        -   Creates the plugin dialog
+        -   Instantiates the plugin main class (CDB4LoaderAdminDialog) with its GUI
+        -   Setups the plugin signals
+        -   Executes the main dialog
+        """
         from .cdb4.gui_admin.cdb4_loader_admin_dialog import CDB4LoaderAdminDialog # Admin dialog
         from .cdb4.gui_admin.functions import tab_conn_widget_functions as dba_wf
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f
@@ -324,9 +335,8 @@ class CDBLoader:
 
     def run_usr(self) -> None:
         """Run main method that performs all the real work.
-
-        -   Creates the plugin dialogs
-        -   Instantiates the plugin main class (DBLoaderDialog) with its GUIs
+        -   Creates the plugin dialog
+        -   Instantiates the plugin main class (CDB4LoaderUserDialog) with its GUI
         -   Setups the plugin signals
         -   Executes the main dialog
         """
@@ -356,8 +366,8 @@ class CDBLoader:
         self.usr_dlg.show()
 
         # Run the dialog event loop.
-        res = self.usr_dlg.exec_()
-        if not res:
+        res = self.usr_dlg.exec_() 
+        if not res: # Dialog has closed (X button was pressed)
             return None
 
 
