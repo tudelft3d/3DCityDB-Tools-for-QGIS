@@ -4,12 +4,14 @@ These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
 import psycopg2
-from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
+
+from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
 from ... import cdb4_constants as c
+from ...shared.functions import general_functions as gen_f
 
-FILE_LOCATION = c.get_file_relative_path(file=__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def fetch_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
+def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
     """SQL query that reads and retrieves extents stored in {usr_schema}.extents
 
     *   :returns: Extents as WKT or None if the entry is empty.
@@ -32,14 +34,14 @@ def fetch_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_ty
         return extents
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
-            func=fetch_extents,
+        gen_f.critical_log(
+            func=fetch_precomputed_extents,
             location=FILE_LOCATION,
             header="Retrieving extents",
             error=error)
         cdbLoader.conn.rollback()
 
-def fetch_crs(cdbLoader: CDBLoader) -> int:
+def fetch_srid_id(cdbLoader: CDBLoader) -> int:
     """SQL query that reads and retrieves the current schema's srid from {cdb_schema}.database_srs
 
     *   :returns: srid number
@@ -55,8 +57,8 @@ def fetch_crs(cdbLoader: CDBLoader) -> int:
         return srid
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
-            func=fetch_crs,
+        gen_f.critical_log(
+            func=fetch_srid_id,
             location=FILE_LOCATION,
             header="Retrieving srid",
             error=error)
@@ -88,7 +90,7 @@ def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str,
         return colnames, metadata
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=fetch_layer_metadata,
             location=FILE_LOCATION,
             header="Retrieving layers metadata",
@@ -111,19 +113,19 @@ def fetch_lookup_tables(cdbLoader: CDBLoader) -> tuple:
                         """)
             lookups=cur.fetchall()
         cdbLoader.conn.commit()
-        lookups,empty=zip(*lookups)
+        lookups, empty =zip(*lookups)
         return lookups
 
     except (Exception, psycopg2.Error) as error:
         # Send error to QGIS Message Log panel.
-        c.critical_log(
+        gen_f.critical_log(
             func=fetch_lookup_tables,
             location=FILE_LOCATION,
             header="Retrieving look-up tables with enumerations and codelists",
             error=error)
         cdbLoader.conn.rollback()
 
-def exec_compute_schema_extents(cdbLoader: CDBLoader) -> tuple:
+def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
     """Calls the qgis_pkg function that computes the schema extents.
 
     *   :returns: x_min, y_min, x_max, y_max, srid
@@ -139,8 +141,8 @@ def exec_compute_schema_extents(cdbLoader: CDBLoader) -> tuple:
         return x_min, y_min, x_max, y_max, srid
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
-            func=exec_compute_schema_extents,
+        gen_f.critical_log(
+            func=exec_compute_cdb_schema_extents,
             location=FILE_LOCATION,
             header="Computing extents of the selected cdb_schema",
             error=error)
@@ -168,7 +170,7 @@ def exec_view_counter(cdbLoader: CDBLoader, layer: c.Layer) -> int:
         return count
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_view_counter,
             location=FILE_LOCATION,
             header=f"Counting number of objects in view {layer.mv_name}",
@@ -191,7 +193,7 @@ def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
         return result_bool
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_has_layers_for_cdb_schema,
             location=FILE_LOCATION,
             header="Checking support for schema",
@@ -215,7 +217,7 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
         cdbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_upsert_extents,
             location=FILE_LOCATION,
             header=f"Upserting '{bbox_type}' extents",
@@ -238,7 +240,7 @@ def fetch_mat_views(cdbLoader: CDBLoader) -> dict:
         return mat_views
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=fetch_mat_views,
             location=FILE_LOCATION,
             header="Retrieving list of materialized views",
@@ -259,7 +261,7 @@ def refresh_mat_view(cdbLoader: CDBLoader, connection, matview_name: str) -> Non
         cdbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=refresh_mat_view,
             location=FILE_LOCATION,
             header=f"Refreshing materialized view {matview_name} in schema {cdbLoader.USR_SCHEMA}",
