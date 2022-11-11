@@ -1,14 +1,13 @@
 """This module contains functions that relate to the server side operations.
-
-These functions are responsible to communicate and fetch data from
-the database with sql queries or sql function calls.
+They communicate and fetch data from the database with sql queries or sql function calls.
 """
 import psycopg2
+
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from ... import cdb4_constants as c
+from ...shared.functions import general_functions as gen_f
 from ...shared.functions import sql as sh_sql
 
-FILE_LOCATION = c.get_file_relative_path(file=__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 def fetch_list_usr_schemas(cdbLoader: CDBLoader) -> tuple:
     """SQL function that retrieves the database usr_schemas
@@ -25,7 +24,7 @@ def fetch_list_usr_schemas(cdbLoader: CDBLoader) -> tuple:
         return schemas
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=fetch_list_usr_schemas,
             location=FILE_LOCATION,
             header="Retrieving list of usr_schemas",
@@ -64,7 +63,7 @@ def is_superuser(cdbLoader: CDBLoader) -> bool:
         return None
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=is_superuser,
             location=FILE_LOCATION,
             header=f"Checking whether user is a database superuser",
@@ -86,7 +85,7 @@ def fetch_list_qgis_pkg_usrgroup_members(cdbLoader: CDBLoader) -> tuple:
         return users
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=fetch_list_qgis_pkg_usrgroup_members,
             location=FILE_LOCATION,
             header="Retrieving list of available users",
@@ -105,7 +104,7 @@ def exec_create_qgis_usr_schema(cdbLoader: CDBLoader) -> None:
         cdbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_create_qgis_usr_schema,
             location=FILE_LOCATION,
             header=f"Creating user schema for {user}",
@@ -122,7 +121,7 @@ def exec_revoke_qgis_usr_privileges(cdbLoader: CDBLoader, usr_name: str, cdb_sch
         cdbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_revoke_qgis_usr_privileges,
             location=FILE_LOCATION,
             header=f"Revoking privileges of user {usr_name} for schema {cdb_schema}.",
@@ -151,7 +150,7 @@ def exec_drop_db_schema(cdbLoader: CDBLoader, schema: str, close_connection: boo
             cdbLoader.conn.close()
 
     except (Exception, psycopg2.Error) as error:
-        c.critical_log(
+        gen_f.critical_log(
             func=exec_drop_db_schema,
             location=FILE_LOCATION,
             header="Dropping schema {schema} from current database",

@@ -386,7 +386,7 @@ def ev_qgis_pkg_install_success(cdbLoader: CDBLoader, pkg: str) -> None:
     # Remove progress bar
     dlg.msg_bar.clearWidgets()
 
-    if sh_sql.is_qgis_pkg_intalled(cdbLoader):
+    if sh_sql.is_qgis_pkg_installed(cdbLoader):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=pkg))
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
@@ -456,7 +456,7 @@ def ev_qgis_pkg_uninstall_success(cdbLoader: CDBLoader) -> None:
 
     qgis_pkg_schema = cdbLoader.QGIS_PKG_SCHEMA
 
-    if not sh_sql.is_qgis_pkg_intalled(cdbLoader):
+    if not sh_sql.is_qgis_pkg_installed(cdbLoader):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=qgis_pkg_schema))
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
