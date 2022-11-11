@@ -286,7 +286,7 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.gbxMainInst.setDisabled(False)
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_intalled(cdbLoader)
+        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(cdbLoader)
 
         # Only for debugging purposes
         #is_qgis_pkg_installed: bool = False
