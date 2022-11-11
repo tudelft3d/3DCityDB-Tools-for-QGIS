@@ -389,7 +389,7 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
     *   :returns: the created layer object
         :rtype: QgsVectorLayer
     """
-    #Just to shorten the variable names.
+    # Shorten the variable names.
     db = cdbLoader.DB
     usr_schema = cdbLoader.USR_SCHEMA
     extents = cdbLoader.QGIS_EXTENTS_GREEN.asWktPolygon()
@@ -397,7 +397,16 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
 
     uri = QgsDataSourceUri()
     uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
-    uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aSql=f"ST_GeomFromText('{extents}') && {c.geom_col}", aKeyColumn=c.id_col)
+
+    #print(cdbLoader.LAYER_EXTENTS_RED)
+    #print(cdbLoader.QGIS_EXTENTS_GREEN)
+
+    if cdbLoader.QGIS_EXTENTS_GREEN == cdbLoader.LAYER_EXTENTS_RED:  
+        # No need to apply a spatial filter in QGIS
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aKeyColumn=c.id_col)
+    else:
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aSql=f"ST_GeomFromText('{extents}') && {c.geom_col}", aKeyColumn=c.id_col)
+
     new_layer = QgsVectorLayer(uri.uri(False), layer_name, "postgres")
     new_layer.setCrs(crs)
 
