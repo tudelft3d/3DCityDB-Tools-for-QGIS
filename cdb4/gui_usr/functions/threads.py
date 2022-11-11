@@ -47,25 +47,26 @@ class LayerCreationWorker(QObject):
         """Execution method that creates the layers
         using function from the 'qgis_pkg' installation.
         """
+        dlg = self.plg.usr_dlg
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
 
         # Set progress bar goal
-        self.plg.usr_dlg.bar.setMaximum(len(c.create_layers_funcs))
+        dlg.bar.setMaximum(len(c.create_layers_funcs))
 
         # Get corners coordinates
-        y_min = str(self.plg.LAYER_EXTENTS.yMinimum())
-        x_min = str(self.plg.LAYER_EXTENTS.xMinimum())
-        y_max = str(self.plg.LAYER_EXTENTS.yMaximum())
-        x_max = str(self.plg.LAYER_EXTENTS.xMaximum())
+        y_min = str(self.plg.LAYER_EXTENTS_RED.yMinimum())
+        x_min = str(self.plg.LAYER_EXTENTS_RED.xMinimum())
+        y_max = str(self.plg.LAYER_EXTENTS_RED.yMaximum())
+        x_max = str(self.plg.LAYER_EXTENTS_RED.xMaximum())
 
         # Set function input
         params = [
             self.plg.DB.username,
             self.plg.CDB_SCHEMA,
-            int(self.plg.usr_dlg.gbxSimplifyGeom.isChecked()),
-            self.plg.usr_dlg.qspbDecimalPrec.value(),
-            self.plg.usr_dlg.qspbMinArea.value(),
+            int(dlg.gbxSimplifyGeom.isChecked()),
+            dlg.qspbDecimalPrec.value(),
+            dlg.qspbMinArea.value(),
             "{"+",".join([x_min, y_min, x_max, y_max])+"}",
             False
             ]
@@ -155,13 +156,15 @@ class RefreshMatViewsWorker(QObject):
         """Execution method that refreshes the materialized views in the
         server (for a specific schema).
         """
+        dlg = self.plg.usr_dlg
+
         # Get feature types from layer_metadata table.
         cols_to_featch: str = ",".join(["feature_type","mv_name"])
         col, ftype_mview = sql.fetch_layer_metadata(cdbLoader=self.plg, usr_schema=self.plg.USR_SCHEMA, cdb_schema=self.plg.CDB_SCHEMA, cols=cols_to_featch)
         col = None # Discard byproduct.
 
         # Set progress bar goal
-        self.plg.usr_dlg.bar.setMaximum(len(ftype_mview))
+        dlg.bar.setMaximum(len(ftype_mview))
 
         # Open new temp session, reserved for mat refresh.
         with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Refresh)") as conn:
@@ -255,13 +258,14 @@ class LayerDroppingWorker(QObject):
         self.plg = cdbLoader
 
     def create_thread(self):
+        dlg = self.plg.usr_dlg
         """Execution method that creates the layers using function from the 'qgis_pkg' installation.
         """
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
 
         # Set progress bar goal
-        self.plg.usr_dlg.bar.setMaximum(len(c.drop_layers_funcs))
+        dlg.bar.setMaximum(len(c.drop_layers_funcs))
 
         # Open new temp session, reserved for installation.
         with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping Layers)") as conn:
@@ -377,12 +381,11 @@ def ev_refresh_success(cdbLoader: CDBLoader) -> None:
         dlg.qgbxExtents.setDisabled(False)
         dlg.btnCityExtents.setDisabled(False)
         dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text.format(sch="layers extents"))
-        lt_wf.gbxBasemap_setup(cdbLoader=cdbLoader, canvas_widget=cdbLoader.CANVAS)
+        lt_wf.gbxBasemap_setup(cdbLoader)
 
 
 def ev_layers_success(cdbLoader: CDBLoader) -> None:
-    """Event that is called when the thread executing the layer
-    creation finishes successfully.
+    """Event that is called when the thread executing the layer creation finishes successfully.
 
     Shows success message at cdbLoader.usr_dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
@@ -394,6 +397,7 @@ def ev_layers_success(cdbLoader: CDBLoader) -> None:
     dlg.msg_bar.clearWidgets()
 
     if sql.exec_has_layers_for_cdb_schema(cdbLoader):
+        dlg = cdbLoader.usr_dlg
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.LAYER_CR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA))
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
@@ -441,8 +445,7 @@ def ev_layers_fail(cdbLoader: CDBLoader) -> None:
 
 
 def ev_drop_layers_success(cdbLoader: CDBLoader) -> None:
-    """Event that is called when the thread executing the layer
-    dropping finishes successfully.
+    """Event that is called when the thread executing the layer dropping finishes successfully.
 
     Shows success message at cdbLoader.usr_dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
@@ -473,6 +476,7 @@ def ev_drop_layers_success(cdbLoader: CDBLoader) -> None:
         # Disable the option to delete them.
         dlg.btnDropLayers.setDisabled(True)
         dlg.lblLayerRefr_out.clear()
+        lt_wf.tabLayers_reset(cdbLoader)
     else:
         ev_drop_layers_fail(cdbLoader)
 
