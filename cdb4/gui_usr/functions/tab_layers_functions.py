@@ -29,6 +29,7 @@ def has_matviews(cdbLoader: CDBLoader) -> bool:
         return True
     return False
 
+
 def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Feature Types' combo box.
     Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
@@ -45,6 +46,7 @@ def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
                 # The first FeatureType object added in 'cbxFeatureType' emits
                 # a 'currentIndexChanged' signal.
                 break # We need only one view to have > 0 features.
+
 
 def instantiate_objects(cdbLoader: CDBLoader) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
@@ -86,6 +88,7 @@ def instantiate_objects(cdbLoader: CDBLoader) -> None:
 
         # Count the number of features that the view has in the current extents.
         sql.exec_view_counter(cdbLoader, view) # Stores number in view.n_selected.
+
 
 def fill_lod_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Geometry Level' combo box (LoD).
@@ -129,6 +132,7 @@ def fill_features_box(cdbLoader: CDBLoader) -> None:
                     userData=view)
     # TODO: 05-02-2021 Add separator between different features
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
+
 
 def value_rel_widget(
         AllowMulti: bool = False,
@@ -398,9 +402,6 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
     uri = QgsDataSourceUri()
     uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
 
-    #print(cdbLoader.LAYER_EXTENTS_RED)
-    #print(cdbLoader.QGIS_EXTENTS_GREEN)
-
     if cdbLoader.QGIS_EXTENTS_GREEN == cdbLoader.LAYER_EXTENTS_RED:  
         # No need to apply a spatial filter in QGIS
         uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aKeyColumn=c.id_col)
@@ -594,7 +595,7 @@ def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
         node_genatt = add_group_node_to_ToC(node_cdb_schema, c.generics_alias) 
         add_lookup_tables_to_ToC(cdbLoader)
     else:
-        #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", main_c.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Get the generic attributes table if it is not already loaded 
@@ -602,7 +603,7 @@ def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
         node_lookup = add_group_node_to_ToC(node_cdb_schema, "Look-up tables") 
         add_genericattrib_table_to_ToC(cdbLoader)
     else:
-        #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", main_c.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Start loading the selected layer(s)

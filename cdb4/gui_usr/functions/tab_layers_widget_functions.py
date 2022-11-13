@@ -9,7 +9,6 @@ clearing widget items or selections and deactivating widgets.
 
 #from qgis.core import Qgis, QgsMessageLog 
 from qgis.PyQt.QtCore import Qt
-from qgis.core import QgsRectangle
 
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from ...shared.functions import general_functions as gen_f
@@ -28,7 +27,7 @@ def gbxBasemap_setup(cdbLoader: CDBLoader) ->  None:
     The basemap is zoomed-in to the city model's extents (in 'Layers' tab)
     """
     # Set basemap of the layer tab.
-    canvas.canvas_setup(cdbLoader, canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, clear=False)
+    canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, clear=False)
 
     # Draw rubberband for extents of selected {cdb_schema}.
     canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
@@ -36,13 +35,8 @@ def gbxBasemap_setup(cdbLoader: CDBLoader) ->  None:
     # Draw rubberband for extents of materialized views in selected {cdb_schema}.
     canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, width=2, color=Qt.red)
 
-    # Zoom to layer extents (red box).
-    # PROBLEM: The zoom operation enlarges automatically the size of the extents in the variable passed.
-    # WORKAROUND: Therefore we decouple it from the global variable by transforming to/from WKT
+    # Zoom to the layer extents (red box).
     canvas.zoom_to_extents(canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED)
-    #temp_extents_wkt: str = cdbLoader.LAYER_EXTENTS_RED.asWktPolygon()
-    #temp_rectangle: QgsRectangle = QgsRectangle.fromWkt(temp_extents_wkt)
-    #cdbLoader.CANVAS.zoomToFeatureExtent(temp_rectangle)
 
     # Create polygon rubber band corresponding to the extents (the green one)
     canvas.insert_rubber_band(band=cdbLoader.RUBBER_QGIS_GREEN, extents=cdbLoader.CURRENT_EXTENTS, crs=cdbLoader.CRS, width=1, color=Qt.green)
@@ -57,6 +51,7 @@ def tabLayers_reset(cdbLoader: CDBLoader) -> None:
     Resets: gbxAvailableL, gbxLayerSelection, gbxExtent and lblInfoText.
     """
     dlg = cdbLoader.usr_dlg
+
     dlg.tabLayers.setDisabled(True)
     gbxAvailableL_reset(cdbLoader)
     gbxLayerSelection_reset(cdbLoader)
@@ -68,6 +63,7 @@ def lblInfoText_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'DB and Schema' label (in Layers tab).
     """
     dlg = cdbLoader.usr_dlg
+
     dlg.lblInfoText.setText(dlg.lblInfoText.init_text)
     dlg.lblInfoText.setDisabled(True)
 
@@ -76,8 +72,8 @@ def gbxBasemap_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Extents' groupbox (in Layers tab).
     """
     dlg = cdbLoader.usr_dlg
+    
     dlg.qgbxExtents.setDisabled(True)
-
     # Remove extent rubber bands.
     cdbLoader.RUBBER_CDB_SCHEMA_BLUE.reset()
     cdbLoader.RUBBER_LAYERS_RED.reset()
@@ -88,6 +84,7 @@ def gbxLayerSelection_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Parameters' group box (in Layers tab).
     """
     dlg = cdbLoader.usr_dlg
+    
     dlg.gbxLayerSelection.setDisabled(True)
     dlg.cbxFeatureType.clear()
     dlg.cbxLod.clear()
@@ -97,6 +94,7 @@ def gbxAvailableL_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Features to Import' group box (in Layers tab).
     """
     dlg = cdbLoader.usr_dlg
+
     dlg.gbxAvailableL.setDisabled(True)
     dlg.ccbxFeatures.clear()
 
