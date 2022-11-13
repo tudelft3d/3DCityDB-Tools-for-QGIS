@@ -23,16 +23,13 @@
  *                                                                         *
  ***************************************************************************/
 """
-
-#from qgis.core import Qgis, QgsMessageLog
-
 import os.path
 import typing
 
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget, QProgressBar, QVBoxLayout
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes, Qgis
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes, Qgis, QgsMessageLog
 from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsMessageBar
 import psycopg2
 
@@ -76,6 +73,9 @@ class CDBLoader:
         self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
         self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
         self.PLUGIN_VERSION_REV: int = main_c.PLUGIN_VERSION_REV
+        self.PLUGIN_VERSION_TXT: str = ".".join([str(self.PLUGIN_VERSION_MAJOR), str(self.PLUGIN_VERSION_MINOR), str(self.PLUGIN_VERSION_REV)])
+
+        QgsMessageLog.logMessage(f"You are using 3DCityDB-Loader v. {self.PLUGIN_VERSION_TXT}. Enjoy!", self.PLUGIN_NAME, level=Qgis.Info, notifyUser=False)
 
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
         self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
