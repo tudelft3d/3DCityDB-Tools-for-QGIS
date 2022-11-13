@@ -6,28 +6,23 @@ from qgis.PyQt.QtGui import QColor
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from ... import cdb4_constants as c
 
-def canvas_setup(cdbLoader: CDBLoader,
-        canvas=QgsMapCanvas(), 
-        extents=c.OSM_INIT_EXTS, 
-        crs=c.OSM_INIT_CRS,
-        clear: bool = True) -> None:
+def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
     """Function to set up the additional map canvas that shows the extents.
-    For the basemap it uses a OSM maps WMS layer
+    For the basemap it uses a OSM maps WMS layer,         
+    (in 'User Connection' tab)
+    (in 'Layers' tab)
 
     *   :param canvas: Canvas objects to put the map on.
-
         :type canvas: QgsMapCanvas
 
     *   :param extents: Extents to focus the canvas on.
-
         :type extents: QgsRectangle
 
     *   :param crs: CRS of the map.
-
         :type extents: QgsCoordinateReferenceSystem
 
-        (in 'User Connection' tab)
-        (in 'Layers' tab)
+    *   :param clear: Clear map registry from old OSM layers.
+        :type clear: bool
     """
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
@@ -60,24 +55,15 @@ def canvas_setup(cdbLoader: CDBLoader,
         QgsProject.instance().addMapLayer(rlayer, addToLegend=False)
 
     # OSM layers object
-    registryOSM_l = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+    registryOSM_list = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
     # Set the map canvas layer set.
-    canvas.setLayers(registryOSM_l)
+    canvas.setLayers(registryOSM_list)
 
-def insert_rubber_band(
-        band: QgsRubberBand,
-        extents: QgsRectangle,
-        crs: QgsCoordinateReferenceSystem,
-        width: int,
-        color: Qt.GlobalColor = Qt.red) -> None:
+def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoordinateReferenceSystem, width: int, color: Qt.GlobalColor = Qt.red) -> None:
     """Function that insert a rubber band corresponding to an extent.
-
-    The rubber band is inserted into the additional map canvas created
-    to show the extents.
-
-    Use different colors to represent different extent types
-    e.g.
+    The rubber band is inserted into the additional map canvas created to show the extents.
+    Use different colors to represent different extent types, e.g.
     +   Qt.blue = citydb schema extents
     +   Qt.red = Layers extents
     +   Qt.green = User defined extents, pressing the buttons
@@ -99,7 +85,6 @@ def insert_rubber_band(
         (in 'User Connection' tab)
         (in 'Layers' tab)
     """
-
     # Create polygon rubber band corresponding to the extents
     #band = QgsRubberBand(canvas, QgsWkbTypes.PolygonGeometry)
     extents_geometry = QgsGeometry.fromRect(extents)
@@ -120,8 +105,9 @@ def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
     *   :param extents: Extents to focus the canvas on.
         :type extents: QgsRectangle
     """
+    # In this way we overcome the problem that the variable extents will be
+    # changed to new values after the zoom function, as this is not desired.
     extents_wkt: str = extents.asWktPolygon()
-    rectangle: QgsRectangle = QgsRectangle.fromWkt(extents_wkt)
+    rectangle: QgsRectangle = QgsRectangle().fromWkt(extents_wkt)
     canvas.zoomToFeatureExtent(rectangle)
-
     return None
