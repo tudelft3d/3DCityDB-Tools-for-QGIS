@@ -21,7 +21,8 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
         with cdbLoader.conn.cursor() as cur:
             # Get db_schema extents from server as WKT.
             cur.execute(query= f"""
-                                   SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
+                                   SELECT ST_AsText(envelope) 
+                                   FROM "{usr_schema}".extents 
                                    WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
                                 """)
             extents = cur.fetchone()
@@ -41,7 +42,7 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
             error=error)
         cdbLoader.conn.rollback()
 
-def fetch_srid_id(cdbLoader: CDBLoader) -> int:
+def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
     """SQL query that reads and retrieves the current schema's srid from {cdb_schema}.database_srs
 
     *   :returns: srid number
@@ -58,7 +59,7 @@ def fetch_srid_id(cdbLoader: CDBLoader) -> int:
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_srid_id,
+            func=fetch_cdb_schema_srid,
             location=FILE_LOCATION,
             header="Retrieving srid",
             error=error)
@@ -125,8 +126,8 @@ def fetch_lookup_tables(cdbLoader: CDBLoader) -> tuple:
             error=error)
         cdbLoader.conn.rollback()
 
-def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
-    """Calls the qgis_pkg function that computes the schema extents.
+def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader, update_extents_table: bool = True) -> tuple:
+    """Calls the qgis_pkg function that computes the cdb_schema extents. Optionally it upserts the table extents in usr_schema.
 
     *   :returns: x_min, y_min, x_max, y_max, srid
         :rtype: tuple
@@ -134,19 +135,50 @@ def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
     try:
         with cdbLoader.conn.cursor() as cur:
             # Execute server function to compute the schema's extents
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_schema_extents""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA])
-            x_min, y_min, x_max, y_max, srid, upserted_id = cur.fetchone()
-        upserted_id = None # Not needed.
-        cdbLoader.conn.commit()
-        return x_min, y_min, x_max, y_max, srid
+            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_cdb_schema_extents""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA, update_extents_table])
+            values = cur.fetchone()
+            cdbLoader.conn.commit()
+            if values:
+                x_min, y_min, x_max, y_max, srid, upserted_id = values
+                upserted_id = None # Not needed.
+                return x_min, y_min, x_max, y_max, srid
+            else:
+                return None
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=exec_compute_cdb_schema_extents,
             location=FILE_LOCATION,
-            header="Computing extents of the selected cdb_schema",
+            header=f"Computing extents of the selected cdb_schema '{cdbLoader.CDB_SCHEMA}'",
             error=error)
         cdbLoader.conn.rollback()
+
+
+##############################################
+# TO BE DROPPED AFTER TESTING
+# def exec_compute_cdb_schema_extents_old(cdbLoader: CDBLoader) -> tuple:
+#     """Calls the qgis_pkg function that computes the schema extents.
+
+#     *   :returns: x_min, y_min, x_max, y_max, srid
+#         :rtype: tuple
+#     """
+#     try:
+#         with cdbLoader.conn.cursor() as cur:
+#             # Execute server function to compute the schema's extents
+#             cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_schema_extents""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA])
+#             x_min, y_min, x_max, y_max, srid, upserted_id = cur.fetchone()
+#         upserted_id = None # Not needed.
+#         cdbLoader.conn.commit()
+#         return x_min, y_min, x_max, y_max, srid
+
+#     except (Exception, psycopg2.Error) as error:
+#         gen_f.critical_log(
+#             func=exec_compute_cdb_schema_extents_old,
+#             location=FILE_LOCATION,
+#             header="Computing extents of the selected cdb_schema",
+#             error=error)
+#         cdbLoader.conn.rollback()
+##############################################
 
 def exec_view_counter(cdbLoader: CDBLoader, layer: c.Layer) -> int:
     """Calls the qgis_pkg function that counts the number of
@@ -177,6 +209,7 @@ def exec_view_counter(cdbLoader: CDBLoader, layer: c.Layer) -> int:
             error=error)
         cdbLoader.conn.rollback()
 
+
 def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
     """Calls the qgis_pkg function that determines whether the {usr_schema} has views
     regarding the current {cdb_schema}.
@@ -187,7 +220,7 @@ def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
     try:
         with cdbLoader.conn.cursor() as cur:
             # Execute function to find if qgis_pkg supports current schema.
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.support_for_schema""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA])
+            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.has_layers_for_cdb_schema""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA])
             result_bool = cur.fetchone()[0] # Tuple has trailing comma.
         cdbLoader.conn.commit()
         return result_bool
@@ -200,7 +233,8 @@ def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
             error=error)
         cdbLoader.conn.rollback()
 
-def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, bbox_type, extents) -> None:
+
+def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, bbox_type: str, extents_wkt_poly: str) -> int:
     """
     TOfill
     """
@@ -213,8 +247,13 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
 
     try:
         with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents])
+            upserted_id = cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents_wkt_poly])
         cdbLoader.conn.commit()
+        if upserted_id:
+            return upserted_id
+        else:
+            return None
+
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
@@ -223,6 +262,7 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
             header=f"Upserting '{bbox_type}' extents",
             error=error)
         cdbLoader.conn.rollback()
+
 
 def fetch_mat_views(cdbLoader: CDBLoader) -> dict:
     """SQL query that retrieves the current cdb_schema's materialised views from pg_matviews
@@ -246,6 +286,7 @@ def fetch_mat_views(cdbLoader: CDBLoader) -> dict:
             header="Retrieving list of materialized views",
             error=error)
         cdbLoader.conn.rollback()
+
 
 def refresh_mat_view(cdbLoader: CDBLoader, connection, matview_name: str) -> None:
     """SQL query that refreshes a materialized view in {usr_schema}

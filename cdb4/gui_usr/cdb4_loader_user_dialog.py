@@ -23,7 +23,8 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry
+from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes
+from qgis.gui import QgsRubberBand
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -67,12 +68,21 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # Enhance various Qt Objects with their initial text.
         # This is used in order to revert to the original state
         # in reset operations when original text has already changed.
+
+        # TAB Connection
         self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
+
+        self.btnRefreshCDBExtents.init_text = c.btnRefreshCDBExtents_t
+
+        self.btnCityExtentsC.init_text = c.btnCityExtentsC_t
+
         self.btnCreateLayers.init_text = c.btnCreateLayers_t
         self.btnRefreshLayers.init_text = c.btnRefreshLayers_t
         self.btnDropLayers.init_text = c.btnDropLayers_t
-        self.btnCityExtentsC.init_text = c.btnCityExtentsC_t
+
+        # TAB Layers
         self.lblInfoText.init_text = c.lblInfoText_t
+
         self.btnCityExtents.init_text = c.btnCityExtents_t
         self.ccbxFeatures.init_text = c.ccbxFeatures_t
 
@@ -90,6 +100,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnConnectToDbC.clicked.connect(lambda: self.evt_btnConnectToDb_clicked(cdbLoader))
         self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbLoader))
 
+
         # Basemap (OSM) group box signals
         # Link the addition canvas to the extents qgroupbox and
         # enable "MapCanvasExtent" options (Byproduct).
@@ -100,6 +111,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         self.qgbxExtentsC.setOutputCrs(outputCrs=cdbLoader.CRS)
 
         # 'Extents' groupbox signals
+        self.btnRefreshCDBExtents.clicked.connect(lambda: self.evt_btnRefreshCDBExtents_clicked(cdbLoader))
+
         self.btnCityExtentsC.clicked.connect(lambda: self.evt_btnCityExtentsC_clicked(cdbLoader))
         cdbLoader.CANVAS_C.extentsChanged.connect(lambda: self.evt_canvas_ext_changed(cdbLoader))
         self.qgbxExtentsC.extentChanged.connect(lambda: self.evt_qgbxExtentsC_ext_changed(cdbLoader))
@@ -185,6 +198,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         if dlgConnector.new_connection:
             dlg.cbxExistingConnC.addItem(f"{dlgConnector.new_connection.connection_name}",dlgConnector.new_connection)
 
+
     # 'Database' group box events (in 'User Connection' tab)
     def evt_btnConnectToDb_clicked(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
@@ -257,7 +271,6 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             error_msg = f"The QGIS Package is not installed in this database (i.e. there is no'{cdbLoader.QGIS_PKG_SCHEMA}' schema). Please contact your database administrator."
             #QgsMessageLog.logMessage(error_msg, cdbLoader.PLUGIN_NAME, level=Qgis.Critical)
             QMessageBox.warning(dlg, "Missing QGIS Package", error_msg)
-
             return None # Exit
 
         # 3) Is the installed QGIS package version compatible with this version of the plugin? If yes, continue
@@ -355,13 +368,14 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return None # Exit
 
+
     def evt_cbxSchema_changed(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema) current index changes.
         Function to setup the GUI after an 'indexChanged' signal is emitted from the cbxSchema combo box.
         This function runs every time the selected schema is changed (in 'User Connection' tab)
         Checks if the connection + schema meet the necessary requirements.
         """
-        # Reset the Layer tab in case it was open from before, with another schema
+        # Reset the Layer tab in case it was open from before, with possibly another schema
         if cdbLoader.CDB_SCHEMA:
             lt_wf.tabLayers_reset(cdbLoader)
 
@@ -382,9 +396,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.lblLayerExist_out.clear()
         dlg.lblLayerRefr_out.clear()
 
+        dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text.format(sch=cdbLoader.CDB_SCHEMA))
         dlg.btnCityExtentsC.setText(dlg.btnCityExtentsC.init_text.format(sch=cdbLoader.CDB_SCHEMA))
-        dlg.btnRefreshLayers.setText(dlg.btnRefreshLayers.init_text.format(sch=cdbLoader.CDB_SCHEMA))
+
         dlg.btnCreateLayers.setText(dlg.btnCreateLayers.init_text.format(sch=cdbLoader.CDB_SCHEMA))
+        dlg.btnRefreshLayers.setText(dlg.btnRefreshLayers.init_text.format(sch=cdbLoader.CDB_SCHEMA))
         dlg.btnDropLayers.setText(dlg.btnDropLayers.init_text.format(sch=cdbLoader.CDB_SCHEMA))
 
         dlg.gbxBasemapC.setDisabled(False)
@@ -394,13 +410,13 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # Setup the 'Basemap (OSM)' groupbox.
         ct_wf.gbxBasemapC_setup(cdbLoader)
 
-        mview_exts = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
-        if mview_exts:
-            # Put extents coordinates into the widget. Singal emitted for qgbxExtentsC.
-            dlg.qgbxExtentsC.setOutputExtentFromUser(QgsRectangle.fromWkt(mview_exts), cdbLoader.CRS)
+        layer_extents_wkt: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
+        if layer_extents_wkt:
+            # Put extents coordinates into the widget. Signal emitted for qgbxExtentsC.
+            dlg.qgbxExtentsC.setOutputExtentFromUser(QgsRectangle.fromWkt(layer_extents_wkt), cdbLoader.CRS)
 
-        # Check if user package has views corresponding to the current schema (layers).
-        has_layers_in_current_schema = sql.exec_has_layers_for_cdb_schema(cdbLoader)
+        # Check if user package has already some layers corresponding to the current schema.
+        has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbLoader)
         if has_layers_in_current_schema:
             dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
             cdbLoader.DB.green_schema_supp = True
@@ -413,7 +429,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             return None
 
         # Check if the materialised views are populated.
-        refresh_date = sql.fetch_layer_metadata(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, cols="refresh_date")
+        refresh_date: tuple = sql.fetch_layer_metadata(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, cols="refresh_date")
         # Extract a date.
         date = list(set(refresh_date[1]))[0][0]
         if date:
@@ -428,10 +444,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         if cdbLoader.DB.user_meets_requirements():
             dlg.tabLayers.setDisabled(False)
             dlg.lblInfoText.setDisabled(False)
-            dlg.lblInfoText.setText(dlg.lblInfoText.init_text.format(
-                        db=cdbLoader.DB.database_name,
-                        usr=cdbLoader.DB.username,
-                        sch=cdbLoader.CDB_SCHEMA))
+            dlg.lblInfoText.setText(dlg.lblInfoText.init_text.format(db=cdbLoader.DB.database_name, usr=cdbLoader.DB.username, sch=cdbLoader.CDB_SCHEMA))
             dlg.gbxBasemap.setDisabled(False)
             dlg.qgbxExtents.setDisabled(False)
             dlg.btnCityExtents.setDisabled(False)
@@ -440,7 +453,6 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             lt_wf.gbxBasemap_setup(cdbLoader)
 
             dlg.tabLayers.setDisabled(False)           
-
             # We are done here with the 'User Connection' tab.
 
         else:
@@ -470,25 +482,191 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
 
-        # Update extents variable with the ones that fired the signal.
+        # Update current extents variable with the ones that fired the signal.
         cdbLoader.CURRENT_EXTENTS: QgsRectangle = dlg.qgbxExtentsC.outputExtent()
         if cdbLoader.CURRENT_EXTENTS.isNull() or cdbLoader.CDB_SCHEMA_EXTENTS_BLUE.isNull():
             return None
 
-        # Draw the extents in the additional canvas (basemap)
+        # Draw the red rubber band corresponding to the next extents of the basemap (basemap)
         canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED_C, extents=cdbLoader.CURRENT_EXTENTS, crs=cdbLoader.CRS, width=2, color=Qt.red)
 
         # Compare original extents with user defined ones.
-        layer_exts = QgsGeometry.fromRect(cdbLoader.CURRENT_EXTENTS)
-        cdb_exts = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
+        layer_extents = QgsGeometry.fromRect(cdbLoader.CURRENT_EXTENTS)
+        cdb_extents = QgsGeometry.fromRect(cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
 
         # Check validity of user extents relative to the City Model's cdb_extents.
-        if layer_exts.intersects(cdb_exts):
+        if layer_extents.intersects(cdb_extents):
             cdbLoader.LAYER_EXTENTS_RED = cdbLoader.CURRENT_EXTENTS           
         else:
             QMessageBox.critical(dlg, "Warning", f"Pick a region intersecting the extents of '{cdbLoader.CDB_SCHEMA}' (blue area).")
             return None
 
+
+    def evt_btnRefreshCDBExtents_clicked(self, cdbLoader: CDBLoader) -> None:
+        """Event that is called when the button (btnRefreshCDBExtents) is pressed.
+        It will check whether the cdb_extents
+        - are null, i.e. the database has been emptied (reset all, the cdb_schema will disappear from the list)
+        - have not changed (do nothing)
+        - have changed and the new cdb extents contain the old ones (only update the ribbons)
+        - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
+
+        """
+        values = sql.exec_compute_cdb_schema_extents(cdbLoader=cdbLoader, update_extents_table=False)
+        if values:
+            x_min, y_min, x_max, y_max, srid = values
+            srid = None # Discard unneeded variable.
+
+            cdb_extents_old: QgsRectangle = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE
+            
+            cdb_extents_new = QgsRectangle()
+            cdb_extents_new.set(x_min, y_min, x_max, y_max, False)
+
+            #########################################
+            # Only for testing purposes
+            #cdb_extents_new.set(-200, 0, -150, 50, False)
+            #cdb_extents_new = cdb_extents_new.buffered(50.0)
+            #########################################
+
+            if cdb_extents_new == cdb_extents_old:
+                # Do nothing, the extents have not changed. No need to do anything
+                QgsMessageLog.logMessage(f"Extents of '{cdbLoader.CDB_SCHEMA}' are unchanged. No need to update them.", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                return None
+            else:
+                # The extents have changed. Show them on the map as dashed line
+
+                # Backup the original Layer extents (red)
+                # (They will be changed by the event evt_qgbxExtentsC_ext_changed later on)
+                layer_extents_wkt: str = cdbLoader.LAYER_EXTENTS_RED.asWktPolygon()
+                temp_layer_extents: QgsRectangle = QgsRectangle().fromWkt(layer_extents_wkt)
+
+                # Create the extents containing both old and new cdb_schema extents
+                cdb_extents_union: QgsRectangle = QgsRectangle(cdb_extents_old)
+                cdb_extents_union.combineExtentWith(cdb_extents_new)
+
+                # Create new rubber band
+                cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(cdbLoader.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+                cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
+
+                # Set up the canvas to the new extents of the cdb_schema.
+                # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
+                canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS_C, extents=cdb_extents_union, crs=cdbLoader.CRS, clear=False)
+
+                # Reset the red layer extents to the original size
+                cdbLoader.LAYER_EXTENTS_RED = temp_layer_extents
+
+                # Add the rubber bands 
+                canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED_C, extents=temp_layer_extents, crs=cdbLoader.CRS, width=2, color=Qt.red)
+
+                # Zoom to the rubber band of the new cdb_extents.
+                # Fires evt_canvas_ext_changed
+                canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdb_extents_union)
+
+                if cdb_extents_new.contains(cdbLoader.LAYER_EXTENTS_RED):
+
+                    msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (dashed blue line). Now they will be automatically updated."
+                    QMessageBox.warning(cdbLoader.usr_dlg, "Extents changed!", msg)
+
+                    # Update the cdb_extents, leave the layer_extents and the layers
+                    # Update the canvas and the rubber bands in both tabs.
+
+                    # Update the cdb_extents in the database
+                    sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_poly=cdb_extents_new.asWktPolygon())
+
+                    # Update canvas and rubber bands in TAB Connection
+
+                    # Drop the existing rubber bands, they need to be redone
+                    cdb_extents_new_rubber_band.reset()
+                    cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C.reset()
+                    cdbLoader.RUBBER_LAYERS_RED_C.reset()
+
+                    cdbLoader.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents_new
+
+                    # Set up the canvas to the new extents of the cdb_schema.
+                    # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
+                    canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, clear=False)
+                    # Reset the layer extents after the previous function modifies them
+                    cdbLoader.LAYER_EXTENTS_RED = temp_layer_extents
+
+                    canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                    canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED_C, extents=temp_layer_extents, crs=cdbLoader.CRS, width=2, color=Qt.red)
+
+                    canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
+
+                    # Update canvas and rubber bands in TAB Layer
+
+                    # Drop the existing rubber bands, they need to be redone
+                    cdbLoader.RUBBER_CDB_SCHEMA_BLUE.reset()
+                    cdbLoader.RUBBER_LAYERS_RED.reset()
+                    cdbLoader.RUBBER_QGIS_GREEN.reset()
+
+                    canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, clear=False)
+                    # Reset the layer extents after the previous function modifies them
+                    cdbLoader.LAYER_EXTENTS_RED = temp_layer_extents
+
+                    cdbLoader.QGIS_EXTENTS_GREEN = cdbLoader.LAYER_EXTENTS_RED
+
+                    canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                    canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED, extents=temp_layer_extents, crs=cdbLoader.CRS, width=2, color=Qt.red)
+                    canvas.insert_rubber_band(band=cdbLoader.RUBBER_QGIS_GREEN, extents=temp_layer_extents, crs=cdbLoader.CRS, width=2, color=Qt.red)
+
+                    canvas.zoom_to_extents(canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED)
+                    
+                    return None
+                else: # The new cdb_extents do not contain the old ones.
+
+                    # Question? Do you want to update the bbox and proceed?
+                    msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (dashed blue line). This requires to drop the existing layers\n\nDo you want to proceed?"
+                    res = QMessageBox.question(cdbLoader.usr_dlg, "Extents changed!", msg)
+                    if res == 16384: # YES, proceed with updating the bbox
+
+                        # Drop the layers (if necessary)
+                        ## TO DO Add check if there are layers to drop, otherwise skip
+                        if cdbLoader.usr_dlg.btnDropLayers.isEnabled():
+                            thr.drop_layers_thread(cdbLoader)
+
+                        # Update the cdb_extents in the database
+                        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_poly=cdb_extents_new.asWktPolygon())
+
+                        # Update canvas and rubber bands in TAB Connection
+
+                        cdb_extents_new_rubber_band.reset()
+                        cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C.reset()
+                        cdbLoader.RUBBER_LAYERS_RED_C.reset()
+
+                        cdbLoader.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents_new
+                        cdbLoader.LAYER_EXTENTS_RED = cdb_extents_new
+
+                        # Set up the canvas to the new extents of the cdb_schema.
+                        # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
+                        canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, clear=False)
+                        # Reset the layer extents after the previous function modifies them
+                        cdbLoader.LAYER_EXTENTS_RED = cdb_extents_new
+
+                        canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                        canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=2, color=Qt.red)
+
+                        canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
+
+                        #QgsMessageLog.logMessage(f"I will update them", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                        return None 
+
+                    else: 
+                        # Do nothing, revert to previous situation.
+                        cdb_extents_new_rubber_band.reset()
+                        canvas.zoom_to_extents(cdbLoader.CANVAS_C, cdb_extents_old)
+                        return None
+        else:
+            # This is the case when the database has been emptied.
+
+            # Inform the user
+            QgsMessageLog.logMessage(f"The database has been emptied.\nThis session will be closed and the cdb_schema '{cdbLoader.CDB_SCHEMA}' will disappear from the drop down menu till you upload new data again.", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+
+            # Close the session and reset everything (the following actions correspond to pressing the button disconnect.)
+            ct_wf.tabConnection_reset(cdbLoader)
+            lt_wf.tabLayers_reset(cdbLoader)
+            return None
 
     def evt_btnCityExtentsC_clicked(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtentsC) is pressed.
@@ -497,11 +675,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg = cdbLoader.usr_dlg
 
         # Get the extents stored in server (already computed at this point).
-        cdb_extents_str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
-        assert cdb_extents_str, "Extents don't exist, but they should have been actually already computed!"
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        assert cdb_extents_wkt, "Extents don't exist, but they should have been actually already computed!"
 
         # Convert extents format to QgsRectangle object.
-        cdb_extents = QgsRectangle.fromWkt(cdb_extents_str)
+        cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
         # Update extents in plugin variable.
         cdbLoader.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents
         cdbLoader.CURRENT_EXTENTS = cdb_extents
@@ -511,12 +689,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # At this point an extentChanged signal is emitted.
 
         # Zoom to layer extents (red box).
-        # PROBLEM: The zoom operation enlarges automatically the size of the extents in the variable passed.
-        # Therefore we decouple it from the global variable by transforming to/from WKT (WORKAROUND)
         canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
-        #temp_extents_wkt: str = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE.asWktPolygon()
-        #temp_rectangle: QgsRectangle = QgsRectangle.fromWkt(temp_extents_wkt)
-        #cdbLoader.CANVAS_C.zoomToFeatureExtent(temp_rectangle)
 
 
     def evt_btnCreateLayers_clicked(self, cdbLoader: CDBLoader) -> None:
@@ -529,8 +702,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         thr.create_layers_thread(cdbLoader)
 
         # Update the layer extents in the corresponding table in the server.
-        sql.exec_upsert_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, 
-                                bbox_type=c.MAT_VIEW_EXT_TYPE, extents=cdbLoader.LAYER_EXTENTS_RED.asWktPolygon())
+        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, 
+                                bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_poly=cdbLoader.LAYER_EXTENTS_RED.asWktPolygon())
 
         refresh_date = []
         while not refresh_date: # Loop to allow for 'layer creation' thread to finish. It seems hacky...
@@ -655,11 +828,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         # At this point an extentChanged signal is emitted.
 
         # Zoom to layer extents (red box).
-        # PROBLEM: The zoom operation enlarges automatically the size of the extents in the variable passed.
-        # (WORKAROUND: Therefore we decouple it from the global variable by transforming to/from WKT
-        temp_extents_wkt: str = cdbLoader.QGIS_EXTENTS_GREEN.asWktPolygon()
-        temp_rectangle: QgsRectangle = QgsRectangle.fromWkt(temp_extents_wkt)
-        cdbLoader.CANVAS.zoomToFeatureExtent(temp_rectangle)
+        canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.QGIS_EXTENTS_GREEN)
 
 
     def evt_cbxFeatureType_changed(self, cdbLoader: CDBLoader) -> None:
