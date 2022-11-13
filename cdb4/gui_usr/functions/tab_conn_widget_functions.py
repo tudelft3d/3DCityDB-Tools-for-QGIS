@@ -46,7 +46,7 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
             # Extents could be None (not computed yet). In the case, see the else
             if cdb_extents_wkt:
                 extents_exist = True
-                cdb_extents: QgsRectangle = QgsRectangle.fromWkt(cdb_extents_wkt)
+                cdb_extents: QgsRectangle = QgsRectangle().fromWkt(cdb_extents_wkt)
 
                 # Get the crs_id stored in the selected {cdb_schema}
                 srid: int = sql.fetch_cdb_schema_srid(cdbLoader)
