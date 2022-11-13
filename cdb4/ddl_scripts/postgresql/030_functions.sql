@@ -40,10 +40,10 @@
 -- qgis_pkg.create_qgis_usr_schema_name(...)
 -- qgis_pkg.create_qgis_usr_schema(...)
 -- qgis_pkg.generate_mview_bbox_poly(...)
--- qgis_pkg.support_for_schema(...)
+-- qgis_pkg.has_layers_for_cdb_schema(...)
 -- qgis_pkg.view_counter(...)
 -- qgis_pkg.add_ga_indices(...)
--- qgis_pkg.compute_schema_extents(...)
+-- qgis_pkg.compute_cdb_schema_extents(...)
 -- qgis_pkg.upsert_extents(...)
 -- qgis_pkg.st_3darea_poly(...)
 -- qgis_pkg.st_snap_poly_to_grid(...)
@@ -790,13 +790,13 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[])
 --SELECT qgis_pkg.generate_mview_bbox_poly('citydb', '{220177, 481471, 220755, 482133}');
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.SUPPORT_FOR_SCHEMA
+-- Create FUNCTION QGIS_PKG.HAS_LAYERS_FOR_CDB_SCHEMA
 ----------------------------------------------------------------
 -- Returns True if qgis_pkg schema supports the input schema.
 -- In pratice it searches the schema for view names starting with
 -- the input schema name.
-DROP FUNCTION IF EXISTS    qgis_pkg.support_for_schema(varchar,varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.support_for_schema(
+DROP FUNCTION IF EXISTS    qgis_pkg.has_layers_for_cdb_schema(varchar,varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.has_layers_for_cdb_schema(
 usr_schema varchar,
 cdb_schema varchar
 )
@@ -818,13 +818,13 @@ RETURN FOUND;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.support_for_schema(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.has_layers_for_cdb_schema(): Error QUERY_CANCELED';
   WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.support_for_schema(): %', SQLERRM;
+		RAISE NOTICE 'qgis_pkg.has_layers_for_cdb_schema(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) IS 'Searches for cdb_schema name into the view names of the usr_schema to determine if it supports the input cdb_schema.';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.support_for_schema(varchar,varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.has_layers_for_cdb_schema(varchar,varchar) IS 'Searches for cdb_schema name into the view names of the usr_schema to determine if it supports the input cdb_schema.';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.has_layers_for_cdb_schema(varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.VIEW_COUNTER
@@ -912,6 +912,78 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.add_ga_indices(varchar) FROM public;
 
 --SELECT qgis_pkg.add_indices(cdb_schema := 'citydb');
 
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.COMPUTE_CDB_SCHEMA_EXTENTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.compute_cdb_schema_extents(varchar, varchar, boolean) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.compute_cdb_schema_extents(
+usr_schema	varchar,
+cdb_schema	varchar,
+update_extents_table boolean DEFAULT TRUE
+)
+RETURNS TABLE (
+x_min		numeric,
+y_min		numeric,
+x_max		numeric,
+y_max		numeric,
+srid_id		integer,
+upserted_id	integer
+)
+AS $$
+DECLARE
+cdb_envelope	geometry(Polygon) := NULL;
+ext_label 		varchar;
+upserted_id		bigint := NULL;
+
+BEGIN
+
+EXECUTE format('SELECT ST_Envelope(ST_Collect(co.envelope)) FROM %I.cityobject AS co', cdb_schema) INTO cdb_envelope;
+
+IF cdb_envelope IS NOT NULL THEN
+	ext_label    := concat(cdb_schema, '-bbox_extents');
+	srid_id      := ST_Srid(cdb_envelope);
+	x_min        :=   floor(ST_Xmin(cdb_envelope));
+	x_max        := ceiling(ST_Xmax(cdb_envelope));
+	y_min        :=   floor(ST_Ymin(cdb_envelope));
+	y_max        := ceiling(ST_Ymax(cdb_envelope));
+	cdb_envelope := ST_MakeEnvelope(x_min, y_min, x_max, y_max, srid_id);
+
+	IF update_extents_table IS TRUE THEN
+		-- upsert statement for table envelope in in usr_schema
+		EXECUTE format('
+			INSERT INTO %I.extents AS e (cdb_schema, bbox_type, label, envelope, creation_date)
+			VALUES (%L, ''db_schema'', %L, %L, clock_timestamp())
+			ON CONFLICT ON CONSTRAINT extents_cdb_schema_bbox_type_key DO
+				UPDATE SET envelope = %L, creation_date = clock_timestamp()
+				WHERE e.cdb_schema = %L AND e.bbox_type = ''db_schema''
+				RETURNING id',
+			usr_schema,
+			cdb_schema, ext_label, cdb_envelope, 
+			cdb_envelope, 
+			cdb_schema)
+		INTO STRICT upserted_id;
+	ELSE
+		-- just return the bbox corners, but no upserted_id 
+		upserted_id := NULL;
+	END IF;
+	RETURN NEXT;	
+END IF;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.compute_cdb_schema_extents(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.compute_cdb_schema_extents(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar, varchar, boolean) IS 'Computes extents of the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar, varchar,  boolean) FROM public;
+
+-- Example:
+-- SELECT * FROM qgis_pkg.compute_cdb_schema_extents(usr_schema := 'alderaan', cdb_schema := 'citydb', update_extents_table := TRUE);
+
+
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.COMPUTE_SCHEMA_EXTENTS
 ----------------------------------------------------------------
@@ -983,7 +1055,7 @@ CREATE OR REPLACE FUNCTION qgis_pkg.upsert_extents(
 usr_schema		varchar,
 cdb_schema		varchar,
 cdb_bbox_type	varchar,  -- A value in (''db_schema'', ''m_view'', ''qgis''))
-cdb_envelope	geometry(Polygon) DEFAULT NULL -- this is a geometry WITHOUT SRID!
+cdb_envelope	geometry(Polygon) DEFAULT NULL -- this is a Polygon geometry WITHOUT SRID!
 )
 RETURNS integer AS $$
 DECLARE
@@ -1004,7 +1076,7 @@ EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO sr_i
 
 CASE
 	WHEN cdb_bbox_type = 'db_schema' THEN
-		upserted_id := (SELECT f.upserted_id FROM qgis_pkg.compute_schema_extents(usr_schema, cdb_schema) AS f);
+		upserted_id := (SELECT f.upserted_id FROM qgis_pkg.compute_cdb_schema_extents(usr_schema, cdb_schema, TRUE) AS f);
 	WHEN cdb_bbox_type IN ('m_view', 'qgis') THEN
 		IF cdb_envelope IS NOT NULL THEN
             cdb_envelope := ST_SetSrid(cdb_envelope, sr_id);
