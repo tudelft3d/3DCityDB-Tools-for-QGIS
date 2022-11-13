@@ -36,11 +36,13 @@ QGIS_EXT_TYPE: str = "qgis"
 # Basemaps
 GOOGLE_URL: str = "http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&"
 GOOGLE_URI: str = f"type=xyz&url={GOOGLE_URL}zmax=22&zmin=0"
+
+OSM_NAME: str = "OSM Basemap"
 OSM_URL: str = "https://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
 OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
-OSM_INIT_EXTS: str = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
-OSM_INIT_CRS: str = QgsCoordinateReferenceSystem("EPSG:3857")
-OSM_NAME: str = "OSM Basemap"
+OSM_INIT_EXTS: QgsRectangle = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
+OSM_INIT_CRS: QgsCoordinateReferenceSystem = QgsCoordinateReferenceSystem("EPSG:3857")
+
 
 # Options default parameters to simplify geometries
 DEC_PREC: int = 3       # decimal positions after the comma to round coordinates
@@ -159,7 +161,11 @@ btnUsrInst_t: str    = "  Create schema for user '{usr}'"
 btnUsrUninst_t: str  = "  Drop schema for user '{usr}'"
 
 btnConnectToDbC_t: str  = "Connect to database '{db}'"
+
+btnRefreshCDBExtents_t: str  = "Refresh '{sch}' extents"
+
 btnCityExtentsC_t: str  = "Set to schema '{sch}'"
+
 btnCreateLayers_t: str  = "Create layers for schema '{sch}'"
 btnRefreshLayers_t: str = " Refresh layers for schema '{sch}'"
 btnDropLayers_t: str    = "Drop layers for schema '{sch}'"
