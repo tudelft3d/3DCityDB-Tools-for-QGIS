@@ -28,10 +28,10 @@ PG_SCRIPTS_INST_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_
 #OR_SCRIPTS_SUBDIR: str = "oracle"
 #OR_SCRIPTS_INST_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.CDB4_PLUGIN_SUBDIR, SQL_SCRIPTS_SUBDIR, OR_SCRIPTS_SUBDIR)
 
-# Extent type names
+# Extent types
 CDB_SCHEMA_EXT_TYPE: str = "db_schema"
-MAT_VIEW_EXT_TYPE: str = "m_view"
-QGIS_EXT_TYPE: str = "qgis"
+MAT_VIEW_EXT_TYPE: str   = "m_view"
+QGIS_EXT_TYPE: str       = "qgis"
 
 # Basemaps
 GOOGLE_URL: str = "http://mt1.google.com/vt/lyrs%3Dm%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&"
@@ -42,7 +42,6 @@ OSM_URL: str = "https://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
 OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
 OSM_INIT_EXTS: QgsRectangle = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS: QgsCoordinateReferenceSystem = QgsCoordinateReferenceSystem("EPSG:3857")
-
 
 # Options default parameters to simplify geometries
 DEC_PREC: int = 3       # decimal positions after the comma to round coordinates
@@ -119,9 +118,6 @@ menu_html: str = icon_msg_core.format(
     color_hex='#000000',  # black
     addtional_text='{text}')
 
-# Log messages
-#log_errors: str = "{type} ERROR at {loc}\n ERROR: "
-
 INST_SUCC_MSG: str    = "Database schema '{pkg}' successfully installed!"
 INST_ERROR_MSG: str   = "Database schema '{pkg}' installation failed!"
 UNINST_SUCC_MSG: str  = "Database schema '{pkg}' successfully uninstalled!"
@@ -143,10 +139,10 @@ INST_FAIL_MSG: str = "Required schema '{pkg}' is not installed"
 INST_FAIL_VERSION_MSG: str = "Unsupported version of QGIS Package"
 INST_FAIL_MISSING_MSG: str = "The QGIS Package is not installed"
 
-SCHEMA_LAYER_MSG: str = "Layers for citydb schema '{sch}' already exist"
-SCHEMA_LAYER_FAIL_MSG: str = "Layers need to be created for citydb schema '{sch}'"
+SCHEMA_LAYER_MSG: str = "Layers for schema '{sch}' already exist"
+SCHEMA_LAYER_FAIL_MSG: str = "Layers need to be created for schema '{sch}'"
 REFR_LAYERS_MSG: str = "Latest refresh: {date}"
-REFR_LAYERS_FAIL_MSG: str = "Layers need to be refreshed"
+REFR_LAYERS_FAIL_MSG: str = "Layers must be refreshed"
 
 # Pop-up messages
 INST_QUERY: str = "Any existing installation of '{pkg}' will be replaced! Do you want to proceed?"
@@ -193,6 +189,7 @@ class Layer():
             qml_file: str,
             creation_data: str,
             refresh_date: str):
+
         self.v_id = v_id
         self.cdb_schema = cdb_schema
         self.feature_type = feature_type
