@@ -7,7 +7,6 @@ from qgis.gui import QgsMessageBar
 from qgis.PyQt import QtWidgets, uic
 
 from ..shared.functions import general_functions as gen_f
-from ..shared.functions import sql as sh_sql
 from .connection import Connection
 from .functions.conn_functions import connect
 

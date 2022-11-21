@@ -59,7 +59,7 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
             cdbLoader.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
 
 def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
-    """Open a connection to postgres database.
+    """Open a connection to PostgreSQL database.
 
     *   :param db: The connection custom object
         :rtype: Connection
