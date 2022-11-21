@@ -288,7 +288,7 @@ class CDBLoader:
             txt=self.tr(self.PLUGIN_NAME_ADMIN),
             callback=self.run_admin,
             parent=self.iface.mainWindow(),
-            add_to_toolbar=True) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar=False) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_user(), run_admin()
         self.first_start_usr = True
