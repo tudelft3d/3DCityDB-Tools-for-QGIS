@@ -48,11 +48,9 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
         # pseudo means that the layer is not going to be added to the legend.
         rlayer = QgsRasterLayer(c.OSM_URI, baseName=c.OSM_NAME, providerType="wms")
 
-        # Make sure that the layer can load properly
-        assert rlayer.isValid()
-
-        # Add layer to the registry
-        QgsProject.instance().addMapLayer(rlayer, addToLegend=False)
+        # Make sure that the layer can load properly, then add layer to the registry
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer, addToLegend=False)
 
     # OSM layers object
     registryOSM_list = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
