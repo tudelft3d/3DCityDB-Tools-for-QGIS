@@ -1,7 +1,6 @@
 class Connection:
     """Class to store connection information.
     """
-
     def __init__(self):
         self.connection_name: str = None
         self.database_name: str = None
@@ -39,8 +38,7 @@ class Connection:
         print('\n')
 
     def user_meets_requirements(self) -> bool:
-        """Method that can be used to check if the connection
-        is ready for plugin use.
+        """Method that can be used to check if the connection is ready for plugin use.
 
         *   :returns: The connection's readiness status to work with
                 the plugin.
