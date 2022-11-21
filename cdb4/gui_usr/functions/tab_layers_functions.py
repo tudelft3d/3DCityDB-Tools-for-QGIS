@@ -197,8 +197,8 @@ def create_layer_relation_to_lookup_tables(cdbLoader: CDBLoader, layer: QgsVecto
     look_layers = look_node.findLayers()
     enum_layer_id = [i.layerId() for i in look_layers if c.enumerations_table in i.layerId()][0]
 
-    assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also imported with every layer (if it doesn\'t already exist)."
-    assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
+    #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also imported with every layer (if it doesn\'t already exist)."
+    #assert enum_layer_id, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_v_enumeration_value')
     #QgsMessageLog.logMessage(f"enum_layer_id: {enum_layer_id}", "3DCityDB-Loader", level=Qgis.Info)
 
     for field in layer.fields():
@@ -229,8 +229,8 @@ def create_layer_relation_to_genericattrib_table(cdbLoader: CDBLoader, layer: Qg
     generics_node = schema_node.findGroup("Generic Attributes")
     genericAtt_layer = generics_node.findLayers()[0]
 
-    assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also  imported with every layer (if it doesn\'t already exist)."
-    assert genericAtt_layer, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_cityobject_generic_attrib')
+    #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also  imported with every layer (if it doesn\'t already exist)."
+    #assert genericAtt_layer, assertion_msg.format(f'{cdbLoader.CDB_SCHEMA}_cityobject_generic_attrib')
 
     # Create new Relation object for referencing generic attributes table
     rel = QgsRelation()
