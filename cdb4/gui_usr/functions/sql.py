@@ -19,9 +19,9 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
     """
     try:
         with cdbLoader.conn.cursor() as cur:
-            # Get db_schema extents from server as WKT.
+            # Get cdb_schema extents from server as WKT.
             cur.execute(query= f"""
-                                   SELECT ST_AsText(envelope) 
+                                   SELECT ST_AsText(envelope)
                                    FROM "{usr_schema}".extents 
                                    WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
                                 """)
@@ -38,7 +38,7 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
         gen_f.critical_log(
             func=fetch_precomputed_extents,
             location=FILE_LOCATION,
-            header="Retrieving extents",
+            header=f"Retrieving extents of schema {cdb_schema}",
             error=error)
         cdbLoader.conn.rollback()
 
@@ -64,6 +64,7 @@ def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
             header="Retrieving srid",
             error=error)
         cdbLoader.conn.rollback()
+
 
 def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, cols="*") -> tuple:
     """SQL query that retrieves the current schema's layer metadata
@@ -98,6 +99,7 @@ def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str,
             error=error)
         cdbLoader.conn.rollback()
 
+
 def fetch_lookup_tables(cdbLoader: CDBLoader) -> tuple:
     """SQL query that retrieves look-up tables from {usr_schema}.
 
@@ -126,22 +128,22 @@ def fetch_lookup_tables(cdbLoader: CDBLoader) -> tuple:
             error=error)
         cdbLoader.conn.rollback()
 
-def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader, update_extents_table: bool = True) -> tuple:
-    """Calls the qgis_pkg function that computes the cdb_schema extents. Optionally it upserts the table extents in usr_schema.
 
-    *   :returns: x_min, y_min, x_max, y_max, srid
+def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
+    """Calls the qgis_pkg function that computes the cdb_schema extents.
+
+    *   :returns: is_geom_null, x_min, y_min, x_max, y_max, srid
         :rtype: tuple
     """
     try:
         with cdbLoader.conn.cursor() as cur:
             # Execute server function to compute the schema's extents
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_cdb_schema_extents""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA, update_extents_table])
+            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_cdb_schema_extents""",[cdbLoader.CDB_SCHEMA])
             values = cur.fetchone()
             cdbLoader.conn.commit()
             if values:
-                x_min, y_min, x_max, y_max, srid, upserted_id = values
-                upserted_id = None # Not needed.
-                return x_min, y_min, x_max, y_max, srid
+                is_geom_null, x_min, y_min, x_max, y_max, srid = values
+                return is_geom_null, x_min, y_min, x_max, y_max, srid
             else:
                 return None
 
@@ -149,36 +151,10 @@ def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader, update_extents_table: 
         gen_f.critical_log(
             func=exec_compute_cdb_schema_extents,
             location=FILE_LOCATION,
-            header=f"Computing extents of the selected cdb_schema '{cdbLoader.CDB_SCHEMA}'",
+            header=f"Computing extents of the schema '{cdbLoader.CDB_SCHEMA}'",
             error=error)
         cdbLoader.conn.rollback()
 
-
-##############################################
-# TO BE DROPPED AFTER TESTING
-# def exec_compute_cdb_schema_extents_old(cdbLoader: CDBLoader) -> tuple:
-#     """Calls the qgis_pkg function that computes the schema extents.
-
-#     *   :returns: x_min, y_min, x_max, y_max, srid
-#         :rtype: tuple
-#     """
-#     try:
-#         with cdbLoader.conn.cursor() as cur:
-#             # Execute server function to compute the schema's extents
-#             cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_schema_extents""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA])
-#             x_min, y_min, x_max, y_max, srid, upserted_id = cur.fetchone()
-#         upserted_id = None # Not needed.
-#         cdbLoader.conn.commit()
-#         return x_min, y_min, x_max, y_max, srid
-
-#     except (Exception, psycopg2.Error) as error:
-#         gen_f.critical_log(
-#             func=exec_compute_cdb_schema_extents_old,
-#             location=FILE_LOCATION,
-#             header="Computing extents of the selected cdb_schema",
-#             error=error)
-#         cdbLoader.conn.rollback()
-##############################################
 
 def exec_view_counter(cdbLoader: CDBLoader, layer: c.Layer) -> int:
     """Calls the qgis_pkg function that counts the number of
@@ -229,31 +205,31 @@ def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
         gen_f.critical_log(
             func=exec_has_layers_for_cdb_schema,
             location=FILE_LOCATION,
-            header="Checking support for schema",
+            header=f"Checking whether layers already exist for schema {cdbLoader.CDB_SCHEMA}",
             error=error)
         cdbLoader.conn.rollback()
 
 
-def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, bbox_type: str, extents_wkt_poly: str) -> int:
-    """
-    TOfill
-    """
-    # Get corner coordinates
-    # y_min = str(extents.yMinimum())
-    # x_min = str(extents.xMinimum())
-    # y_max = str(extents.yMaximum())
-    # x_max = str(extents.xMaximum())
-    # extents = "{"+",".join([x_min,y_min,x_max,y_max])+"}"
+def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, bbox_type: str, extents_wkt_2d_poly: str) -> int:
+    """Calls a QGIS Package function to insert (or update) the extents geometry in table qgis_{usr}.extents.
 
+    *   :param bbox_type: one of ['db_schema', 'm_view', 'qgis']
+        :type bbox_type: str
+
+    *   :param extents_2d_poly: wkt of a polygon, 2D and withouth SRID
+        :type extents_2d_poly: str
+
+    *   :returns: upserted_id
+        :rtype: int
+    """
     try:
         with cdbLoader.conn.cursor() as cur:
-            upserted_id = cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents_wkt_poly])
+            upserted_id = cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents_wkt_2d_poly])
         cdbLoader.conn.commit()
         if upserted_id:
             return upserted_id
         else:
             return None
-
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
