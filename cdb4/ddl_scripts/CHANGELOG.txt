@@ -8,9 +8,10 @@ Add update statement to delete trigger functions to reduce number of features in
 Version 0.8.0
 Fixed bug in trigger functions to extract the name of the cdb_schema
 Script 030:
-	- Updated functions
-		[qgis_pkg.list_cdb_schemas_new(...)]
+	- Updated/rewritten functions
+		[qgis_pkg.list_cdb_schemas(...)]
 		[qgis_pkg.compute_cdb_schema_extents(...)]
+		[qgis_pkg.upsert_extents(...)]		
 	- Renamed function [qgis_pkg.support_for_schema(...)] to  [qgis_pkg.has_layers_for_cdb_schema(...)]
 Scripts 080-170:
 	- Renamed some attribute forms and added news for new features
