@@ -44,8 +44,7 @@ class LayerCreationWorker(QObject):
         self.plg = cdbLoader
 
     def create_thread(self):
-        """Execution method that creates the layers
-        using function from the 'qgis_pkg' installation.
+        """Execution method that creates the layers using function from the 'qgis_pkg' installation.
         """
         dlg = self.plg.usr_dlg
         # Flag to help us break from a failing installation.
@@ -171,7 +170,7 @@ class RefreshMatViewsWorker(QObject):
             for s, (ftype, mview) in enumerate(ftype_mview):
 
                 # Update progress bar with current step and text.
-                text = " ".join(["Refreshing materialized views of:", ftype])
+                text = " ".join(["Refreshing layers of:", ftype])
                 self.progress.emit("usr_dlg", s, text)
 
                 try:
@@ -268,7 +267,7 @@ class LayerDroppingWorker(QObject):
         dlg.bar.setMaximum(len(c.drop_layers_funcs))
 
         # Open new temp session, reserved for installation.
-        with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping Layers)") as conn:
+        with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping layers)") as conn:
             for s, module_func in enumerate(c.drop_layers_funcs, start=1):
                 # Update progress bar with current step and script.
                 text = " ".join(["Executing:", module_func])
@@ -362,13 +361,13 @@ def ev_refresh_success(cdbLoader: CDBLoader) -> None:
 
     if date:
         # Replace with Success msg.
-        msg = dlg.msg_bar.createMessage("Materialized views successfully refreshed!")
+        msg = dlg.msg_bar.createMessage("Layers successfully refreshed!")
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
         # Inform user
         dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
         QgsMessageLog.logMessage(
-                message="Materialized views successfully refreshed!",
+                message="Layers successfully refreshed!",
                 tag=cdbLoader.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
