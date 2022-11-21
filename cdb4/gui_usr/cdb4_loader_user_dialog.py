@@ -509,12 +509,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         - have not changed (do nothing)
         - have changed and the new cdb extents contain the old ones (only update the ribbons)
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
-
         """
-        values = sql.exec_compute_cdb_schema_extents(cdbLoader=cdbLoader, update_extents_table=False)
-        if values:
-            x_min, y_min, x_max, y_max, srid = values
-            srid = None # Discard unneeded variable.
+        is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(cdbLoader=cdbLoader)
+        srid = None # Discard unneeded variable.
+
+        if not is_geom_null:
 
             cdb_extents_old: QgsRectangle = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE
             
@@ -572,7 +571,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                     # Update the canvas and the rubber bands in both tabs.
 
                     # Update the cdb_extents in the database
-                    sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_poly=cdb_extents_new.asWktPolygon())
+                    sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
 
                     # Update canvas and rubber bands in TAB Connection
 
@@ -622,15 +621,13 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                     if res == 16384: # YES, proceed with updating the bbox
 
                         # Drop the layers (if necessary)
-                        ## TO DO Add check if there are layers to drop, otherwise skip
                         if cdbLoader.usr_dlg.btnDropLayers.isEnabled():
                             thr.drop_layers_thread(cdbLoader)
 
                         # Update the cdb_extents in the database
-                        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_poly=cdb_extents_new.asWktPolygon())
+                        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
 
                         # Update canvas and rubber bands in TAB Connection
-
                         cdb_extents_new_rubber_band.reset()
                         cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C.reset()
                         cdbLoader.RUBBER_LAYERS_RED_C.reset()
@@ -649,7 +646,6 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
                         canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
 
-                        #QgsMessageLog.logMessage(f"I will update them", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
                         return None 
 
                     else: 
@@ -661,13 +657,28 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             # This is the case when the database has been emptied.
 
             # Inform the user
-            QgsMessageLog.logMessage(f"The database has been emptied.\nThis session will be closed and the cdb_schema '{cdbLoader.CDB_SCHEMA}' will disappear from the drop down menu till you upload new data again.", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            msg: str = f"The '{cdbLoader.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu untill you upload new data again."
+            QMessageBox.information(cdbLoader.usr_dlg, "Extents changed!", msg)
+            QgsMessageLog.logMessage(msg, cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
-            # Close the session and reset everything (the following actions correspond to pressing the button disconnect.)
-            ct_wf.tabConnection_reset(cdbLoader)
-            lt_wf.tabLayers_reset(cdbLoader)
+            # Reset to null the cdb_extents in the extents table in PostgreSQL
+            sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+            # Reset to null the layers_extents in the extents table in PostgreSQL
+            sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_2d_poly=None)
+
+            # Drop the layers (if necessary)
+            if cdbLoader.usr_dlg.btnDropLayers.isEnabled():
+                thr.drop_layers_thread(cdbLoader) # This already disables the layers tab
+
+            # Close the connection
+            if cdbLoader.conn is not None:
+                cdbLoader.conn.close()
+
+            # Reconnect and reset the list of the cdb_schemas in the combobox
+            self.evt_btnConnectToDb_clicked(cdbLoader)
             return None
 
+        
     def evt_btnCityExtentsC_clicked(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtentsC) is pressed.
         """
@@ -676,7 +687,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the extents stored in server (already computed at this point).
         cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
-        assert cdb_extents_wkt, "Extents don't exist, but they should have been actually already computed!"
+        #assert cdb_extents_wkt, "Extents don't exist, but they should have been actually already computed!"
 
         # Convert extents format to QgsRectangle object.
         cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
@@ -693,8 +704,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_btnCreateLayers_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Create layers for schema {sch}'
-        pushButton (btnCreateLayers) is pressed.
+        """Event that is called when the 'Create layers for schema {sch}' pushButton (btnCreateLayers) is pressed.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
@@ -702,8 +712,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         thr.create_layers_thread(cdbLoader)
 
         # Update the layer extents in the corresponding table in the server.
-        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, 
-                                bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_poly=cdbLoader.LAYER_EXTENTS_RED.asWktPolygon())
+        sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_2d_poly=cdbLoader.LAYER_EXTENTS_RED.asWktPolygon())
 
         refresh_date = []
         while not refresh_date: # Loop to allow for 'layer creation' thread to finish. It seems hacky...
@@ -723,8 +732,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_btnRefreshLayers_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Refresh layers for schema {sch}'
-        pushButton (btnRefreshLayers) is pressed.
+        """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.usr_dlg
@@ -735,15 +743,13 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_btnDropLayers_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Drop layers for schema {sch}'
-        pushButton (btnRefreshLayers) is pressed.
+        """Event that is called when the 'Drop layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         thr.drop_layers_thread(cdbLoader)
 
 
     def evt_btnCloseConnC_clicked(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Close current connection' pushButton
-        (btnCloseConn) is pressed.
+        """Event that is called when the 'Close current connection' pushButton (btnCloseConn) is pressed.
         """
         ct_wf.tabConnection_reset(cdbLoader)
         lt_wf.tabLayers_reset(cdbLoader)
@@ -815,7 +821,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the layer extents stored in server (already computed at this point).
         extents_str: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
-        assert extents_str, "Extents don't exist but should have been already computed!"
+        #assert extents_str, "Extents don't exist but should have been already computed!"
 
         # Convert extents format to QgsRectangle object.
         extents: QgsRectangle = QgsRectangle.fromWkt(extents_str)

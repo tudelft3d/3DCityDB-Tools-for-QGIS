@@ -34,7 +34,6 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
-    print('gbxBasemapC_setup')
     try:
         extents_exist: bool = False
 
@@ -72,7 +71,7 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
             else: 
                 # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
                 # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
-                sql.exec_compute_cdb_schema_extents(cdbLoader=cdbLoader, update_extents_table=True)
+                sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
 
                 # Check that it has been actually done, i.e. the cdb_extents are now available to be read in the next iteration.
                 cdb_extents_test: str = sql.fetch_precomputed_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
@@ -84,7 +83,7 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
         gen_f.critical_log(
             func=gbxBasemapC_setup,
             location=FILE_LOCATION,
-            header="Retrieving extents",
+            header=f"Retrieving extents of schema {cdbLoader.CDB_SCHEMA}",
             error=error)
         cdbLoader.conn.rollback()
         return False
