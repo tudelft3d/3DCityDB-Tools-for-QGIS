@@ -33,8 +33,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
 
     def store_credetials(self):
-        """Function that stores the database connection parameters
-        in the user's profile settings for future use.
+        """Function that stores the database connection parameters in the user's profile settings for future use.
         """
         #TODO: Warn user that the connection parameters are stored locally in a .ini file
 
