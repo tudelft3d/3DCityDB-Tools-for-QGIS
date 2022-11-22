@@ -31,6 +31,7 @@ def fetch_list_usr_schemas(cdbLoader: CDBLoader) -> tuple:
             error=error)
         cdbLoader.conn.rollback()
 
+
 def is_3dcitydb_installed(cdbLoader: CDBLoader) -> bool:
     """Function that checks whether the current database has the 
     3DCityDB installed. The check is done by querying the 3DCityDB
@@ -46,6 +47,7 @@ def is_3dcitydb_installed(cdbLoader: CDBLoader) -> bool:
         cdbLoader.DB.citydb_version = version
         return True
     return False
+
 
 def is_superuser(cdbLoader: CDBLoader) -> bool:
     """SQL query that determines whether the connecting user has administrations privileges.
@@ -70,6 +72,7 @@ def is_superuser(cdbLoader: CDBLoader) -> bool:
             error=error)
         cdbLoader.conn.rollback()    
 
+        
 def fetch_list_qgis_pkg_usrgroup_members(cdbLoader: CDBLoader) -> tuple:
     """SQL function that retrieves the members of the database group "qgis_usrgroup"
 
@@ -91,7 +94,8 @@ def fetch_list_qgis_pkg_usrgroup_members(cdbLoader: CDBLoader) -> tuple:
             header="Retrieving list of available users",
             error=error)
         cdbLoader.conn.rollback()
-  
+
+ 
 def exec_create_qgis_usr_schema(cdbLoader: CDBLoader) -> None:
     """Calls the qgis_pkg function that creates the {usr_schema} for a selected user.
     """
@@ -111,6 +115,7 @@ def exec_create_qgis_usr_schema(cdbLoader: CDBLoader) -> None:
             error=error)
         cdbLoader.conn.rollback()
 
+
 def exec_revoke_qgis_usr_privileges(cdbLoader: CDBLoader, usr_name: str, cdb_schema: str) -> None:
     """Calls the qgis_pkg function that revokes the user privileges.
     """
@@ -127,6 +132,7 @@ def exec_revoke_qgis_usr_privileges(cdbLoader: CDBLoader, usr_name: str, cdb_sch
             header=f"Revoking privileges of user {usr_name} for schema {cdb_schema}.",
             error=error)
         cdbLoader.conn.rollback()
+
 
 def exec_drop_db_schema(cdbLoader: CDBLoader, schema: str, close_connection: bool = True) -> None:
     """SQL query that drops plugin packages from the database.
