@@ -414,7 +414,6 @@ CREATE TYPE         qgis_pkg.obj_city_furniture AS (
 );
 COMMENT ON TYPE qgis_pkg.obj_city_furniture IS 'This object (type) corresponds to table CITY_FURNITURE';
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table citymodel
 ----------------------------------------------------------------
@@ -435,8 +434,6 @@ CREATE TYPE         qgis_pkg.obj_citymodel AS (
  lineage                varchar
 );
 COMMENT ON TYPE qgis_pkg.obj_citymodel IS 'This object (type) corresponds to table CITYMODEL';
-*/
-
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table cityobject
@@ -594,7 +591,6 @@ CREATE TYPE         qgis_pkg.obj_grid_coverage AS (
 );
 COMMENT ON TYPE qgis_pkg.obj_grid_coverage IS 'This object (type) corresponds to table GRID_COVERAGE';
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table implicit_geometry
 ----------------------------------------------------------------
@@ -608,7 +604,7 @@ CREATE TYPE         qgis_pkg.obj_implicit_geometry AS (
  relative_other_geom  geometry
 );
 COMMENT ON TYPE qgis_pkg.obj_implicit_geometry IS 'This object (type) corresponds to table IMPLICIT_GEOMETRY';
-*/
+
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table land_use
@@ -710,7 +706,6 @@ CREATE TYPE         qgis_pkg.obj_relief_component AS (
  extent         geometry
 );
 COMMENT ON TYPE qgis_pkg.obj_relief_component IS 'This object (type) corresponds to table RELIEF_COMPONENT';
-
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table relief_feature
@@ -816,7 +811,6 @@ CREATE TYPE         qgis_pkg.obj_surface_data AS (
 );
 COMMENT ON TYPE qgis_pkg.obj_surface_data IS 'This object (type) corresponds to table SURFACE_DATA';
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table surface_geometry
 ----------------------------------------------------------------
@@ -838,9 +832,7 @@ CREATE TYPE         qgis_pkg.obj_surface_geometry AS (
  cityobject_id     bigint
 );
 COMMENT ON TYPE qgis_pkg.obj_surface_geometry IS 'This object (type) corresponds to table SURFACE_GEOMETRY';
-*/
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table tex_image
 ----------------------------------------------------------------
@@ -853,9 +845,7 @@ CREATE TYPE         qgis_pkg.obj_tex_image AS (
  tex_mime_type_codespace varchar
 );
 COMMENT ON TYPE qgis_pkg.obj_tex_image IS 'This object (type) corresponds to table TEX_IMAGE';
-*/
 
-/*
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table textureparam
 ----------------------------------------------------------------
@@ -868,7 +858,6 @@ CREATE TYPE         qgis_pkg.obj_textureparam AS (
  surface_data_id            bigint
 );
 COMMENT ON TYPE qgis_pkg.obj_textureparam IS 'This object (type) corresponds to table TEXTUREPARAM';
-*/
 
 ----------------------------------------------------------------
 -- CREATE OBJECT (TYPE) corresponding to table thematic_surface

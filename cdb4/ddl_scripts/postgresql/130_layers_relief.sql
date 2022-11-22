@@ -141,7 +141,7 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('ReliefFeature'::varchar, 14::integer, 'relief_feat'::varchar)
+	('ReliefFeature'::varchar, 14::integer, 'rel_feat'::varchar)
 	) AS t(class_name, class_id, class_label)
 LOOP
 	FOR t IN 
@@ -172,8 +172,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('dtm_',r.class_label,'_form.qml');
---qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'relief_feature';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -230,7 +229,7 @@ END LOOP;  -- relief feature
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('TINRelief'::varchar, 16::integer, 'tin_relief'::varchar)
+	('TINRelief'::varchar, 16::integer, 'rel_tin'::varchar)
 	) AS t(class_name, class_id, class_label)
 LOOP
 	FOR t IN 
@@ -260,8 +259,7 @@ view_name      := concat(cdb_schema,'_',l_name);
 mview_name     := concat('_g_',view_name);
 qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
 qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('dtm_',r.class_label,'_form.qml');
--- qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat(r.class_label,'_form.qml');
 trig_f_suffix := 'tin_relief';
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
@@ -318,18 +316,271 @@ END LOOP;  -- tin feature
 ---------------------------------------------------------------
 -- Create LAYER RASTER_RELIEF_LOD0-4
 ---------------------------------------------------------------
+
 --------------------------------------------------------
 --------------------------------------------------------
 
 ---------------------------------------------------------------
 -- Create LAYER MASSPOINT_RELIEF_LOD0-4
 ---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('MassPointRelief'::varchar, 17::integer, 'rel_masspoint'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar),
+		('LoD1'			, 'lod1'),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')			
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+-- First check if there are any features at all in the database schema
+sql_mview_count := concat('
+SELECT count(o.id) AS n_features
+FROM 
+	',qi_cdb_schema,'.masspoint_relief AS o
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),');
+');
+EXECUTE sql_mview_count INTO num_features;
+
+RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name;
+
+l_name         := concat(r.class_label,'_',t.lodx_label);
+view_name      := concat(cdb_schema,'_',l_name);
+mview_name     := concat('_g_',view_name);
+qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
+qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
+qml_file_name  := concat('rel_masspoint_form.qml');
+trig_f_suffix := 'masspoint_relief';
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema, qi_mview_name),'
+	SELECT
+		o.id::bigint AS co_id,
+		o.relief_points::geometry(MultiPointZ, ',srid_id,') AS geom	
+	FROM
+		',qi_cdb_schema,'.masspoint_relief AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+
+-------
+-- VIEW
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+SELECT',sql_co_atts,'
+  o.lod,
+  g.geom::geometry(MultiPointZ,',srid_id,')
+FROM
+	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' AND o.lod = ',right(t.lodx_label,1),')	
+  	INNER JOIN ',qi_cdb_schema,'.masspoint_relief AS o2 ON (o2.id = co.id AND o2.objectclass_id = ',r.class_id,');
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+END IF;
+
+	END LOOP; -- masspoint relief lod
+END LOOP;  -- masspoint relief feature
 --------------------------------------------------------
 --------------------------------------------------------
 
 ---------------------------------------------------------------
 -- Create LAYER BREAKLINE_RELIEF_LOD0-4
 ---------------------------------------------------------------
+FOR r IN 
+	SELECT * FROM (VALUES
+	('BreaklineRelief'::varchar, 18::integer, 'rel_breakline'::varchar)
+	) AS t(class_name, class_id, class_label)
+LOOP
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar),
+		('LoD1'			, 'lod1'),
+		('LoD2'			, 'lod2'),
+		('LoD3'			, 'lod3'),
+		('LoD4'			, 'lod4')			
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+-- First check if there are any features at all in the database schema
+sql_mview_count := concat('
+SELECT count(o.id) AS n_features
+FROM 
+	',qi_cdb_schema,'.breakline_relief AS o
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+WHERE o.ridge_or_valley_lines IS NOT NULL OR o.break_lines IS NOT NULL;
+');
+EXECUTE sql_mview_count INTO num_features;
+
+RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name;
+
+l_name         := concat(r.class_label,'_',t.lodx_label);
+view_name      := concat(cdb_schema,'_',l_name);
+mview_name     := concat('_g_',view_name);
+qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
+qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
+qml_file_name  := concat('rel_breakline_form.qml');
+trig_f_suffix := 'breakline_relief';
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema, qi_mview_name),'
+	SELECT
+		foo.co_id::bigint,
+		ST_Union(foo.geom)::geometry(MultiLineStringZ,',srid_id,') AS geom
+	FROM (
+		SELECT
+			o.id::bigint AS co_id,
+			o.break_lines AS geom	
+		FROM
+			',qi_cdb_schema,'.breakline_relief AS o
+			INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+			INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+		WHERE o.break_lines IS NOT NULL
+		UNION
+		SELECT
+			o.id::bigint AS co_id,
+			o.ridge_or_valley_lines AS geom	
+		FROM
+			',qi_cdb_schema,'.breakline_relief AS o
+			INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+			INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+		WHERE o.ridge_or_valley_lines IS NOT NULL
+		) AS foo
+	GROUP BY foo.co_id
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+
+-------
+-- VIEW
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+SELECT',sql_co_atts,'
+  o.lod,
+  g.geom::geometry(MultiLineStringZ,',srid_id,')
+FROM
+	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' AND o.lod = ',right(t.lodx_label,1),')	
+  	INNER JOIN ',qi_cdb_schema,'.breakline_relief AS o2 ON (o2.id = co.id AND o2.objectclass_id = ',r.class_id,')
+	WHERE o2.ridge_or_valley_lines IS NOT NULL OR o2.break_lines IS NOT NULL;
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+END IF;
+
+		FOR u IN 
+			SELECT * FROM (VALUES
+			('break_lines'::varchar	, 'break_lines'::varchar),
+			('ridge_or_valley_lines', 'ridge_or_valley_lines')   
+			) AS t(break_line_name, break_line_label)
+		LOOP
+
+-- First check if there are any features at all in the database schema
+sql_mview_count := concat('
+SELECT count(o.id) AS n_features
+FROM 
+	',qi_cdb_schema,'.breakline_relief AS o
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+WHERE o.',u.break_line_name,' IS NOT NULL;
+');
+EXECUTE sql_mview_count INTO num_features;
+
+RAISE NOTICE 'Found % features for % % %', num_features, r.class_name, t.lodx_name, u.break_line_name;
+
+l_name         := concat(r.class_label,'_',t.lodx_label,'_',u.break_line_label);
+view_name      := concat(cdb_schema,'_',l_name);
+mview_name     := concat('_g_',view_name);
+qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
+qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
+qml_file_name  := concat('rel_breakline_form.qml');
+-- qml_file_name  := concat(r.class_label,'_form.qml');
+trig_f_suffix := 'breakline_relief';
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema, qi_mview_name),'
+SELECT
+	o.id::bigint AS co_id,
+	o.',u.break_line_name,'::geometry(MultiLineStringZ, ',srid_id,') AS geom	
+FROM
+	',qi_cdb_schema,'.breakline_relief AS o
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o2 ON (o2.id = o.id AND o2.lod = ',right(t.lodx_label,1),')
+WHERE o.',u.break_line_name,' IS NOT NULL
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' ',u.break_line_label,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+
+-------
+-- VIEW
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+SELECT',sql_co_atts,'
+  o.lod,
+  g.geom::geometry(MultiLineStringZ,',srid_id,')
+FROM
+	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+	INNER JOIN ',qi_cdb_schema,'.relief_component AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' AND o.lod = ',right(t.lodx_label,1),')	
+  	INNER JOIN ',qi_cdb_schema,'.breakline_relief AS o2 ON (o2.id = co.id AND o2.objectclass_id = ',r.class_id,')
+	WHERE o2.',u.break_line_name,' IS NOT NULL;
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' ',u.break_line_label,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+END IF;
+
+		END LOOP; -- loop break_lines or ridge_or_valley_lines
+
+	END LOOP; -- breakline relief lod
+END LOOP;  -- breakline relief feature
+
 --------------------------------------------------------
 --------------------------------------------------------
 
@@ -350,6 +601,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) IS 'Generate SQL script to create layers for module Relief';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_layers_relief(varchar, varchar, integer, integer, numeric, geometry, boolean) FROM public;
+
 
 --**************************
 DO $MAINBODY$

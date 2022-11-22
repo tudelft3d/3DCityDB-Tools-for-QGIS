@@ -1,30 +1,24 @@
 """This module contains classes and functions related to the database connections."""
-
-from xmlrpc.client import boolean
-from qgis.core import Qgis, QgsSettings
-
 import os
-from qgis.gui import QgsMessageBar
-from qgis.PyQt import uic,QtWidgets
-from PyQt5 import QtWidgets
-
 import psycopg2
+#from PyQt5 import QtWidgets
+from qgis.core import Qgis, QgsSettings
+from qgis.gui import QgsMessageBar
+from qgis.PyQt import QtWidgets, uic
 
-from .. import cdb4_constants as c
+from ..shared.functions import general_functions as gen_f
 from .connection import Connection
 from .functions.conn_functions import connect
 
-FILE_LOCATION = c.get_file_relative_path(__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
 # This loads the .ui file so that PyQt can populate the plugin
 # with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
 
 class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
-    """Connector Dialog. This dialog pops up when a user requests
-    to make a new connection.
+    """Connector Dialog. This dialog pops up when a user requests to make a new connection.
     """
-
     def __init__(self, parent=None):
         super(DBConnectorDialog, self).__init__(parent)
         self.setupUi(self)
@@ -39,8 +33,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
 
     def store_credetials(self):
-        """Function that stores the database connection parameters
-        in the user's profile settings for future use.
+        """Function that stores the database connection parameters in the user's profile settings for future use.
         """
         #TODO: Warn user that the connection parameters are stored locally in a .ini file
 
@@ -54,8 +47,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         new_settings.setValue(f'{con_path}/password', self.new_connection.password)
 
     def evt_btnConnect_clicked(self) -> None:
-        """Event that is called when the current 'Connect' pushButton
-        (btnConnect) is pressed.
+        """Event that is called when the current 'Connect' pushButton (btnConnect) is pressed.
         """
         # Instantiate a connection object
         connectionInstance = Connection()
@@ -84,7 +76,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.store_credetials()
 
         except (Exception, psycopg2.DatabaseError) as error:
-            c.critical_log(
+            gen_f.critical_log(
                 func=self.evt_btnConnect_clicked,
                 location=FILE_LOCATION,
                 header="Attempting connection",
@@ -94,4 +86,3 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 "Connection failed!",
                 level=Qgis.Critical,
                 duration=5)
-

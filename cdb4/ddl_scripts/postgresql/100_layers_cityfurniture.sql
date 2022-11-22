@@ -152,6 +152,89 @@ FOR r IN
 	('CityFurniture'::varchar, 21::integer, 'city_furn'::varchar)
 	) AS t(class_name, class_id, class_label)
 LOOP
+
+---------------------------------------------------------------
+-- Create LAYER CITY_FURNITURE_LOD1-4 TerrainIntersectionCurve
+---------------------------------------------------------------
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD1'::varchar, 'lod1'::varchar),
+		('LoD2'         , 'lod2'         ),
+		('LoD3'         , 'lod3'         ),
+		('LoD4'         , 'lod4'         )		
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+-- First check if there are any features at all in the database schema
+sql_mview_count := concat('
+	SELECT count(o.id) AS n_features
+	FROM 
+		',qi_cdb_schema,'.city_furniture AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+	WHERE
+		o.',t.lodx_label,'_terrain_intersection IS NOT NULL;
+');
+EXECUTE sql_mview_count INTO num_features;
+
+RAISE NOTICE 'Found % features for % % (tic)', num_features, r.class_name, t.lodx_name;
+
+l_name         := concat(r.class_label,'_',t.lodx_label,'_tic');
+view_name      := concat(cdb_schema,'_',l_name);
+mview_name     := concat('_g_',view_name);
+qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
+qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
+--qml_file_name  := concat(r.class_label,'_form.qml');
+qml_file_name  := concat('frn_tin_form.qml');
+trig_f_suffix := 'city_furniture';
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+	SELECT
+		o.id::bigint AS co_id,
+		o.',t.lodx_label,'_terrain_intersection::geometry(MultiLineStringZ, ',srid_id,') AS geom
+	FROM
+		',qi_cdb_schema,'.city_furniture AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
+	WHERE
+		o.',t.lodx_label,'_terrain_intersection IS NOT NULL
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+
+-------
+-- VIEW
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+SELECT',
+sql_co_atts,
+sql_cfu_atts,'
+  g.geom::geometry(MultiLineStringZ,',srid_id,')
+FROM
+	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+  	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+END IF;
+
+	END LOOP; -- END Loop TIC LoD1-4
+
+---------------------------------------------------------------
+-- Create LAYER CITY_FURNITURE_LOD1-4 (Polygon-based layers)
+---------------------------------------------------------------
 	FOR t IN 
 		SELECT * FROM (VALUES
 		('LoD1'::varchar, 'lod1'::varchar),

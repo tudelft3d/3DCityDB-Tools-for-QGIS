@@ -5,14 +5,17 @@ from ....cdb_loader import CDBLoader # Used only to add the type of the function
 
 # Clean and fills up again the combo box with the list of users.
 def fill_users_box(cdbLoader: CDBLoader, users: tuple) -> None:
+    """Function to reset the box containing the list of users.
+    """
+    dlg = cdbLoader.admin_dlg
 
     # Clean combo box from leftovers.
-    cdbLoader.admin_dlg.cbxUser.clear()
+    dlg.cbxUser.clear()
 
     user_icon = QIcon(":/plugins/citydb_loader/icons/user.svg")
 
     for user in users:
-        cdbLoader.admin_dlg.cbxUser.addItem(user_icon, user)
+        dlg.cbxUser.addItem(user_icon, user)
 
 
 #############################################
@@ -30,10 +33,8 @@ clearing widget items or selections and deactivating them.
 """
 
 def tabDbAdmin_reset(cdbLoader: CDBLoader) -> None:
-    """Function to reset the 'Settings' tab.
-    Resets: gbxInstall and lblInfoText.
+    """Function to reset the 'Settings' tab. Resets: gbxInstall and lblInfoText.
     """
-
     # Close the current open connection.
     if cdbLoader.conn is not None:
         cdbLoader.conn.close()
@@ -46,28 +47,33 @@ def tabDbAdmin_reset(cdbLoader: CDBLoader) -> None:
 
 def gbxMainInst_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Main Installation' groupBox
-    (in Database Administration tab)."""
+    """
+    dlg = cdbLoader.admin_dlg
 
-    cdbLoader.admin_dlg.gbxMainInst.setDisabled(True)
-    cdbLoader.admin_dlg.btnMainInst.setText(cdbLoader.admin_dlg.btnMainInst.init_text)
-    cdbLoader.admin_dlg.btnMainUninst.setText(cdbLoader.admin_dlg.btnMainUninst.init_text)
+    dlg.gbxMainInst.setDisabled(True)
+    dlg.btnMainInst.setText(dlg.btnMainInst.init_text)
+    dlg.btnMainUninst.setText(dlg.btnMainUninst.init_text)
 
 
 def gbxUserInst_reset(cdbLoader: CDBLoader) -> None:
-    """Function to reset the 'User Installation' groupBox"""
-    
-    cdbLoader.admin_dlg.gbxUserInst.setDisabled(True)
-    cdbLoader.admin_dlg.btnUsrInst.setText(cdbLoader.admin_dlg.btnUsrInst.init_text)
-    cdbLoader.admin_dlg.btnUsrUninst.setText(cdbLoader.admin_dlg.btnUsrUninst.init_text)
-    cdbLoader.admin_dlg.cbxUser.clear()
+    """Function to reset the 'User Installation' groupBox
+    """
+    dlg = cdbLoader.admin_dlg
+
+    dlg.gbxUserInst.setDisabled(True)
+    dlg.btnUsrInst.setText(dlg.btnUsrInst.init_text)
+    dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text)
+    dlg.cbxUser.clear()
 
 
 def gbxConnStatus_reset(cdbLoader: CDBLoader) -> None:
-    """Function to reset the 'Connection status' groupbox"""
+    """Function to reset the 'Connection status' groupbox
+    """
+    dlg = cdbLoader.admin_dlg
 
-    cdbLoader.admin_dlg.gbxConnStatus.setDisabled(True)
-    cdbLoader.admin_dlg.lblConnToDb_out.clear()
-    cdbLoader.admin_dlg.lblPostInst_out.clear()
-    cdbLoader.admin_dlg.lbl3DCityDBInst_out.clear()
-    cdbLoader.admin_dlg.lblMainInst_out.clear()
-    cdbLoader.admin_dlg.lblUserInst_out.clear()
+    dlg.gbxConnStatus.setDisabled(True)
+    dlg.lblConnToDb_out.clear()
+    dlg.lblPostInst_out.clear()
+    dlg.lbl3DCityDBInst_out.clear()
+    dlg.lblMainInst_out.clear()
+    dlg.lblUserInst_out.clear()

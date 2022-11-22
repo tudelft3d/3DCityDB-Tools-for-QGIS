@@ -1,7 +1,25 @@
 2022-xx-xx TO DO
 ----------
-TO DO
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
+Add update statement to delete trigger functions to reduce number of features in table layer metadata
+
+2022-11-13
+----------
+Version 0.8.0
+Fixed bug in trigger functions to extract the name of the cdb_schema
+Script 030:
+	- Updated/rewritten functions
+		[qgis_pkg.list_cdb_schemas(...)]
+		[qgis_pkg.compute_cdb_schema_extents(...)]
+		[qgis_pkg.upsert_extents(...)]		
+	- Renamed function [qgis_pkg.support_for_schema(...)] to  [qgis_pkg.has_layers_for_cdb_schema(...)]
+Scripts 080-170:
+	- Renamed some attribute forms and added news for new features
+	- Added layer support for
+		Terrain Intersection Curve (bridge, building, tunnel, generics, city_furniture)
+		Multi_Curve geometries (bridge, building, tunnel)
+		MasspointRelief (multipoint), BreaklinesRelief (multilinestring)
+Minor code clean-up and bug fixes
 
 2022-06-02
 ----------
@@ -60,7 +78,7 @@ Renamed all [sql_generator_xx()] [functions to generate_sql_xx()]
 Script: 
 Script 070: Added scripts to create/refresh/drop layer functions
 	- Drop functions can handle up to one cdb_schema at once (circa max 520 layers)
-Script 080-170: Cleaned up code of layer generation functions
+Scripts 080-170: Cleaned up code of layer generation functions
 	- Switched order of first 2 input parameters
 	- Added controls for usr_name, cdb_schema validity
 Script 180:

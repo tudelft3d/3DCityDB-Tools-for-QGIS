@@ -34,111 +34,6 @@
 -- ***********************************************************************
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_ADDRESS_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_address_atts(
-obj         qgis_pkg.obj_address,
-cdb_schema varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-SELECT qgis_pkg.upd_t_address(obj, cdb_schema) INTO updated_id;
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_address_atts(id: %): %', obj.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) IS 'Update attributes of table ADDRESS';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_address_atts(qgis_pkg.obj_address, varchar) FROM public;
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_APPEARANCE_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_appearance_atts(
-obj         qgis_pkg.obj_appearance,
-cdb_schema varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-SELECT qgis_pkg.upd_t_appearance(obj, cdb_schema) INTO updated_id;
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_appearance_atts(id: %): %', obj.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) IS 'Update attributes of table APPEARANCE';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_appearance_atts(qgis_pkg.obj_appearance, varchar) FROM public;
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_CITYOBJECT_GENERICATTRIB_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(
-obj         qgis_pkg.obj_cityobject_genericattrib,
-cdb_schema varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-SELECT qgis_pkg.upd_t_cityobject_genericattrib(obj, cdb_schema) INTO updated_id;
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_cityobject_genericattrib_atts(id: %): %', obj.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) IS 'Update attributes of table CITYOBJECT_GENERICATTRIB';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_cityobject_genericattrib_atts(qgis_pkg.obj_cityobject_genericattrib, varchar) FROM public;
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_EXTERNAL_REFERENCE_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_external_reference_atts(
-obj         qgis_pkg.obj_external_reference,
-cdb_schema varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-SELECT qgis_pkg.upd_t_external_reference(obj, cdb_schema) INTO updated_id;
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_external_reference_atts(id: %): %', obj.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) IS 'Update attributes of table EXTERNAL_REFERENCE';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_external_reference_atts(qgis_pkg.obj_external_reference, varchar) FROM public;
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_SURFACE_DATA_ATTS
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_surface_data_atts(
-obj         qgis_pkg.obj_surface_data,
-cdb_schema varchar
-)
-RETURNS bigint AS $$
-DECLARE
-  updated_id bigint;
-BEGIN
-SELECT qgis_pkg.upd_t_surface_data(obj, cdb_schema) INTO updated_id;
-RETURN updated_id;
-EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_surface_data_atts(id: %): %', obj.id, SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) IS 'Update attributes of table SURFACE_DATA';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_surface_data_atts(qgis_pkg.obj_surface_data, varchar) FROM public;
-
-----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_BRIDGE_OPENING_ATTS
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.upd_bridge_opening_atts(qgis_pkg.obj_cityobject, varchar) CASCADE;
@@ -888,13 +783,12 @@ COMMENT ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_p
 REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_tin_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_tin_relief, varchar) FROM public;
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_RASTER_RELIEF_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_BREAKLINE_RELIEF_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_raster_relief_atts(
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_breakline_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_breakline_relief_atts(
 obj      qgis_pkg.obj_cityobject,
 obj_1    qgis_pkg.obj_relief_component,
-obj_2    qgis_pkg.obj_raster_relief,
 cdb_schema varchar
 )
 RETURNS bigint AS $$
@@ -904,15 +798,39 @@ BEGIN
 
 SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
 PERFORM qgis_pkg.upd_t_relief_component(obj_1, cdb_schema);
-PERFORM qgis_pkg.upd_t_raster_relief(obj_2, cdb_schema);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_raster_relief_atts(id: %): %', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_breakline_relief_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) IS 'Update attributes of table RASTER_RELIEF (and parent ones)';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_raster_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, qgis_pkg.obj_raster_relief, varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.upd_breakline_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) IS 'Update attributes of table BREAKLINE_RELIEF (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_breakline_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) FROM public;
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPD_MASSPOINT_RELIEF_ATTS
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_masspoint_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_masspoint_relief_atts(
+obj      qgis_pkg.obj_cityobject,
+obj_1    qgis_pkg.obj_relief_component,
+cdb_schema varchar
+)
+RETURNS bigint AS $$
+DECLARE
+  updated_id bigint;
+BEGIN
+
+SELECT  qgis_pkg.upd_t_cityobject(obj, cdb_schema) INTO updated_id;
+PERFORM qgis_pkg.upd_t_relief_component(obj_1, cdb_schema);
+
+RETURN updated_id;
+EXCEPTION
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_masspoint_relief_atts(id: %): %', obj.id, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.upd_masspoint_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) IS 'Update attributes of table MASSPOINT_RELIEF (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_masspoint_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERBODY_ATTS
