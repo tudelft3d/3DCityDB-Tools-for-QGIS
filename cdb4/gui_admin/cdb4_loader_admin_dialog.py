@@ -96,8 +96,8 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
     #'Connection' group box events
     def evt_cbxExistingConn_changed(self, cdbLoader: CDBLoader) -> None:
-        """Event that is called when the 'Existing Connection'
-        comboBox (cbxExistingConn) current index changes.
+        """Event that is called when the 'Existing Connection' comboBox (cbxExistingConn) current index changes.
+        This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
         cdbLoader.DB = self.cbxExistingConn.currentData()
@@ -137,7 +137,7 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         dlgConnector.exec_()
 
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.admin_dlg
 
         # Add new connection to the Existing connections
         if dlgConnector.new_connection:
