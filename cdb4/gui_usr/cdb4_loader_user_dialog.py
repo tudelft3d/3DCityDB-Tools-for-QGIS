@@ -564,7 +564,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 if cdb_extents_new.contains(cdbLoader.LAYER_EXTENTS_RED):
 
-                    msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (dashed blue line). Now they will be automatically updated."
+                    msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (blue dashed line). Now they will be automatically updated."
                     QMessageBox.warning(cdbLoader.usr_dlg, "Extents changed!", msg)
 
                     # Update the cdb_extents, leave the layer_extents and the layers
