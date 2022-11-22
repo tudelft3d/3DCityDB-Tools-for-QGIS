@@ -371,7 +371,7 @@ class CDBLoader:
             return None
 
 
-    def evt_update_bar(self, dialog, step, text) -> None:
+    def evt_update_bar(self, dialog: str, step: int, text: str) -> None:
         """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
         in CDBLoader.msg_bar: QgsMessageBar and CDBLoader.bar: QProgressBar.
         This event is not linked to any widet_setup function as it isn't responsible for changes in different 
