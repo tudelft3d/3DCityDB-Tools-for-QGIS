@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>405</width>
-    <height>664</height>
+    <height>585</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -118,7 +118,7 @@
           </size>
          </property>
          <property name="title">
-          <string>Connection</string>
+          <string>PostgreSQL connection</string>
          </property>
          <property name="flat">
           <bool>false</bool>
@@ -126,15 +126,21 @@
          <property name="checkable">
           <bool>false</bool>
          </property>
-         <layout class="QFormLayout" name="fLayoutConnection">
-          <item row="0" column="0">
-           <widget class="QLabel" name="lblExistingConnection">
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="1">
+           <widget class="QLabel" name="lblNewConnection">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
-             <string>Select an existing connection:</string>
+             <string>Define a new one:</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
+          <item row="1" column="0">
            <widget class="QComboBox" name="cbxExistingConn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -142,8 +148,20 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>220</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="toolTip">
-             <string>uylilu</string>
+             <string>Click to select an exiting connection</string>
             </property>
             <property name="accessibleName">
              <string/>
@@ -162,21 +180,7 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="lblOr">
-            <property name="text">
-             <string>    or</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="lblNewConnection">
-            <property name="text">
-             <string>Make new connection:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
+          <item row="1" column="1">
            <widget class="QPushButton" name="btnNewConn">
             <property name="enabled">
              <bool>true</bool>
@@ -186,6 +190,15 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Click to open a new window and add a new connection</string>
             </property>
             <property name="text">
              <string>New Connection</string>
@@ -201,6 +214,19 @@
             </property>
             <property name="flat">
              <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblExistingConnection">
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Select an existing connection:</string>
             </property>
            </widget>
           </item>
@@ -230,8 +256,8 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
-           <height>40</height>
+           <width>16777215</width>
+           <height>10</height>
           </size>
          </property>
         </spacer>
@@ -258,6 +284,9 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Install the server-side QGIS Package to the database</string>
             </property>
             <property name="text">
              <string>  Install to database {db}</string>
@@ -287,6 +316,9 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Uninstall the server-side QGIS Package from the database</string>
             </property>
             <property name="text">
              <string>  Uninstall from database {db}</string>
@@ -357,6 +389,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="toolTip">
+               <string>Select an exiting user belonging to the database group &quot;qgis_pkg_usrgroup&quot;</string>
+              </property>
               <property name="editable">
                <bool>false</bool>
               </property>
@@ -378,6 +413,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnUsrInst">
+            <property name="toolTip">
+             <string>Create the database schema with all user-related data (layers, configurations, etc.)</string>
+            </property>
             <property name="text">
              <string>  Create schema for user {usr}</string>
             </property>
@@ -394,6 +432,9 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Remove the database schema with all user-related data (layers, configurations, etc.)</string>
             </property>
             <property name="text">
              <string>  Drop schema for user {usr}</string>
