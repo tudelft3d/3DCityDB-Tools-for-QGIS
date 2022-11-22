@@ -91,8 +91,7 @@ def install_qgis_pkg_thread(cdbLoader: CDBLoader, sql_scripts_path: str, qgis_pk
     by branching a new Worker thread to execute the operation on.
 
     *   :param path: The relative path to the directory storing the
-            SQL installation scripts
-            (e.g. ./citydb_loader/sql_scripts/postgresql)
+            SQL installation scripts (e.g. ./citydb_loader/cdb4/ddl_scripts/postgresql)
         :type path: str
     
     *   :param pkg: The package (schema) name that's installed
@@ -102,7 +101,7 @@ def install_qgis_pkg_thread(cdbLoader: CDBLoader, sql_scripts_path: str, qgis_pk
 
     if qgis_pkg_schema == cdbLoader.QGIS_PKG_SCHEMA:
         # Add a new progress bar to follow the installation procedure.
-        cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUsrInst, position=-1)
+        cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.vLayoutMainInst, position=-1)
 
     # Create new thread object.
     cdbLoader.thread = QThread()
@@ -228,7 +227,7 @@ def uninstall_qgis_pkg_thread(cdbLoader: CDBLoader) -> None:
     dlg = cdbLoader.admin_dlg
 
     # Add a new progress bar to follow the installation procedure.
-    cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUsrInst, position=-1)
+    cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.vLayoutMainInst, position=-1)
 
     # Create new thread object.
     cdbLoader.thread = QThread()
@@ -393,7 +392,6 @@ def ev_qgis_pkg_install_success(cdbLoader: CDBLoader, pkg: str) -> None:
 
         # Inform user
         dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_MSG + " (v. " + c.QGIS_PKG_MIN_VERSION_TXT + ")").format(pkg=cdbLoader.QGIS_PKG_SCHEMA))
-        #dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=pkg)))
         QgsMessageLog.logMessage(
                 message=c.INST_SUCC_MSG.format(pkg=pkg),
                 tag=cdbLoader.PLUGIN_NAME,
