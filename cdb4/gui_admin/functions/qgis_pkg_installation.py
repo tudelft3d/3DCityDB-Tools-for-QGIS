@@ -36,7 +36,7 @@ def installation_query(cdbLoader: CDBLoader, message: str, inst_type: str) -> bo
         cdbLoader.admin_dlg.btnUsrUninst.setDisabled(True)
         return False
     else:
-        QMessageBox.critical(dlg, "Installation", "Unrecognised install type!")
+        QMessageBox.critical(dlg, "Installation error", "Unrecognised install type!")
         return False
 
 def uninstallation_query(cdbLoader: CDBLoader, message: str, uninst_type: str) -> bool:
