@@ -12,6 +12,7 @@ The plugin consists of a server-side part (written in PL/pgSQL) and a client-sid
 These are the main features currently available in the plugin:
 - All CityGML modules are supported (Building, Bridge, Tunnel, etc.)
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
+- Support for other geometry types other than Solids/(Multi)Polygons (e.g. MultiCurves for Terrain Instersection Curves, MultiPoints)
 - Support for multiple citydb schemas in the same 3D City Database instance
 - Support for multiple users with different privileges (i.e. read-only, read-write)
 - User-friendly form-based editing of feature attributes; changes are stored directly into the database
@@ -19,7 +20,7 @@ These are the main features currently available in the plugin:
 - Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
 - Smart layer management: layers are generated only for existing data, only layers with data within the AOI extents can be selected
 - Support for CityGML enumerations and codelists
-- All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
+- All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still quite unstable...).
 
 Further details, and a simple user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBLoader_UserGuide.pdf](https://github.com/tudelft3d/3DCityDB-QGIS-Loader/blob/master/user_guide/3DCityDBLoader_UserGuide.pdf)").
 
@@ -29,9 +30,9 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plugin has been developed using **[QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR** and works best with it. Our tests so far show that it works with any QGIS version >= 3.20. Please note that support und further development will focus only on LTR versions, e.g. the next one will be QGIS 3.28 LTR expected in autumn 2022.
+The plugin has been developed using **[QGIS](https://www.qgis.org/nl/site/forusers/download.html) version 3.22 LTR** and works best with it. Our tests so far show that it works with any QGIS version >= 3.20, including the latest version 3.28 LTR, released in Autumn 2022. The server-side part of the plugin requires **PostgreSQL version >= 10**.
 
-Other than QGIS, only a working instance of the 3D City Database is required. The currently supported version of the **[3DCityDB](https://github.com/3dcitydb) is the 4.x**. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily reccommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
+Other than QGIS and PostgreSQL, just a working instance of the 3D City Database is required. The currently supported version of the **[3DCityDB](https://github.com/3dcitydb) is the 4.x**. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily reccommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
 
 # Developers
 
@@ -48,7 +49,6 @@ Besides further testing and debugging, there are a number of improvements that w
 - Richer GUI, e.g. with more options for database administrators, and better codelists management/settings 
 - Support of ADEs (e.g. the [Energy ADE](https://www.citygmlwiki.org/index.php/CityGML_Energy_ADE), to start with)
 - Support for appearances (at least for X3D Materials, if possible)
-- Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Instersection Curves)
 - Testing and initial support for the [3DCityDB v. 5.0](https://github.com/3dcitydb/3dcitydb/releases) (and therefore CityGML v. 3.0)
 - ...the sky is the limit...
 
