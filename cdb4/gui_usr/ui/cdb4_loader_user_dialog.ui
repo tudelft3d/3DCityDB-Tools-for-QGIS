@@ -17,7 +17,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -169,12 +169,12 @@
             <property name="minimumSize">
              <size>
               <width>450</width>
-              <height>0</height>
+              <height>23</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
@@ -211,7 +211,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
@@ -224,13 +224,13 @@
            <widget class="QLabel" name="lblExistingConnectionC">
             <property name="minimumSize">
              <size>
-              <width>400</width>
+              <width>450</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>400</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
@@ -253,13 +253,13 @@
             <property name="minimumSize">
              <size>
               <width>150</width>
-              <height>0</height>
+              <height>23</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
-              <height>25</height>
+              <width>16777215</width>
+              <height>16777215</height>
              </size>
             </property>
             <property name="toolTip">
@@ -284,9 +284,12 @@
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::MinimumExpanding</enum>
+            </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>40</width>
+              <width>20</width>
               <height>20</height>
              </size>
             </property>
@@ -334,6 +337,18 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>400</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>Select one of the citydb schemas containing data</string>
             </property>
@@ -360,6 +375,12 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>400</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="text">
              <string>Connect to {db}</string>
             </property>
@@ -367,7 +388,7 @@
              <bool>false</bool>
             </property>
             <property name="default">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -429,21 +450,39 @@
          <layout class="QGridLayout" name="gLayoutBasemapC">
           <item row="2" column="0">
            <widget class="QPushButton" name="btnCityExtentsC">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the extents of the area (&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;reb box&lt;/span&gt;) to be the same as the citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Set to {sch} schema</string>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="0" column="0">
            <widget class="QPushButton" name="btnRefreshCDBExtents">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you deleted or added new data to the city model, you may have to refresh the extents of all data contained in the selected citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Refresh {sch} extents</string>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -733,6 +772,12 @@
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
+         </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create layers for all CityGML data within the area extents defined by the &lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;red box&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -749,12 +794,21 @@
            <height>20</height>
           </size>
          </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnRefreshLayers">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh all existing layers (i.e. the views and the materialised views they consist of).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Beware:&lt;/span&gt; it may take some time!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -765,6 +819,9 @@
          <property name="icon">
           <iconset>
            <normaloff>:/plugins/citydb_loader/icons/refresh_icon.svg</normaloff>:/plugins/citydb_loader/icons/refresh_icon.svg</iconset>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -786,11 +843,20 @@
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
+         </property>
          <property name="toolTip">
           <string>Drop all existing layers referring to the selected citydb schema</string>
          </property>
          <property name="text">
           <string>Drop layers for schema {sch}</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1020,8 +1086,17 @@
        </item>
        <item>
         <widget class="QPushButton" name="btnCloseConnC">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
+         </property>
          <property name="text">
           <string>Close current connection</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
