@@ -1,4 +1,4 @@
-"""This module contains hardcoded variables that are used within the plugin
+"""This module contains hardcoded variables that are used within the main plugin class (CDBLoader)
 """
 import os.path
 
