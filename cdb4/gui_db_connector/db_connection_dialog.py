@@ -19,109 +19,143 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
     """
     def __init__(self, parent=None):
         super(DBConnectorDialog, self).__init__(parent)
+
         self.setupUi(self)
 
+        ############################################################
+        ## From here you can add your variables or constants
+        ############################################################
+
+        # Connection object variable
+        self.conn_params: Connection = None
+        
         self.gbxConnDet.bar = QgsMessageBar()
         self.verticalLayout.addWidget(self.gbxConnDet.bar, 0)
 
-        # Connection object variable
-        self.new_connection: Connection = None
+        ################################################
+        ### SIGNALS (start) ############################
+        ################################################
 
         # Connect signals
-        self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
+        self.btnTestConn.clicked.connect(self.evt_btnTestConn_clicked)
+        self.btnOK.clicked.connect(self.evt_btnOK_clicked)
+        self.btnCancel.clicked.connect(self.evt_btnCancel_clicked)
+
+        ################################################
+        ### SIGNALS (end) ##############################
+        ################################################
 
     def store_conn_parameters(self):
         """Function that stores the database connection parameters in the user's profile settings for future use.
         """
         #TODO: Warn user that the connection parameters are stored locally in a .ini file
 
-        new_settings = QgsSettings()
-        con_path= f'PostgreSQL/connections/{self.new_connection.connection_name}'
+        new_conn_params = QgsSettings()
+        conn_path= f'PostgreSQL/connections/{self.conn_params.connection_name}'
 
-        new_settings.setValue(f'{con_path}/database', self.new_connection.database_name)
-        new_settings.setValue(f'{con_path}/host', self.new_connection.host)
-        new_settings.setValue(f'{con_path}/port', self.new_connection.port)
-        new_settings.setValue(f'{con_path}/username', self.new_connection.username)
-        new_settings.setValue(f'{con_path}/password', self.new_connection.password)
+        new_conn_params.setValue(f'{conn_path}/database', self.conn_params.database_name)
+        new_conn_params.setValue(f'{conn_path}/host', self.conn_params.host)
+        new_conn_params.setValue(f'{conn_path}/port', self.conn_params.port)
+        new_conn_params.setValue(f'{conn_path}/username', self.conn_params.username)
+        new_conn_params.setValue(f'{conn_path}/password', self.conn_params.password)
 
-    def evt_btnConnect_clicked(self) -> None:
-        """Event that is called when the current 'Connect' pushButton (btnConnect) is pressed.
+        ################################################
+        ### EVENTS (start) ############################
+        ################################################
+
+    def evt_btnTestConn_clicked(self) -> None:
+        """Event that is called when the 'Test connection' pushButton (btnTestConn) is pressed.
         """
         # Instantiate a connection object
-        connectionInstance = Connection()
+        NewConnParams = Connection()
 
         # Update connection attributes parameters from 'Line Edit' user info
-        connectionInstance.connection_name = self.ledConnName.text()
-        connectionInstance.host = self.ledHost.text()
-        connectionInstance.port = self.ledPort.text()
-        connectionInstance.database_name = self.ledDb.text()
-        connectionInstance.username = self.ledUserName.text()
-        connectionInstance.password = self.qledPassw.text()
+        NewConnParams.connection_name = self.ledConnName.text()
+        NewConnParams.host = self.ledHost.text()
+        NewConnParams.port = self.ledPort.text()
+        NewConnParams.database_name = self.ledDb.text()
+        NewConnParams.username = self.ledUserName.text()
+        NewConnParams.password = self.qledPassw.text()
         if self.checkBox.isChecked():
-            connectionInstance.store_creds = True
+            NewConnParams.store_creds = True
+        
+        if any((not NewConnParams.connection_name, not NewConnParams.host, 
+                not NewConnParams.port, not NewConnParams.database_name, 
+                not NewConnParams.username, not NewConnParams.password)):
+            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
+            return None
+        else:
+            temp_conn: psycopg2.connection = None
+            try:
+                temp_conn = connect(NewConnParams) # attempt to open connection and keep it open
+                # If successful, close it, otherwise an Exception will be raised.
+                temp_conn.close() # close connection after the test.
+                self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.Success, duration=3)
 
-        try:
-            # Attempt to open connection
-            connect(connectionInstance)
-            self.new_connection = connectionInstance
+            except (Exception, psycopg2.DatabaseError) as error:
+                gen_f.critical_log(
+                    func=self.evt_btnTestConn_clicked,
+                    location=FILE_LOCATION,
+                    header="Attempting connection",
+                    error=error)
+                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.Critical, duration=3)
 
-            self.gbxConnDet.bar.pushMessage(
-                    "Success", 
-                    "Connection is valid! You will find it in 'Select an existing connection' box.", 
-                    level=Qgis.Success,
-                    duration=3)
-            if self.checkBox.isChecked():
-                self.store_conn_parameters()
+            return None
 
-        except (Exception, psycopg2.DatabaseError) as error:
-            gen_f.critical_log(
-                func=self.evt_btnConnect_clicked,
-                location=FILE_LOCATION,
-                header="Attempting connection",
-                error=error)
-            self.gbxConnDet.bar.pushMessage(
-                "Error",
-                "Connection failed!",
-                level=Qgis.Critical,
-                duration=5)
 
-    def evt_btnTestConnect_clicked(self) -> None:
-        """Event that is called when the 'Test connection' pushButton (btnTestConnect) is pressed.
+    def evt_btnOK_clicked(self) -> None:
+        """Event that is called when the 'OK' pushButton (btnOK) is pressed. It checks the connection,
+        and, if successful, 
         """
         # Instantiate a connection object
-        connectionInstance = Connection()
+        NewConnParams = Connection()
 
         # Update connection attributes parameters from 'Line Edit' user info
-        connectionInstance.connection_name = self.ledConnName.text()
-        connectionInstance.host = self.ledHost.text()
-        connectionInstance.port = self.ledPort.text()
-        connectionInstance.database_name = self.ledDb.text()
-        connectionInstance.username = self.ledUserName.text()
-        connectionInstance.password = self.qledPassw.text()
+        NewConnParams.connection_name = self.ledConnName.text()
+        NewConnParams.host = self.ledHost.text()
+        NewConnParams.port = self.ledPort.text()
+        NewConnParams.database_name = self.ledDb.text()
+        NewConnParams.username = self.ledUserName.text()
+        NewConnParams.password = self.qledPassw.text()
         if self.checkBox.isChecked():
-            connectionInstance.store_creds = True
+            NewConnParams.store_creds = True
+        
+        if any((not NewConnParams.connection_name, not NewConnParams.host, 
+                not NewConnParams.port, not NewConnParams.database_name, 
+                not NewConnParams.username, not NewConnParams.password)):
+            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
+            return None
+        else:
+            temp_conn: psycopg2.connection = None
+            try:
+                temp_conn = connect(NewConnParams) # attempt to open connection and keep it open
+                # If successful, close it, otherwise an Exception will be raised.
+                temp_conn.close() # close connection after the test.
 
-        try:
-            # Attempt to open connection
-            connect(connectionInstance)
-            self.new_connection = connectionInstance
+                # Assign the new connection parameters to the variable, they will be added to the dropbox in the parent dialog.
+                self.conn_params = NewConnParams
 
-            self.gbxConnDet.bar.pushMessage(
-                    "Success", 
-                    "Connection is valid! You will find it in 'Select an existing connection' box.", 
-                    level=Qgis.Success,
-                    duration=3)
-            if self.checkBox.isChecked():
-                self.store_conn_parameters()
+                # Store the new connection parameters for future use.
+                if self.checkBox.isChecked():
+                    self.store_conn_parameters()
+                                
+            except (Exception, psycopg2.DatabaseError) as error:
+                gen_f.critical_log(
+                    func=self.evt_btnTestConn_clicked,
+                    location=FILE_LOCATION,
+                    header="Attempting connection",
+                    error=error)
+                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.Critical, duration=3)
 
-        except (Exception, psycopg2.DatabaseError) as error:
-            gen_f.critical_log(
-                func=self.evt_btnConnect_clicked,
-                location=FILE_LOCATION,
-                header="Attempting connection",
-                error=error)
-            self.gbxConnDet.bar.pushMessage(
-                "Error",
-                "Connection failed!",
-                level=Qgis.Critical,
-                duration=5)
+        self.close()
+
+
+    def evt_btnCancel_clicked(self) -> None:
+        """Event that is called when the 'Cancel' pushButton (btnCancel) is pressed.
+        It simply closes the dialog.
+        """
+        self.close()
+
+        ################################################
+        ### EVENTS (end) ############################
+        ################################################
