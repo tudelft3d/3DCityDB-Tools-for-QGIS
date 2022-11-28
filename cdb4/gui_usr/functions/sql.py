@@ -6,7 +6,8 @@ the database with sql queries or sql function calls.
 import psycopg2
 
 from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
-from ... import cdb4_constants as c
+from ..other_classes import CDBLayer
+
 from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
@@ -21,8 +22,7 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
         with cdbLoader.conn.cursor() as cur:
             # Get cdb_schema extents from server as WKT.
             cur.execute(query= f"""
-                                   SELECT ST_AsText(envelope)
-                                   FROM "{usr_schema}".extents 
+                                   SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
                                    WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
                                 """)
             extents = cur.fetchone()
@@ -66,7 +66,7 @@ def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
         cdbLoader.conn.rollback()
 
 
-def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, cols="*") -> tuple:
+def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, cols: str="*") -> tuple:
     """SQL query that retrieves the current schema's layer metadata
     from {usr_schema}.layer_metadata table. By default it retrieves all columns.
 
@@ -156,16 +156,15 @@ def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
         cdbLoader.conn.rollback()
 
 
-def exec_view_counter(cdbLoader: CDBLoader, layer: c.Layer) -> int:
-    """Calls the qgis_pkg function that counts the number of
-    geometry objects found within the selected extents.
+def exec_view_counter(cdbLoader: CDBLoader, layer: CDBLayer) -> int:
+    """Calls the qgis_pkg function that counts the number of geometry objects found within the selected extents.
 
     *   :returns: Number of objects.
         :rtype: int
     """
     try:
         # Convert QgsRectanlce into WKT polygon format
-        extents = cdbLoader.CURRENT_EXTENTS.asWktPolygon()
+        extents = cdbLoader.usr_dlg.CURRENT_EXTENTS.asWktPolygon()
 
         with cdbLoader.conn.cursor() as cur:
             # Execute server function to get the number of objects in extents.

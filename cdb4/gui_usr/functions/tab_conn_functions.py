@@ -9,9 +9,9 @@ from ....cdb_loader import CDBLoader # Used only to add the type of the function
 def fill_schema_box(cdbLoader: CDBLoader, cdb_schemas: tuple) -> None:
     """Function that fills schema combo box with the provided schemas.
     """
-
+    dlg = cdbLoader.usr_dlg
     # Clear combo box from previous entries
-    cdbLoader.usr_dlg.cbxSchema.clear()
+    dlg.cbxSchema.clear()
 
     for cdb_schema in cdb_schemas:
-        cdbLoader.usr_dlg.cbxSchema.addItem(cdb_schema, True)
+        dlg.cbxSchema.addItem(cdb_schema, True)

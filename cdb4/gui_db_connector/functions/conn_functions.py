@@ -9,7 +9,7 @@ from qgis.core import QgsSettings
 from .... import main_constants as main_c
 from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
 from ...shared.functions import general_functions as gen_f
-from ..connection import Connection
+from ..other_classes import Connection
 from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
@@ -59,7 +59,7 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
             cdbLoader.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
 
 def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
-    """Open a connection to PostgreSQL database.
+    """Creates a new database session and returns a new instance of the psycopg connection class.
 
     *   :param db: The connection custom object
         :rtype: Connection
@@ -70,13 +70,13 @@ def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
     *   :returns: The connection psycopg2 object (opened)
         :rtype: psycopg2.connection
     """
-    return psycopg2.connect(
-            dbname           = db_connection.database_name,
-            user             = db_connection.username,
-            password         = db_connection.password,
-            host             = db_connection.host,
-            port             = db_connection.port,
-            application_name = app_name)
+    open_conn = psycopg2.connect(dbname           = db_connection.database_name,
+                            user             = db_connection.username,
+                            password         = db_connection.password,
+                            host             = db_connection.host,
+                            port             = db_connection.port,    
+                            application_name = app_name)
+    return open_conn
 
 def open_and_set_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) -> bool:
     """Opens a connection using the parameters stored in CDBLoader.DB

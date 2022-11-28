@@ -29,14 +29,14 @@ import typing
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget, QProgressBar, QVBoxLayout
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsWkbTypes, Qgis, QgsMessageLog
-from qgis.gui import QgisInterface, QgsMapCanvas, QgsRubberBand, QgsMessageBar
+from qgis.core import Qgis, QgsMessageLog
+from qgis.gui import QgisInterface, QgsMessageBar
 import psycopg2
 
 from . import main_constants as main_c
 from .resources import qInitResources
 
-from .cdb4.gui_db_connector import connection as dbconn
+from .cdb4.gui_db_connector import other_classes as dbconn
 
 class CDBLoader:
     """QGIS Plugin Implementation. Main class.
@@ -96,44 +96,6 @@ class CDBLoader:
         # Variable to store the existing connection object.
         self.DB: dbconn.Connection = None
 
-        # Variable to store the selected crs.
-        self.CRS: QgsCoordinateReferenceSystem = iface.mapCanvas().mapSettings().destinationCrs()
-
-        # Variable to store the selected extents.
-        self.CURRENT_EXTENTS: QgsRectangle = iface.mapCanvas().extent()
-        # Variable to store the extents of the selected {cdb_schema}
-        self.CDB_SCHEMA_EXTENTS_BLUE: QgsRectangle = iface.mapCanvas().extent()
-        # Variable to store the extents of the materialized views .
-        self.LAYER_EXTENTS_RED: QgsRectangle = iface.mapCanvas().extent()
-        # Variable to store the extents of the QGIS layers.
-        self.QGIS_EXTENTS_GREEN: QgsRectangle = iface.mapCanvas().extent()
-
-        # Variable to store an additional canvas (to show the extents in the CONNECTION TAB).
-        self.CANVAS_C: QgsMapCanvas = QgsMapCanvas()
-        self.CANVAS_C.enableAntiAliasing(True)
-        self.CANVAS_C.setMinimumWidth(300)
-        self.CANVAS_C.setMaximumHeight(350)
-
-        # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA_BLUE_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_RED_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-
-        # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
-        self.CANVAS: QgsMapCanvas = QgsMapCanvas()
-        self.CANVAS.enableAntiAliasing(True)
-        self.CANVAS.setMinimumWidth(300)
-        self.CANVAS.setMaximumHeight(350)
-
-        # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA_BLUE = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_RED = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_QGIS_GREEN = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-
-        # Variable to store all available FeatureTypes.
-        # The availability is defined by the existence of at least one feature.
-        # instance inside the current selected extents (bbox).
-        self.FeatureType_container: dict = {}
-
         # initialize locale.
         locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(self.PLUGIN_ABS_PATH, "i18n", "DBLoader_{}.qm".format(locale))
@@ -150,6 +112,7 @@ class CDBLoader:
         self.first_start_usr: bool = True
         self.first_start_admin: bool = True
 
+
     def tr(self, message: str) -> str:
         """Get the translation for a string using Qt translation API.
         We implement this ourselves since we do not inherit QObject.
@@ -161,6 +124,7 @@ class CDBLoader:
             :rtype: str
         """
         return QCoreApplication.translate("DBLoader", message)
+
 
     def add_action(self,
             icon_path: str,
@@ -267,6 +231,7 @@ class CDBLoader:
 
         return action
 
+
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
@@ -288,11 +253,12 @@ class CDBLoader:
             txt=self.tr(self.PLUGIN_NAME_ADMIN),
             callback=self.run_admin,
             parent=self.iface.mainWindow(),
-            add_to_toolbar=False) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar=True) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_user(), run_admin()
         self.first_start_usr = True
         self.first_start_admin = True
+
 
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI.
@@ -300,7 +266,8 @@ class CDBLoader:
         for action in self.actions:
             self.iface.removeDatabaseToolBarIcon(qAction=action)
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
-    
+
+
     def run_admin(self) -> None:
         """Run main method that performs all the real work.
         -   Creates the plugin dialog
@@ -333,6 +300,7 @@ class CDBLoader:
             # Reset the dialog widgets. (Closes the current open connection.)
             dba_wf.tabDbAdmin_reset(self)
 
+
     def run_usr(self) -> None:
         """Run main method that performs all the real work.
         -   Creates the plugin dialog
@@ -351,13 +319,15 @@ class CDBLoader:
             # Create the dialog with elements (after translation).
             self.usr_dlg = CDB4LoaderUserDialog(cdbLoader=self)
 
+            dlg = self.usr_dlg
+
             # Replace empty graphics view widget with Map canvas.
-            self.usr_dlg.gLayoutBasemapC.replaceWidget(self.usr_dlg.gvCanvasC, self.CANVAS_C)
-            self.usr_dlg.vLayoutBasemap.replaceWidget(self.usr_dlg.gvCanvas, self.CANVAS)
+            dlg.gLayoutBasemapC.replaceWidget(dlg.gvCanvasC, dlg.CANVAS_C)
+            dlg.vLayoutBasemap.replaceWidget(dlg.gvCanvas, dlg.CANVAS_L)
 
             # Remove empty graphics View widget from dialog.
-            self.usr_dlg.gvCanvasC.setParent(None)
-            self.usr_dlg.gvCanvas.setParent(None)
+            dlg.gvCanvasC.setParent(None)
+            dlg.gvCanvas.setParent(None)
 
             # Get existing connections from QGIS profile settings.
             conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn

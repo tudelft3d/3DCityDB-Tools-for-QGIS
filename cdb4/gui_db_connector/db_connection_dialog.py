@@ -1,19 +1,17 @@
 """This module contains classes and functions related to the database connections."""
 import os
 import psycopg2
-#from PyQt5 import QtWidgets
 from qgis.core import Qgis, QgsSettings
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import QtWidgets, uic
 
 from ..shared.functions import general_functions as gen_f
-from .connection import Connection
+from .other_classes import Connection
 from .functions.conn_functions import connect
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
-# This loads the .ui file so that PyQt can populate the plugin
-# with the elements from Qt Designer
+# This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
 
 class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
@@ -32,7 +30,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         # Connect signals
         self.btnConnect.clicked.connect(self.evt_btnConnect_clicked)
 
-    def store_credetials(self):
+    def store_conn_parameters(self):
         """Function that stores the database connection parameters in the user's profile settings for future use.
         """
         #TODO: Warn user that the connection parameters are stored locally in a .ini file
@@ -69,11 +67,52 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.gbxConnDet.bar.pushMessage(
                     "Success", 
-                    "Connection is valid! You can find it in 'Select an existing connection' box.", 
+                    "Connection is valid! You will find it in 'Select an existing connection' box.", 
                     level=Qgis.Success,
                     duration=3)
             if self.checkBox.isChecked():
-                self.store_credetials()
+                self.store_conn_parameters()
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            gen_f.critical_log(
+                func=self.evt_btnConnect_clicked,
+                location=FILE_LOCATION,
+                header="Attempting connection",
+                error=error)
+            self.gbxConnDet.bar.pushMessage(
+                "Error",
+                "Connection failed!",
+                level=Qgis.Critical,
+                duration=5)
+
+    def evt_btnTestConnect_clicked(self) -> None:
+        """Event that is called when the 'Test connection' pushButton (btnTestConnect) is pressed.
+        """
+        # Instantiate a connection object
+        connectionInstance = Connection()
+
+        # Update connection attributes parameters from 'Line Edit' user info
+        connectionInstance.connection_name = self.ledConnName.text()
+        connectionInstance.host = self.ledHost.text()
+        connectionInstance.port = self.ledPort.text()
+        connectionInstance.database_name = self.ledDb.text()
+        connectionInstance.username = self.ledUserName.text()
+        connectionInstance.password = self.qledPassw.text()
+        if self.checkBox.isChecked():
+            connectionInstance.store_creds = True
+
+        try:
+            # Attempt to open connection
+            connect(connectionInstance)
+            self.new_connection = connectionInstance
+
+            self.gbxConnDet.bar.pushMessage(
+                    "Success", 
+                    "Connection is valid! You will find it in 'Select an existing connection' box.", 
+                    level=Qgis.Success,
+                    duration=3)
+            if self.checkBox.isChecked():
+                self.store_conn_parameters()
 
         except (Exception, psycopg2.DatabaseError) as error:
             gen_f.critical_log(

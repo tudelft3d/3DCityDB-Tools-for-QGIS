@@ -34,6 +34,7 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
+    dlg = cdbLoader.usr_dlg
     try:
         extents_exist: bool = False
 
@@ -50,23 +51,23 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
                 # Get the crs_id stored in the selected {cdb_schema}
                 srid: int = sql.fetch_cdb_schema_srid(cdbLoader)
                 # Format CRS variable as QGIS Epsg code.
-                crs: str = ":".join(["EPSG",str(srid)]) # e.g. EPSG:28992
+                crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
 
                 # Assign the crs into the plugin variable
-                cdbLoader.CRS = QgsCoordinateReferenceSystem(crs)
+                dlg.CRS = QgsCoordinateReferenceSystem(crs)
                 # Store the extents into plugin variables.
-                cdbLoader.CURRENT_EXTENTS = cdb_extents
-                cdbLoader.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents
+                dlg.CURRENT_EXTENTS = cdb_extents
+                dlg.CDB_SCHEMA_EXTENTS_BLUE = cdb_extents
 
                 # Draw the cdb extents in the canvas
                 # First, create polygon rubber band corresponding to the cdb_schema extents
-                canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+                canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA_BLUE_C, extents=dlg.CDB_SCHEMA_EXTENTS_BLUE, crs=dlg.CRS, width=3, color=Qt.blue)
 
                 # Then update canvas with cdb_schema extents and crs
-                canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, clear=True)
+                canvas.canvas_setup(cdbLoader=cdbLoader, canvas=dlg.CANVAS_C, extents=dlg.CDB_SCHEMA_EXTENTS_BLUE, crs=dlg.CRS, clear=True)
 
                 # Zoom to the cdb_schema extents (blue box)
-                canvas.zoom_to_extents(canvas=cdbLoader.CANVAS_C, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE)
+                canvas.zoom_to_extents(canvas=dlg.CANVAS_C, extents=dlg.CDB_SCHEMA_EXTENTS_BLUE)
 
             else: 
                 # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
@@ -148,15 +149,15 @@ def gbxBasemapC_reset(cdbLoader: CDBLoader) -> None:
     dlg.btnCityExtentsC.setText(dlg.btnCityExtentsC.init_text)
 
     # Remove extent rubber bands.
-    cdbLoader.RUBBER_CDB_SCHEMA_BLUE_C.reset()
-    cdbLoader.RUBBER_LAYERS_RED_C.reset()
-    cdbLoader.RUBBER_QGIS_GREEN.reset()
+    dlg.RUBBER_CDB_SCHEMA_BLUE_C.reset()
+    dlg.RUBBER_LAYERS_RED_C.reset()
+    dlg.RUBBER_QGIS_GREEN_L.reset()
 
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     QgsProject.instance().removeMapLayers(registryLayers)
     # Refresh to show to re-render the canvas (as empty).
-    cdbLoader.CANVAS_C.refresh()
+    dlg.CANVAS_C.refresh()
 
 
 def cgbxOptions_reset(cdbLoader: CDBLoader) -> None:
@@ -175,8 +176,8 @@ def gbxSimplifyGeom_reset(cdbLoader: CDBLoader) -> None:
     dlg = cdbLoader.usr_dlg
 
     dlg.gbxSimplifyGeom.setChecked(False)
-    dlg.qspbDecimalPrec.setValue(c.DEC_PREC)
-    dlg.qspbMinArea.setValue(c.MIN_AREA)
+    dlg.qspbDecimalPrec.setValue(dlg.settings.simp_geom_dec_prec)
+    dlg.qspbMinArea.setValue(dlg.settings.simp_geom_min_area)
 
 
 def btnCreateLayers_reset(cdbLoader: CDBLoader) -> None:
@@ -192,6 +193,7 @@ def btnRefreshLayers_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Refresh layers' pushButton (in 'User Connection' tab).
     """
     dlg = cdbLoader.usr_dlg
+
     dlg.btnRefreshLayers.setDisabled(True)
     dlg.btnRefreshLayers.setText(dlg.btnRefreshLayers.init_text)
 

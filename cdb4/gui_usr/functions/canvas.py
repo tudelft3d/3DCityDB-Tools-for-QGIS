@@ -23,15 +23,15 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
 
     *   :param clear: Clear map registry from old OSM layers.
         :type clear: bool
-    """
+    """    
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    if canvas==cdbLoader.CANVAS_C: # in 'User Connection' tab
+    if canvas==cdbLoader.usr_dlg.CANVAS_C: # in 'User Connection' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsC.
         cdbLoader.usr_dlg.qgbxExtentsC.setOutputCrs(crs)
         cdbLoader.usr_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs)
-    elif canvas==cdbLoader.CANVAS: # in 'Layers' tab
+    elif canvas==cdbLoader.usr_dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtents.
         cdbLoader.usr_dlg.qgbxExtents.setOutputCrs(crs)
         cdbLoader.usr_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
@@ -57,6 +57,8 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
 
     # Set the map canvas layer set.
     canvas.setLayers(registryOSM_list)
+
+    return None
 
 def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoordinateReferenceSystem, width: int, color: Qt.GlobalColor = Qt.red) -> None:
     """Function that insert a rubber band corresponding to an extent.
@@ -84,12 +86,13 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
         (in 'Layers' tab)
     """
     # Create polygon rubber band corresponding to the extents
-    #band = QgsRubberBand(canvas, QgsWkbTypes.PolygonGeometry)
     extents_geometry = QgsGeometry.fromRect(extents)
     band.setToGeometry(extents_geometry, crs)
     band.setColor(QColor(color))
     band.setWidth(width)
     band.setFillColor(Qt.transparent)
+
+    return None
 
 
 def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
@@ -108,4 +111,5 @@ def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
     extents_wkt: str = extents.asWktPolygon()
     rectangle: QgsRectangle = QgsRectangle().fromWkt(extents_wkt)
     canvas.zoomToFeatureExtent(rectangle)
+
     return None

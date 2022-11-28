@@ -54,10 +54,10 @@ class LayerCreationWorker(QObject):
         dlg.bar.setMaximum(len(c.create_layers_funcs))
 
         # Get corners coordinates
-        y_min = str(self.plg.LAYER_EXTENTS_RED.yMinimum())
-        x_min = str(self.plg.LAYER_EXTENTS_RED.xMinimum())
-        y_max = str(self.plg.LAYER_EXTENTS_RED.yMaximum())
-        x_max = str(self.plg.LAYER_EXTENTS_RED.xMaximum())
+        y_min = str(dlg.LAYER_EXTENTS_RED.yMinimum())
+        x_min = str(dlg.LAYER_EXTENTS_RED.xMinimum())
+        y_max = str(dlg.LAYER_EXTENTS_RED.yMaximum())
+        x_max = str(dlg.LAYER_EXTENTS_RED.xMaximum())
 
         # Set function input
         params = [

@@ -33,6 +33,7 @@ from qgis.gui import QgsMessageBar
 from qgis.PyQt.QtWidgets import QMessageBox
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
+from .other_classes import AdminDialogRequirements
 
 from ..gui_db_connector.db_connection_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -61,6 +62,10 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots
 
         self.setupUi(self)
+
+        ## From here you can add variables or constants
+
+        #self.requirements = AdminDialogRequirements()
 
         # Initialize some properties.
         # This is used in order to revert to the original state
@@ -370,18 +375,23 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg = cdbLoader.admin_dlg
 
         # Update current users and user_schema variables.
-        cdbLoader.USER = dlg.cbxUser.currentText()
+        #cdbLoader.USER = dlg.cbxUser.currentText()
+        usr_name: str = dlg.cbxUser.currentText()
 
-        if not cdbLoader.USER:
+        #if not cdbLoader.USER:
+        if not usr_name:
             return None
         
-        sh_sql.exec_create_qgis_usr_schema_name(cdbLoader, usr_name=cdbLoader.USER)
+        #sh_sql.exec_create_qgis_usr_schema_name(cdbLoader, usr_name=cdbLoader.USER)
+        sh_sql.exec_create_qgis_usr_schema_name(cdbLoader, usr_name=usr_name)
     
         # Enable 'User installation' group box.
         dlg.gbxUserInst.setDisabled(False)
-        dlg.btnUsrInst.setText(dlg.btnUsrInst.init_text.format(usr=cdbLoader.USER))
-        dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text.format(usr=cdbLoader.USER))
-
+        #dlg.btnUsrInst.setText(dlg.btnUsrInst.init_text.format(usr=cdbLoader.USER))
+        #dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text.format(usr=cdbLoader.USER))
+        dlg.btnUsrInst.setText(dlg.btnUsrInst.init_text.format(usr=usr_name))
+        dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text.format(usr=usr_name))
+        
         # Check if user package (schema) is installed in database.
         is_usr_pkg_installed: bool = sh_sql.is_usr_schema_installed(cdbLoader)
         if is_usr_pkg_installed:

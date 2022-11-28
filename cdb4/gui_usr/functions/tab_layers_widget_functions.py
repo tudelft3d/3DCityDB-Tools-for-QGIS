@@ -27,19 +27,19 @@ def gbxBasemap_setup(cdbLoader: CDBLoader) ->  None:
     The basemap is zoomed-in to the city model's extents (in 'Layers' tab)
     """
     # Set basemap of the layer tab.
-    canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, clear=False)
+    canvas.canvas_setup(cdbLoader=cdbLoader, canvas=cdbLoader.usr_dlg.CANVAS_L, extents=cdbLoader.usr_dlg.LAYER_EXTENTS_RED, crs=cdbLoader.usr_dlg.CRS, clear=False)
 
     # Draw rubberband for extents of selected {cdb_schema}.
-    canvas.insert_rubber_band(band=cdbLoader.RUBBER_CDB_SCHEMA_BLUE, extents=cdbLoader.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.CRS, width=3, color=Qt.blue)
+    canvas.insert_rubber_band(band=cdbLoader.usr_dlg.RUBBER_CDB_SCHEMA_BLUE_L, extents=cdbLoader.usr_dlg.CDB_SCHEMA_EXTENTS_BLUE, crs=cdbLoader.usr_dlg.CRS, width=3, color=Qt.blue)
 
     # Draw rubberband for extents of materialized views in selected {cdb_schema}.
-    canvas.insert_rubber_band(band=cdbLoader.RUBBER_LAYERS_RED, extents=cdbLoader.LAYER_EXTENTS_RED, crs=cdbLoader.CRS, width=2, color=Qt.red)
+    canvas.insert_rubber_band(band=cdbLoader.usr_dlg.RUBBER_LAYERS_RED_L, extents=cdbLoader.usr_dlg.LAYER_EXTENTS_RED, crs=cdbLoader.usr_dlg.CRS, width=2, color=Qt.red)
 
     # Zoom to the layer extents (red box).
-    canvas.zoom_to_extents(canvas=cdbLoader.CANVAS, extents=cdbLoader.LAYER_EXTENTS_RED)
+    canvas.zoom_to_extents(canvas=cdbLoader.usr_dlg.CANVAS_L, extents=cdbLoader.usr_dlg.LAYER_EXTENTS_RED)
 
     # Create polygon rubber band corresponding to the extents (the green one)
-    canvas.insert_rubber_band(band=cdbLoader.RUBBER_QGIS_GREEN, extents=cdbLoader.CURRENT_EXTENTS, crs=cdbLoader.CRS, width=1, color=Qt.green)
+    canvas.insert_rubber_band(band=cdbLoader.usr_dlg.RUBBER_QGIS_GREEN_L, extents=cdbLoader.usr_dlg.CURRENT_EXTENTS, crs=cdbLoader.usr_dlg.CRS, width=1, color=Qt.green)
 
 
 ####################################################
@@ -75,9 +75,9 @@ def gbxBasemap_reset(cdbLoader: CDBLoader) -> None:
     
     dlg.qgbxExtents.setDisabled(True)
     # Remove extent rubber bands.
-    cdbLoader.RUBBER_CDB_SCHEMA_BLUE.reset()
-    cdbLoader.RUBBER_LAYERS_RED.reset()
-    cdbLoader.RUBBER_QGIS_GREEN.reset()
+    dlg.RUBBER_CDB_SCHEMA_BLUE_L.reset()
+    dlg.RUBBER_LAYERS_RED_L.reset()
+    dlg.RUBBER_QGIS_GREEN_L.reset()
 
 
 def gbxLayerSelection_reset(cdbLoader: CDBLoader) -> None:

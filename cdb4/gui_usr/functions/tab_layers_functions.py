@@ -11,6 +11,8 @@ from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup,
 from qgis.gui import QgsCheckableComboBox
 
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
+#from ..cdb4_loader_user_dialog import CDB4LoaderUserDialog # Used only to add the type of the function parameters
+from ..other_classes import CDBLayer, FeatureType
 
 from ... import cdb4_constants as c
 from . import sql
@@ -36,38 +38,39 @@ def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     """
     # Create 'Feature Type' and 'View' objects
     instantiate_objects(cdbLoader)
+    
+    dlg = cdbLoader.usr_dlg
 
-    # Add only those Feature Types that have at least
-    # one view containing > 0 features.
-    for FeatureType_obj in cdbLoader.FeatureType_container.values():
-        for view in FeatureType_obj.views:
-            if view.n_selected > 0:
-                cdbLoader.usr_dlg.cbxFeatureType.addItem(FeatureType_obj.alias,FeatureType_obj)
-                # The first FeatureType object added in 'cbxFeatureType' emits
-                # a 'currentIndexChanged' signal.
+    # Add only those Feature Types that have at least one view containing > 0 features.
+    for FeatureType_obj in dlg.FeatureType_container.values():
+        for layer in FeatureType_obj.layers:
+            if layer.n_selected > 0:
+                dlg.cbxFeatureType.addItem(FeatureType_obj.alias,FeatureType_obj)
+                # The first FeatureType object added in 'cbxFeatureType' emits a 'currentIndexChanged' signal.
                 break # We need only one view to have > 0 features.
 
 
 def instantiate_objects(cdbLoader: CDBLoader) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
     """
+    dlg = cdbLoader.usr_dlg
     # Get field names and metadata values from server.
     colnames, metadata = sql.fetch_layer_metadata(cdbLoader, cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA)
     # Format metadata into a list of dictionaries where each element is a layer.
     metadata_dict_list = [dict(zip(colnames, values)) for values in metadata]
 
     # Instantiate 'FeatureType' objects for each CityGML module into a plugin variable (dict).
-    cdbLoader.FeatureType_container = {
-        "Bridge": c.FeatureType(alias="Bridge"),
-        "Building": c.FeatureType(alias="Building"),
-        "CityFurniture": c.FeatureType(alias="CityFurniture"),
-        "Generics": c.FeatureType(alias="Generics"),
-        "LandUse": c.FeatureType(alias="LandUse"),
-        "Relief": c.FeatureType(alias="Relief"),
-        "Transportation": c.FeatureType(alias="Transportation"),
-        "Tunnel": c.FeatureType(alias="Tunnel"),
-        "Vegetation": c.FeatureType(alias="Vegetation"),
-        "WaterBody": c.FeatureType(alias="WaterBody")
+    dlg.FeatureType_container = {
+        "Bridge": FeatureType(alias="Bridge"),
+        "Building": FeatureType(alias="Building"),
+        "CityFurniture": FeatureType(alias="CityFurniture"),
+        "Generics": FeatureType(alias="Generics"),
+        "LandUse": FeatureType(alias="LandUse"),
+        "Relief": FeatureType(alias="Relief"),
+        "Transportation": FeatureType(alias="Transportation"),
+        "Tunnel": FeatureType(alias="Tunnel"),
+        "Vegetation": FeatureType(alias="Vegetation"),
+        "WaterBody": FeatureType(alias="WaterBody")
         }
 
     for metadata_dict in metadata_dict_list:
@@ -77,35 +80,36 @@ def instantiate_objects(cdbLoader: CDBLoader) -> None:
         if metadata_dict["refresh_date"] is None:
             continue
 
-        # Get the FeatureType object that the current layer is.
-        curr_FeatureType_obj = cdbLoader.FeatureType_container[metadata_dict['feature_type']]
+        # Get the FeatureType object of the current layer
+        curr_FeatureType_obj = dlg.FeatureType_container[metadata_dict['feature_type']]
 
-        # Create a View object with all the values extracted from 'layer_metadata'.
-        view = c.Layer(*metadata_dict.values())
+        # Create a Layer object with all the values extracted from 'layer_metadata'.
+        layer = CDBLayer(*metadata_dict.values())
 
         # Add the view to the FeatureObject views list
-        curr_FeatureType_obj.views.append(view)
+        curr_FeatureType_obj.layers.append(layer)
 
-        # Count the number of features that the view has in the current extents.
-        sql.exec_view_counter(cdbLoader, view) # Stores number in view.n_selected.
+        # Count the number of features that the layer has in the current extents.
+        sql.exec_view_counter(cdbLoader, layer) # Stores number in layer.n_selected.
 
 
 def fill_lod_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Geometry Level' combo box (LoD).
     """
+    dlg = cdbLoader.usr_dlg
     # Get 'FeatureType' object from combo box data.
-    selected_FeatureType = cdbLoader.usr_dlg.cbxFeatureType.currentData()
+    selected_FeatureType = dlg.cbxFeatureType.currentData()
     if not selected_FeatureType:
         return None
 
     geom_set = set() # To store the unique lods.
-    for view in selected_FeatureType.views:
-        geom_set.add(view.lod)
+    for layer in selected_FeatureType.layers:
+        geom_set.add(layer.lod)
 
     # Add lod string into both text and data holder of combo box.
     for lod in sorted(list(geom_set)):
         # The first LoD string added in 'cbxLod' emits a 'currentIndexChanged' signal.
-        cdbLoader.usr_dlg.cbxLod.addItem(lod, lod)
+       dlg.cbxLod.addItem(lod, lod)
 
 
 def fill_features_box(cdbLoader: CDBLoader) -> None:
@@ -123,13 +127,13 @@ def fill_features_box(cdbLoader: CDBLoader) -> None:
     if not selected_FeatureType or not selected_lod:
         return None
 
-    for view in selected_FeatureType.views:
-        if view.lod == selected_lod:
-            if view.n_selected > 0:
+    for layer in selected_FeatureType.layers:
+        if layer.lod == selected_lod:
+            if layer.n_selected > 0:
                 dlg.ccbxFeatures.addItemWithCheckState(
-                    text=f'{view.layer_name} ({view.n_selected})',
+                    text=f'{layer.layer_name} ({layer.n_selected})',
                     state=0,
-                    userData=view)
+                    userData=layer)
     # TODO: 05-02-2021 Add separator between different features
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
 
@@ -396,17 +400,17 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
     # Shorten the variable names.
     db = cdbLoader.DB
     usr_schema = cdbLoader.USR_SCHEMA
-    extents = cdbLoader.QGIS_EXTENTS_GREEN.asWktPolygon()
-    crs = cdbLoader.CRS
+    extents = cdbLoader.usr_dlg.QGIS_EXTENTS_GREEN.asWktPolygon()
+    crs = cdbLoader.usr_dlg.CRS
 
     uri = QgsDataSourceUri()
     uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
 
-    if cdbLoader.QGIS_EXTENTS_GREEN == cdbLoader.LAYER_EXTENTS_RED:  
+    if cdbLoader.usr_dlg.QGIS_EXTENTS_GREEN == cdbLoader.usr_dlg.LAYER_EXTENTS_RED:  
         # No need to apply a spatial filter in QGIS
-        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aKeyColumn=c.id_col)
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aKeyColumn="id")
     else:
-        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn=c.geom_col, aSql=f"ST_GeomFromText('{extents}') && {c.geom_col}", aKeyColumn=c.id_col)
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aSql=f"ST_GeomFromText('{extents}') && geom", aKeyColumn="id")
 
     new_layer = QgsVectorLayer(uri.uri(False), layer_name, "postgres")
     new_layer.setCrs(crs)
@@ -507,7 +511,7 @@ def add_group_node_to_ToC(parent_node: QgsLayerTreeGroup, child_name: str) -> Qg
     return node
 
 
-def add_layer_node_to_ToC(cdbLoader: CDBLoader, layer: c.Layer) -> QgsLayerTreeGroup:
+def add_layer_node_to_ToC(cdbLoader: CDBLoader, layer: CDBLayer) -> QgsLayerTreeGroup:
     """Function that populates the project's 'Table of Contents' tree.
 
     *   :param view: The view used to build the ToC.
