@@ -49,22 +49,29 @@ force_layer_creation boolean
 RETURNS text AS $$
 DECLARE
 feature_type CONSTANT varchar := 'Building';
+qgis_user_group_name CONSTANT varchar := 'qgis_pkg_usrgroup';
+l_type				varchar := 'VectorLayer';
 usr_schema      	varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
 usr_names_array     varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
 usr_schemas_array 	varchar[] := (SELECT array_agg(s.usr_schema) FROM qgis_pkg.list_usr_schemas() AS s);
 cdb_schemas_array 	varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
-srid_id         	integer;
+srid                integer;
+num_features    	bigint;
+root_class			varchar; curr_class varchar;
+ql_feature_type varchar := quote_literal(feature_type);
+ql_l_type varchar := quote_literal(l_type);
 qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
-num_features    	bigint;
-l_name 			varchar;
-view_name varchar; ql_view_name varchar; qi_view_name varchar;
-mview_name varchar; qi_mview_name varchar; ql_mview_name varchar;
-qml_file_name 	varchar;
-trig_f_suffix   varchar;
+l_name varchar; ql_l_name varchar; qi_l_name varchar;
+av_name varchar; ql_av_name varchar; qi_av_name varchar;
+gv_name varchar; qi_gv_name varchar; ql_gv_name varchar;
+qml_form_name 	varchar := NULL;
+qml_symb_name 	varchar := NULL;
+qml_3d_name 	varchar := NULL;
+trig_f_suffix   varchar := NULL;
 r RECORD; s RECORD; t RECORD; u RECORD;
-sql_mview_count text := NULL;
+sql_feat_count	text := NULL;
 sql_where 		text := NULL;
 sql_upd			text := NULL;
 sql_ins			text := NULL;
@@ -95,23 +102,22 @@ sql_cfu_atts varchar := '
   string_to_array(o.usage_codespace, ''--/\--'')::varchar[] AS usage_codespace,';
 
 BEGIN
-
 -- Check if the usr_name exists AND is group of the "qgis_pkg_usrgroup";
 -- The check to avoid if it is null has been already carried out by 
 -- function qgis_pkg.create_qgis_usr_schema_name(usr_name) during DECLARE
 IF NOT usr_name = ANY(usr_names_array) THEN
-	RAISE EXCEPTION 'usr_name is invalid. It must be an existing database user AND member of role (group) "qgis_pkg_usrgroup"';
+	RAISE EXCEPTION 'usr_name is invalid. It must be an existing database user AND member of role (group) "%"', qgis_user_group_name;
 END IF;
 
 -- Check if the usr_schema exists (must habe been created before)
 -- No need to check if it is NULL.
 IF NOT usr_schema = ANY(usr_schemas_array) THEN
-	RAISE EXCEPTION 'usr_schema does not exist. Please create it beforehand';
+	RAISE EXCEPTION 'usr_schema "%" does not exist. Please create it beforehand', usr_schema;
 END IF;
 
 -- Check if the cdb_schema exists
 IF (cdb_schema IS NULL) OR (NOT cdb_schema = ANY(cdb_schemas_array)) THEN
-	RAISE EXCEPTION 'cdb_schema is invalid. It must correspond to an existing citydb schema';
+	RAISE EXCEPTION 'cdb_schema "%" is invalid. It must correspond to an existing citydb schema', cdb_schema;
 END IF;
 
 -- Add quote identifier and literal for later user.
@@ -124,29 +130,33 @@ ql_usr_schema := quote_literal(usr_schema);
 
 -- Prepare fixed part of SQL statements
 sql_upd := concat('
-DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.feature_type = ''',feature_type,''';
+DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type = ',ql_l_type,' AND l.feature_type = ',ql_feature_type,';
 INSERT INTO ',qi_usr_schema,'.layer_metadata 
-(n_features, cdb_schema, feature_type, qml_file, lod, root_class, layer_name, creation_date, mv_name, v_name)
+(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, av_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d)
 VALUES');
 
 -- Get the srid from the cdb_schema
-EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid_id;
+EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
 
 -- Check that the srid is the same if the mview_box
-IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid_id THEN
+IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid THEN
 	sql_where := NULL;
 ELSE
-	sql_where := concat('AND ST_MakeEnvelope(', floor(ST_XMin(mview_bbox)),', ', floor(ST_YMin(mview_bbox)),', ', ceil(ST_XMax(mview_bbox)),', ',	ceil(ST_YMax(mview_bbox)),', ',	srid_id,') && co.envelope');
+	sql_where := concat('AND ST_MakeEnvelope(', floor(ST_XMin(mview_bbox)),', ', floor(ST_YMin(mview_bbox)),', ', ceil(ST_XMax(mview_bbox)),', ',	ceil(ST_YMax(mview_bbox)),', ',	srid,') && co.envelope');
 END IF;
 
 RAISE NOTICE 'For module "%" and user "%": creating layers in usr_schema "%" for cdb_schema "%"', feature_type, qi_usr_name, qi_usr_schema, qi_cdb_schema;
 
 sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 
+root_class := 'Building';
+---------------------------------------------------------------
+-- Create LAYER BUILDING(PART)
+---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('Building'::varchar, 26::integer, 'bdg'::varchar),
-	('BuildingPart'     , 25         , 'bdg_part')	
+	('Building'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'Building', NULL)::integer, 'bdg'::varchar),
+	('BuildingPart'     , qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingPart', NULL)     , 'bdg_part')	
 	) AS t(class_name, class_id, class_label)
 LOOP
 
@@ -163,7 +173,7 @@ LOOP
 	LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 	SELECT count(o.id) AS n_features
 	FROM 
 		',qi_cdb_schema,'.building AS o
@@ -171,40 +181,44 @@ sql_mview_count := concat('
 	WHERE
 		o.',t.lodx_label,'_terrain_intersection IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % % (tic)', num_features, r.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label,'_tic');
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_tic_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_tic');
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'line_black_symb.qml';
+qml_3d_name    := 'line_black_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		o.id::bigint AS co_id,
-		o.',t.lodx_label,'_terrain_intersection::geometry(MultiLineStringZ, ',srid_id,') AS geom
+		o.',t.lodx_label,'_terrain_intersection::geometry(MultiLineStringZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.building AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
 	WHERE
 		o.',t.lodx_label,'_terrain_intersection IS NOT NULL
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -226,22 +240,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiLineStringZ,',srid_id,')
+  g.geom::geometry(MultiLineStringZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 	END LOOP; -- END Loop TIC LoD1-4
@@ -258,7 +272,7 @@ END IF;
 	LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 	SELECT count(o.id) AS n_features
 	FROM 
 		',qi_cdb_schema,'.building AS o
@@ -266,40 +280,44 @@ sql_mview_count := concat('
 	WHERE
 		o.',t.lodx_label,'_multi_curve IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % % (multi_curve)', num_features, r.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label,'_multi_curve');
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_multicurve_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_multi_curve');
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'line_black_symb.qml';
+qml_3d_name    := 'line_black_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		o.id::bigint AS co_id,
-		o.',t.lodx_label,'_multi_curve::geometry(MultiLineStringZ, ',srid_id,') AS geom
+		o.',t.lodx_label,'_multi_curve::geometry(MultiLineStringZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.building AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
 	WHERE
 		o.',t.lodx_label,'_multi_curve IS NOT NULL
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -321,22 +339,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiLineStringZ,',srid_id,')
+  g.geom::geometry(MultiLineStringZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 	END LOOP; -- END Loop MultiCurve LoD1-4
@@ -351,7 +369,7 @@ END IF;
 	LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(foo.n_features) AS n_features 
 FROM (
@@ -363,27 +381,31 @@ FROM (
 		o.',t.lodx_label,'_footprint_id IS NOT NULL OR o.',t.lodx_label,'_roofprint_id IS NOT NULL
 ) AS foo;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'poly_red_symb.qml';
+qml_3d_name    := 'poly_red_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM (
 		SELECT
 			b1.',t.lodx_label,'_footprint_id AS sg_id
@@ -400,13 +422,13 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = b.sg_id AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -428,22 +450,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 ---------------------------------------------------------------
@@ -457,7 +479,7 @@ END IF;
 		LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT count(o.id) AS n_features
 FROM 
 	',qi_cdb_schema,'.building AS o
@@ -465,40 +487,44 @@ FROM
 WHERE
 	o.',t.lodx_label,'_',u.themsurf_label,'_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % % %', num_features, r.class_name, t.lodx_name, u.themsurf_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label,'_',u.themsurf_name);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_',u.themsurf_name);
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'poly_red_symb.qml';
+qml_3d_name    := 'poly_red_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.building AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,') 
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_',u.themsurf_label,'_id AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.themsurf_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.themsurf_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -520,22 +546,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' ',u.themsurf_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' ',u.themsurf_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 			END LOOP; -- building lod0 footprint/roofprint
@@ -551,7 +577,7 @@ END IF;
 	LOOP
 	
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT count(o.id) AS n_features
 FROM 
 	',qi_cdb_schema,'.building AS o
@@ -559,27 +585,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL OR o.',t.lodx_label,'_solid_id IS NOT NULL
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'poly_red_symb.qml';
+qml_3d_name    := 'poly_red_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM (
 		SELECT
 			o.id AS co_id, 	
@@ -596,13 +626,13 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = foo.sg_id AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -624,22 +654,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 	END LOOP; -- building lod1
@@ -656,7 +686,7 @@ END IF;
 	LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(foo.n_features) AS n_features 
 FROM (
@@ -676,27 +706,31 @@ FROM (
 		o.',t.lodx_label,'_multi_surface_id IS NOT NULL
 ) AS foo;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat(r.class_label,'_form.qml');
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := concat(r.class_label,'_form.qml');
+qml_symb_name  := 'poly_red_symb.qml';
+qml_3d_name    := 'poly_red_3d.qml';
 trig_f_suffix := 'building';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		foo2.co_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM (
 		SELECT
 			foo.co_id,
@@ -725,13 +759,13 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
 	GROUP BY foo2.co_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 CASE WHEN r.class_name = 'BuildingPart' THEN '
@@ -753,22 +787,22 @@ sql_cfu_atts,'
   o.storey_heights_ag_unit,
   o.storey_heights_below_ground,
   o.storey_heights_bg_unit,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 ---------------------------------------------------------------
@@ -776,17 +810,17 @@ END IF;
 ---------------------------------------------------------------
 		FOR u IN 
 			SELECT * FROM (VALUES
-			('BuildingRoofSurface'::varchar , 33::integer, 'roofsurf'::varchar),
-			('BuildingWallSurface'			, 34		 , 'wallsurf'),
-			('BuildingGroundSurface'		, 35		 , 'groundsurf'),
-			('BuildingClosureSurface'		, 36		 , 'closuresurf'),
-			('OuterBuildingCeilingSurface'	, 60		 , 'outerceilingsurf'),
-			('OuterBuildingFloorSurface'	, 61		 , 'outerfloorsurf')
+			('BuildingRoofSurface'::varchar , qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingRoofSurface', NULL)::integer, 'roofsurf'::varchar),
+			('BuildingWallSurface'			, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingWallSurface'			, NULL), 'wallsurf'),
+			('BuildingGroundSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingGroundSurface'		, NULL), 'groundsurf'),
+			('BuildingClosureSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingClosureSurface'		, NULL), 'closuresurf'),
+			('OuterBuildingCeilingSurface'	, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingCeilingSurface'	, NULL), 'outerceilingsurf'),
+			('OuterBuildingFloorSurface'	, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingFloorSurface'	, NULL), 'outerfloorsurf')
 			) AS t(class_name, class_id, class_label)
 		LOOP
 
 -- First check if there are any features at all in the database schema
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT count(o.id) AS n_features
 FROM 
 	',qi_cdb_schema,'.thematic_surface AS o
@@ -795,28 +829,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for % % %', num_features, r.class_name, t.lodx_name, u.class_name;
 
-l_name         := concat(r.class_label,'_',t.lodx_label,'_',u.class_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_them_surf_form.qml');
---qml_file_name  := concat(r.class_label,'_them_surf_form.qml');
+curr_class := u.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_',u.class_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_them_surf');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := 'bdg_them_surf_form.qml';
+qml_symb_name  := 'poly_red_semi_transp_symb.qml';
+qml_3d_name    := 'poly_red_semi_transp_3d.qml';
 trig_f_suffix := 'thematic_surface';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.thematic_surface AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,')		
@@ -824,32 +861,32 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,'
   o.building_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS o ON (o.id = co.id AND o.objectclass_id = ',u.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 		END LOOP; -- building lod2-4 thematic surfaces
@@ -860,7 +897,7 @@ END IF;
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
-		('BuildingInstallation'::varchar, 27::integer, 'out_inst'::varchar)
+		('BuildingInstallation'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingInstallation', NULL)::integer, 'out_inst'::varchar)
 		) AS t(class_name, class_id, class_label)
 	LOOP
 		FOR t IN 
@@ -871,7 +908,7 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(foo.n_features) AS n_features 
 FROM (
@@ -895,27 +932,31 @@ FROM (
 		o.',t.lodx_label,'_multi_surface_id IS NOT NULL
 ) AS foo;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_out_inst_form.qml');
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_inst');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := 'bdg_inst_form.qml';
+qml_symb_name  := 'poly_cyan_symb.qml';
+qml_3d_name    := 'poly_cyan_3d.qml';
 trig_f_suffix := 'building_installation';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT 
 		foo2.co_id AS co_id,
-		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM ( 
 			SELECT 
 				foo.co_id,
@@ -973,7 +1014,7 @@ sql_layer := concat(sql_layer,'
 			   ST_Y(o.',t.lodx_label,'_implicit_ref_point)::double precision,
 			   ST_Z(o.',t.lodx_label,'_implicit_ref_point)::double precision
 			),
-			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+			',srid,')::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM 
 		',qi_cdb_schema,'.building_installation AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
@@ -984,34 +1025,34 @@ sql_layer := concat(sql_layer,'
 		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
 	GROUP BY o.id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 sql_cfu_atts,'
   o.building_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building_installation AS o ON (o.id = co.id AND o.objectclass_id = ',s.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 ---------------------------------------------------------------
@@ -1019,16 +1060,16 @@ END IF;
 ---------------------------------------------------------------
 			FOR u IN 
 				SELECT * FROM (VALUES
-				('BuildingRoofSurface'::varchar , 33::integer, 'roofsurf'::varchar),
-				('BuildingWallSurface'			, 34		 , 'wallsurf'),
-				('BuildingGroundSurface'		, 35		 , 'groundsurf'),
-				('BuildingClosureSurface'		, 36		 , 'closuresurf'),
-				('OuterBuildingCeilingSurface'	, 60		 , 'outerceilingsurf'),
-				('OuterBuildingFloorSurface'	, 61		 , 'outerfloorsurf')
+				('BuildingRoofSurface'::varchar , qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingRoofSurface', NULL)::integer, 'roofsurf'::varchar),
+				('BuildingWallSurface'			, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingWallSurface'			, NULL)		 , 'wallsurf'),
+				('BuildingGroundSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingGroundSurface'		, NULL)		 , 'groundsurf'),
+				('BuildingClosureSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingClosureSurface'		, NULL)		 , 'closuresurf'),
+				('OuterBuildingCeilingSurface'	, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingCeilingSurface'	, NULL)		 , 'outerceilingsurf'),
+				('OuterBuildingFloorSurface'	, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingFloorSurface'	, NULL)		 , 'outerfloorsurf')
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
 FROM 
@@ -1039,28 +1080,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.class_name, t.lodx_name, u.class_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_inst_them_surf_form.qml');
---qml_file_name  := concat('bdg_out_inst_them_surf_form.qml');
+curr_class := u.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_them_surf');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := 'bdg_inst_them_surf_form.qml';
+qml_symb_name  := 'poly_cyan_semi_transp_symb.qml';
+qml_3d_name    := 'poly_cyan_semi_transp_3d.qml';
 trig_f_suffix := 'thematic_surface';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.thematic_surface AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
@@ -1069,34 +1113,34 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,'
   o.building_installation_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',u.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS o ON (o.id = co.id AND o.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building_installation AS bi ON (bi.id = o.building_installation_id AND bi.objectclass_id = ',s.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = bi.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 			END LOOP; -- end loop outer building installation thematic surfaces lod 2-4
@@ -1108,8 +1152,8 @@ END IF;
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
-		('BuildingWindow'::varchar, 38::integer, 'window'::varchar),
-		('BuildingDoor'           , 39         , 'door')		
+		('BuildingWindow'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingWindow', NULL)::integer, 'window'::varchar),
+		('BuildingDoor'           , qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingDoor', NULL)         , 'door')		
 		) AS t(class_name, class_id, class_label)
 	LOOP
 		FOR t IN 
@@ -1119,7 +1163,7 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 	SELECT 
 		count(o.id) AS n_features
 	FROM 
@@ -1131,27 +1175,36 @@ sql_mview_count := concat('
 	WHERE
 		o.',t.lodx_label,'_multi_surface_id IS NOT NULL OR o.',t.lodx_label,'_implicit_rep_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_',s.class_label,'_form.qml');
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_opening');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_opening_form.qml';
+IF s.class_name = 'BuildingWindow' THEN
+	qml_symb_name	:= 'poly_azure_symb.qml';
+	qml_3d_name		:= 'poly_azure_3d.qml';
+ELSE
+	qml_symb_name	:= 'poly_brown_symb.qml';
+	qml_3d_name		:= 'poly_brown_3d.qml';
+END IF;
 trig_f_suffix := 'opening';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.opening AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
@@ -1186,7 +1239,7 @@ sql_layer := concat(sql_layer,'
 			   ST_Y(o.',t.lodx_label,'_implicit_ref_point)::double precision,
 			   ST_Z(o.',t.lodx_label,'_implicit_ref_point)::double precision
 			),
-			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+			',srid,')::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM 
 		',qi_cdb_schema,'.opening AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')		
@@ -1199,36 +1252,36 @@ sql_layer := concat(sql_layer,'
 		o.',t.lodx_name,'_implicit_rep_id IS NOT NULL
 	GROUP BY o.id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,'
   ots.thematic_surface_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.opening_to_them_surface AS ots ON (ots.opening_id = co.id)
 --	INNER JOIN ',qi_cdb_schema,'.opening AS o ON (o.id = co.id AND o.objectclass_id = ',s.class_id,')
 -- 	INNER JOIN ',qi_cdb_schema,'.opening_to_them_surface AS ots ON (ots.opening_id = o.id)
 	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS ts ON (ts.id = ots.thematic_surface_id)
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = ts.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 		END LOOP; -- opening lod3-4
@@ -1240,7 +1293,7 @@ END IF;
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
-		('Room'::varchar, 41::integer, 'room'::varchar)	
+		('BuildingRoom'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingRoom', NULL)::integer, 'room'::varchar)	
 		) AS t(class_name, class_id, class_label)
 	LOOP
 		FOR t IN 
@@ -1249,7 +1302,7 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
 FROM 
@@ -1259,27 +1312,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL OR o.',t.lodx_label,'_solid_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_room_form.qml');
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_room');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_room_form.qml';
+qml_symb_name	:= 'poly_orange_symb.qml';
+qml_3d_name		:= 'poly_orange_3d.qml';
 trig_f_suffix := 'room';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		foo2.co_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom	
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom	
 	FROM (
 		SELECT
 			foo.co_id,
@@ -1310,34 +1367,34 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = foo2.sg_id AND sg.geometry IS NOT NULL)
 	GROUP BY foo2.co_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 sql_cfu_atts,'
   o.building_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.room AS o ON (o.id = co.id AND o.objectclass_id = ',s.class_id,')	
   	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 ---------------------------------------------------------------
@@ -1345,13 +1402,13 @@ END IF;
 ---------------------------------------------------------------
 			FOR u IN 
 				SELECT * FROM (VALUES
-				('BuildingCeilingSurface'::varchar	, 30::integer	, 'ceilingsurf'::varchar),
-				('InteriorBuildingWallSurface'		, 31		 	, 'intwallsurf'),
-				('BuildingFloorSurface'				, 32		    , 'floorsurf')
+				('BuildingCeilingSurface'::varchar	, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingCeilingSurface', NULL)::integer	, 'ceilingsurf'::varchar),
+				('InteriorBuildingWallSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'InteriorBuildingWallSurface'	, NULL)	 	, 'intwallsurf'),
+				('BuildingFloorSurface'				, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingFloorSurface'		, NULL)	    , 'floorsurf')
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT
 	count(o.id) AS n_features
 FROM 
@@ -1362,27 +1419,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.class_name, t.lodx_name, u.class_label;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_room_them_surf_form.qml');
+curr_class := u.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_them_surf');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_room_them_surf_form.qml';
+qml_symb_name	:= 'poly_orange_semi_transp_symb.qml';
+qml_3d_name		:= 'poly_orange_semi_transp_3d.qml';
 trig_f_suffix := 'thematic_surface';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.thematic_surface AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
@@ -1391,34 +1452,34 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,'
   o.room_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS o ON (o.id = co.id AND o.objectclass_id = ',u.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.room AS r ON (r.id = o.room_id AND r.objectclass_id = ',s.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = r.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 			END LOOP; -- room lod4 thematic surfaces
@@ -1430,7 +1491,7 @@ END IF;
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
-		('IntBuildingInstallation'::varchar, 28::integer, 'int_inst'::varchar)
+		('IntBuildingInstallation'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'IntBuildingInstallation', NULL)::integer, 'int_inst'::varchar)
 		) AS t(class_name, class_id, class_label)
 	LOOP
 		FOR t IN 
@@ -1439,7 +1500,7 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(foo.n_features) AS n_features 
 FROM (
@@ -1463,27 +1524,31 @@ FROM (
 		o.',t.lodx_label,'_multi_surface_id IS NOT NULL
 ) AS foo;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_int_inst_form.qml');
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_inst');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_inst_form.qml';
+qml_symb_name	:= 'poly_cyan_symb.qml';
+qml_3d_name		:= 'poly_cyan_3d.qml';
 trig_f_suffix := 'building_installation';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT 
 		foo2.co_id AS co_id,
-		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM ( 
 			SELECT 
 				foo.co_id,
@@ -1541,7 +1606,7 @@ sql_layer := concat(sql_layer,'
 			   ST_Y(o.',t.lodx_label,'_implicit_ref_point)::double precision,
 			   ST_Z(o.',t.lodx_label,'_implicit_ref_point)::double precision
 			),
-			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+			',srid,')::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM 
 		',qi_cdb_schema,'.building_installation AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
@@ -1552,34 +1617,34 @@ sql_layer := concat(sql_layer,'
 		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
 	GROUP BY o.id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 sql_cfu_atts,'
   o.building_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building_installation AS o ON (o.id = co.id AND o.objectclass_id = ',s.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = o.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 ---------------------------------------------------------------
@@ -1587,19 +1652,19 @@ END IF;
 ---------------------------------------------------------------
 			FOR u IN 
 				SELECT * FROM (VALUES
-				('BuildingCeilingSurface'::varchar	, 30::integer	, 'ceilingsurf'::varchar),
-				('InteriorBuildingWallSurface'		, 31		 	, 'intwallsurf'),
-				('BuildingFloorSurface'				, 32		    , 'floorsurf'),
-				('BuildingRoofSurface'				, 33			, 'roofsurf'),
-				('BuildingWallSurface'				, 34		 	, 'wallsurf'),
-				('BuildingGroundSurface'			, 35		 	, 'groundsurf'),
-				('BuildingClosureSurface'			, 36		 	, 'closuresurf'),
-				('OuterBuildingCeilingSurface'		, 60		 	, 'outerceilingsurf'),
-				('OuterBuildingFloorSurface'		, 61		 	, 'outerfloorsurf')				
+				('BuildingCeilingSurface'::varchar	, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingCeilingSurface', NULL)::integer	, 'ceilingsurf'::varchar),
+				('InteriorBuildingWallSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'InteriorBuildingWallSurface'	, NULL), 'intwallsurf'),
+				('BuildingFloorSurface'				, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingFloorSurface'		, NULL), 'floorsurf'),
+				('BuildingRoofSurface'				, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingRoofSurface'			, NULL), 'roofsurf'),
+				('BuildingWallSurface'				, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingWallSurface'			, NULL), 'wallsurf'),
+				('BuildingGroundSurface'			, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingGroundSurface'		, NULL), 'groundsurf'),
+				('BuildingClosureSurface'			, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingClosureSurface'		, NULL), 'closuresurf'),
+				('OuterBuildingCeilingSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingCeilingSurface'	, NULL), 'outerceilingsurf'),
+				('OuterBuildingFloorSurface'		, qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBuildingFloorSurface'	, NULL), 'outerfloorsurf')				
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
 FROM 
@@ -1610,28 +1675,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_multi_surface_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.class_name, t.lodx_name, u.class_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_inst_them_surf_form.qml');
---qml_file_name  := concat('bdg_int_inst_them_surf_form.qml');
+curr_class := u.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_them_surf');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_inst_them_surf_form.qml';
+qml_symb_name	:= 'poly_cyan_semi_transp_symb.qml';
+qml_3d_name		:= 'poly_cyan_semi_transp_3d.qml';
 trig_f_suffix := 'thematic_surface';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT
 		sg.cityobject_id::bigint AS co_id,
-		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid_id,') AS geom
+		ST_Collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ,',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.thematic_surface AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',u.class_id,' ',sql_where,') 
@@ -1640,34 +1708,34 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_name,'_multi_surface_id  AND sg.geometry IS NOT NULL)
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,'
   o.building_installation_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',u.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS o ON (o.id = co.id AND o.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building_installation AS bi ON (bi.id = o.building_installation_id AND bi.objectclass_id = ',s.class_id,')
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = bi.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 			END LOOP; -- int building installation lod4 thematic surfaces
@@ -1679,7 +1747,7 @@ END IF;
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
-		('BuildingFurniture'::varchar, 40::integer, 'furniture'::varchar)	
+		('BuildingFurniture'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingFurniture', NULL)::integer, 'furn'::varchar)	
 		) AS t(class_name, class_id, class_label)
 	LOOP
 		FOR t IN 
@@ -1688,7 +1756,7 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
-sql_mview_count := concat('
+sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
 FROM 
@@ -1699,27 +1767,31 @@ FROM
 WHERE
 	o.',t.lodx_label,'_brep_id IS NOT NULL OR o.',t.lodx_label,'_implicit_rep_id IS NOT NULL;
 ');
-EXECUTE sql_mview_count INTO num_features;
+EXECUTE sql_feat_count INTO num_features;
 
 RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
 
-l_name         := concat(r.class_label,'_',s.class_label,'_',t.lodx_label);
-view_name      := concat(cdb_schema,'_',l_name);
-mview_name     := concat('_g_',view_name);
-qi_mview_name  := quote_ident(mview_name); ql_mview_name := quote_literal(mview_name);
-qi_view_name   := quote_ident(view_name); ql_view_name := quote_literal(view_name);
-qml_file_name  := concat('bdg_furniture_form.qml');
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
+av_name			:= concat('_a_',cdb_schema,'_bdg_furn');
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'bdg_frn_form.qml';
+qml_symb_name	:= 'poly_violet_symb.qml';
+qml_3d_name		:= 'poly_violet_3d.qml';
 trig_f_suffix := 'building_furniture';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
 --------------------
--- MATERIALIZED VIEW
+-- MATERIALIZED VIEW (for geom)
 --------------------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_mview_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
 	SELECT 
 		sg.cityobject_id::bigint AS co_id,
-		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid_id,') AS geom
+		st_collect(qgis_pkg.ST_snap_poly_to_grid(sg.geometry,',perform_snapping,',',digits,',',area_poly_min,'))::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM
 		',qi_cdb_schema,'.building_furniture AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
@@ -1753,7 +1825,7 @@ sql_layer := concat(sql_layer,'
 			   ST_Y(o.',t.lodx_label,'_implicit_ref_point)::double precision,
 			   ST_Z(o.',t.lodx_label,'_implicit_ref_point)::double precision
 			),
-			',srid_id,')::geometry(MultiPolygonZ, ',srid_id,') AS geom
+			',srid,')::geometry(MultiPolygonZ, ',srid,') AS geom
 	FROM 
 		',qi_cdb_schema,'.building_furniture AS o
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND o.objectclass_id = ',s.class_id,' ',sql_where,')
@@ -1765,36 +1837,36 @@ sql_layer := concat(sql_layer,'
 		o.',t.lodx_label,'_brep_id IS NULL AND o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
 	GROUP BY o.id
 WITH NO DATA;
-COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, qi_mview_name, ql_view_name));
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
 -------
--- VIEW
+--  VIEW (for atts + geom)
 -------
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_view_name),'
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
 SELECT',
 sql_co_atts,
 sql_cfu_atts,'
   o.room_id,
   r.building_id,
-  g.geom::geometry(MultiPolygonZ,',srid_id,')
+  g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
-	',qi_usr_schema,'.',qi_mview_name,' AS g 
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.building_furniture AS o ON (o.id = co.id AND o.objectclass_id = ',s.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.room AS r ON (r.id = o.room_id)	
 	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = r.building_id AND b.objectclass_id = ',r.class_id,');
-COMMENT ON VIEW ',qi_usr_schema,'.',qi_view_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
-ALTER TABLE ',qi_usr_schema,'.',qi_view_name,' OWNER TO ',qi_usr_name,';
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(view_name, trig_f_suffix, usr_name, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',num_features,',',ql_cdb_schema,',''',feature_type,''',''',qml_file_name,''',''',t.lodx_label,''',''',r.class_name,''',''',l_name,''',clock_timestamp(),',ql_mview_name,',',ql_view_name,'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
 ELSE
-sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, qi_mview_name, ql_view_name));
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 		END LOOP; -- building furniture lod4

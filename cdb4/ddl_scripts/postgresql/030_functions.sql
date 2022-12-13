@@ -35,13 +35,17 @@
 -- qgis_pkg.list_qgis_pkg_usrgroup_members()
 -- qgis_pkg.list_cdb_schemas()
 -- qgis_pkg.list_usr_schemas()
+-- qgis_pkg.class_name_to_class_id(...)
 -- qgis_pkg.grant_qgis_usr_privileges(...)
 -- qgis_pkg.revoke_qgis_usr_privileges(...)
 -- qgis_pkg.create_qgis_usr_schema_name(...)
 -- qgis_pkg.create_qgis_usr_schema(...)
 -- qgis_pkg.generate_mview_bbox_poly(...)
 -- qgis_pkg.has_layers_for_cdb_schema(...)
--- qgis_pkg.view_counter(...)
+-- qgis_pkg.root_class_counter(...)
+-- qgis_pkg.feature_type_counter(...)
+-- qgis_pkg.gview_counter(...)
+-- qgis_pkg.aview_counter(...)
 -- qgis_pkg.add_ga_indices(...)
 -- qgis_pkg.compute_cdb_schema_extents(...)
 -- qgis_pkg.upsert_extents(...)
@@ -75,10 +79,10 @@ DECLARE
 
 BEGIN
 major_version  := 0;
-minor_version  := 8;
+minor_version  := 9;
 minor_revision := 0;
-code_name      := 'Hunt for Red October';
-release_date   := '2022-10-30'::date;
+code_name      := 'Santa Claus';
+release_date   := '2022-12-25'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -294,6 +298,54 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_usr_schemas() FROM public;
 -- Example:
 --SELECT usr_schema FROM qgis_pkg.list_usr_schemas();
 --SELECT array_agg(usr_schema) FROM qgis_pkg.list_usr_schemas();
+
+----------------------------------------------------------------
+-- Create FUNCTION CLASS_NAME_TO_CLASS_ID
+----------------------------------------------------------------
+-- Returns the class_id from table OBJECTCLASS of the given class
+DROP FUNCTION IF EXISTS    qgis_pkg.class_name_to_class_id(varchar, varchar, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.class_name_to_class_id(
+	cdb_schema	varchar,
+	class_name	varchar,
+	ade_prefix	varchar DEFAULT NULL
+)
+RETURNS integer AS $$
+DECLARE
+	ade_id		integer := NULL;
+	class_id	varchar := NULL;
+BEGIN
+IF ade_prefix IS NOT NULL THEN
+	EXECUTE format('SELECT a.id FROM %I.ade AS a WHERE a.db_prefix=%L', cdb_schema, ade_prefix) INTO ade_id;
+	IF ade_id IS NULL THEN
+		RAISE EXCEPTION 'There is no ADE with prefix "%"!', ade_prefix;
+	END IF;
+END IF;
+
+IF ade_prefix IS NULL THEN
+	-- we are looking for a standard CityGML objectclass
+	EXECUTE format('SELECT o.id FROM %I.objectclass AS o WHERE o.classname=%L AND ade_id IS NULL', cdb_schema, class_name) INTO class_id;
+ELSE
+	-- we are looking for an ADE objectclass
+	EXECUTE format('SELECT o.id FROM %I.objectclass AS o WHERE o.classname=%L AND ade_id=%L', cdb_schema, ade_id) INTO class_id;
+END IF;
+
+IF class_id IS NULL THEN
+	RAISE EXCEPTION 'There is no class found with name "%" in schema "%"!', class_name,  cdb_schema;
+ELSE
+	RETURN class_id;
+END IF;
+
+EXCEPTION
+	WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.class_name_to_class_id(%, %, %): %', cdb_schema, class_name, ade_prefix, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.class_name_to_class_id(varchar, varchar, varchar) IS 'Returns the class_id from table OBJECTCLASS of the given class';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.class_name_to_class_id(varchar, varchar, varchar) FROM public;
+
+-- Example:
+--SELECT qgis_pkg.class_name_to_class_id('citydb', 'SolitaryVegetationObject', NULL);
+--SELECT qgis_pkg.class_name_to_class_id('citydb', 'ThermalZone', 'ng');
+
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GRANT_QGIS_USR_PRIVILEGES
@@ -560,10 +612,8 @@ ALTER TABLE %I.codelist_value OWNER TO %I;
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
-
 usr_schema,usr_schema,usr_schema,usr_name,
 usr_schema,usr_schema,usr_schema,usr_name,
-
 usr_schema,usr_schema,usr_schema,usr_name
 );
 
@@ -751,53 +801,336 @@ COMMENT ON FUNCTION qgis_pkg.has_layers_for_cdb_schema(varchar,varchar) IS 'Sear
 REVOKE EXECUTE ON FUNCTION qgis_pkg.has_layers_for_cdb_schema(varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.VIEW_COUNTER
+-- Create FUNCTION QGIS_PKG.ROOT_CLASS_CHECKER
 ----------------------------------------------------------------
--- Counts records in the selected materialized view
--- This function can be run providing only the name of the view,
--- OR, alternatively, also the extents.
-DROP FUNCTION IF EXISTS    qgis_pkg.view_counter(varchar, varchar, varchar, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.view_counter(
+DROP FUNCTION IF EXISTS    qgis_pkg.root_class_checker(varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.root_class_checker(
+cdb_schema	varchar,
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
+)
+RETURNS TABLE (
+	feature_type 	varchar,
+	root_class	 	varchar,
+    exists_in_db 	boolean
+)
+AS $$
+DECLARE
+cdb_schemas_array 	varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+srid				integer;
+oc_id				integer;
+query_geom			geometry(Polygon);
+sql_where 			varchar;
+sql_statement 		varchar;
+row_test 			boolean;
+r 					RECORD;
+
+BEGIN
+-- Check if the cdb_schema exists
+IF (cdb_schema IS NULL) OR (NOT cdb_schema = ANY(cdb_schemas_array)) THEN
+	RAISE EXCEPTION 'cdb_schema is invalid. It must correspond to an existing citydb schema';
+END IF;
+
+IF extents IS NULL THEN
+	sql_where := NULL;
+ELSE
+	-- Get the srid from the cdb_schema
+	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
+	query_geom := ST_GeomFromText(extents, srid);
+	sql_where  := concat(' AND ST_MakeEnvelope(', floor(ST_XMin(query_geom)),', ', floor(ST_YMin(query_geom)),', ', ceil(ST_XMax(query_geom)),', ',	ceil(ST_YMax(query_geom)),', ',  srid,') && co.envelope');
+END IF;
+
+FOR r IN SELECT t.feature_type, t.root_class FROM (VALUES 
+	('Bridge'::varchar,		'Bridge'::varchar),
+	('Building', 			'Building'),
+	('CityFurniture', 		'CityFurniture'),
+--	('CityObjectGroup', 	'CityObjectGroup'),
+	('Generics', 			'GenericCityObject'),
+	('LandUse', 			'LandUse'),
+	('Relief', 				'ReliefFeature'),
+	('Transportation', 		'TransportationComplex'),
+	('Transportation', 		'Track'),
+	('Transportation', 		'Railway'),
+	('Transportation',		'Road'),
+	('Transportation', 		'Square'),
+	('Tunnel', 				'Tunnel'),
+	('Vegetation', 			'SolitaryVegetationObject'),
+	('Vegetation', 			'PlantCover'),
+	('WaterBody', 			'WaterBody')
+	) AS t(feature_type, root_class)
+LOOP
+	feature_type := r.feature_type;
+	root_class := r.root_class;
+
+	EXECUTE format('SELECT id FROM %I.objectclass WHERE classname = %L LIMIT 1', cdb_schema, root_class) INTO oc_id;
+	
+	sql_statement := concat('SELECT exists(SELECT id FROM ',quote_ident(cdb_schema),'.cityobject AS co WHERE co.objectclass_id = ', oc_id, sql_where,' LIMIT 1);');
+	EXECUTE sql_statement INTO row_test;
+	
+	RAISE NOTICE '%, % (oc_id=%): %', feature_type, root_class, oc_id, row_test;
+
+	exists_in_db := row_test;
+	
+	RETURN NEXT;
+END LOOP;
+
+RETURN;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.root_class_checker(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.root_class_checker(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.root_class_checker(varchar, varchar) IS 'Counts root-class objects in the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.root_class_checker(varchar, varchar) FROM public;
+
+-- Example: 
+--SELECT * FROM qgis_pkg.root_class_counter('qgis_user_rw','alderaan', NULL);
+--SELECT * FROM qgis_pkg.root_class_counter('qgis_user_rw','rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.FEATURE_TYPE_CHECKER
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.feature_type_checker(varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.feature_type_checker(
+cdb_schema	varchar,
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
+)
+RETURNS TABLE (
+	feature_type 	varchar,
+    exists_in_db 	boolean
+)
+AS $$
+DECLARE
+
+BEGIN
+--do not perform any checks, they will be carried out by the invoked function anyway
+RETURN QUERY
+	SELECT t.feature_type AS feature_type, bool_or(t.exists_in_db) AS exists_in_db
+	FROM qgis_pkg.root_class_checker(cdb_schema, extents) AS t 
+	GROUP BY t.feature_type 
+	ORDER BY t.feature_type;
+
+RETURN;
+
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.feature_type_checker(varchar, varchar) IS 'Counts features according to CityGML FeatureTypes (modules) in the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.feature_type_checker(varchar, varchar) FROM public;
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.ROOT_CLASS_COUNTER
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.root_class_counter(varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.root_class_counter(
+cdb_schema	varchar,
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
+)
+RETURNS TABLE (
+	feature_type 	varchar,
+	root_class	 	varchar,
+    n_feature_type 	bigint
+)
+AS $$
+DECLARE
+cdb_schemas_array 	varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+srid				integer;
+n_co				bigint;
+oc_id				integer;
+query_geom			geometry(Polygon);
+sql_where 			varchar;
+sql_statement 		varchar;
+r 					RECORD;
+
+BEGIN
+-- Check if the cdb_schema exists
+IF (cdb_schema IS NULL) OR (NOT cdb_schema = ANY(cdb_schemas_array)) THEN
+	RAISE EXCEPTION 'cdb_schema is invalid. It must correspond to an existing citydb schema';
+END IF;
+
+IF extents IS NULL THEN
+	sql_where := NULL;
+ELSE
+	-- Get the srid from the cdb_schema
+	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
+	query_geom := ST_GeomFromText(extents, srid);
+	sql_where  := concat('AND ST_MakeEnvelope(', floor(ST_XMin(query_geom)),', ', floor(ST_YMin(query_geom)),', ', ceil(ST_XMax(query_geom)),', ',	ceil(ST_YMax(query_geom)),', ',  srid,') && co.envelope');
+END IF;
+
+FOR r IN 
+
+SELECT t.feature_type, t.root_class FROM (VALUES 
+	('Bridge'::varchar,		'Bridge'::varchar),
+	('Building', 			'Building'),
+	('CityFurniture', 		'CityFurniture'),
+--	('CityObjectGroup', 	'CityObjectGroup'),
+	('Generics', 			'GenericCityObject'),
+	('LandUse', 			'LandUse'),
+	('Relief', 				'ReliefFeature'),
+	('Transportation', 		'TransportationComplex'),
+	('Transportation', 		'Track'),
+	('Transportation', 		'Railway'),
+	('Transportation',		'Road'),
+	('Transportation', 		'Square'),
+	('Tunnel', 				'Tunnel'),
+	('Vegetation', 			'SolitaryVegetationObject'),
+	('Vegetation', 			'PlantCover'),
+	('WaterBody', 			'WaterBody')
+	) AS t(feature_type, root_class)
+	
+LOOP
+	feature_type := r.feature_type;
+	root_class := r.root_class;
+	--n_feature_type := 0;
+	EXECUTE format('SELECT id FROM %I.objectclass WHERE classname = %L LIMIT 1', cdb_schema, root_class) INTO oc_id;
+	
+	sql_statement := concat('SELECT count(id) AS n_co FROM ', quote_ident(cdb_schema),'.cityobject AS co WHERE co.objectclass_id = ', oc_id, sql_where, ';');
+	EXECUTE sql_statement INTO n_co;
+	--RAISE NOTICE '%, % (oc_id=%): %', feature_type, root_class, oc_id, n_co;
+
+	n_feature_type := n_co;
+	
+	RETURN NEXT;
+END LOOP;
+
+RETURN;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.root_class_counter(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.root_class_counter(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.root_class_counter(varchar, varchar) IS 'Counts root-class objects in the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.root_class_counter(varchar, varchar) FROM public;
+
+-- Example: 
+--SELECT * FROM qgis_pkg.root_class_counter('alderaan', NULL);
+--SELECT * FROM qgis_pkg.root_class_counter('rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.FEATURE_TYPE_COUNTER
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.feature_type_counter(varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.feature_type_counter(
+cdb_schema	varchar,
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
+)
+RETURNS TABLE (
+	feature_type 	varchar,
+    n_feature_type 	bigint
+)
+AS $$
+DECLARE
+
+BEGIN
+--do not perform any checks, they will be carried out by the invoked function anyway
+RETURN QUERY
+	SELECT t.feature_type AS feature_type, sum(t.n_feature_type)::bigint AS n_feature_type
+	FROM qgis_pkg.root_class_counter(cdb_schema, extents) AS t 
+	GROUP BY t.feature_type 
+	ORDER BY t.feature_type;
+
+RETURN;
+
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) IS 'Counts features according to CityGML FeatureTypes (modules) in the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) FROM public;
+
+-- Example: 
+--SELECT * FROM qgis_pkg.feature_type_counter('alderaan', NULL);
+--SELECT * FROM qgis_pkg.feature_type_counter('rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.GVIEW_COUNTER
+----------------------------------------------------------------
+-- Counts records in the selected materialized view with geometries (gview)
+-- This function can be run providing only the name of the gview, OR, alternatively, also the extents.
+DROP FUNCTION IF EXISTS    qgis_pkg.gview_counter(varchar, varchar, varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.gview_counter(
 usr_schema	varchar,
 cdb_schema	varchar,
-mview_name	varchar, 				-- Materialised view name
+gview_name	varchar, 				-- Materialised view name containing geometries (i.e. prefixed with _g_)
 extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
 )
 RETURNS integer
 AS $$
 DECLARE
 counter		integer := 0;
-db_srid		integer;
+srid		integer;
 query_geom	geometry(Polygon);
 query_bbox	box2d;
 
 BEGIN
 IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname::varchar = usr_schema AND mv.ispopulated IS TRUE) THEN
 	IF extents IS NULL THEN
-		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, mview_name) INTO counter;
+		EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, gview_name) INTO counter;
 	ELSE
-		EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO db_srid;
-		query_geom := ST_GeomFromText(extents,db_srid);
+		EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
+		query_geom := ST_GeomFromText(extents,srid);
 		query_bbox := ST_Extent(query_geom);
-		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom', usr_schema, mview_name, query_bbox) USING query_bbox INTO counter;
+		EXECUTE FORMAT('SELECT count(t.co_id) FROM %I.%I t WHERE $1 && t.geom', usr_schema, gview_name, query_bbox) USING query_bbox INTO counter;
 	END IF;
 ELSE
-	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, mview_name;	
+	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, gview_name;	
 END IF;
 RETURN counter;
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.view_counter(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.gview_counter(): Error QUERY_CANCELED';
   WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.view_counter(): %', SQLERRM;
+		RAISE NOTICE 'qgis_pkg.gview_counter(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar, varchar) IS 'Counts records in the selected materialized view';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.view_counter(varchar, varchar, varchar, varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.gview_counter(varchar, varchar, varchar, varchar) IS 'Counts records in the selected materialized view for geometries';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.gview_counter(varchar, varchar, varchar, varchar) FROM public;
 
 -- Example: 
---SELECT qgis_pkg.view_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', NULL);
---SELECT qgis_pkg.view_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+--SELECT qgis_pkg.gview_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', NULL);
+--SELECT qgis_pkg.gview_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.AVIEW_COUNTER
+----------------------------------------------------------------
+-- Counts records in the selected materialized view with geometries (gview)
+-- This function can be run providing only the name of the gview, OR, alternatively, also the extents.
+DROP FUNCTION IF EXISTS    qgis_pkg.aview_counter(varchar, varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.aview_counter(
+usr_schema	varchar,
+cdb_schema	varchar,
+aview_name	varchar 				-- Materialised view name containing geometries (i.e. prefixed with _g_)
+)
+RETURNS integer
+AS $$
+DECLARE
+counter		integer := 0;
+
+BEGIN
+IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname::varchar = usr_schema AND mv.ispopulated IS TRUE) THEN
+	EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, aview_name) INTO counter;
+ELSE
+	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, aview_name;	
+END IF;
+RETURN counter;
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.aview_counter(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE NOTICE 'qgis_pkg.aview_counter(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.aview_counter(varchar, varchar, varchar) IS 'Counts records in the selected materialized view for attributes';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.aview_counter(varchar, varchar, varchar) FROM public;
+
+-- Example: 
+--SELECT qgis_pkg.gview_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', NULL);
+
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.COMPUTE_GA_INDICES
@@ -1175,7 +1508,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, inte
 DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_matview_header(varchar,varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_matview_header(
 qi_usr_schema	varchar,
-qi_mview_name	varchar 
+qi_gv_name	varchar 
 )
 RETURNS text
 AS $$
@@ -1186,10 +1519,10 @@ BEGIN
 
 sql_statement := concat('
 -----------------------------------------------------------------
--- MATERIALIZED VIEW ',upper(qi_usr_schema),'.',upper(qi_mview_name),'
+-- MATERIALIZED VIEW ',upper(qi_usr_schema),'.',upper(qi_gv_name),'
 -----------------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS ',qi_usr_schema,'.',qi_mview_name,' CASCADE;
-CREATE MATERIALIZED VIEW         ',qi_usr_schema,'.',qi_mview_name,' AS');
+DROP MATERIALIZED VIEW IF EXISTS ',qi_usr_schema,'.',qi_gv_name,' CASCADE;
+CREATE MATERIALIZED VIEW         ',qi_usr_schema,'.',qi_gv_name,' AS');
 
 RETURN sql_statement;
 
@@ -1207,27 +1540,26 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_header(varchar,varchar)
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_matview_footer(varchar,varchar,varchar,varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_matview_footer(
-qi_usr_name		varchar,
-qi_usr_schema	varchar,
-qi_mview_name	varchar,
-ql_view_name	varchar
+qi_usr_name   varchar,
+qi_usr_schema varchar,
+ql_l_name	  varchar,
+qi_gv_name	  varchar
 )
 RETURNS text
 AS $$
 DECLARE
-mview_name CONSTANT varchar := trim(both '"' from qi_mview_name);
-mview_idx_name CONSTANT varchar := quote_ident(concat(mview_name,'_id_idx'));
-mview_spx_name CONSTANT varchar := quote_ident(concat(mview_name,'_geom_spx'));
+gv_name CONSTANT varchar := trim(both '"' from qi_gv_name);
+gv_idx_name CONSTANT varchar := quote_ident(concat(gv_name,'_id_idx'));
+gv_spx_name CONSTANT varchar := quote_ident(concat(gv_name,'_geom_spx'));
 sql_statement text;
 
 BEGIN
 sql_statement := concat('
-CREATE INDEX ',mview_idx_name,' ON ',qi_usr_schema,'.',qi_mview_name,' (co_id);
-CREATE INDEX ',mview_spx_name,' ON ',qi_usr_schema,'.',qi_mview_name,' USING gist (geom);
-ALTER TABLE ',qi_usr_schema,'.',qi_mview_name,' OWNER TO ',qi_usr_name,';
-
---DELETE FROM ',qi_usr_schema,'.layer_metadata WHERE v_name = ',ql_view_name,';
---REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_mview_name,';
+CREATE INDEX ',gv_idx_name,' ON ',qi_usr_schema,'.',qi_gv_name,' (co_id);
+CREATE INDEX ',gv_spx_name,' ON ',qi_usr_schema,'.',qi_gv_name,' USING gist (geom);
+ALTER TABLE ',qi_usr_schema,'.',qi_gv_name,' OWNER TO ',qi_usr_name,';
+--DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.layer_name = ',ql_l_name,';
+--REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,';
 ');
 
 RETURN sql_statement;
@@ -1247,7 +1579,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_footer(varchar,varchar,
 DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_view_header(varchar,varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_view_header(
 qi_usr_schema	varchar,
-qi_view_name	varchar 
+qi_layer_name	varchar 
 )
 RETURNS text
 AS $$
@@ -1257,10 +1589,10 @@ sql_statement text;
 BEGIN
 sql_statement := concat('
 -----------------------------------------------------------------
--- VIEW ',upper(qi_usr_schema),'.',upper(qi_view_name),'
+-- VIEW ',upper(qi_usr_schema),'.',upper(qi_layer_name),' -- joins attributes and mat views of geometries
 -----------------------------------------------------------------
-DROP VIEW IF EXISTS    ',qi_usr_schema,'.',qi_view_name,' CASCADE;
-CREATE OR REPLACE VIEW ',qi_usr_schema,'.',qi_view_name,' AS');
+DROP VIEW IF EXISTS    ',qi_usr_schema,'.',qi_layer_name,' CASCADE;
+CREATE OR REPLACE VIEW ',qi_usr_schema,'.',qi_layer_name,' AS');
 
 RETURN sql_statement;
 
@@ -1276,11 +1608,13 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_view_header(varchar,varchar) FR
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_MATVIEW_ELSE
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_matview_else(varchar,varchar,varchar) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_matview_else(varchar,varchar,varchar,varchar,varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_matview_else(
-qi_usr_schema	varchar,
-qi_mview_name	varchar,
-ql_view_name	varchar  
+qi_usr_schema varchar,
+ql_cdb_schema varchar,
+ql_l_type     varchar,
+ql_l_name     varchar,
+qi_gv_name    varchar
 )
 RETURNS text
 AS $$
@@ -1290,8 +1624,8 @@ sql_statement text;
 BEGIN
 sql_statement := concat('
 -- This drops the materialized view AND the associated view
-DROP MATERIALIZED VIEW IF EXISTS ',qi_usr_schema,'.',qi_mview_name,' CASCADE;
-DELETE FROM ',qi_usr_schema,'.layer_metadata WHERE v_name = ',ql_view_name,';
+DROP MATERIALIZED VIEW IF EXISTS ',qi_usr_schema,'.',qi_gv_name,' CASCADE;
+DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.cdb_schema = ',ql_cdb_schema,' AND lm.layer_type = ',ql_l_type,' AND lm.layer_name = ', ql_l_name,';
 ');
 
 RETURN sql_statement;
@@ -1303,18 +1637,17 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_matview_else(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_else(varchar,varchar,varchar) FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_matview_else(varchar,varchar,varchar,varchar,varchar) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_TRIGGERS
 ----------------------------------------------------------------
 -- Function to generate SQL for triggers
-DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_triggers(varchar, varchar, varchar, varchar) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_triggers(varchar, varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_triggers(
-view_name			varchar,
-tr_function_suffix	varchar,
-usr_name			varchar,
-usr_schema			varchar 
+usr_schema			varchar,
+layer_name			varchar,
+tr_function_suffix	varchar
 )
 RETURNS text
 AS $$
@@ -1326,7 +1659,6 @@ slq_stat_trig_part	text := NULL;
 sql_statement		text := NULL;
 
 BEGIN
-
 FOR tr IN 
 	SELECT * FROM (VALUES
 	('ins'::varchar,	'insert'::varchar,	'INSERT'::varchar),
@@ -1335,7 +1667,7 @@ FOR tr IN
 	) AS t(tr_short, tr_small, tr_cap)
 LOOP
 	trigger_f := format('tr_%s_%s()', tr.tr_short, tr_function_suffix);
-	trigger_n := concat('tr_', tr.tr_short, '_', view_name);
+	trigger_n := concat('tr_', tr.tr_short, '_', layer_name);
 	slq_stat_trig_part := NULL;
 	slq_stat_trig_part := format('
 DROP TRIGGER IF EXISTS %I ON %I.%I;
@@ -1344,16 +1676,14 @@ CREATE TRIGGER         %I
 	FOR EACH ROW EXECUTE PROCEDURE qgis_pkg.%s;
 COMMENT ON TRIGGER %I ON %I.%I IS ''Fired upon %s into view %I.%I'';
 ',
-	trigger_n, usr_schema, view_name,
+	trigger_n, usr_schema, layer_name,
 	trigger_n,
-	tr.tr_cap, usr_schema, view_name,
+	tr.tr_cap, usr_schema, layer_name,
 	trigger_f,
-	trigger_n, usr_schema, view_name,
-	tr.tr_small, usr_schema, view_name
-);
-
-sql_statement := concat(sql_statement, slq_stat_trig_part);
-
+	trigger_n, usr_schema, layer_name,
+	tr.tr_small, usr_schema, layer_name
+	);
+	sql_statement := concat(sql_statement, slq_stat_trig_part);
 END LOOP;
 
 RETURN sql_statement;
@@ -1365,7 +1695,7 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.generate_sql_triggers(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers(varchar, varchar, varchar, varchar) FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_triggers(varchar, varchar, varchar) FROM public;
 
 /* --- TEMPLATE FOR ADDITIONAL FUNCTIONS
 ----------------------------------------------------------------
