@@ -3,12 +3,18 @@
 import os.path
 
 # Plugin names
-PLUGIN_NAME: str = "3DCityDB-Loader"
-PLUGIN_NAME_ADMIN: str = " ".join([PLUGIN_NAME, "(Administration)"])
+PLUGIN_NAME: str = "3DCityDB Manager"
+#PLUGIN_NAME_ADMIN: str = " ".join([PLUGIN_NAME, "(Administration)"])
+PLUGIN_NAME_LOADER: str = "3DCityDB Layer Loader"
+PLUGIN_NAME_ADMIN: str = "3DCityDB Feature Deleter"
+PLUGIN_NAME_DELETER: str = "3DCityDB Administration"
 
 # Paths
 PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
 PLUGIN_ROOT_DIR: str = os.path.split(os.path.dirname(__file__))[1]
+
+#print("PLUGIN_ROOT_PATH: " + PLUGIN_ROOT_PATH)
+#print("PLUGIN_ROOT_DIR: " + PLUGIN_ROOT_DIR)
 
 CDB4_PLUGIN_DIR: str = "cdb4"
 

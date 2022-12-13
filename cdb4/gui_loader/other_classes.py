@@ -1,7 +1,7 @@
 import os.path
 from .. import cdb4_constants as c
 
-class UserDialogRequirements:
+class LoaderDialogRequirements:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_postgis_installed: bool = False
@@ -40,7 +40,7 @@ class UserDialogRequirements:
         return False
 
     
-class UserDialogSettings:
+class LoaderDialogSettings:
     "TODO: these settings will be read from a setting.ini file stored in the QGIS plugin directory"
 
     def __init__(self):

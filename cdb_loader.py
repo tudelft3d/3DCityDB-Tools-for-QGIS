@@ -70,6 +70,9 @@ class CDBLoader:
         # Read and assign constants from main_constants file (main_c)
         self.PLUGIN_NAME: str = main_c.PLUGIN_NAME
         self.PLUGIN_NAME_ADMIN: str = main_c.PLUGIN_NAME_ADMIN
+        self.PLUGIN_NAME_LOADER: str = main_c.PLUGIN_NAME_LOADER
+        self.PLUGIN_NAME_DELETER: str = main_c.PLUGIN_NAME_DELETER
+        
         self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
         self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
         self.PLUGIN_VERSION_REV: int = main_c.PLUGIN_VERSION_REV
@@ -90,8 +93,10 @@ class CDBLoader:
         # Variable to store the selected {usr_schema} name.
         self.USR_SCHEMA: str = main_c.USR_SCHEMA
 
-        # Variable to store the user dialog of the plugin.
+        # Variable to store the loader dialog of the plugin.
         self.loader_dlg = None
+        # Variable to store the deleter dialog of the plugin.
+        self.deleter_dlg = None
         # Variable to store the admin dialog of the plugin.
         self.admin_dlg = None
 
@@ -115,6 +120,7 @@ class CDBLoader:
         # Check if plugin was started the first time in current QGIS session.
         # Must be set in initGui() to survive plugin reloads.
         self.first_start_loader: bool = True
+        self.first_start_deleter: bool = True
         self.first_start_admin: bool = True
 
 
@@ -128,7 +134,7 @@ class CDBLoader:
         *   :returns: Translated version of message.
             :rtype: str
         """
-        return QCoreApplication.translate("DBLoader", message)
+        return QCoreApplication.translate("3DCityDB Manager", message)
 
 
     def add_action(self,
@@ -240,30 +246,50 @@ class CDBLoader:
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
-        # The icon path is set from the compiled resources file (in main dir).
-        loader_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
-        adm_icon_path = ":/plugins/citydb_loader/icons/settings_icon.svg"
 
-        # Loader plugin
+        # The icon path is set from the compiled resources file (in main dir).
+        icon_path = "/".join([ main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR])
+        #admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
+        #loader_icon_path  = ":/plugins/citydb_loader/icons/plugin_icon.png"
+        loader_icon_path  = "/".join([icon_path, "icons/plugin_icon.png"])
+        deleter_icon_path = "/".join([icon_path, "icons/delete_icon.png"])
+        admin_icon_path   = "/".join([icon_path, "icons/db_admin.png"])
+
+        # Loader Dialog
         self.add_action(
             icon_path = loader_icon_path,
-            txt = self.tr(self.PLUGIN_NAME),
+            #txt = self.tr(self.PLUGIN_NAME_LOADER),
+            txt = self.PLUGIN_NAME_LOADER,
             callback = self.run_loader,
             parent = self.iface.mainWindow(),
+            add_to_menu = True,
             add_to_toolbar = True)
 
-        # Admin plugin
+        # Deleter Dialog
         self.add_action(
-            icon_path = adm_icon_path,
-            txt = self.tr(self.PLUGIN_NAME_ADMIN),
+            icon_path = deleter_icon_path,
+            #txt = self.tr(self.PLUGIN_NAME_DELETER),
+            txt = self.PLUGIN_NAME_DELETER,
+            callback = self.run_deleter,
+            parent = self.iface.mainWindow(),
+            add_to_menu = True,
+            add_to_toolbar = True)
+
+        # Admin Dialog
+        self.add_action(
+            icon_path = admin_icon_path,
+            #txt = self.tr(self.PLUGIN_NAME_DELETER),
+            txt = self.PLUGIN_NAME_ADMIN,
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
+            add_to_menu = True,
             add_to_toolbar = True) # Default: False (but useful to set it to True in development mode).
 
-        # Will be set False in run_user(), run_admin()
-        self.first_start_loader = True
-        self.first_start_admin = True
 
+        # Will be set False in run_admin(), run_loader(), run_deleter() etc.
+        self.first_start_loader = True
+        self.first_start_deleter = True
+        self.first_start_admin = True
 
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI.
@@ -273,47 +299,14 @@ class CDBLoader:
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
 
 
-    def run_admin(self) -> None:
-        """Run main method that performs all the real work.
-        -   Creates the plugin dialog
-        -   Instantiates the plugin main class (CDB4LoaderAdminDialog) with its GUI
-        -   Setups the plugin signals
-        -   Executes the main dialog
-        """
-        from .cdb4.gui_admin.cdb4_admin_dialog import CDB4AdminDialog # Admin dialog
-        from .cdb4.gui_admin.functions import tab_conn_widget_functions as dba_wf
-        from .cdb4.gui_db_connector.functions import conn_functions as conn_f
-
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
-        if self.first_start_admin:
-            self.first_start_admin = False
-            # Create the dialog with elements (after translation).
-            self.admin_dlg = CDB4AdminDialog(cdbLoader=self)
-
-        # Get existing connections from QGIS profile settings.
-        conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
-
-        # When this dialogue is open, inputs in any other windows are blocked.
-        self.admin_dlg.setWindowModality(2)
-
-        # Show the dialog
-        self.admin_dlg.show()
-
-        # Run the dialog event loop.
-        res = self.admin_dlg.exec_()
-        if not res: # Dialog has closed (X button was pressed)
-            # Reset the dialog widgets. (Closes the current open connection.)
-            dba_wf.tabDbAdmin_reset(self)
-
-
     def run_loader(self) -> None:
         """Run main method that performs all the real work.
         -   Creates the plugin dialog
-        -   Instantiates the plugin main class (CDB4LoaderUserDialog) with its GUI
+        -   Instantiates the plugin main class (CDB4LoaderDialog) with its GUI
         -   Setups the plugin signals
-        -   Executes the main dialog
+        -   Executes the dialog
         """
-        from .cdb4.gui_loader.cdb4_loader_dialog import CDB4LoaderDialog # User dialog
+        from .cdb4.gui_loader.cdb4_loader_dialog import CDB4LoaderDialog # Loader dialog
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f        
 
         # Only create GUI ONCE in callback,
@@ -346,6 +339,76 @@ class CDBLoader:
             return None
 
 
+    def run_deleter(self) -> None:
+        """Run main method that performs all the real work.
+        -   Creates the plugin dialog
+        -   Instantiates the plugin main class (CDB4DeleterDialog) with its GUI
+        -   Setups the plugin signals
+        -   Executes the dialog
+        """
+        from .cdb4.gui_deleter.cdb4_deleter_dialog import CDB4DeleterDialog # Deleter dialog
+        from .cdb4.gui_db_connector.functions import conn_functions as conn_f        
+
+        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
+        if self.first_start_deleter:
+            self.first_start_deleter = False
+
+            # Create the dialog with elements (after translation).
+            self.deleter_dlg = CDB4DeleterDialog(cdbLoader=self)
+
+            dlg = self.deleter_dlg
+
+            # Replace empty graphics view widget with Map canvas.
+            dlg.gLayoutBasemapC.replaceWidget(dlg.gvCanvasC, dlg.CANVAS_C)
+
+            # Remove empty graphics View widget from dialog.
+            dlg.gvCanvasC.setParent(None)
+
+            # Get existing connections from QGIS profile settings.
+            conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
+
+        # Show the dialog
+        self.deleter_dlg.show()
+
+        # Run the dialog event loop.
+        res = self.deleter_dlg.exec_() 
+        if not res: # Dialog has closed (X button was pressed)
+            return None
+
+
+    def run_admin(self) -> None:
+        """Run main method that performs all the real work.
+        -   Creates the plugin dialog
+        -   Instantiates the plugin main class (CDB4AdminDialog) with its GUI
+        -   Setups the plugin signals
+        -   Executes the dialog
+        """
+        from .cdb4.gui_admin.cdb4_admin_dialog import CDB4AdminDialog # Admin dialog
+        from .cdb4.gui_admin.functions import tab_conn_widget_functions as dba_wf
+        from .cdb4.gui_db_connector.functions import conn_functions as conn_f
+
+        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
+        if self.first_start_admin:
+            self.first_start_admin = False
+            # Create the dialog with elements (after translation).
+            self.admin_dlg = CDB4AdminDialog(cdbLoader=self)
+
+        # Get existing connections from QGIS profile settings.
+        conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
+
+        # When this dialogue is open, inputs in any other windows are blocked.
+        self.admin_dlg.setWindowModality(2)
+
+        # Show the dialog
+        self.admin_dlg.show()
+
+        # Run the dialog event loop.
+        res = self.admin_dlg.exec_()
+        if not res: # Dialog has closed (X button was pressed)
+            # Reset the dialog widgets. (Closes the current open connection.)
+            dba_wf.tabDbAdmin_reset(self)
+
+
     def evt_update_bar(self, dialog_name: str, step: int, text: str) -> None:
         """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
         in CDBLoader.msg_bar: QgsMessageBar and CDBLoader.bar: QProgressBar.
@@ -363,12 +426,12 @@ class CDBLoader:
             :type text: str
         """
 
-        if dialog_name == self.ADMIN_DLG:         #"admin_dlg"
+        if dialog_name == self.ADMIN_DLG:         # "admin_dlg"
             progress_bar = self.admin_dlg.bar
         elif dialog_name == self.LOADER_DLG:      # "loader_dlg":
             progress_bar = self.loader_dlg.bar
-        #elif dialog_name == self.DELETER_DLG:      # "deleter_dlg":
-            #progress_bar = self.deleter_dlg.bar
+        elif dialog_name == self.DELETER_DLG:     # "deleter_dlg":
+            progress_bar = self.deleter_dlg.bar
 
         # Show text instead of completed percentage.
         if text:

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DBLoaderDialogBase</class>
- <widget class="QDialog" name="DBLoaderDialogBase">
+ <class>CDBLoaderDialog</class>
+ <widget class="QDialog" name="CDBLoaderDialog">
   <property name="windowModality">
    <enum>Qt::WindowModal</enum>
   </property>
@@ -122,7 +122,7 @@
       </property>
       <attribute name="icon">
        <iconset>
-        <normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</normaloff>:/plugins/citydb_loader/icons/postgres_elephant.svg</iconset>
+        <normaloff>../../../icons/postgres_elephant.svg</normaloff>../../../icons/postgres_elephant.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>User Connection</string>
@@ -1120,7 +1120,7 @@
       </property>
       <attribute name="icon">
        <iconset>
-        <normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</normaloff>:/plugins/citydb_loader/icons/plugin_icon.png</iconset>
+        <normaloff>../../../icons/layers.svg</normaloff>../../../icons/layers.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Layers</string>
@@ -1364,6 +1364,15 @@ Current citydb schema: {sch}</string>
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QWidget" name="tabSettings">
+      <attribute name="icon">
+       <iconset>
+        <normaloff>../../../icons/settings_icon.svg</normaloff>../../../icons/settings_icon.svg</iconset>
+      </attribute>
+      <attribute name="title">
+       <string>Settings</string>
+      </attribute>
      </widget>
     </widget>
    </item>

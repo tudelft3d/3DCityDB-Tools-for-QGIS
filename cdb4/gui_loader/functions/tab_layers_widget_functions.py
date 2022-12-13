@@ -55,7 +55,7 @@ def tabLayers_reset(cdbLoader: CDBLoader) -> None:
     dlg.tabLayers.setDisabled(True)
     gbxAvailableL_reset(cdbLoader)
     gbxLayerSelection_reset(cdbLoader)
-    gbxBasemap_reset(cdbLoader)
+    gbxBasemapL_reset(cdbLoader)
     lblInfoText_reset(cdbLoader)
 
 
@@ -68,7 +68,7 @@ def lblInfoText_reset(cdbLoader: CDBLoader) -> None:
     dlg.lblInfoText.setDisabled(True)
 
 
-def gbxBasemap_reset(cdbLoader: CDBLoader) -> None:
+def gbxBasemapL_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Extents' groupbox (in Layers tab).
     """
     dlg = cdbLoader.loader_dlg
