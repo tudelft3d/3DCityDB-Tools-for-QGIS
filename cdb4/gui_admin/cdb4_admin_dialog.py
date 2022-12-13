@@ -36,7 +36,7 @@ from ...cdb_loader import CDBLoader # Used only to add the type of the function 
 from ..gui_db_connector.other_classes import Connection
 #from .other_classes import AdminDialogRequirements
 
-from ..gui_db_connector.db_connection_dialog import DBConnectorDialog
+from ..gui_db_connector.new_db_connection_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
 
 from .. import cdb4_constants as c
