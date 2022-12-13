@@ -14,9 +14,14 @@ CDB4_PLUGIN_DIR: str = "cdb4"
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
-PLUGIN_VERSION_MINOR: int = 6
+PLUGIN_VERSION_MINOR: int = 7
 PLUGIN_VERSION_REV:   int = 0
 
 # Database schemas where QGIS Package is installed etc.
 QGIS_PKG_SCHEMA: str = "qgis_pkg"
 USR_SCHEMA: str = "qgis_{user}"
+
+# Dialog names
+ADMIN_DLG: str = "admin_dlg"
+LOADER_DLG: str = "loader_dlg"
+DELETER_DLG: str = "deleter_dlg"

@@ -41,45 +41,53 @@ class LayerCreationWorker(QObject):
 
     def __init__(self, cdbLoader: CDBLoader):
         super().__init__()
-        self.plg = cdbLoader
+        self.plugin = cdbLoader
 
     def create_thread(self):
         """Execution method that creates the layers using function from the 'qgis_pkg' installation.
         """
-        dlg = self.plg.usr_dlg
+        dlg = self.plugin.loader_dlg
+
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
 
         # Set progress bar goal
         dlg.bar.setMaximum(len(c.create_layers_funcs))
 
-        # Get corners coordinates
-        y_min = str(dlg.LAYER_EXTENTS_RED.yMinimum())
-        x_min = str(dlg.LAYER_EXTENTS_RED.xMinimum())
-        y_max = str(dlg.LAYER_EXTENTS_RED.yMaximum())
-        x_max = str(dlg.LAYER_EXTENTS_RED.xMaximum())
+        bbox: str
+        if dlg.LAYER_EXTENTS_RED == dlg.CDB_SCHEMA_EXTENTS_BLUE:
+            bbox = None
+            #QgsMessageLog.logMessage("BLUE AND RED extents coincide", self.plg.PLUGIN_NAME, level=Qgis.Info)
+        else:
+            # Get corners coordinates
+            y_min = str(dlg.LAYER_EXTENTS_RED.yMinimum())
+            x_min = str(dlg.LAYER_EXTENTS_RED.xMinimum())
+            y_max = str(dlg.LAYER_EXTENTS_RED.yMaximum())
+            x_max = str(dlg.LAYER_EXTENTS_RED.xMaximum())
+            bbox = "{"+",".join([x_min, y_min, x_max, y_max])+"}"
 
         # Set function input
         params = [
-            self.plg.DB.username,
-            self.plg.CDB_SCHEMA,
+            self.plugin.DB.username,
+            self.plugin.CDB_SCHEMA,
             int(dlg.gbxSimplifyGeom.isChecked()),
             dlg.qspbDecimalPrec.value(),
             dlg.qspbMinArea.value(),
-            "{"+",".join([x_min, y_min, x_max, y_max])+"}",
-            False
+            bbox,
+            dlg.settings.force_all_layers_creation  #to be substituted with the value in the settings tab
             ]
 
         # Open new temp session
-        with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Layer creation)") as conn:
+        with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Layer creation)") as conn:
             for s, module_func in enumerate(c.create_layers_funcs, start=1):
 
                 # Update progress bar with current step and script.
                 text = " ".join(["Executing:", module_func])
-                self.progress.emit("usr_dlg", s, text)
+                #self.progress.emit("usr_dlg", s, text)
+                self.progress.emit(self.plugin.LOADER_DLG, s, text)
                 try:
                     with conn.cursor() as cursor:
-                        cursor.callproc(f"{self.plg.QGIS_PKG_SCHEMA}.{module_func}", [*params])
+                        cursor.callproc(f"{self.plugin.QGIS_PKG_SCHEMA}.{module_func}", [*params])
                     conn.commit()
 
                 except (Exception, psycopg2.DatabaseError) as error:
@@ -99,7 +107,7 @@ def create_layers_thread(cdbLoader: CDBLoader) -> None:
     """Function that creates layers in the user schema in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
@@ -149,32 +157,32 @@ class RefreshMatViewsWorker(QObject):
 
     def __init__(self, cdbLoader: CDBLoader):
         super().__init__()
-        self.plg = cdbLoader
+        self.plugin = cdbLoader
 
-    def refresh_all_mat_views(self):
-        """Execution method that refreshes the materialized views in the
-        server (for a specific schema).
+    def refresh_all_gviews(self):
+        """Execution method that refreshes the materialized views in the server (for a specific schema).
         """
-        dlg = self.plg.usr_dlg
+        dlg = self.plugin.loader_dlg
 
         # Get feature types from layer_metadata table.
-        cols_to_featch: str = ",".join(["feature_type","mv_name"])
-        col, ftype_mview = sql.fetch_layer_metadata(cdbLoader=self.plg, usr_schema=self.plg.USR_SCHEMA, cdb_schema=self.plg.CDB_SCHEMA, cols=cols_to_featch)
+        cols_to_fetch: str = ",".join(["feature_type","gv_name"])
+        col, feattype_geom_mview = sql.fetch_layer_metadata(cdbLoader=self.plugin, usr_schema=self.plugin.USR_SCHEMA, cdb_schema=self.plugin.CDB_SCHEMA, cols=cols_to_fetch)
         col = None # Discard byproduct.
 
         # Set progress bar goal
-        dlg.bar.setMaximum(len(ftype_mview))
+        dlg.bar.setMaximum(len(feattype_geom_mview))
 
         # Open new temp session, reserved for mat refresh.
-        with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Refresh)") as conn:
-            for s, (ftype, mview) in enumerate(ftype_mview):
+        with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Refresh)") as conn:
+            for s, (ftype, mview) in enumerate(feattype_geom_mview):
 
                 # Update progress bar with current step and text.
                 text = " ".join(["Refreshing layers of:", ftype])
-                self.progress.emit("usr_dlg", s, text)
+                #self.progress.emit("usr_dlg", s, text)
+                self.progress.emit(self.plugin.LOADER_DLG, s, text)
 
                 try:
-                    sql.refresh_mat_view(cdbLoader=self.plg, connection=conn, matview_name=mview)
+                    sql.refresh_gview(cdbLoader=self.plugin, connection=conn, gview_name=mview)
                     conn.commit()
                     # time.sleep(0.05) # Use this for debugging instead of waiting for mats.
 
@@ -190,7 +198,7 @@ def refresh_views_thread(cdbLoader: CDBLoader) -> None:
     """Function that refreshes the materialized views in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
@@ -217,7 +225,7 @@ def refresh_views_thread(cdbLoader: CDBLoader) -> None:
     cdbLoader.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
 
     # Execute worker's 'run' method.
-    cdbLoader.thread.started.connect(cdbLoader.worker.refresh_all_mat_views)
+    cdbLoader.thread.started.connect(cdbLoader.worker.refresh_all_gviews)
 
     # Capture progress to show in bar.
     cdbLoader.worker.progress.connect(cdbLoader.evt_update_bar)
@@ -254,10 +262,10 @@ class LayerDroppingWorker(QObject):
 
     def __init__(self, cdbLoader: CDBLoader):
         super().__init__()
-        self.plg = cdbLoader
+        self.plugin = cdbLoader
 
     def create_thread(self):
-        dlg = self.plg.usr_dlg
+        dlg = self.plugin.loader_dlg
         """Execution method that creates the layers using function from the 'qgis_pkg' installation.
         """
         # Flag to help us break from a failing installation.
@@ -267,19 +275,20 @@ class LayerDroppingWorker(QObject):
         dlg.bar.setMaximum(len(c.drop_layers_funcs))
 
         # Open new temp session, reserved for installation.
-        with conn_f.connect(db_connection=self.plg.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping layers)") as conn:
+        with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping layers)") as conn:
             for s, module_func in enumerate(c.drop_layers_funcs, start=1):
                 # Update progress bar with current step and script.
                 text = " ".join(["Executing:", module_func])
-                self.progress.emit("usr_dlg", s, text)
+                #self.progress.emit("usr_dlg", s, text)
+                self.progress.emit(self.plugin.LOADER_DLG, s, text)
                 try:
                     with conn.cursor() as cursor:
-                        cursor.callproc(f"{self.plg.QGIS_PKG_SCHEMA}.{module_func}", [self.plg.USR_SCHEMA, self.plg.CDB_SCHEMA])
+                        cursor.callproc(f"{self.plugin.QGIS_PKG_SCHEMA}.{module_func}", [self.plugin.USR_SCHEMA, self.plugin.CDB_SCHEMA])
                     conn.commit()
                 except (Exception, psycopg2.DatabaseError) as error:
                     QgsMessageLog.logMessage(
                         message=error,
-                        tag=self.plg.PLUGIN_NAME,
+                        tag=self.plugin.PLUGIN_NAME,
                         level=Qgis.Critical,
                         notifyUser=True)
                     fail_flag = True
@@ -296,7 +305,7 @@ def drop_layers_thread(cdbLoader: CDBLoader) -> None:
     """Function that drops layers of the user schema in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # The sole purpose of the loop here is to find the widget's index in
     # the layout, in order to put the progress bar just below it.
@@ -349,7 +358,7 @@ def ev_refresh_success(cdbLoader: CDBLoader) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Remove progress bar
     dlg.msg_bar.clearWidgets()
@@ -390,13 +399,13 @@ def ev_layers_success(cdbLoader: CDBLoader) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Remove progress bar
     dlg.msg_bar.clearWidgets()
 
     if sql.exec_has_layers_for_cdb_schema(cdbLoader):
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.LAYER_CR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA))
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
@@ -425,7 +434,7 @@ def ev_layers_fail(cdbLoader: CDBLoader) -> None:
     Shows fail message in Connection Status groupbox
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Remove progress bar
     dlg.msg_bar.clearWidgets()
@@ -450,7 +459,7 @@ def ev_drop_layers_success(cdbLoader: CDBLoader) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Remove progress bar
     dlg.msg_bar.clearWidgets()
@@ -488,7 +497,7 @@ def ev_drop_layers_fail(cdbLoader: CDBLoader) -> None:
     Shows fail message in Connection Status groupbox
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Remove progress bar
     dlg.msg_bar.clearWidgets()

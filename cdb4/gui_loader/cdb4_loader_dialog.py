@@ -32,7 +32,8 @@ import os
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from .other_classes import UserDialogRequirements, UserDialogSettings
-  
+
+from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
 from ..gui_db_connector.db_connection_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
 
@@ -49,16 +50,16 @@ from ..shared.functions import sql as sh_sql
 # This loads the .ui file so that PyQt can populate the plugin
 # with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), "ui", "cdb4_loader_user_dialog.ui"))
+    os.path.dirname(__file__), "ui", "cdb4_loader_dialog.ui"))
 
-class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
+class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     """User Dialog class of the plugin.
     The GUI is imported from an external .ui xml
     """
 
     def __init__(self, cdbLoader: CDBLoader, parent=None):
         """Constructor."""
-        super(CDB4LoaderUserDialog, self).__init__(parent)
+        super(CDB4LoaderDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -118,11 +119,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Variable to store all available FeatureTypes.
         # The availability is defined by the existence of at least one feature of that type inside the current selected extents (bbox).
-        self.FeatureType_container: dict = {}
+        self.FeatureTypeLayerGroups: dict = {}
 
-        # Enhance various Qt Objects with their initial text.
-        # This is used in order to revert to the original state
-        # in reset operations when original text has already changed.
+        # Enhance various Qt Objects with their initial text. 
+        # This is used in order to revert to the original state in reset operations when original text has already changed.
 
         # TAB Connection
         self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
@@ -158,8 +158,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbLoader))
 
         # Basemap (OSM) group box signals
-        # Link the addition canvas to the extents qgroupbox and
-        # enable "MapCanvasExtent" options (Byproduct).
+        # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
         self.qgbxExtentsC.setMapCanvas(canvas=self.CANVAS_C, drawOnCanvasOption=False)
 
         # Draw on Canvas tool is disabled.
@@ -202,8 +201,9 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         ### SIGNALS (end) ##############################
         ################################################
 
-
+    ################################################
     ### EVENTS (start) ############################
+    ################################################
 
     ## Events for 'User connection' tab BEGIN
 
@@ -213,10 +213,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Set the current database connection object variable
-        cdbLoader.DB = self.cbxExistingConnC.currentData()
+        cdbLoader.DB: Connection = self.cbxExistingConnC.currentData()
         if not cdbLoader.DB:
             return None
 
@@ -242,7 +242,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         Responsible to add a new VALID connection to the 'Existing connections'.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
@@ -251,8 +251,8 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         dlgConnector.exec_()
 
         # Add new connection to the Existing connections
-        if dlgConnector.new_connection:
-            dlg.cbxExistingConnC.addItem(f"{dlgConnector.new_connection.connection_name}",dlgConnector.new_connection)
+        if dlgConnector.conn_params:
+            dlg.cbxExistingConnC.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
 
 
     # 'Database' group box events (in 'User Connection' tab)
@@ -261,7 +261,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         (btnConnectToDbC) is pressed. It sets up the GUI after a click signal is emitted.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         error_msg: str = None
 
@@ -289,17 +289,16 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         if successful_connection:
             # Show database name
             dlg.lblConnToDbC_out.setText(c.success_html.format(text=cdbLoader.DB.database_name))
-            #cdbLoader.DB.green_db_conn = True
-            dlg.requirements.green_db_conn = True
+            dlg.requirements.is_conn_successful = True
 
             if cdbLoader.DB.pg_server_version is not None:
                 # Show server version
                 dlg.lblPostInstC_out.setText(c.success_html.format(text=cdbLoader.DB.pg_server_version))
-                #cdbLoader.DB.green_postgis_inst = True
-                dlg.requirements.green_postgis_inst = True
+                dlg.requirements.is_postgis_installed = True
             else:
                 dlg.lblPostInstC_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
-                cdbLoader.DB.green_post_inst = False
+                dlg.requirements.is_postgis_installed = False
+                #cdbLoader.DB.green_post_inst = False
 
                 return None # Exit
 
@@ -307,9 +306,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             ct_wf.gbxConnStatus_reset(cdbLoader)
             dlg.gbxConnStatusC.setDisabled(False)
             dlg.lblConnToDbC_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
-            cdbLoader.DB.green_connection = False
+            dlg.requirements.is_conn_successful = False
+            #cdbLoader.DB.green_connection = False
             dlg.lblPostInstC_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
-            cdbLoader.DB.green_pg_server_version = False
+            dlg.requirements.is_postgis_installed = False
+            #cdbLoader.DB.green_pg_server_version = False
 
             return None # Exit
 
@@ -324,8 +325,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             sh_sql.exec_create_qgis_usr_schema_name(cdbLoader)
         else:
             dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
-            #cdbLoader.DB.green_main_inst = False
-            dlg.requirements.green_main_inst = False
+            dlg.requirements.is_qgis_pkg_installed = False
 
             error_msg = f"The QGIS Package is not installed in this database (i.e. there is no'{cdbLoader.QGIS_PKG_SCHEMA}' schema). Please contact your database administrator."
             QMessageBox.warning(dlg, "Missing QGIS Package", error_msg)
@@ -354,12 +354,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Show message in Connection Status the Qgis Package is installed (and version)
             dlg.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=cdbLoader.QGIS_PKG_SCHEMA)))
-            #cdbLoader.DB.green_main_inst = True
-            dlg.requirements.green_main_inst = True
+            dlg.requirements.is_qgis_pkg_installed = True
         else:
             dlg.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
-            #cdbLoader.DB.green_main_inst = False
-            dlg.requirements.green_main_inst = False
+            dlg.requirements.is_qgis_pkg_installed = False
 
             error_msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(dlg, "Unsupported version of QGIS Package", error_msg)
@@ -374,20 +372,16 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             # Show message in Connection Status the 3DCityDB version if installed
             cdbLoader.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(cdbLoader)
             dlg.lbl3DCityDBInstC_out.setText(c.success_html.format(text=cdbLoader.DB.citydb_version))
-            #cdbLoader.DB.green_citydb_inst = True
-            dlg.requirements.green_citydb_inst = True
+            dlg.requirements.is_3dcitydb_installed = True
 
             # Show message in Connection Status that the qgis_{usr} schema is installed               
             dlg.lblUserInstC_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=cdbLoader.USR_SCHEMA)))
-            #cdbLoader.DB.green_user_inst = True
-            dlg.requirements.green_user_inst = True
+            dlg.requirements.is_usr_pkg_installed = True
         else:
             dlg.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbLoader.DB.username}")))
-            #cdbLoader.DB.green_user_inst = False
-            dlg.requirements.green_user_inst = False
+            dlg.requirements.is_usr_pkg_installed = False
 
             error_msg = f"The required user schema 'qgis_{cdbLoader.DB.username}' is missing. Please contact your database administrator to install it."
-            #QgsMessageLog.logMessage(error_msg, main_c.PLUGIN_NAME, level=Qgis.Critical)
             QMessageBox.warning(dlg, "User schema not found", error_msg)
 
             return None # Exit
@@ -422,7 +416,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None
 
             else: # Finally, we have all conditions to fill the cdb_schema combobox
-                uc_tf.fill_schema_box(cdbLoader, cdb_schemas=cdb_schema_names)
+                uc_tf.fill_cdb_schemas_box(cdbLoader, cdb_schemas=cdb_schema_names)
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
                 # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
@@ -440,10 +434,10 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             lt_wf.tabLayers_reset(cdbLoader)
 
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Set the current schema variable
-        cdbLoader.CDB_SCHEMA = dlg.cbxSchema.currentText()
+        cdbLoader.CDB_SCHEMA: str = dlg.cbxSchema.currentText()
         # By now, the schema variable must have be assigned.
         if not dlg.cbxSchema.currentData():
             return None
@@ -479,29 +473,25 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbLoader)
         if has_layers_in_current_schema:
             dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
-            #cdbLoader.DB.green_schema_supp = True
-            dlg.requirements.green_schema_supp = True
+            dlg.requirements.layers_exist = True
 
             dlg.btnRefreshLayers.setDisabled(False)
             dlg.btnDropLayers.setDisabled(False)        
         else:
             dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbLoader.CDB_SCHEMA)))
-            #cdbLoader.DB.green_schema_supp = False
-            dlg.requirements.green_schema_supp = False
+            dlg.requirements.layers_exist = False
             return None
 
         # Check if the materialised views are populated.
-        refresh_date: tuple = sql.fetch_layer_metadata(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, cols="refresh_date")
+        refresh_date = sql.fetch_layer_metadata(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, cols="refresh_date")
         # Extract a date.
         date = list(set(refresh_date[1]))[0][0]
         if date:
             dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
-            #cdbLoader.DB.green_refresh_date = True
-            dlg.requirements.green_refresh_date = True
+            dlg.requirements.layers_refreshed = True
         else:
             dlg.lblLayerRefr_out.setText(c.failure_html.format(text=c.REFR_LAYERS_FAIL_MSG))
-            #cdbLoader.DB.green_refresh_date = False
-            dlg.requirements.green_refresh_date = False
+            dlg.requirements.layers_refreshed = False
             return None
 
         # Check that DB is configured correctly. If so, enable all following buttons etc.
@@ -531,7 +521,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         (qgbxExtentsC) widget.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Get canvas's current extent
         extent: QgsRectangle = self.CANVAS_C.extent()
@@ -545,7 +535,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Extents' groubBox (qgbxExtentsC) extent in widget changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Update current extents variable with the ones that fired the signal.
         self.CURRENT_EXTENTS: QgsRectangle = dlg.qgbxExtentsC.outputExtent()
@@ -630,7 +620,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
                 if cdb_extents_new.contains(self.LAYER_EXTENTS_RED):
 
                     msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (blue dashed line). Now they will be automatically updated."
-                    QMessageBox.warning(cdbLoader.usr_dlg, "Extents changed!", msg)
+                    QMessageBox.warning(cdbLoader.loader_dlg, "Extents changed!", msg)
 
                     # Update the cdb_extents, leave the layer_extents and the layers
                     # Update the canvas and the rubber bands in both tabs.
@@ -682,11 +672,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     # Question? Do you want to update the bbox and proceed?
                     msg: str = f"Extents of '{cdbLoader.CDB_SCHEMA}' have changed (dashed blue line). This requires to drop the existing layers\n\nDo you want to proceed?"
-                    res = QMessageBox.question(cdbLoader.usr_dlg, "Extents changed!", msg)
+                    res = QMessageBox.question(cdbLoader.loader_dlg, "Extents changed!", msg)
                     if res == 16384: # YES, proceed with updating the bbox
 
                         # Drop the layers (if necessary)
-                        if cdbLoader.usr_dlg.btnDropLayers.isEnabled():
+                        if cdbLoader.loader_dlg.btnDropLayers.isEnabled():
                             thr.drop_layers_thread(cdbLoader)
 
                         # Update the cdb_extents in the database
@@ -723,7 +713,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Inform the user
             msg: str = f"The '{cdbLoader.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu untill you upload new data again."
-            QMessageBox.information(cdbLoader.usr_dlg, "Extents changed!", msg)
+            QMessageBox.information(cdbLoader.loader_dlg, "Extents changed!", msg)
             QgsMessageLog.logMessage(msg, cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
             # Reset to null the cdb_extents in the extents table in PostgreSQL
@@ -732,7 +722,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
             sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_2d_poly=None)
 
             # Drop the layers (if necessary)
-            if cdbLoader.usr_dlg.btnDropLayers.isEnabled():
+            if cdbLoader.loader_dlg.btnDropLayers.isEnabled():
                 thr.drop_layers_thread(cdbLoader) # This already disables the layers tab
 
             # Close the connection
@@ -748,7 +738,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtentsC) is pressed.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Get the extents stored in server (already computed at this point).
         cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
@@ -772,7 +762,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Create layers for schema {sch}' pushButton (btnCreateLayers) is pressed.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         thr.create_layers_thread(cdbLoader)
 
@@ -790,11 +780,11 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         if date:
             dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
             #cdbLoader.DB.green_refresh_date = True
-            dlg.requirements.green_refresh_date = True
+            dlg.requirements.layers_refreshed = True
         else:
             dlg.lblLayerRefr_out.setText(c.failure_html.format(text=c.REFR_LAYERS_FAIL_MSG))
             #cdbLoader.DB.green_refresh_date = False
-            dlg.requirements.green_refresh_date = False
+            dlg.requirements.layers_refreshed = False
             return None
 
 
@@ -802,7 +792,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         res = QMessageBox.question(dlg, "Layer refresh", "Refreshing layers can take long time.\nDo you want to proceed?")
         if res == 16384: #YES
@@ -832,7 +822,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Extents' groubBox (qgbxExtents) extent changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # NOTE: 'Draw on Canvas'* has an undesired effect.
         # There is a hardcoded True value that causes the parent dialog to
@@ -884,7 +874,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the current 'Set to layers extents' pushButton (btnCityExtents) is pressed.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Get the layer extents stored in server (already computed at this point).
         extents_str: str = sql.fetch_precomputed_extents(cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, ext_type=c.MAT_VIEW_EXT_TYPE)
@@ -908,7 +898,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Feature Type'comboBox (cbxFeatureType) current index changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Clear 'Geometry Level' combo box from previous runs.
         dlg.cbxLod.clear()
@@ -924,7 +914,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Geometry Level'comboBox (cbxLod) current index changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Enable 'Features to Import' group box.
         dlg.gbxAvailableL.setDisabled(False)
@@ -944,7 +934,7 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Available Features' checkableComboBox (ccbxFeatures) current index changes.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
 
         # Get all the selected layers (views).
         checked_views = dlg.ccbxFeatures.checkedItems()
@@ -961,9 +951,9 @@ class CDB4LoaderUserDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Import Features' pushButton (btnImport) is pressed.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbLoader.usr_dlg
+        dlg = cdbLoader.loader_dlg
         
-        # Get the data that is checked from 'ccbxFeatures'
+        # Get the datsa that is checked from 'ccbxFeatures'
         # Remember widget hold items in the form of (view_name, View_object)
         checked_layers = l_tf.get_checkedItemsData(dlg.ccbxFeatures)
 

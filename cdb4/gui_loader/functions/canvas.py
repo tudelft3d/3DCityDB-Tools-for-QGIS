@@ -27,14 +27,14 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    if canvas==cdbLoader.usr_dlg.CANVAS_C: # in 'User Connection' tab
+    if canvas==cdbLoader.loader_dlg.CANVAS_C: # in 'User Connection' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsC.
-        cdbLoader.usr_dlg.qgbxExtentsC.setOutputCrs(crs)
-        cdbLoader.usr_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs)
-    elif canvas==cdbLoader.usr_dlg.CANVAS_L: # in 'Layers' tab
+        cdbLoader.loader_dlg.qgbxExtentsC.setOutputCrs(crs)
+        cdbLoader.loader_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs)
+    elif canvas==cdbLoader.loader_dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtents.
-        cdbLoader.usr_dlg.qgbxExtents.setOutputCrs(crs)
-        cdbLoader.usr_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
+        cdbLoader.loader_dlg.qgbxExtents.setOutputCrs(crs)
+        cdbLoader.loader_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)

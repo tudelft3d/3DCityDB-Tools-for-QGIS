@@ -36,7 +36,7 @@ import psycopg2
 from . import main_constants as main_c
 from .resources import qInitResources
 
-from .cdb4.gui_db_connector import other_classes as dbconn
+from .cdb4.gui_db_connector.other_classes import Connection
 
 class CDBLoader:
     """QGIS Plugin Implementation. Main class.
@@ -80,13 +80,18 @@ class CDBLoader:
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
         self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
 
+        # Dialog names
+        self.ADMIN_DLG: str = main_c.ADMIN_DLG
+        self.LOADER_DLG: str = main_c.LOADER_DLG
+        self.DELETER_DLG: str = main_c.DELETER_DLG
+
         # Variable to store the selected citydb schema name.
         self.CDB_SCHEMA: str = None
         # Variable to store the selected {usr_schema} name.
         self.USR_SCHEMA: str = main_c.USR_SCHEMA
 
         # Variable to store the user dialog of the plugin.
-        self.usr_dlg = None
+        self.loader_dlg = None
         # Variable to store the admin dialog of the plugin.
         self.admin_dlg = None
 
@@ -94,7 +99,7 @@ class CDBLoader:
         self.conn: psycopg2.connection = None
 
         # Variable to store the existing connection object.
-        self.DB: dbconn.Connection = None
+        self.DB: Connection = None
 
         # initialize locale.
         locale = QSettings().value("locale/userLocale")[0:2]
@@ -109,7 +114,7 @@ class CDBLoader:
 
         # Check if plugin was started the first time in current QGIS session.
         # Must be set in initGui() to survive plugin reloads.
-        self.first_start_usr: bool = True
+        self.first_start_loader: bool = True
         self.first_start_admin: bool = True
 
 
@@ -236,27 +241,27 @@ class CDBLoader:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
         # The icon path is set from the compiled resources file (in main dir).
-        usr_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
+        loader_icon_path = ":/plugins/citydb_loader/icons/plugin_icon.png"
         adm_icon_path = ":/plugins/citydb_loader/icons/settings_icon.svg"
 
-        # User plugin
+        # Loader plugin
         self.add_action(
-            icon_path=usr_icon_path,
-            txt=self.tr(self.PLUGIN_NAME),
-            callback=self.run_usr,
-            parent=self.iface.mainWindow(),
-            add_to_toolbar=True)
+            icon_path = loader_icon_path,
+            txt = self.tr(self.PLUGIN_NAME),
+            callback = self.run_loader,
+            parent = self.iface.mainWindow(),
+            add_to_toolbar = True)
 
         # Admin plugin
         self.add_action(
-            icon_path=adm_icon_path,
-            txt=self.tr(self.PLUGIN_NAME_ADMIN),
-            callback=self.run_admin,
-            parent=self.iface.mainWindow(),
-            add_to_toolbar=True) # Default: False (but useful to set it to True in development mode).
+            icon_path = adm_icon_path,
+            txt = self.tr(self.PLUGIN_NAME_ADMIN),
+            callback = self.run_admin,
+            parent = self.iface.mainWindow(),
+            add_to_toolbar = True) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_user(), run_admin()
-        self.first_start_usr = True
+        self.first_start_loader = True
         self.first_start_admin = True
 
 
@@ -275,7 +280,7 @@ class CDBLoader:
         -   Setups the plugin signals
         -   Executes the main dialog
         """
-        from .cdb4.gui_admin.cdb4_loader_admin_dialog import CDB4LoaderAdminDialog # Admin dialog
+        from .cdb4.gui_admin.cdb4_admin_dialog import CDB4AdminDialog # Admin dialog
         from .cdb4.gui_admin.functions import tab_conn_widget_functions as dba_wf
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 
@@ -283,7 +288,7 @@ class CDBLoader:
         if self.first_start_admin:
             self.first_start_admin = False
             # Create the dialog with elements (after translation).
-            self.admin_dlg = CDB4LoaderAdminDialog(cdbLoader=self)
+            self.admin_dlg = CDB4AdminDialog(cdbLoader=self)
 
         # Get existing connections from QGIS profile settings.
         conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
@@ -301,25 +306,25 @@ class CDBLoader:
             dba_wf.tabDbAdmin_reset(self)
 
 
-    def run_usr(self) -> None:
+    def run_loader(self) -> None:
         """Run main method that performs all the real work.
         -   Creates the plugin dialog
         -   Instantiates the plugin main class (CDB4LoaderUserDialog) with its GUI
         -   Setups the plugin signals
         -   Executes the main dialog
         """
-        from .cdb4.gui_usr.cdb4_loader_user_dialog import CDB4LoaderUserDialog # User dialog
+        from .cdb4.gui_loader.cdb4_loader_dialog import CDB4LoaderDialog # User dialog
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f        
 
         # Only create GUI ONCE in callback,
         # so that it will only load when the plugin is started.
-        if self.first_start_usr:
-            self.first_start_usr = False
+        if self.first_start_loader:
+            self.first_start_loader = False
 
             # Create the dialog with elements (after translation).
-            self.usr_dlg = CDB4LoaderUserDialog(cdbLoader=self)
+            self.loader_dlg = CDB4LoaderDialog(cdbLoader=self)
 
-            dlg = self.usr_dlg
+            dlg = self.loader_dlg
 
             # Replace empty graphics view widget with Map canvas.
             dlg.gLayoutBasemapC.replaceWidget(dlg.gvCanvasC, dlg.CANVAS_C)
@@ -333,22 +338,22 @@ class CDBLoader:
             conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
 
         # Show the dialog
-        self.usr_dlg.show()
+        self.loader_dlg.show()
 
         # Run the dialog event loop.
-        res = self.usr_dlg.exec_() 
+        res = self.loader_dlg.exec_() 
         if not res: # Dialog has closed (X button was pressed)
             return None
 
 
-    def evt_update_bar(self, dialog: str, step: int, text: str) -> None:
+    def evt_update_bar(self, dialog_name: str, step: int, text: str) -> None:
         """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
         in CDBLoader.msg_bar: QgsMessageBar and CDBLoader.bar: QProgressBar.
         This event is not linked to any widet_setup function as it isn't responsible for changes in different 
         widgets in the gui.
 
         *   :param dialog: The dialog to hold the bar.
-            "admin_dlg" or "usr_dlg"
+            e.g. "admin_dlg" or "loader_dlg"
             :type step: str
 
         *   :param step: Current value of the progress
@@ -358,14 +363,17 @@ class CDBLoader:
             :type text: str
         """
 
-        if dialog == "admin_dlg":
+        if dialog_name == self.ADMIN_DLG:         #"admin_dlg"
             progress_bar = self.admin_dlg.bar
-        elif dialog == "usr_dlg":
-            progress_bar = self.usr_dlg.bar
+        elif dialog_name == self.LOADER_DLG:      # "loader_dlg":
+            progress_bar = self.loader_dlg.bar
+        #elif dialog_name == self.DELETER_DLG:      # "deleter_dlg":
+            #progress_bar = self.deleter_dlg.bar
 
         # Show text instead of completed percentage.
         if text:
             progress_bar.setFormat(text)
+
         # Update progress with current step
         progress_bar.setValue(step)
 

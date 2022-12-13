@@ -42,6 +42,7 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
             error=error)
         cdbLoader.conn.rollback()
 
+
 def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
     """SQL query that reads and retrieves the current schema's srid from {cdb_schema}.database_srs
 
@@ -67,8 +68,8 @@ def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
 
 
 def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, cols: str="*") -> tuple:
-    """SQL query that retrieves the current schema's layer metadata
-    from {usr_schema}.layer_metadata table. By default it retrieves all columns.
+    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
+    By default it retrieves all columns.
 
     *   :param cols: The columns to retrieve from the table.
             Note: to fetch multiple columns use: ",".join([col1,col2,col3])
@@ -156,7 +157,7 @@ def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
         cdbLoader.conn.rollback()
 
 
-def exec_view_counter(cdbLoader: CDBLoader, layer: CDBLayer) -> int:
+def exec_gview_counter(cdbLoader: CDBLoader, layer: CDBLayer) -> int:
     """Calls the qgis_pkg function that counts the number of geometry objects found within the selected extents.
 
     *   :returns: Number of objects.
@@ -164,11 +165,11 @@ def exec_view_counter(cdbLoader: CDBLoader, layer: CDBLayer) -> int:
     """
     try:
         # Convert QgsRectanlce into WKT polygon format
-        extents = cdbLoader.usr_dlg.CURRENT_EXTENTS.asWktPolygon()
+        extents: str = cdbLoader.loader_dlg.CURRENT_EXTENTS.asWktPolygon()
 
         with cdbLoader.conn.cursor() as cur:
             # Execute server function to get the number of objects in extents.
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.view_counter""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA, layer.mv_name, extents])
+            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.gview_counter""",[cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA, layer.gv_name, extents])
             count = cur.fetchone()[0] # Tuple has trailing comma.
         cdbLoader.conn.commit()
 
@@ -178,15 +179,15 @@ def exec_view_counter(cdbLoader: CDBLoader, layer: CDBLayer) -> int:
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_view_counter,
+            func=exec_gview_counter,
             location=FILE_LOCATION,
-            header=f"Counting number of objects in view {layer.mv_name}",
+            header=f"Counting number of geometries objects in layer {layer.layer_name} (via gview {layer.gv_name})",
             error=error)
         cdbLoader.conn.rollback()
 
 
 def exec_has_layers_for_cdb_schema(cdbLoader: CDBLoader) -> bool:
-    """Calls the qgis_pkg function that determines whether the {usr_schema} has views
+    """Calls the qgis_pkg function that determines whether the {usr_schema} has layers
     regarding the current {cdb_schema}.
 
     *   :returns: status
@@ -263,23 +264,44 @@ def fetch_mat_views(cdbLoader: CDBLoader) -> dict:
         cdbLoader.conn.rollback()
 
 
-def refresh_mat_view(cdbLoader: CDBLoader, connection, matview_name: str) -> None:
-    """SQL query that refreshes a materialized view in {usr_schema}
+def refresh_gview(cdbLoader: CDBLoader, connection, gview_name: str) -> None:
+    """SQL query that refreshes a materialized view in {usr_schema} containing geometries
     """
     try:
         with connection.cursor() as cur:
-            cur.execute(query=f"""REFRESH MATERIALIZED VIEW "{cdbLoader.USR_SCHEMA}"."{matview_name}";""")
+            cur.execute(query=f"""REFRESH MATERIALIZED VIEW "{cdbLoader.USR_SCHEMA}"."{gview_name}";""")
             cur.execute(query=f"""
                                 UPDATE "{cdbLoader.USR_SCHEMA}".layer_metadata
                                 SET refresh_date = clock_timestamp()
-                                WHERE mv_name = '{matview_name}';
+                                WHERE gv_name = '{gview_name}';
                                 """)
         cdbLoader.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=refresh_mat_view,
+            func=refresh_gview,
             location=FILE_LOCATION,
-            header=f"Refreshing materialized view {matview_name} in schema {cdbLoader.USR_SCHEMA}",
+            header=f"Refreshing materialized view {gview_name} in schema {cdbLoader.USR_SCHEMA}",
             error=error)
         cdbLoader.conn.rollback()
+
+# def refresh_aview(cdbLoader: CDBLoader, connection, aview_name: str) -> None:
+#     """SQL query that refreshes a materialized view in {usr_schema} containing attributes
+#     """
+#     try:
+#         with connection.cursor() as cur:
+#             cur.execute(query=f"""REFRESH MATERIALIZED VIEW "{cdbLoader.USR_SCHEMA}"."{aview_name}";""")
+#             cur.execute(query=f"""
+#                                 UPDATE "{cdbLoader.USR_SCHEMA}".layer_metadata
+#                                 SET refresh_date = clock_timestamp()
+#                                 WHERE av_name = '{aview_name}';
+#                                 """)
+#         cdbLoader.conn.commit()
+
+#     except (Exception, psycopg2.Error) as error:
+#         gen_f.critical_log(
+#             func=refresh_aview,
+#             location=FILE_LOCATION,
+#             header=f"Refreshing materialized view {att_mview_name} in schema {cdbLoader.USR_SCHEMA}",
+#             error=error)
+#         cdbLoader.conn.rollback()

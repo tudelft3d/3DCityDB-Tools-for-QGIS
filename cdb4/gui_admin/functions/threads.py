@@ -67,7 +67,8 @@ class QgisPKGInstallWorker(QObject):
 
                 # Update progress bar with current step and script.
                 text = " ".join(["Installing:", script])
-                self.sig_progress.emit("admin_dlg", s, text)
+                #self.sig_progress.emit("admin_dlg", s, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG, s, text)
                 try:
                     with conn.cursor() as cursor:
                         with open(os.path.join(self.sql_scripts_path, script), "r") as sql_script:
@@ -85,6 +86,7 @@ class QgisPKGInstallWorker(QObject):
         if not fail_flag:
             self.sig_success.emit()
         self.sig_finished.emit()
+
 
 def install_qgis_pkg_thread(cdbLoader: CDBLoader, sql_scripts_path: str, qgis_pkg_schema: str) -> None:
     """Function that installs the plugin package (qgis_pkg) in the database
@@ -134,6 +136,7 @@ def install_qgis_pkg_thread(cdbLoader: CDBLoader, sql_scripts_path: str, qgis_pk
     # Initiate worker thread
     cdbLoader.thread.start()
 
+
 class QgisPKGUninstallWorker(QObject):
     """Class to assign Worker that executes the 'uninstallation scripts'
     to uninstall the plugin package (qgis_pkg) from the database.
@@ -156,7 +159,6 @@ class QgisPKGUninstallWorker(QObject):
 
         # Get users and cdb_schemas
         usrs: tuple = sql.fetch_list_qgis_pkg_usrgroup_members(cdbLoader=self.plugin)
-        #cdb_schemas: tuple = sql.exec_list_cdb_schemas(cdbLoader=self.plugin, only_not_empty=False)
         cdb_schemas, dummy = sh_sql.exec_list_cdb_schemas_all(cdbLoader=self.plugin)
         dummy = None # discard byproduct
         qgis_pkg_schema: str = self.plugin.QGIS_PKG_SCHEMA
@@ -182,7 +184,8 @@ class QgisPKGUninstallWorker(QObject):
                 # Update progress bar with current step and script.
                 text = " ".join(["Revoking privileges from user:", usr_name])
                 curr_step += 1
-                self.sig_progress.emit("admin_dlg", curr_step, text)
+                #self.sig_progress.emit("admin_dlg", curr_step, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
                 for cdb_schema in cdb_schemas:
                     with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping Layers)") as conn:
@@ -193,21 +196,24 @@ class QgisPKGUninstallWorker(QObject):
                             # Update progress bar with current step and script.
                             text = " ".join(["Dropping layers:", module_drop_func])
                             curr_step += 1
-                            self.sig_progress.emit("admin_dlg", curr_step, text)
+                            #self.sig_progress.emit("admin_dlg", curr_step, text)
+                            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
                 # Drop qgis_{usr} schema
                 sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=usr_schema, close_connection=False)
                 # Update progress bar with current step and script.
                 text = " ".join(["Dropping user schema:", usr_schema])
                 curr_step += 1
-                self.sig_progress.emit("admin_dlg", curr_step, text)
+                #self.sig_progress.emit("admin_dlg", curr_step, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
             # Drop "qgis_pkg" schema
             sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=qgis_pkg_schema, close_connection=False)
             # Update progress bar with current step and script.
-            text = " ".join(["Dropping schema:", qgis_pkg_schema])
+            text = " ".join(["Dropping QGIS Package schema:", qgis_pkg_schema])
             curr_step += 1
-            self.sig_progress.emit("admin_dlg", curr_step, text)
+            #self.sig_progress.emit("admin_dlg", curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -219,6 +225,7 @@ class QgisPKGUninstallWorker(QObject):
         if not fail_flag:
             self.sig_success.emit()
         self.sig_finished.emit()
+
 
 def uninstall_qgis_pkg_thread(cdbLoader: CDBLoader) -> None:
     """Function that uninstalls the qgis_pkg schema from the database
@@ -260,6 +267,7 @@ def uninstall_qgis_pkg_thread(cdbLoader: CDBLoader) -> None:
     # Initiate worker thread
     cdbLoader.thread.start()
 
+
 class DropUsrSchemaWorker(QObject):
     """Class to assign Worker that drops a user schema from the database and all associated activities.
     """
@@ -273,7 +281,7 @@ class DropUsrSchemaWorker(QObject):
         super().__init__()
         self.plugin = cdbLoader
 
-    def drop_thread(self):
+    def drop_usr_schema_thread(self):
         """Execution method that uninstalls the {usr_schema} from the current database
         """
          # Flag to help us break from a failing installation.
@@ -281,7 +289,6 @@ class DropUsrSchemaWorker(QObject):
 
         usr_name: str = self.plugin.admin_dlg.cbxUser.currentText()
         usr_schema: str = self.plugin.USR_SCHEMA
-        #cdb_schemas: tuple = sql.exec_list_cdb_schemas(cdbLoader=self.plugin, only_not_empty=False)
         cdb_schemas, dummy = sh_sql.exec_list_cdb_schemas_all(cdbLoader=self.plugin)
         dummy = None # discard byproduct
         qgis_pkg_schema: str = self.plugin.QGIS_PKG_SCHEMA
@@ -301,7 +308,8 @@ class DropUsrSchemaWorker(QObject):
             # Update progress bar with current step and script.
             text = " ".join(["Revoking privileges from user:", usr_name])
             curr_step += 1
-            self.sig_progress.emit("admin_dlg", curr_step, text)
+            #self.sig_progress.emit("admin_dlg", curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
             for cdb_schema in cdb_schemas:
                 with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping layers)") as conn:
@@ -312,14 +320,16 @@ class DropUsrSchemaWorker(QObject):
                         # Update progress bar with current step and script.
                         text = " ".join(["Dropping layers:", module_drop_func])
                         curr_step += 1
-                        self.sig_progress.emit("admin_dlg", curr_step, text)
+                        #self.sig_progress.emit("admin_dlg", curr_step, text)
+                        self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
             # Drop user schema
             sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=usr_schema, close_connection=False)
             # Update progress bar with current step and script.
             text = " ".join(["Dropping user schema:", usr_schema])
             curr_step += 1
-            self.sig_progress.emit("admin_dlg", curr_step, text)
+            #self.sig_progress.emit("admin_dlg", curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -331,6 +341,7 @@ class DropUsrSchemaWorker(QObject):
         if not fail_flag:
             self.sig_success.emit()
         self.sig_finished.emit()
+
 
 def drop_usr_schema_thread(cdbLoader: CDBLoader) -> None:
     """Function that uninstalls the {usr_schema} from the database
@@ -351,7 +362,7 @@ def drop_usr_schema_thread(cdbLoader: CDBLoader) -> None:
     #-SIGNALS--(start)#########################################################
 
     # Execute worker's 'run' method.
-    cdbLoader.thread.started.connect(cdbLoader.worker.drop_thread)
+    cdbLoader.thread.started.connect(cdbLoader.worker.drop_usr_schema_thread)
 
     # Capture progress to show in bar.
     cdbLoader.worker.sig_progress.connect(cdbLoader.evt_update_bar)
@@ -372,9 +383,9 @@ def drop_usr_schema_thread(cdbLoader: CDBLoader) -> None:
 
 #--EVENTS  (start)  ##############################################################
 
+
 def ev_qgis_pkg_install_success(cdbLoader: CDBLoader, pkg: str) -> None:
-    """Event that is called when the thread executing the installation
-    finishes successfully.
+    """Event that is called when the thread executing the installation finishes successfully.
 
     Shows success message at cdbLoader.usr_dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
@@ -406,6 +417,7 @@ def ev_qgis_pkg_install_success(cdbLoader: CDBLoader, pkg: str) -> None:
         wf.fill_users_box(cdbLoader,usrs)
     else:
         ev_qgis_pkg_install_fail(cdbLoader, pkg)
+
 
 def ev_qgis_pkg_install_fail(cdbLoader: CDBLoader, pkg: str) -> None:
     """Event that is called when the thread executing the installation
@@ -439,6 +451,7 @@ def ev_qgis_pkg_install_fail(cdbLoader: CDBLoader, pkg: str) -> None:
     # Drop corrupted installation.
     sql.exec_drop_db_schema(cdbLoader, schema=cdbLoader.QGIS_PKG_SCHEMA, close_connection=False)
     dlg.btnMainUninst.setDisabled(True)
+
 
 def ev_qgis_pkg_uninstall_success(cdbLoader: CDBLoader) -> None:
     """Event that is called when the thread executing the uninstallation  finishes successfully.
@@ -474,6 +487,7 @@ def ev_qgis_pkg_uninstall_success(cdbLoader: CDBLoader) -> None:
     else:
         ev_qgis_pkg_uninstall_fail(cdbLoader, qgis_pkg_schema)
 
+
 def ev_qgis_pkg_uninstall_fail(cdbLoader: CDBLoader, error: str = 'error') -> None:
     """Event that is called when the thread executing the uninstallation
     emits a fail signal meaning that something went wrong with uninstallation.
@@ -498,6 +512,7 @@ def ev_qgis_pkg_uninstall_fail(cdbLoader: CDBLoader, error: str = 'error') -> No
             tag=cdbLoader.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
+
 
 def ev_usr_schema_drop_success(cdbLoader: CDBLoader) -> None:
     """Event that is called when the thread executing the uninstallation
@@ -529,6 +544,7 @@ def ev_usr_schema_drop_success(cdbLoader: CDBLoader) -> None:
         dlg.btnUsrUninst.setDisabled(True)
     else:
         ev_usr_schema_drop_fail(cdbLoader, usr_schema)
+
 
 def ev_usr_schema_drop_fail(cdbLoader: CDBLoader, error: str ='error') -> None:
     """Event that is called when the thread executing the uninstallation

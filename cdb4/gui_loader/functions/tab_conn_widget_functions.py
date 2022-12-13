@@ -34,7 +34,7 @@ def gbxBasemapC_setup(cdbLoader: CDBLoader) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
     try:
         extents_exist: bool = False
 
@@ -98,7 +98,7 @@ def tabConnection_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Connection' tab.
     Resets: gbxConnStatusC and gbxDatabase.
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Close the current open connection.
     if cdbLoader.conn is not None:
@@ -117,7 +117,7 @@ def tabConnection_reset(cdbLoader: CDBLoader) -> None:
 def gbxDatabase_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Database' groupbox (in Connection tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.cbxSchema.clear()
     dlg.cbxSchema.setDisabled(True)
@@ -127,7 +127,7 @@ def gbxDatabase_reset(cdbLoader: CDBLoader) -> None:
 def gbxConnStatus_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Connection status' groupbox
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.gbxConnStatusC.setDisabled(True)
     dlg.lblConnToDbC_out.clear()
@@ -142,7 +142,7 @@ def gbxConnStatus_reset(cdbLoader: CDBLoader) -> None:
 def gbxBasemapC_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Basemap (OSM)' groupbox
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.gbxBasemapC.setDisabled(True)
     dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text)
@@ -163,7 +163,7 @@ def gbxBasemapC_reset(cdbLoader: CDBLoader) -> None:
 def cgbxOptions_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Advanced option' groupbox (in 'User Connection' tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.cgbxOptions.setCollapsed(True)
     dlg.cgbxOptions.setDisabled(True)
@@ -173,7 +173,7 @@ def cgbxOptions_reset(cdbLoader: CDBLoader) -> None:
 def gbxSimplifyGeom_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Simplify geometries' groupbox (in 'User Connection' tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.gbxSimplifyGeom.setChecked(False)
     dlg.qspbDecimalPrec.setValue(dlg.settings.simp_geom_dec_prec)
@@ -183,7 +183,7 @@ def gbxSimplifyGeom_reset(cdbLoader: CDBLoader) -> None:
 def btnCreateLayers_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Create layers' pushButton (in 'User Connection' tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.btnCreateLayers.setDisabled(True)
     dlg.btnCreateLayers.setText(dlg.btnCreateLayers.init_text)
@@ -192,7 +192,7 @@ def btnCreateLayers_reset(cdbLoader: CDBLoader) -> None:
 def btnRefreshLayers_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Refresh layers' pushButton (in 'User Connection' tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.btnRefreshLayers.setDisabled(True)
     dlg.btnRefreshLayers.setText(dlg.btnRefreshLayers.init_text)
@@ -201,7 +201,7 @@ def btnRefreshLayers_reset(cdbLoader: CDBLoader) -> None:
 def btnDropLayers_reset(cdbLoader: CDBLoader) -> None:
     """Function to reset the 'Drop layers' pushButton (in 'User Connection' tab).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     dlg.btnDropLayers.setDisabled(True)
     dlg.btnDropLayers.setText(dlg.btnDropLayers.init_text)

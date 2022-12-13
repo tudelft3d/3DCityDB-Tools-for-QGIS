@@ -10,6 +10,7 @@ from ...cdb4_constants import PG_SCRIPTS_INST_PATH
 from . import sql 
 from . import threads as thr
 
+
 def installation_query(cdbLoader: CDBLoader, message: str, inst_type: str) -> bool:
     """Function that prompts the user to install the plugin packages in the database.
 
@@ -38,6 +39,7 @@ def installation_query(cdbLoader: CDBLoader, message: str, inst_type: str) -> bo
     else:
         QMessageBox.critical(dlg, "Installation error", "Unrecognised install type!")
         return False
+
 
 def uninstallation_query(cdbLoader: CDBLoader, message: str, uninst_type: str) -> bool:
     """Function that uninstalls a qgis_{usr} or the qgis_pkg schema in current database.

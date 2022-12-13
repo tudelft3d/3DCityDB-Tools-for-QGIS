@@ -6,13 +6,12 @@ from collections import OrderedDict
 
 from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup, 
                         QgsVectorLayer, QgsDataSourceUri, QgsAttributeEditorElement,
-                        QgsAttributeEditorRelation, Qgis,QgsLayerTreeGroup,
-                        QgsRelation,QgsAttributeEditorContainer)
+                        QgsAttributeEditorRelation, Qgis, QgsLayerTreeGroup,
+                        QgsRelation, QgsAttributeEditorContainer, QgsMapLayer)
 from qgis.gui import QgsCheckableComboBox
 
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
-#from ..cdb4_loader_user_dialog import CDB4LoaderUserDialog # Used only to add the type of the function parameters
-from ..other_classes import CDBLayer, FeatureType
+from ..other_classes import CDBLayer, FeatureTypeLayersGroup
 
 from ... import cdb4_constants as c
 from . import sql
@@ -32,6 +31,55 @@ def has_matviews(cdbLoader: CDBLoader) -> bool:
     return False
 
 
+def instantiate_objects(cdbLoader: CDBLoader) -> None:
+    """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
+    """
+    dlg = cdbLoader.loader_dlg
+
+    # Get field names and metadata values from server.
+    colnames, layer_metadata = sql.fetch_layer_metadata(cdbLoader, cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA)
+    # Format metadata into a list of dictionaries where each element is a layer.
+    metadata_dict_list = [dict(zip(colnames, values)) for values in layer_metadata]
+
+    # Instantiate 'FeatureType' objects for each CityGML module into a plugin variable (dict).
+    dlg.FeatureTypeLayerGroups = {
+        "Bridge": FeatureTypeLayersGroup(feature_type_alias="Bridge"),
+        "Building": FeatureTypeLayersGroup(feature_type_alias="Building"),
+        "CityFurniture": FeatureTypeLayersGroup(feature_type_alias="CityFurniture"),
+        "Generics": FeatureTypeLayersGroup(feature_type_alias="Generics"),
+        "LandUse": FeatureTypeLayersGroup(feature_type_alias="LandUse"),
+        "Relief": FeatureTypeLayersGroup(feature_type_alias="Relief"),
+        "Transportation": FeatureTypeLayersGroup(feature_type_alias="Transportation"),
+        "Tunnel": FeatureTypeLayersGroup(feature_type_alias="Tunnel"),
+        "Vegetation": FeatureTypeLayersGroup(feature_type_alias="Vegetation"),
+        "WaterBody": FeatureTypeLayersGroup(feature_type_alias="WaterBody")
+        }
+
+    for metadata_dict in metadata_dict_list:
+        #keys:  id, cdb_schema, layer_type, feature_type, lod, root_class, curr_class, layer_name, 
+        #       av_name, gv_name, n_features, creation_data, refresh_date,
+        #       qml_form, qml_symb, qml_3d, 
+        #       qml_form_with_path, qml_symb_with_path, qml_3d_with_path
+        #       n_selected
+
+        if metadata_dict["n_features"] == 0:        # ignore those layers that have no features
+            continue
+        if metadata_dict["refresh_date"] is None:   # ignore those layers that have not been refreshed
+            continue
+
+        # Get the FeatureType object of the current layer
+        curr_FeatureTypeLayersGroup = dlg.FeatureTypeLayerGroups[metadata_dict['feature_type']]
+
+        # Create a Layer object with all the values extracted from 'layer_metadata'.
+        layer = CDBLayer(*metadata_dict.values())
+
+        # Add the view to the FeatureObject views list
+        curr_FeatureTypeLayersGroup.layers.append(layer)
+
+        # Count the number of features that the layer has in the current extents.
+        sql.exec_gview_counter(cdbLoader, layer) # Stores number in layer.n_selected.
+
+
 def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Feature Types' combo box.
     Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
@@ -39,70 +87,31 @@ def fill_FeatureType_box(cdbLoader: CDBLoader) -> None:
     # Create 'Feature Type' and 'View' objects
     instantiate_objects(cdbLoader)
     
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
+    layer: CDBLayer
+    curr_FeatureTypeLayersGroup: FeatureTypeLayersGroup
 
     # Add only those Feature Types that have at least one view containing > 0 features.
-    for FeatureType_obj in dlg.FeatureType_container.values():
-        for layer in FeatureType_obj.layers:
+    for curr_FeatureTypeLayersGroup in dlg.FeatureTypeLayerGroups.values():
+        for layer in curr_FeatureTypeLayersGroup.layers:
             if layer.n_selected > 0:
-                dlg.cbxFeatureType.addItem(FeatureType_obj.alias,FeatureType_obj)
+                dlg.cbxFeatureType.addItem(curr_FeatureTypeLayersGroup.feature_type_alias, curr_FeatureTypeLayersGroup)
                 # The first FeatureType object added in 'cbxFeatureType' emits a 'currentIndexChanged' signal.
                 break # We need only one view to have > 0 features.
-
-
-def instantiate_objects(cdbLoader: CDBLoader) -> None:
-    """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
-    """
-    dlg = cdbLoader.usr_dlg
-    # Get field names and metadata values from server.
-    colnames, metadata = sql.fetch_layer_metadata(cdbLoader, cdbLoader.USR_SCHEMA, cdbLoader.CDB_SCHEMA)
-    # Format metadata into a list of dictionaries where each element is a layer.
-    metadata_dict_list = [dict(zip(colnames, values)) for values in metadata]
-
-    # Instantiate 'FeatureType' objects for each CityGML module into a plugin variable (dict).
-    dlg.FeatureType_container = {
-        "Bridge": FeatureType(alias="Bridge"),
-        "Building": FeatureType(alias="Building"),
-        "CityFurniture": FeatureType(alias="CityFurniture"),
-        "Generics": FeatureType(alias="Generics"),
-        "LandUse": FeatureType(alias="LandUse"),
-        "Relief": FeatureType(alias="Relief"),
-        "Transportation": FeatureType(alias="Transportation"),
-        "Tunnel": FeatureType(alias="Tunnel"),
-        "Vegetation": FeatureType(alias="Vegetation"),
-        "WaterBody": FeatureType(alias="WaterBody")
-        }
-
-    for metadata_dict in metadata_dict_list:
-        #keys:  id,cdb_schema,feature_type,lod,root_class,layer_name,n_features,mv_name, v_name,qml_file,creation_data,refresh_date
-        if metadata_dict["n_features"] == 0:
-            continue
-        if metadata_dict["refresh_date"] is None:
-            continue
-
-        # Get the FeatureType object of the current layer
-        curr_FeatureType_obj = dlg.FeatureType_container[metadata_dict['feature_type']]
-
-        # Create a Layer object with all the values extracted from 'layer_metadata'.
-        layer = CDBLayer(*metadata_dict.values())
-
-        # Add the view to the FeatureObject views list
-        curr_FeatureType_obj.layers.append(layer)
-
-        # Count the number of features that the layer has in the current extents.
-        sql.exec_view_counter(cdbLoader, layer) # Stores number in layer.n_selected.
 
 
 def fill_lod_box(cdbLoader: CDBLoader) -> None:
     """Function that fills out the 'Geometry Level' combo box (LoD).
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
+
     # Get 'FeatureType' object from combo box data.
     selected_FeatureType = dlg.cbxFeatureType.currentData()
     if not selected_FeatureType:
         return None
 
     geom_set = set() # To store the unique lods.
+    layer: CDBLayer
     for layer in selected_FeatureType.layers:
         geom_set.add(layer.lod)
 
@@ -116,17 +125,20 @@ def fill_features_box(cdbLoader: CDBLoader) -> None:
     """Function that fills the 'Features' checkable combo box.
     """
     # Variable to store the plugin main dialog.
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
 
     # Get current 'LoD' from widget.
     selected_lod = dlg.cbxLod.currentText()
 
+    selected_FeatureType: FeatureTypeLayersGroup
     # Get current 'Feature Type' from widget.
     selected_FeatureType = dlg.cbxFeatureType.currentData()
 
     if not selected_FeatureType or not selected_lod:
         return None
 
+    layer: CDBLayer
+    #selected_FeatureType: FeatureTypeLayersGroup
     for layer in selected_FeatureType.layers:
         if layer.lod == selected_lod:
             if layer.n_selected > 0:
@@ -284,9 +296,6 @@ def create_layer_relation_to_genericattrib_table(cdbLoader: CDBLoader, layer: Qg
 
     # Commit?
     layer.setEditFormConfig(layer_configuration)
-    # Look-up tables relation --- TO BE REMOVED
-    # Commented out here and added at the end of the add_layer_to_ToC function, which makes more sense.
-    #create_layer_relation_to_lookup_tables(cdbLoader, layer)
 
 
 def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> bool:
@@ -311,8 +320,8 @@ def add_lookup_tables_to_ToC(cdbLoader: CDBLoader) -> None:
     """
     # Just to shorten the variables names.
     db = cdbLoader.DB
-    cdb_schema = cdbLoader.CDB_SCHEMA
-    usr_schema = cdbLoader.USR_SCHEMA
+    cdb_schema: str = cdbLoader.CDB_SCHEMA
+    usr_schema: str = cdbLoader.USR_SCHEMA
 
     # Add look-up tables into their own group in ToC.
     node_cdb_schema = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
@@ -400,13 +409,13 @@ def create_qgis_vector_layer(cdbLoader: CDBLoader, layer_name: str) -> QgsVector
     # Shorten the variable names.
     db = cdbLoader.DB
     usr_schema = cdbLoader.USR_SCHEMA
-    extents = cdbLoader.usr_dlg.QGIS_EXTENTS_GREEN.asWktPolygon()
-    crs = cdbLoader.usr_dlg.CRS
+    extents = cdbLoader.loader_dlg.QGIS_EXTENTS_GREEN.asWktPolygon()
+    crs = cdbLoader.loader_dlg.CRS
 
     uri = QgsDataSourceUri()
     uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
 
-    if cdbLoader.usr_dlg.QGIS_EXTENTS_GREEN == cdbLoader.usr_dlg.LAYER_EXTENTS_RED:  
+    if cdbLoader.loader_dlg.QGIS_EXTENTS_GREEN == cdbLoader.loader_dlg.LAYER_EXTENTS_RED:  
         # No need to apply a spatial filter in QGIS
         uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aKeyColumn="id")
     else:
@@ -557,7 +566,7 @@ def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
     """
     # Just to shorten the variables names.
     db = cdbLoader.DB
-    cdb_schema = cdbLoader.CDB_SCHEMA
+    cdb_schema: str = cdbLoader.CDB_SCHEMA
 
     root = QgsProject.instance().layerTreeRoot()
     node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
@@ -611,6 +620,7 @@ def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
         pass
 
     # Start loading the selected layer(s)
+    layer: CDBLayer
     for layer in layers:
         # Check if the layer has already been loaded before
         layer_found = False
@@ -622,46 +632,57 @@ def add_selected_layers_to_ToC(cdbLoader: CDBLoader, layers: list) -> bool:
                 if node_lod:
                     existing_layers: list = node_lod.findLayers()
                     for existing_layer in existing_layers:  
-                        if existing_layer.name() == layer.v_name:
+                        if existing_layer.name() == layer.av_name:
                             layer_found = True
 
         if layer_found:
-            QgsMessageLog.logMessage(f"Layer {layer.v_name} already in Layer Tree: skip reloading", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(f"Layer {layer.layer_name} already in Layer Tree: skip reloading", cdbLoader.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
             continue
 
         # Build the Table of Contents Tree or Restructure it.
         node_lod = add_layer_node_to_ToC(cdbLoader, layer)
 
-        new_layer: QgsVectorLayer = create_qgis_vector_layer(cdbLoader, layer_name=layer.v_name)
+        new_layer: QgsVectorLayer = create_qgis_vector_layer(cdbLoader, layer_name=layer.layer_name)
 
         if new_layer or new_layer.isValid(): # Success
             QgsMessageLog.logMessage(
-                message=f"Layer imported: {layer.v_name}",
+                message=f"Layer imported: {layer.layer_name}",
                 tag=cdbLoader.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
         else: # Fail
             QgsMessageLog.logMessage(
-                message=f"Failed to properly load: {layer.v_name}",
+                message=f"Failed to properly load: {layer.layer_name}",
                 tag=cdbLoader.PLUGIN_NAME,
                 level=Qgis.Critical,
                 notifyUser=True)
             return False
 
+        # Attach 'attribute form' from QML file.
+        if layer.qml_form:
+            new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+            # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+        # Attach 'symbology' from QML file.
+        if layer.qml_symb:
+            new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+        if cdbLoader.loader_dlg.settings.enable_3d_renderer:
+            # Attach '3d symbology' from QML file.
+            if layer.qml_3d:
+                new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+        else:
+            # Deactivate 3D renderer to avoid crashes and slow downs.
+            new_layer.setRenderer3D(None)
+
         # Insert the layer to the assigned group
         node_lod.addLayer(new_layer)
         QgsProject.instance().addMapLayer(new_layer, False)
-
-        # Attach 'attribute form' from QML file.
-        new_layer.loadNamedStyle(layer.qml_path)
 
         # Setup the relations for this layer to the look-up (enumeration) tables
         create_layer_relation_to_lookup_tables(cdbLoader, layer=new_layer)
 
         # Setup the relations for this layer to the generic attributes table
         create_layer_relation_to_genericattrib_table(cdbLoader, layer=new_layer)
-
-        # Deactivate 3D renderer to avoid crashes.
-        new_layer.setRenderer3D(None)
 
     return True # All went well

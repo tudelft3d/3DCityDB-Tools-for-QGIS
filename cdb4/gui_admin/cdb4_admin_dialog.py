@@ -33,7 +33,8 @@ from qgis.gui import QgsMessageBar
 from qgis.PyQt.QtWidgets import QMessageBox
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from .other_classes import AdminDialogRequirements
+from ..gui_db_connector.other_classes import Connection
+#from .other_classes import AdminDialogRequirements
 
 from ..gui_db_connector.db_connection_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -47,16 +48,15 @@ from ..shared.functions import sql as sh_sql
 
 # This loads the .ui file so that PyQt can populate the plugin
 # with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_loader_admin_dialog.ui"))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_admin_dialog.ui"))
 
-class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
-    """Administrator Dialog class of the plugin.
-    The GUI is imported from an external .ui xml
+class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
+    """Administrator Dialog class of the plugin. The GUI is imported from an external .ui xml
     """
 
     def __init__(self, cdbLoader, parent=None):
         """Constructor."""
-        super(CDB4LoaderAdminDialog, self).__init__(parent)
+        super(CDB4AdminDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots
@@ -65,6 +65,8 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         ## From here you can add variables or constants
 
+        # Initialize class containing requirements.
+        # At the moment, not needed
         #self.requirements = AdminDialogRequirements()
 
         # Initialize some properties.
@@ -105,7 +107,7 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
-        cdbLoader.DB = self.cbxExistingConn.currentData()
+        cdbLoader.DB: Connection = self.cbxExistingConn.currentData()
         if not cdbLoader.DB:
             return None
         
@@ -145,8 +147,8 @@ class CDB4LoaderAdminDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg = cdbLoader.admin_dlg
 
         # Add new connection to the Existing connections
-        if dlgConnector.new_connection:
-            dlg.cbxExistingConn.addItem(f"{dlgConnector.new_connection.connection_name}", dlgConnector.new_connection)
+        if dlgConnector.conn_params:
+            dlg.cbxExistingConn.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
             #dlgConnector.close()
 
         # Re-set the input blockage

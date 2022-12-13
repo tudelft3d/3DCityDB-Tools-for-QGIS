@@ -12,13 +12,17 @@ PG_MIN_VERSION: int = 10
 CDB_MIN_VERSION: int = 4
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
-QGIS_PKG_MIN_VERSION_MINOR: int = 8
+QGIS_PKG_MIN_VERSION_MINOR: int = 9
 QGIS_PKG_MIN_VERSION_MINOR_REV: int = 0
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
-# Path to forms
-QML_FORMS_DIR: str = "forms"
-QML_FORMS_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, QML_FORMS_DIR)
+# Path to style configuration files
+QML_DIR: str = "qml"
+QML_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, QML_DIR)
+
+QML_FORM_DIR: str = "form"
+QML_SYMB_DIR: str = "symb"
+QML_3D_DIR: str = "3d"
 
 # Path to SQL scripts to install the QGIS Package
 SQL_SCRIPTS_DIR: str= "ddl_scripts"
@@ -42,14 +46,20 @@ OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
 OSM_INIT_EXTS: QgsRectangle = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS: QgsCoordinateReferenceSystem = QgsCoordinateReferenceSystem("EPSG:3857")
 
+## SETTINGS (BEGIN) ####
+
 # Options default parameters to simplify geometries
 SIMP_GEOM_DEC_PREC: int = 3         # decimal positions after the comma to round coordinates
 SIMP_GEOM_MIN_AREA: float = 0.0001  # to be expressed in m2
 
 # Max number of features per layer to be imported
 MAX_FEATURES_TO_IMPORT: int = 50000
-FORCE_ALL_LAYERS_CREATION: bool = False
 
+# Other settings
+FORCE_ALL_LAYERS_CREATION: bool = False
+ENABLE_3D_RENDERER: bool = False
+
+## SETTINGS (END) ####
 
 # 3DCityDB constants
 generics_table: str     = "cityobject_genericattrib"

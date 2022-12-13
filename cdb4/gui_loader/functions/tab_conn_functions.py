@@ -6,10 +6,10 @@ relating to child widgets of the 'Connection Tab'.
 """
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
 
-def fill_schema_box(cdbLoader: CDBLoader, cdb_schemas: tuple) -> None:
+def fill_cdb_schemas_box(cdbLoader: CDBLoader, cdb_schemas: tuple) -> None:
     """Function that fills schema combo box with the provided schemas.
     """
-    dlg = cdbLoader.usr_dlg
+    dlg = cdbLoader.loader_dlg
     # Clear combo box from previous entries
     dlg.cbxSchema.clear()
 

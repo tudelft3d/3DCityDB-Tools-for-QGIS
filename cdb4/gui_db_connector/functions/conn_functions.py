@@ -22,8 +22,8 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
     or 'cbxExistingConn' widget
     """
     # Clear the contents of the comboBox from previous runs
-    if cdbLoader.usr_dlg:
-        cdbLoader.usr_dlg.cbxExistingConnC.clear()
+    if cdbLoader.loader_dlg:
+        cdbLoader.loader_dlg.cbxExistingConnC.clear()
     if cdbLoader.admin_dlg:
         cdbLoader.admin_dlg.cbxExistingConn.clear()
 
@@ -52,8 +52,8 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
         qsettings.endGroup()
 
         # For 'User Connection' tab.
-        if cdbLoader.usr_dlg:
-            cdbLoader.usr_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
+        if cdbLoader.loader_dlg:
+            cdbLoader.loader_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
         # For 'Database Administration' tab.
         if cdbLoader.admin_dlg:
             cdbLoader.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
