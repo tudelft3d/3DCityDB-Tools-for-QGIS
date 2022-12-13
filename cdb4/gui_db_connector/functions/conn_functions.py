@@ -51,12 +51,16 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
         
         qsettings.endGroup()
 
-        # For 'User Connection' tab.
-        if cdbLoader.loader_dlg:
-            cdbLoader.loader_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
-        # For 'Database Administration' tab.
+        # For 'Database Administration' dialog
         if cdbLoader.admin_dlg:
             cdbLoader.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
+        # For 'Loader' dialog
+        if cdbLoader.loader_dlg:
+            cdbLoader.loader_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
+        # For 'Deleter' dialog
+        if cdbLoader.deleter_dlg:
+            cdbLoader.deleter_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
+
 
 def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
     """Creates a new database session and returns a new instance of the psycopg connection class.

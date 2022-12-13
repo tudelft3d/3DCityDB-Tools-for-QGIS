@@ -12,7 +12,7 @@ from .functions.conn_functions import connect
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "new_db_connection_dialog.ui"))
 
 class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
     """Connector Dialog. This dialog pops up when a user requests to make a new connection.
