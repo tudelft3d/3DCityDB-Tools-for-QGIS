@@ -84,9 +84,9 @@ class CDBLoader:
         self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
 
         # Dialog names
-        self.ADMIN_DLG: str = main_c.ADMIN_DLG
-        self.LOADER_DLG: str = main_c.LOADER_DLG
-        self.DELETER_DLG: str = main_c.DELETER_DLG
+        self.ADMIN_DLG_NAME: str = main_c.ADMIN_DLG_NAME
+        self.LOADER_DLG_NAME: str = main_c.LOADER_DLG_NAME
+        self.DELETER_DLG_NAME: str = main_c.DELETER_DLG_NAME
 
         # Variable to store the selected citydb schema name.
         self.CDB_SCHEMA: str = None
@@ -99,6 +99,11 @@ class CDBLoader:
         self.deleter_dlg = None
         # Variable to store the admin dialog of the plugin.
         self.admin_dlg = None
+        # Check if plugin was started the first time in current QGIS session.
+        # Must be set in initGui() to survive plugin reloads.
+        self.first_start_loader: bool = True
+        self.first_start_deleter: bool = True
+        self.first_start_admin: bool = True
 
         # Variable to store the current open connection of a database.
         self.conn: psycopg2.connection = None
@@ -117,16 +122,8 @@ class CDBLoader:
         # Declare instance attributes.
         self.actions: list = []
 
-        # Check if plugin was started the first time in current QGIS session.
-        # Must be set in initGui() to survive plugin reloads.
-        self.first_start_loader: bool = True
-        self.first_start_deleter: bool = True
-        self.first_start_admin: bool = True
-
-
     def tr(self, message: str) -> str:
-        """Get the translation for a string using Qt translation API.
-        We implement this ourselves since we do not inherit QObject.
+        """Get the translation for a string using Qt translation API. We implement this ourselves since we do not inherit QObject. 
 
         *   :param message: String for translation.
             :type message: str
@@ -216,8 +213,7 @@ class CDBLoader:
 
         # Adds plugin to "Database" menu.
         if add_to_menu:
-            # In order to add the plugin into the database menu we
-            # follow the 'hacky' approach below to bypass possibly a bug:
+            # In order to add the plugin into the database menu we follow the 'hacky' approach below to bypass possibly a bug:
             #
             # The bug: Using the method addPluginToDatabaseMenu causes
             # the plugin to be inserted in a submenu of itself
@@ -230,7 +226,7 @@ class CDBLoader:
             # method seems to bypass this issue. Needs further investigation.
 
             # Add the action to the database menu (bug countermeasure)
-            self.iface.addPluginToDatabaseMenu(name=main_c.PLUGIN_NAME, action=action)
+            self.iface.addPluginToDatabaseMenu(name=self.PLUGIN_NAME, action=action)
 
             # Add the action to the database menu
             #self.iface.databaseMenu().addAction(action)
@@ -247,13 +243,12 @@ class CDBLoader:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
 
-        # The icon path is set from the compiled resources file (in main dir).
-        icon_path = "/".join([ main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR])
+        # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
         #admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
         #loader_icon_path  = ":/plugins/citydb_loader/icons/plugin_icon.png"
-        loader_icon_path  = "/".join([icon_path, "icons/plugin_icon.png"])
-        deleter_icon_path = "/".join([icon_path, "icons/delete_icon.png"])
-        admin_icon_path   = "/".join([icon_path, "icons/db_admin.png"])
+        loader_icon_path  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "plugin_icon.png")
+        deleter_icon_path = os.path.join(self.PLUGIN_ABS_PATH, "icons", "delete_icon.png")
+        admin_icon_path   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "db_admin.png")
 
         # Loader Dialog
         self.add_action(
@@ -426,11 +421,11 @@ class CDBLoader:
             :type text: str
         """
 
-        if dialog_name == self.ADMIN_DLG:         # "admin_dlg"
+        if dialog_name == self.ADMIN_DLG_NAME:         # "admin_dlg"
             progress_bar = self.admin_dlg.bar
-        elif dialog_name == self.LOADER_DLG:      # "loader_dlg":
+        elif dialog_name == self.LOADER_DLG_NAME:      # "loader_dlg":
             progress_bar = self.loader_dlg.bar
-        elif dialog_name == self.DELETER_DLG:     # "deleter_dlg":
+        elif dialog_name == self.DELETER_DLG_NAME:     # "deleter_dlg":
             progress_bar = self.deleter_dlg.bar
 
         # Show text instead of completed percentage.
