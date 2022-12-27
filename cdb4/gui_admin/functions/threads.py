@@ -68,7 +68,7 @@ class QgisPKGInstallWorker(QObject):
                 # Update progress bar with current step and script.
                 text = " ".join(["Installing:", script])
                 #self.sig_progress.emit("admin_dlg", s, text)
-                self.sig_progress.emit(self.plugin.ADMIN_DLG, s, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, s, text)
                 try:
                     with conn.cursor() as cursor:
                         with open(os.path.join(self.sql_scripts_path, script), "r") as sql_script:
@@ -185,7 +185,7 @@ class QgisPKGUninstallWorker(QObject):
                 text = " ".join(["Revoking privileges from user:", usr_name])
                 curr_step += 1
                 #self.sig_progress.emit("admin_dlg", curr_step, text)
-                self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
                 for cdb_schema in cdb_schemas:
                     with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping Layers)") as conn:
@@ -197,7 +197,7 @@ class QgisPKGUninstallWorker(QObject):
                             text = " ".join(["Dropping layers:", module_drop_func])
                             curr_step += 1
                             #self.sig_progress.emit("admin_dlg", curr_step, text)
-                            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+                            self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
                 # Drop qgis_{usr} schema
                 sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=usr_schema, close_connection=False)
@@ -205,7 +205,7 @@ class QgisPKGUninstallWorker(QObject):
                 text = " ".join(["Dropping user schema:", usr_schema])
                 curr_step += 1
                 #self.sig_progress.emit("admin_dlg", curr_step, text)
-                self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+                self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
             # Drop "qgis_pkg" schema
             sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=qgis_pkg_schema, close_connection=False)
@@ -213,7 +213,7 @@ class QgisPKGUninstallWorker(QObject):
             text = " ".join(["Dropping QGIS Package schema:", qgis_pkg_schema])
             curr_step += 1
             #self.sig_progress.emit("admin_dlg", curr_step, text)
-            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -309,7 +309,7 @@ class DropUsrSchemaWorker(QObject):
             text = " ".join(["Revoking privileges from user:", usr_name])
             curr_step += 1
             #self.sig_progress.emit("admin_dlg", curr_step, text)
-            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
             for cdb_schema in cdb_schemas:
                 with conn_f.connect(db_connection=self.plugin.DB, app_name=f"{conn_f.connect.__defaults__[0]} (Dropping layers)") as conn:
@@ -321,7 +321,7 @@ class DropUsrSchemaWorker(QObject):
                         text = " ".join(["Dropping layers:", module_drop_func])
                         curr_step += 1
                         #self.sig_progress.emit("admin_dlg", curr_step, text)
-                        self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+                        self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
             # Drop user schema
             sql.exec_drop_db_schema(cdbLoader=self.plugin, schema=usr_schema, close_connection=False)
@@ -329,7 +329,7 @@ class DropUsrSchemaWorker(QObject):
             text = " ".join(["Dropping user schema:", usr_schema])
             curr_step += 1
             #self.sig_progress.emit("admin_dlg", curr_step, text)
-            self.sig_progress.emit(self.plugin.ADMIN_DLG, curr_step, text)
+            self.sig_progress.emit(self.plugin.ADMIN_DLG_NAME, curr_step, text)
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
