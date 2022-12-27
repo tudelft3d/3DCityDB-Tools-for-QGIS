@@ -42,8 +42,8 @@
 -- qgis_pkg.create_qgis_usr_schema(...)
 -- qgis_pkg.generate_mview_bbox_poly(...)
 -- qgis_pkg.has_layers_for_cdb_schema(...)
--- qgis_pkg.root_class_counter(...)
 -- qgis_pkg.feature_type_counter(...)
+-- qgis_pkg.root_class_counter(...)
 -- qgis_pkg.gview_counter(...)
 -- qgis_pkg.aview_counter(...)
 -- qgis_pkg.add_ga_indices(...)
@@ -921,6 +921,41 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.feature_type_checker(varchar, varchar) FROM 
 
 
 ----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.FEATURE_TYPE_COUNTER
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS    qgis_pkg.feature_type_counter(varchar, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.feature_type_counter(
+cdb_schema	varchar,
+extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
+)
+RETURNS TABLE (
+	feature_type 	varchar,
+    n_feature_type 	bigint
+)
+AS $$
+DECLARE
+
+BEGIN
+--do not perform any checks, they will be carried out by the invoked function anyway
+RETURN QUERY
+	SELECT t.feature_type AS feature_type, sum(t.n_feature_type)::bigint AS n_feature_type
+	FROM qgis_pkg.root_class_counter(cdb_schema, extents) AS t 
+	GROUP BY t.feature_type 
+	ORDER BY t.feature_type;
+
+RETURN;
+
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) IS 'Counts features according to CityGML FeatureTypes (modules) in the selected cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) FROM public;
+
+-- Example: 
+--SELECT * FROM qgis_pkg.feature_type_counter('alderaan', NULL);
+--SELECT * FROM qgis_pkg.feature_type_counter('rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
+
+
+----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.ROOT_CLASS_COUNTER
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.root_class_counter(varchar, varchar) CASCADE;
@@ -1010,40 +1045,6 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.root_class_counter(varchar, varchar) FROM pu
 -- Example: 
 --SELECT * FROM qgis_pkg.root_class_counter('alderaan', NULL);
 --SELECT * FROM qgis_pkg.root_class_counter('rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.FEATURE_TYPE_COUNTER
-----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.feature_type_counter(varchar, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.feature_type_counter(
-cdb_schema	varchar,
-extents		varchar DEFAULT NULL	-- PostGIS polygon without SRID, e.g. passed as: ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932))
-)
-RETURNS TABLE (
-	feature_type 	varchar,
-    n_feature_type 	bigint
-)
-AS $$
-DECLARE
-
-BEGIN
---do not perform any checks, they will be carried out by the invoked function anyway
-RETURN QUERY
-	SELECT t.feature_type AS feature_type, sum(t.n_feature_type)::bigint AS n_feature_type
-	FROM qgis_pkg.root_class_counter(cdb_schema, extents) AS t 
-	GROUP BY t.feature_type 
-	ORDER BY t.feature_type;
-
-RETURN;
-
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) IS 'Counts features according to CityGML FeatureTypes (modules) in the selected cdb_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.feature_type_counter(varchar, varchar) FROM public;
-
--- Example: 
---SELECT * FROM qgis_pkg.feature_type_counter('alderaan', NULL);
---SELECT * FROM qgis_pkg.feature_type_counter('rh', ST_AsEWKT(ST_MakeEnvelope(229234, 476749, 230334, 479932)));
 
 
 ----------------------------------------------------------------
