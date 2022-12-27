@@ -21,10 +21,9 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
     try:
         with cdbLoader.conn.cursor() as cur:
             # Get cdb_schema extents from server as WKT.
-            cur.execute(query= f"""
-                                   SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
-                                   WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
-                                """)
+            cur.execute(f"""SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
+                            WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
+                         """)
             extents = cur.fetchone()
             # extents = (None,) when the envelope is Null,
             # BUT extents = None when the query returns NO results.
@@ -53,7 +52,7 @@ def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
     try:
         with cdbLoader.conn.cursor() as cur:
             # Get database srid
-            cur.execute(query= f"""SELECT srid FROM "{cdbLoader.CDB_SCHEMA}".database_srs LIMIT 1;""")
+            cur.execute(f"""SELECT srid FROM "{cdbLoader.CDB_SCHEMA}".database_srs LIMIT 1;""")
             srid = cur.fetchone()[0] # Tuple has trailing comma.
         cdbLoader.conn.commit()
         return srid

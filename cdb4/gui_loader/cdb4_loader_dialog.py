@@ -43,6 +43,8 @@ from .functions import tab_conn_widget_functions as ct_wf
 from .functions import tab_conn_functions as uc_tf
 from .functions import tab_layers_widget_functions as lt_wf
 from .functions import tab_layers_functions as l_tf
+from .functions import tab_settings_widget_functions as st_wf
+
 
 from .functions import canvas, sql, threads as thr
 from ..shared.functions import sql as sh_sql
@@ -141,6 +143,10 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnCityExtents.init_text = c.btnCityExtents_t
         self.ccbxFeatures.init_text = c.ccbxFeatures_t
 
+        # TAB Settings
+
+
+
         ################################################
         ### SIGNALS (start) ############################
         ################################################
@@ -150,7 +156,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # 'Connection' group box signals
         self.cbxExistingConnC.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbLoader))
         
-        #self.btnNewConnC.clicked.connect(self.evt_btnNewConn_clicked)
         self.btnNewConnC.clicked.connect(lambda: self.evt_btnNewConn_clicked(cdbLoader))
 
         # 'Database' group box signals
@@ -178,7 +183,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.btnCloseConnC.clicked.connect(lambda: self.evt_btnCloseConnC_clicked(cdbLoader))
 
-        #### 'Layer ' tab
+        #### 'Layer' tab
         
         # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
         self.qgbxExtents.setMapCanvas(canvas=self.CANVAS_L, drawOnCanvasOption=False)
@@ -196,6 +201,15 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # 'Features to Import' groupbox signals (in 'Layers' tab)
         self.ccbxFeatures.checkedItemsChanged.connect(lambda: self.evt_cbxFeatures_changed(cdbLoader))
         self.btnImport.clicked.connect(lambda: self.evt_btnImport_clicked(cdbLoader))
+
+        #### 'Settings' tab
+
+
+
+
+
+
+
 
         ################################################
         ### SIGNALS (end) ##############################
@@ -223,6 +237,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Reset the tabs
         ct_wf.tabConnection_reset(cdbLoader)
         lt_wf.tabLayers_reset(cdbLoader)
+        st_wf.tabSettings_reset(cdbLoader)
 
         # Reset and (re)enable the "3D City Database" connection box and buttons
         dlg.gbxDatabase.setDisabled(False)   # Activate the group box
@@ -458,7 +473,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.btnDropLayers.setText(dlg.btnDropLayers.init_text.format(sch=cdbLoader.CDB_SCHEMA))
 
         dlg.gbxBasemapC.setDisabled(False)
-        dlg.cgbxOptions.setDisabled(False)        
+        #dlg.cgbxOptions.setDisabled(False)        
         dlg.btnCreateLayers.setDisabled(False)
 
         # Setup the 'Basemap (OSM)' groupbox.

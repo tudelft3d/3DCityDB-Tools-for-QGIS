@@ -84,7 +84,7 @@ class LayerCreationWorker(QObject):
                 # Update progress bar with current step and script.
                 text = " ".join(["Executing:", module_func])
                 #self.progress.emit("usr_dlg", s, text)
-                self.progress.emit(self.plugin.LOADER_DLG, s, text)
+                self.progress.emit(self.plugin.LOADER_DLG_NAME, s, text)
                 try:
                     with conn.cursor() as cursor:
                         cursor.callproc(f"{self.plugin.QGIS_PKG_SCHEMA}.{module_func}", [*params])
@@ -179,7 +179,7 @@ class RefreshMatViewsWorker(QObject):
                 # Update progress bar with current step and text.
                 text = " ".join(["Refreshing layers of:", ftype])
                 #self.progress.emit("usr_dlg", s, text)
-                self.progress.emit(self.plugin.LOADER_DLG, s, text)
+                self.progress.emit(self.plugin.LOADER_DLG_NAME, s, text)
 
                 try:
                     sql.refresh_gview(cdbLoader=self.plugin, connection=conn, gview_name=mview)
@@ -280,7 +280,7 @@ class LayerDroppingWorker(QObject):
                 # Update progress bar with current step and script.
                 text = " ".join(["Executing:", module_func])
                 #self.progress.emit("usr_dlg", s, text)
-                self.progress.emit(self.plugin.LOADER_DLG, s, text)
+                self.progress.emit(self.plugin.LOADER_DLG_NAME, s, text)
                 try:
                     with conn.cursor() as cursor:
                         cursor.callproc(f"{self.plugin.QGIS_PKG_SCHEMA}.{module_func}", [self.plugin.USR_SCHEMA, self.plugin.CDB_SCHEMA])

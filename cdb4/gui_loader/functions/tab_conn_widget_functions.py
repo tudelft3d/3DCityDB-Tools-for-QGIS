@@ -14,7 +14,9 @@ from qgis.core import QgsProject, QgsRectangle, QgsCoordinateReferenceSystem
 from qgis.PyQt.QtCore import Qt
 import psycopg2
 
+
 from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
+#from ..cdb4_loader_dialog import CDB4LoaderDialog # Used only to add the type of the function parameters
 
 from ...shared.functions import general_functions as gen_f
 from ... import cdb4_constants as c
@@ -107,7 +109,6 @@ def tabConnection_reset(cdbLoader: CDBLoader) -> None:
     gbxDatabase_reset(cdbLoader)
     gbxConnStatus_reset(cdbLoader)
     gbxBasemapC_reset(cdbLoader)
-    cgbxOptions_reset(cdbLoader)
     btnCreateLayers_reset(cdbLoader)
     btnRefreshLayers_reset(cdbLoader)
     btnDropLayers_reset(cdbLoader)
@@ -165,8 +166,8 @@ def cgbxOptions_reset(cdbLoader: CDBLoader) -> None:
     """
     dlg = cdbLoader.loader_dlg
 
-    dlg.cgbxOptions.setCollapsed(True)
-    dlg.cgbxOptions.setDisabled(True)
+    #dlg.cgbxOptions.setCollapsed(True)
+    #dlg.cgbxOptions.setDisabled(True)
     gbxSimplifyGeom_reset(cdbLoader)
 
 
@@ -175,7 +176,7 @@ def gbxSimplifyGeom_reset(cdbLoader: CDBLoader) -> None:
     """
     dlg = cdbLoader.loader_dlg
 
-    dlg.gbxSimplifyGeom.setChecked(False)
+    #dlg.gbxSimplifyGeom.setChecked(False)
     dlg.qspbDecimalPrec.setValue(dlg.settings.simp_geom_dec_prec)
     dlg.qspbMinArea.setValue(dlg.settings.simp_geom_min_area)
 
