@@ -1,4 +1,4 @@
-"""This module contains constant values that are used within the CDB4plugin
+"""This module contains constant values that are used within the CityDB-Loader plugin for 3DCityDB v. 4.x
 """
 
 import os.path
