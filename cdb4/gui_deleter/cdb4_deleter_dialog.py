@@ -106,10 +106,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # TAB Connection
         self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
-
         self.btnRefreshCDBExtents.init_text = c.btnRefreshCDBExtents_t
-
         self.btnCityExtentsC.init_text = c.btnCityExtentsC_t
+        self.btnCleanUpSchema.init_text = c.btnCleanUpSchema
+        self.btnDropLayers.init_text = c.btnDropLayers
 
         #self.btnCreateLayers.init_text = c.btnCreateLayers_t
         #self.btnRefreshLayers.init_text = c.btnRefreshLayers_t
@@ -152,7 +152,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.btnCloseConnC.clicked.connect(lambda: self.evt_btnCloseConnC_clicked(cdbLoader))
 
-
+        self.groupBox.clicked.connect(lambda: self.evt_groupBox_clicked(cdbLoader))
+        self.btnCleanUpSchema.clicked.connect(lambda: self.evt_btnCleanUpSchema_clicked(cdbLoader))
+        self.gbxFeatSel.clicked.connect(lambda: self.evt_gbxFeatSel_clicked(cdbLoader))
         ################################################
         ### SIGNALS (end) ##############################
         ################################################
@@ -396,6 +398,17 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.cbxSchema.setDisabled(False)
         dlg.lblSchema.setDisabled(False)
 
+        ''' CDBDeleter '''
+        # enable 'Clean up schema' and 'Truncate ALL'
+        dlg.groupBox.setDisabled(False)
+        dlg.groupBox_2.setDisabled(False)
+        dlg.gbxFeatSel.setDisabled(False)
+        # change 'Truncate ALL' current text
+        dlg.btnCleanUpSchema.setText(dlg.btnCleanUpSchema.init_text.format(sch=cdbLoader.CDB_SCHEMA))
+        dlg.btnDropLayers.setText(c.btnDropLayers.format(sch=cdbLoader.CDB_SCHEMA))
+        # populate
+        ''' CDBDeleter '''
+
         dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text.format(sch=cdbLoader.CDB_SCHEMA))
         dlg.btnCityExtentsC.setText(dlg.btnCityExtentsC.init_text.format(sch=cdbLoader.CDB_SCHEMA))
 
@@ -422,6 +435,50 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text.format(sch="layers extents"))
         
         return None
+
+    def evt_groupBox_clicked(self, cdbLoader: CDBLoader):
+
+        dlg = cdbLoader.deleter_dlg
+        # if checked:
+            # enable 'Truncate ALL'
+            # disable feature selection
+        if dlg.groupBox.isChecked():
+            dlg.btnDropLayers.setDisabled(True)
+            dlg.btnCleanUpSchema.setDisabled(False)
+            dlg.gbxFeatSel.setDisabled(True)
+        # if unchecked:
+            # do the opposite
+        if not(dlg.groupBox.isChecked()):
+            dlg.btnCleanUpSchema.setDisabled(True)
+            dlg.gbxFeatSel.setDisabled(False)
+            dlg.btnDropLayers.setDisabled(False)
+
+    def evt_btnCleanUpSchema_clicked(self, cdbLoader: CDBLoader):
+
+        dlg = cdbLoader.deleter_dlg
+        res = QMessageBox.question(dlg, "Cleanup Schema", f"You are about to delete all CityGML features in the schema '{cdbLoader.CDB_SCHEMA}'. Proceed ?")
+        if res == 16384:
+            with cdbLoader.conn.cursor() as cur:
+                cur.execute(f"""SELECT {cdbLoader.CDB_SCHEMA}.cleanup_schema()""")
+        else:
+            return
+        cdbLoader.conn.commit()
+
+    def evt_gbxFeatSel_clicked(self,cdbLoader: CDBLoader):
+
+        dlg = cdbLoader.deleter_dlg
+        if dlg.gbxFeatSel.isChecked():
+            dlg.groupBox.setDisabled(True)
+            dlg.btnDropLayers.setDisabled(False)
+        if not(dlg.gbxFeatSel.isChecked()):
+            dlg.groupBox.setDisabled(False)
+            dlg.btnDropLayers.setDisabled(True)
+
+        # populate Feature Type and Feature Root Class
+
+
+
+
 
     # 'Basemap (OSM)' group box events (in 'User Connection' tab)
     def evt_canvas_ext_changed(self, cdbLoader: CDBLoader) -> None:

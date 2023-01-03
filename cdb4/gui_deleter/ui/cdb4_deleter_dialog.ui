@@ -13,7 +13,7 @@
     <x>0</x>
     <y>0</y>
     <width>705</width>
-    <height>935</height>
+    <height>1000</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -521,25 +521,6 @@
              <bool>false</bool>
             </property>
             <layout class="QGridLayout" name="gLayoutBasemapC">
-             <item row="1" column="1" rowspan="3">
-              <widget class="QGraphicsView" name="gvCanvasC">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>250</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;Blue box&lt;/span&gt;: Extents of all data in the selected citydb schema&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;Red box&lt;/span&gt;: Extents of the area in which feature will be deleted&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
              <item row="3" column="0">
               <widget class="QPushButton" name="btnCityExtentsC">
                <property name="sizePolicy">
@@ -562,6 +543,25 @@
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" rowspan="3">
+              <widget class="QGraphicsView" name="gvCanvasC">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>250</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;Blue box&lt;/span&gt;: Extents of all data in the selected citydb schema&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;Red box&lt;/span&gt;: Extents of the area in which feature will be deleted&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -618,28 +618,6 @@
                </property>
                <property name="text">
                 <string>Refresh {sch} extents</string>
-               </property>
-               <property name="autoDefault">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QPushButton" name="btnDropLayers">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>620</width>
-                 <height>23</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Delete all selected features in the current citydb schema</string>
-               </property>
-               <property name="text">
-                <string>Delete features from schema {sch}</string>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -703,6 +681,28 @@
            </widget>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnDropLayers">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>620</width>
+           <height>23</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Delete all selected features in the current citydb schema</string>
+         </property>
+         <property name="text">
+          <string>Delete features from schema {sch}</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
