@@ -29,6 +29,7 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 import os
+import psycopg2
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from .other_classes import DeleterDialogRequirements, DeleterDialogSettings
@@ -467,6 +468,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_gbxFeatSel_clicked(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
+
         if dlg.gbxFeatSel.isChecked():
             dlg.groupBox.setDisabled(True)
             dlg.btnDropLayers.setDisabled(False)
@@ -474,7 +476,34 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.groupBox.setDisabled(False)
             dlg.btnDropLayers.setDisabled(True)
 
-        # populate Feature Type and Feature Root Class
+        extent = None
+        if self.delete_extent:
+            extent = self.delete_extent
+        else:
+            extent = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE
+
+        connection = psycopg2.connect(user='postgres',
+                                      password='gatekey',
+                                      host='localhost',
+                                      port=5432,
+                                      database='3dcitydb1',
+                                      options=f'-c search_path={cdbLoader.CDB_SCHEMA},public')
+        cursor = connection.cursor()
+
+        root_class_query = f'''SELECT distinct classname
+                                       FROM {cdbLoader.CDB_SCHEMA}.objectclass as oc
+                                       JOIN {cdbLoader.CDB_SCHEMA}.cityobject as co 
+                                       ON oc.id = co.objectclass_id
+                                       WHERE (co.envelope && ST_MakeEnvelope({extent.xMinimum()}, {extent.yMinimum()}, 
+                                       {extent.xMaximum()}, {extent.yMaximum()},28992))
+                                       AND oc.is_toplevel = 1'''
+
+        cursor.execute(root_class_query)
+        root_classes = [f[0] for f in cursor.fetchall()]
+        for root in root_classes:
+            dlg.mComboBox_2.addItemWithCheckState(root, 0)
+        ftype_query = ''' '''
+        # retrieve feature types in extent
 
 
 
@@ -491,10 +520,16 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get canvas's current extent
         extent: QgsRectangle = self.CANVAS_C.extent()
-
+        self.delete_extent = extent
         # Set the current extent to show in the 'extent' widget.
         dlg.qgbxExtentsC.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS)
         dlg.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
+
+        if self.delete_extent.xMaximum()!=0 and dlg.gbxFeatSel.isChecked():
+            pass
+            # execute query to get feature classes in new extent
+            # add classes to mComboBox_2
+
 
 
     def evt_qgbxExtentsC_ext_changed(self, cdbLoader: CDBLoader) -> None:
