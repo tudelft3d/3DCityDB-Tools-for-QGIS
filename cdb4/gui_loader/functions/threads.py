@@ -70,11 +70,11 @@ class LayerCreationWorker(QObject):
         params = [
             self.plugin.DB.username,
             self.plugin.CDB_SCHEMA,
-            int(dlg.gbxSimplifyGeom.isChecked()),
+            int(dlg.gbxGeomSimp.isChecked()), # 0 (False) or 1 (True)
             dlg.qspbDecimalPrec.value(),
             dlg.qspbMinArea.value(),
             bbox,
-            dlg.settings.force_all_layers_creation  #to be substituted with the value in the settings tab
+            dlg.cbxForceLayerGen.isChecked() # True or False
             ]
 
         # Open new temp session

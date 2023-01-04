@@ -784,6 +784,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Update the layer extents in the corresponding table in the server.
         sql.exec_upsert_extents(cdbLoader=cdbLoader, usr_schema=cdbLoader.USR_SCHEMA, cdb_schema=cdbLoader.CDB_SCHEMA, bbox_type=c.MAT_VIEW_EXT_TYPE, extents_wkt_2d_poly=self.LAYER_EXTENTS_RED.asWktPolygon())
 
+        print('------------- Dopo di exec_upsert_extents')
+
         refresh_date = []
         while not refresh_date: # Loop to allow for 'layer creation' thread to finish. It seems hacky...
             # Check if the materialised views are populated. # NOTE: Duplicate code!
@@ -791,14 +793,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             # Extract a date.
             refresh_date = list(set(refresh_date[1]))
 
+        print('------------- Dopo di fetch_layer_metadata')
+
         date = refresh_date[0][0] # Extract date.
         if date:
             dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
-            #cdbLoader.DB.green_refresh_date = True
             dlg.requirements.layers_refreshed = True
         else:
             dlg.lblLayerRefr_out.setText(c.failure_html.format(text=c.REFR_LAYERS_FAIL_MSG))
-            #cdbLoader.DB.green_refresh_date = False
             dlg.requirements.layers_refreshed = False
             return None
 
