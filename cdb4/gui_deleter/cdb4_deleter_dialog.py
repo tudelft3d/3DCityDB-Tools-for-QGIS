@@ -153,9 +153,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.btnCloseConnC.clicked.connect(lambda: self.evt_btnCloseConnC_clicked(cdbLoader))
 
+
+        self.feat_click_count = 0
         self.groupBox.clicked.connect(lambda: self.evt_groupBox_clicked(cdbLoader))
         self.btnCleanUpSchema.clicked.connect(lambda: self.evt_btnCleanUpSchema_clicked(cdbLoader))
         self.gbxFeatSel.clicked.connect(lambda: self.evt_gbxFeatSel_clicked(cdbLoader))
+        self.btnDropLayers.clicked.connect(lambda: self.evt_btnDropLayers(cdbLoader))
         ################################################
         ### SIGNALS (end) ##############################
         ################################################
@@ -407,7 +410,6 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # change 'Truncate ALL' current text
         dlg.btnCleanUpSchema.setText(dlg.btnCleanUpSchema.init_text.format(sch=cdbLoader.CDB_SCHEMA))
         dlg.btnDropLayers.setText(c.btnDropLayers.format(sch=cdbLoader.CDB_SCHEMA))
-        # populate
         ''' CDBDeleter '''
 
         dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text.format(sch=cdbLoader.CDB_SCHEMA))
@@ -454,16 +456,16 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.gbxFeatSel.setDisabled(False)
             dlg.btnDropLayers.setDisabled(False)
 
-    def evt_btnCleanUpSchema_clicked(self, cdbLoader: CDBLoader):
+    def evt_btnCleanUpSchema_clicked(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
         res = QMessageBox.question(dlg, "Cleanup Schema", f"You are about to delete all CityGML features in the schema '{cdbLoader.CDB_SCHEMA}'. Proceed ?")
         if res == 16384:
             with cdbLoader.conn.cursor() as cur:
                 cur.execute(f"""SELECT {cdbLoader.CDB_SCHEMA}.cleanup_schema()""")
+                cdbLoader.conn.commit()
         else:
             return
-        cdbLoader.conn.commit()
 
     def evt_gbxFeatSel_clicked(self,cdbLoader: CDBLoader):
 
@@ -482,28 +484,16 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             extent = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE
 
-        connection = psycopg2.connect(user='postgres',
-                                      password='gatekey',
-                                      host='localhost',
-                                      port=5432,
-                                      database='3dcitydb1',
-                                      options=f'-c search_path={cdbLoader.CDB_SCHEMA},public')
-        cursor = connection.cursor()
+        if bool(not(self.feat_click_count)):
 
-        root_class_query = f'''SELECT distinct classname
-                                       FROM {cdbLoader.CDB_SCHEMA}.objectclass as oc
-                                       JOIN {cdbLoader.CDB_SCHEMA}.cityobject as co 
-                                       ON oc.id = co.objectclass_id
-                                       WHERE (co.envelope && ST_MakeEnvelope({extent.xMinimum()}, {extent.yMinimum()}, 
-                                       {extent.xMaximum()}, {extent.yMaximum()},28992))
-                                       AND oc.is_toplevel = 1'''
+                root_classes = sql.get_root_classes(cdbLoader,extent)
+                for root in root_classes:
+                    dlg.mComboBox_2.addItemWithCheckState(root, 0)
+                types = sql.get_feature_types(cdbLoader,extent)
+                for ftype in types:
+                    dlg.cbxFeatType.addItemWithCheckState(ftype,0)
 
-        cursor.execute(root_class_query)
-        root_classes = [f[0] for f in cursor.fetchall()]
-        for root in root_classes:
-            dlg.mComboBox_2.addItemWithCheckState(root, 0)
-        ftype_query = ''' '''
-        # retrieve feature types in extent
+                self.feat_click_count += 1
 
 
 
@@ -525,11 +515,42 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.qgbxExtentsC.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS)
         dlg.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
 
-        if self.delete_extent.xMaximum()!=0 and dlg.gbxFeatSel.isChecked():
-            pass
-            # execute query to get feature classes in new extent
-            # add classes to mComboBox_2
+        if bool(self.delete_extent.xMaximum()) and dlg.gbxFeatSel.isChecked():
+            dlg.mComboBox_2.clear()
+            dlg.cbxFeatType.clear()
+            root_classes = sql.get_root_classes(cdbLoader, extent)
+            for root in root_classes:
+                dlg.mComboBox_2.addItemWithCheckState(root, 0)
+            types = sql.get_feature_types(cdbLoader, extent)
+            for ftype in types:
+                dlg.cbxFeatType.addItemWithCheckState(ftype, 0)
 
+    def evt_btnDropLayers(self,cdbLoader: CDBLoader):
+
+        dlg = cdbLoader.deleter_dlg
+
+        if len(dlg.cbxFeatType.checkedItems()):
+            with cdbLoader.conn.cursor() as cur:
+                for item in dlg.cbxFeatType.checkedItems():
+                    gmlid_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
+                                      WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
+                                      {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},
+                                      {self.delete_extent.yMaximum()},28992)) AND 
+                                      co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
+                                                           WHERE classname = '{item}')
+                                      '''
+
+                    cur.execute(gmlid_query)
+                    ids = [idx[0] for idx in cur.fetchall()]
+                    for objid in ids:
+                        delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject({objid})'''
+                        cur.execute(delete_query)
+                        cdbLoader.conn.commit()
+                        del_features = [f[0] for f in cur.fetchall()]
+                        print(del_features)
+                    #del_features = [f[0] for f in cur.fetchall()]
+                    #print(del_features)
+                    #assert(len(ids) == len(del_features))
 
 
     def evt_qgbxExtentsC_ext_changed(self, cdbLoader: CDBLoader) -> None:
