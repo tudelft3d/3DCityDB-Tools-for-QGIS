@@ -528,6 +528,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
+        from threading import Thread
 
         if len(dlg.cbxFeatType.checkedItems()):
             with cdbLoader.conn.cursor() as cur:
@@ -542,15 +543,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     cur.execute(gmlid_query)
                     ids = [idx[0] for idx in cur.fetchall()]
-                    for objid in ids:
-                        delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject({objid})'''
-                        cur.execute(delete_query)
-                        cdbLoader.conn.commit()
-                        del_features = [f[0] for f in cur.fetchall()]
-                        print(del_features)
-                    #del_features = [f[0] for f in cur.fetchall()]
-                    #print(del_features)
-                    #assert(len(ids) == len(del_features))
+
+                    #for objid in ids:
+                    delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
+                    t = Thread(target=cur.execute, args=[delete_query])
+                    t.start()
+                    cdbLoader.conn.commit()
+
+        # repeat for root classes
 
 
     def evt_qgbxExtentsC_ext_changed(self, cdbLoader: CDBLoader) -> None:
