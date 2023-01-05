@@ -30,6 +30,7 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 import os
 import psycopg2
+import sys
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
 from .other_classes import DeleterDialogRequirements, DeleterDialogSettings
@@ -485,19 +486,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             extent = cdbLoader.CDB_SCHEMA_EXTENTS_BLUE
 
         if bool(not(self.feat_click_count)):
+            root_classes = sql.get_root_classes(cdbLoader,extent)
+            for root in root_classes:
+                dlg.mComboBox_2.addItemWithCheckState(root, 0)
+            for root in root_classes:
+                ftype = c.module_finder[root]
+                dlg.cbxFeatType.addItemWithCheckState(ftype,0)
 
-                root_classes = sql.get_root_classes(cdbLoader,extent)
-                for root in root_classes:
-                    dlg.mComboBox_2.addItemWithCheckState(root, 0)
-                types = sql.get_feature_types(cdbLoader,extent)
-                for ftype in types:
-                    dlg.cbxFeatType.addItemWithCheckState(ftype,0)
-
-                self.feat_click_count += 1
-
-
-
-
+            self.feat_click_count += 1
 
     # 'Basemap (OSM)' group box events (in 'User Connection' tab)
     def evt_canvas_ext_changed(self, cdbLoader: CDBLoader) -> None:
@@ -521,36 +517,53 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             root_classes = sql.get_root_classes(cdbLoader, extent)
             for root in root_classes:
                 dlg.mComboBox_2.addItemWithCheckState(root, 0)
-            types = sql.get_feature_types(cdbLoader, extent)
-            for ftype in types:
+            for root in root_classes:
+                ftype = c.module_finder[root]
                 dlg.cbxFeatType.addItemWithCheckState(ftype, 0)
 
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
         from threading import Thread
+        with cdbLoader.conn.cursor() as cur:
 
-        if len(dlg.cbxFeatType.checkedItems()):
-            with cdbLoader.conn.cursor() as cur:
-                for item in dlg.cbxFeatType.checkedItems():
-                    gmlid_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
-                                      WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
-                                      {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},
-                                      {self.delete_extent.yMaximum()},28992)) AND 
-                                      co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
-                                                           WHERE classname = '{item}')
-                                      '''
+            # delete from db using feature types
+            if len(dlg.cbxFeatType.checkedItems()):
+                    for ftype in dlg.cbxFeatType.checkedItems():
+                        for item in c.ftype_class_finder[ftype]:
+                            id_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
+                                              WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
+                                              {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},
+                                              {self.delete_extent.yMaximum()},28992)) AND 
+                                              co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
+                                                                   WHERE classname = '{item}')'''
+                            cur.execute(id_query)
 
-                    cur.execute(gmlid_query)
-                    ids = [idx[0] for idx in cur.fetchall()]
+                            ids = [idx[0] for idx in cur.fetchall()]
+                            if len(ids):
+                                delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
+                                t = Thread(target=cur.execute, args=[delete_query])
+                                t.start()
+                                cdbLoader.conn.commit()
 
-                    #for objid in ids:
-                    delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
-                    t = Thread(target=cur.execute, args=[delete_query])
-                    t.start()
-                    cdbLoader.conn.commit()
+            # delete from db using root classes
+            if len(dlg.mComboBox_2.checkedItems()):
+                    for root in dlg.mComboBox_2.checkedItems():
+                        for item in c.frc_class_finder[root]:
+                            gmlid_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
+                                              WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
+                                              {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},
+                                              {self.delete_extent.yMaximum()},28992)) AND 
+                                              co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
+                                                                   WHERE classname = '{item}')'''
+                            cur.execute(gmlid_query)
 
-        # repeat for root classes
+                            ids = [idx[0] for idx in cur.fetchall()]
+                            if len(ids):
+                                delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
+                                t = Thread(target=cur.execute, args=[delete_query])
+                                t.start()
+                                cdbLoader.conn.commit()
 
 
     def evt_qgbxExtentsC_ext_changed(self, cdbLoader: CDBLoader) -> None:

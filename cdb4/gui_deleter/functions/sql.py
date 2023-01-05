@@ -24,18 +24,6 @@ def get_root_classes(cdbLoader, extent):
         cur.execute(root_class_query)
         return [f[0] for f in cur.fetchall()]
 
-def get_feature_types(cdbLoader,extent):
-    with cdbLoader.conn.cursor() as cur:
-        ftype_query = f'''SELECT distinct classname
-                          FROM {cdbLoader.CDB_SCHEMA}.objectclass as oc
-                          JOIN {cdbLoader.CDB_SCHEMA}.cityobject as co 
-                          ON oc.id = co.objectclass_id
-                          WHERE (co.envelope && ST_MakeEnvelope({extent.xMinimum()}, {extent.yMinimum()}, 
-                          {extent.xMaximum()}, {extent.yMaximum()},28992))'''
-        cur.execute(ftype_query)
-        return [type[0] for type in cur.fetchall()]
-
-
 def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
     """SQL query that reads and retrieves extents stored in {usr_schema}.extents
 
