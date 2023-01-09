@@ -521,32 +521,7 @@
              <bool>false</bool>
             </property>
             <layout class="QGridLayout" name="gLayoutBasemapC">
-             <item row="3" column="0">
-              <widget class="QPushButton" name="btnCityExtentsC">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>250</width>
-                 <height>23</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the extents of the area (&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;reb box&lt;/span&gt;) to be the same as the citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Set to {sch} schema</string>
-               </property>
-               <property name="autoDefault">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1" rowspan="3">
+             <item row="1" column="1" rowspan="4">
               <widget class="QGraphicsView" name="gvCanvasC">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -562,6 +537,31 @@
                </property>
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;Blue box&lt;/span&gt;: Extents of all data in the selected citydb schema&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;Red box&lt;/span&gt;: Extents of the area in which feature will be deleted&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QPushButton" name="btnRefreshCDBExtents">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>250</width>
+                 <height>23</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you deleted or added new data to the city model, you may have to refresh the extents of all data contained in the selected citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Refresh {sch} extents</string>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -599,8 +599,8 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QPushButton" name="btnRefreshCDBExtents">
+             <item row="3" column="0">
+              <widget class="QPushButton" name="btnCityExtentsC">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -614,13 +614,20 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you deleted or added new data to the city model, you may have to refresh the extents of all data contained in the selected citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the extents of the area (&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;reb box&lt;/span&gt;) to be the same as the citydb schema (&lt;span style=&quot; font-weight:600; color:#0000ff;&quot;&gt;blue box&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
-                <string>Refresh {sch} extents</string>
+                <string>Set to {sch} schema</string>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QPushButton" name="btnPlaceSearch">
+               <property name="text">
+                <string>Set extent using place search</string>
                </property>
               </widget>
              </item>
@@ -966,8 +973,6 @@
   <tabstop>cbxSchema</tabstop>
   <tabstop>groupBox</tabstop>
   <tabstop>gvCanvasC</tabstop>
-  <tabstop>btnRefreshCDBExtents</tabstop>
-  <tabstop>btnCityExtentsC</tabstop>
   <tabstop>btnCloseConnC</tabstop>
  </tabstops>
  <resources/>

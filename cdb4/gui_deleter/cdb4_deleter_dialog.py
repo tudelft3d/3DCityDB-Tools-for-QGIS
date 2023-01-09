@@ -23,17 +23,19 @@
  *                                                                         *
  ***************************************************************************/
 """
+import threading
+
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt,QThread
 from qgis.PyQt.QtWidgets import QMessageBox
 import os
 import psycopg2
 import sys
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from .other_classes import DeleterDialogRequirements, DeleterDialogSettings
+from .other_classes import DeleterDialogRequirements, DeleterDialogSettings, CDBGeocoderDialog, DeleteWorker
 
 from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
 from ..gui_db_connector.new_db_connection_dialog import DBConnectorDialog
@@ -97,7 +99,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store a rubberband formed by the current extents.
         self.RUBBER_CDB_SCHEMA_BLUE_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
         self.RUBBER_LAYERS_RED_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-
+        self.city_object_count = 0
+        cdbLoader.thread = DeleteWorker(cdbLoader)
  
         # Variable to store all available FeatureTypes.
         # The availability is defined by the existence of at least one feature of that type inside the current selected extents (bbox).
@@ -160,6 +163,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnCleanUpSchema.clicked.connect(lambda: self.evt_btnCleanUpSchema_clicked(cdbLoader))
         self.gbxFeatSel.clicked.connect(lambda: self.evt_gbxFeatSel_clicked(cdbLoader))
         self.btnDropLayers.clicked.connect(lambda: self.evt_btnDropLayers(cdbLoader))
+        self.btnPlaceSearch.clicked.connect(lambda: self.evt_btnPlaceSearch_clicked(cdbLoader))
+
         ################################################
         ### SIGNALS (end) ##############################
         ################################################
@@ -460,10 +465,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnCleanUpSchema_clicked(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
+        from threading import Thread
         res = QMessageBox.question(dlg, "Cleanup Schema", f"You are about to delete all CityGML features in the schema '{cdbLoader.CDB_SCHEMA}'. Proceed ?")
         if res == 16384:
             with cdbLoader.conn.cursor() as cur:
-                cur.execute(f"""SELECT {cdbLoader.CDB_SCHEMA}.cleanup_schema()""")
+                delete_query = f"""SELECT {cdbLoader.CDB_SCHEMA}.cleanup_schema()"""
+                t = Thread(target=cur.execute, args=[delete_query])
+                t.start()
                 cdbLoader.conn.commit()
         else:
             return
@@ -524,10 +532,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
-        from threading import Thread
         with cdbLoader.conn.cursor() as cur:
 
             # delete from db using feature types
+            # using feature type to obtain classname and id
+            # from table objectclass
             if len(dlg.cbxFeatType.checkedItems()):
                     for ftype in dlg.cbxFeatType.checkedItems():
                         for item in c.ftype_class_finder[ftype]:
@@ -541,12 +550,19 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
                             ids = [idx[0] for idx in cur.fetchall()]
                             if len(ids):
-                                delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
-                                t = Thread(target=cur.execute, args=[delete_query])
-                                t.start()
-                                cdbLoader.conn.commit()
+                                cdbLoader.fids = ids
+                                #cdbLoader.worker = DeleteWorker(cdbLoader)
+                                #cdbLoader.worker.moveToThread(cdbLoader.thread)
+                                #cdbLoader.worker.finished.connect(cdbLoader.thread.quit)
+                                #cdbLoader.worker.finished.connect(cdbLoader.worker.deleteLater)
+                                #cdbLoader.thread.finished.connect(cdbLoader.thread.deleteLater)
+                                #cdbLoader.thread.started.connect(cdbLoader.worker.delete_thread)
+                                cdbLoader.thread.start()
+
 
             # delete from db using root classes
+            # using feature root class to obtain classname and id
+            # from table objectclass
             if len(dlg.mComboBox_2.checkedItems()):
                     for root in dlg.mComboBox_2.checkedItems():
                         for item in c.frc_class_finder[root]:
@@ -560,10 +576,20 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
                             ids = [idx[0] for idx in cur.fetchall()]
                             if len(ids):
-                                delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
-                                t = Thread(target=cur.execute, args=[delete_query])
-                                t.start()
-                                cdbLoader.conn.commit()
+                                cdbLoader.fids = ids
+                                cdbLoader.thread.start()
+                                #delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
+                                #cur.execute(delete_query)
+                                #cdbLoader.conn.commit()
+
+
+
+    def evt_btnPlaceSearch_clicked(self,cdbLoader: CDBLoader):
+
+        dlgGeocoder = CDBGeocoderDialog(cdbLoader)
+        dlgGeocoder.setWindowModality(2)
+        dlgGeocoder.show()
+        dlgGeocoder.exec_()
 
 
     def evt_qgbxExtentsC_ext_changed(self, cdbLoader: CDBLoader) -> None:
