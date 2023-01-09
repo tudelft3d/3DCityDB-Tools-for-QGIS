@@ -1,9 +1,8 @@
-"""This module contains constant values that are used within the CDB4plugin
+"""This module contains constant values that are used within the CityDB-Loader plugin for 3DCityDB v. 4.x
 """
 
 import os.path
-from typing import Callable
-from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsMessageLog, QgsRectangle
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from .. import main_constants as main_c
 
@@ -13,13 +12,17 @@ PG_MIN_VERSION: int = 10
 CDB_MIN_VERSION: int = 4
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
-QGIS_PKG_MIN_VERSION_MINOR: int = 8
+QGIS_PKG_MIN_VERSION_MINOR: int = 9
 QGIS_PKG_MIN_VERSION_MINOR_REV: int = 0
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
-# Path to forms
-QML_FORMS_DIR: str = "forms"
-QML_FORMS_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, QML_FORMS_DIR)
+# Path to style configuration files
+QML_DIR: str = "qml"
+QML_PATH: str = os.path.join(main_c.PLUGIN_ROOT_PATH, main_c.PLUGIN_ROOT_DIR, main_c.CDB4_PLUGIN_DIR, QML_DIR)
+
+QML_FORM_DIR: str = "form"
+QML_SYMB_DIR: str = "symb"
+QML_3D_DIR: str = "3d"
 
 # Path to SQL scripts to install the QGIS Package
 SQL_SCRIPTS_DIR: str= "ddl_scripts"
@@ -43,22 +46,26 @@ OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
 OSM_INIT_EXTS: QgsRectangle = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS: QgsCoordinateReferenceSystem = QgsCoordinateReferenceSystem("EPSG:3857")
 
+## SETTINGS (BEGIN) ####
+
 # Options default parameters to simplify geometries
-DEC_PREC: int = 3       # decimal positions after the comma to round coordinates
-MIN_AREA: float = 0.0001  # to be expressed in m2
+SIMP_GEOM_DEC_PREC: int = 3         # decimal positions after the comma to round coordinates
+SIMP_GEOM_MIN_AREA: float = 0.0001  # to be expressed in m2
 
 # Max number of features per layer to be imported
 MAX_FEATURES_TO_IMPORT: int = 50000
 
-# Layer column name constants
-id_col: str = "id" # Primary key column name of database layers.
-geom_col: str = "geom" # Geometry column name of database layers.
+# Other settings
+FORCE_ALL_LAYERS_CREATION: bool = False
+ENABLE_3D_RENDERER: bool = False
+
+## SETTINGS (END) ####
 
 # 3DCityDB constants
-generics_table: str = "cityobject_genericattrib"
-generics_alias: str = "Generic Attributes"
+generics_table: str     = "cityobject_genericattrib"
+generics_alias: str     = "Generic Attributes"
 enumerations_table: str = "v_enumeration_value"
-codelists_table: str = "v_codelist_value"
+codelists_table: str    = "v_codelist_value"
 
 create_layers_funcs: list = [
     "create_layers_bridge",
@@ -118,10 +125,19 @@ menu_html: str = icon_msg_core.format(
     color_hex='#000000',  # black
     addtional_text='{text}')
 
+# Admin dialog strings
 INST_SUCC_MSG: str    = "Database schema '{pkg}' successfully installed!"
 INST_ERROR_MSG: str   = "Database schema '{pkg}' installation failed!"
 UNINST_SUCC_MSG: str  = "Database schema '{pkg}' successfully uninstalled!"
-UNINST_ERROR_MSG: str = "Database schema '{pkg}' NOT removed!"
+
+
+
+
+
+# Usr dialog strings
+
+
+
 
 LAYER_CR_SUCC_MSG: str  = "Layers successfully created in schema '{sch}'"
 LAYER_CR_ERROR_MSG: str = "Error while creating layers in schema '{sch}'"
@@ -147,7 +163,13 @@ REFR_LAYERS_FAIL_MSG: str = "Layers must be refreshed"
 # Pop-up messages
 INST_QUERY: str = "Any existing installation of '{pkg}' will be replaced! Do you want to proceed?"
 UNINST_QUERY: str = "Uninstalling '{pkg}'! Do you want to proceed?"
-REFRESH_QUERY: str = "Refreshing layers can take long time.\nDo you want to proceed?"
+
+
+# Admin dialog: Widget initial embedded text | Note: empty spaces are for positioning.
+
+
+# User dialog: Widget initial embedded text | Note: empty spaces are for positioning.
+
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDb: str  = "Connect to database '{db}'"
@@ -169,46 +191,32 @@ btnDropLayers_t: str    = "Drop layers for schema '{sch}'"
 lblInfoText_t: str    = "Current database: '{db}'\nCurrent user: '{usr}'\nCurrent citydb schema: '{sch}'"
 btnCityExtents_t: str = "Set to schema '{sch}'"
 ccbxFeatures_t: str   = "Select available features to import"
+btnCleanUpSchema: str = "Truncate ALL tables in schema '{sch}'"
+btnDropLayers: str = "Delete features from '{sch}'"
 
+# dict for getting feature type from root class
+module_finder = {'Bridge': 'Bridge',
+                 'Building': 'Building',
+                 'CityFurniture': 'CityFurniture',
+                 'CityObjectGroup': 'CityObjectGroup',
+                 'GenericCityObject': 'Generics',
+                 'LandUse': 'LandUse',
+                 'ReliefFeature': 'Relief',
+                 'TransportationComplex': 'Transportation',
+                 'Track': 'Transportation',
+                 'Railway': 'Transportation',
+                 'Road': 'Transportation',
+                 'Square': 'Transportation',
+                 'Tunnel': 'Tunnel',
+                 'SolitaryVegetationObject': 'Vegetation',
+                 'PlantCover': 'Vegetation',
+                 'WaterBody': 'WaterBody'}
 
-# Classes
-class Layer():
-    """This class is used to convert each row of the 'layer_metadata' table into object
-    instances. Its purpose is to facilitate access to attributes.
-    """
-    def __init__(self,
-            v_id: int,
-            cdb_schema: str,
-            feature_type: str,
-            lod: str,
-            root_class: str,
-            layer_name: str,
-            n_features: int,
-            mv_name: str,
-            v_name: str,
-            qml_file: str,
-            creation_data: str,
-            refresh_date: str):
+ftype_class_finder = {'Building': ('Building','BuildingPart','BuildingInstallation','IntBuildingInstallation','BuildingCeilingSurface',
+                                   'InteriorBuildingWallSurface','BuildingFloorSurface','BuildingRoofSurface','BuildingWallSurface',
+                                   'BuildingGroundSurface','BuildingClosureSurface','BuildingWindow','BuildingDoor','BuildingFurniture','BuildingRoom'),
+                      }
 
-        self.v_id = v_id
-        self.cdb_schema = cdb_schema
-        self.feature_type = feature_type
-        self.lod = lod
-        self.root_class = root_class
-        self.layer_name = layer_name
-        self.n_features = n_features
-        self.n_selected = 0
-        self.mv_name = mv_name
-        self.v_name = v_name
-        self.qml_file = qml_file
-        self.qml_path = os.path.join(QML_FORMS_PATH, qml_file)
-        self.creation_data = creation_data
-        self.refresh_date = refresh_date
-
-class FeatureType():
-    """This class acts as a container of the View class.
-    It is used to organise all views according to their corresponding feature type.
-    """
-    def __init__(self, alias: str):
-        self.alias = alias
-        self.views = []
+frc_class_finder = {'Building': ('Building','BuildingPart','BuildingInstallation','IntBuildingInstallation','BuildingCeilingSurface',
+                                 'InteriorBuildingWallSurface','BuildingFloorSurface','BuildingRoofSurface','BuildingWallSurface',
+                                 'BuildingGroundSurface','BuildingClosureSurface','BuildingWindow','BuildingDoor','BuildingFurniture','BuildingRoom')}
