@@ -453,6 +453,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # disable feature selection
         if dlg.groupBox.isChecked():
             dlg.btnDropLayers.setDisabled(True)
+            dlg.groupBox_2.setDisabled(True)
             dlg.btnCleanUpSchema.setDisabled(False)
             dlg.gbxFeatSel.setDisabled(True)
         # if unchecked:
@@ -461,18 +462,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.btnCleanUpSchema.setDisabled(True)
             dlg.gbxFeatSel.setDisabled(False)
             dlg.btnDropLayers.setDisabled(False)
+            dlg.groupBox_2.setDisabled(False)
 
     def evt_btnCleanUpSchema_clicked(self,cdbLoader: CDBLoader):
 
         dlg = cdbLoader.deleter_dlg
-        from threading import Thread
         res = QMessageBox.question(dlg, "Cleanup Schema", f"You are about to delete all CityGML features in the schema '{cdbLoader.CDB_SCHEMA}'. Proceed ?")
         if res == 16384:
-            with cdbLoader.conn.cursor() as cur:
-                delete_query = f"""SELECT {cdbLoader.CDB_SCHEMA}.cleanup_schema()"""
-                t = Thread(target=cur.execute, args=[delete_query])
-                t.start()
-                cdbLoader.conn.commit()
+            cdbLoader.thread.started.connect(cdbLoader.thread.cleanup)
+            cdbLoader.thread.start()
         else:
             return
 
@@ -531,6 +529,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
+        # apply setWindowModality(2) here
+        # prevent any action that interferes with deletion process
         dlg = cdbLoader.deleter_dlg
         with cdbLoader.conn.cursor() as cur:
 
@@ -540,6 +540,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             if len(dlg.cbxFeatType.checkedItems()):
                     for ftype in dlg.cbxFeatType.checkedItems():
                         for item in c.ftype_class_finder[ftype]:
+                            # better to have this query executed on a separate thread
+                            # prevents momentary freezing of qgis while the ids
+                            # of the features in the bbox are retrieved
                             id_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
                                               WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
                                               {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},
@@ -551,6 +554,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                             ids = [idx[0] for idx in cur.fetchall()]
                             if len(ids):
                                 cdbLoader.fids = ids
+                                cdbLoader.thread.started.connect(cdbLoader.thread.delete_features)
                                 #cdbLoader.worker = DeleteWorker(cdbLoader)
                                 #cdbLoader.worker.moveToThread(cdbLoader.thread)
                                 #cdbLoader.worker.finished.connect(cdbLoader.thread.quit)
@@ -566,6 +570,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             if len(dlg.mComboBox_2.checkedItems()):
                     for root in dlg.mComboBox_2.checkedItems():
                         for item in c.frc_class_finder[root]:
+                            # better to have this query executed on a separate thread
+                            # prevents momentary freezing of qgis while the ids
+                            # of the features in the bbox are retrieved
                             gmlid_query = f'''SELECT co.id FROM {cdbLoader.CDB_SCHEMA}.cityobject as co
                                               WHERE (co.envelope && ST_MakeEnvelope({self.delete_extent.xMinimum()},
                                               {self.delete_extent.yMinimum()}, {self.delete_extent.xMaximum()},

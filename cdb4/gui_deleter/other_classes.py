@@ -58,11 +58,19 @@ class DeleteWorker(QThread):
         super().__init__()
         self.plugin = cdbLoader
 
-    def run(self):
+    def delete_features(self):
         with self.plugin.conn.cursor() as cur:
             for idx in self.plugin.fids:
                 cur.execute(f'''SELECT {self.plugin.CDB_SCHEMA}.del_cityobject({idx})''')
         self.plugin.conn.commit()
+
+    def cleanup(self):
+        with self.plugin.conn.cursor() as cur:
+            delete_query = f"""SELECT {self.plugin.CDB_SCHEMA}.cleanup_schema()"""
+            cur.execute(delete_query)
+        self.plugin.conn.commit()
+
+
 
 
 class DeleterDialogRequirements:

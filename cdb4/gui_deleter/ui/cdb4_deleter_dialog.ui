@@ -523,6 +523,9 @@
             <layout class="QGridLayout" name="gLayoutBasemapC">
              <item row="1" column="1" rowspan="4">
               <widget class="QGraphicsView" name="gvCanvasC">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
