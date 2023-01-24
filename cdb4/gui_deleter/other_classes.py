@@ -5,7 +5,7 @@ from .. import cdb4_constants as c
 from ..shared.functions import general_functions as gen_f
 from ...cdb_loader import CDBLoader
 from .functions.sql import fetch_cdb_schema_srid as get_srid
-from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
+from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal, QRunnable, QThreadPool
 
 
 
@@ -26,10 +26,22 @@ class CDBGeocoderDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg = cdbLoader.deleter_dlg
         url = 'https://nominatim.openstreetmap.org/search?q='
         url = ''.join([url,self.lineEditPlaceName.text(),'&format=json'])
-        nominatim = requests.get(url).json()
+        nominatim = None
+        try:
+            nominatim = requests.get(url).json()
+        except:
+            res = QtWidgets.QMessageBox.information(dlg, "Geocode Unsuccessful", "Please check your internet connection.")
+            if res == 1024:
+                return
+
+        ''' 
+            pass all place search matches in the response variable [nominatim]
+            through a spatial filter [bounding box containts] 
+        '''
         if len(nominatim):
             not_in_bbox = True
             for place in nominatim:
+                print(place)
                 if not_in_bbox:
                     wgs_location = [float(place[key]) for key in place if key in ['lat','lon']]
                     point = QgsPointXY(wgs_location[1],wgs_location[0])
@@ -41,7 +53,7 @@ class CDBGeocoderDialog(QtWidgets.QDialog, FORM_CLASS):
                         not_in_bbox = False
                         dlg.CANVAS_C.zoomByFactor(scaleFactor=0.5,center=point)
                     else:
-                        res = QtWidgets.QMessageBox.information(dlg, "Geocode Unsuccessful","Place search unsuccessful, please refine your place name.")
+                        res = QtWidgets.QMessageBox.information(dlg, "Geocode Unsuccessful",f"Place outside {cdbLoader.CDB_SCHEMA} extent, please refine your place name.")
                         if res == 1024:
                             return
         else:
@@ -69,6 +81,37 @@ class DeleteWorker(QThread):
             delete_query = f"""SELECT {self.plugin.CDB_SCHEMA}.cleanup_schema()"""
             cur.execute(delete_query)
         self.plugin.conn.commit()
+
+class Signals(QObject):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal()
+
+class DelWorker(QRunnable):
+
+    def __init__(self,cdbLoader,q):
+        super().__init__()
+        self.plugin = cdbLoader
+        self.queue = q
+        self.count = 0
+        self.signal = Signals()
+
+    def run(self):
+        while True:
+            try:
+                with self.plugin.conn.cursor() as cur:
+                    cur.execute(f'''SELECT {self.plugin.CDB_SCHEMA}.del_cityobject({self.queue.get()})''')
+                    self.count += 1
+                    b = self.count
+                    self.signal.progress.emit(b)
+                self.plugin.conn.commit()
+            except:
+                continue
+            else:
+                self.queue.task_done()
+
+
+
+
 
 
 

@@ -694,6 +694,9 @@
         </widget>
        </item>
        <item>
+        <layout class="QVBoxLayout" name="DelLayout"/>
+       </item>
+       <item>
         <widget class="QPushButton" name="btnDropLayers">
          <property name="enabled">
           <bool>false</bool>

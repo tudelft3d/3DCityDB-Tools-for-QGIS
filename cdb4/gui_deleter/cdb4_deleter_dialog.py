@@ -23,19 +23,19 @@
  *                                                                         *
  ***************************************************************************/
 """
-import threading
+
 
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
-from qgis.gui import QgsRubberBand, QgsMapCanvas
+from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import Qt,QThread
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtCore import Qt,QThread,QThreadPool
+from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar
 import os
 import psycopg2
 import sys
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from .other_classes import DeleterDialogRequirements, DeleterDialogSettings, CDBGeocoderDialog, DeleteWorker
+from .other_classes import DeleterDialogRequirements, DeleterDialogSettings, CDBGeocoderDialog, DelWorker
 
 from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
 from ..gui_db_connector.new_db_connection_dialog import DBConnectorDialog
@@ -100,8 +100,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.RUBBER_CDB_SCHEMA_BLUE_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
         self.RUBBER_LAYERS_RED_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
         self.city_object_count = 0
-        cdbLoader.thread = DeleteWorker(cdbLoader)
- 
+        cdbLoader.thread = QThread()
+
         # Variable to store all available FeatureTypes.
         # The availability is defined by the existence of at least one feature of that type inside the current selected extents (bbox).
         self.FeatureTypeLayerGroups: dict = {}
@@ -501,6 +501,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.feat_click_count += 1
 
+
     # 'Basemap (OSM)' group box events (in 'User Connection' tab)
     def evt_canvas_ext_changed(self, cdbLoader: CDBLoader) -> None:
         """Event that is called when the current canvas extents (pan over map) changes.
@@ -509,7 +510,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.deleter_dlg
-
+        dlg.btnDropLayers.setDisabled(False)
         # Get canvas's current extent
         extent: QgsRectangle = self.CANVAS_C.extent()
         self.delete_extent = extent
@@ -527,16 +528,20 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 ftype = c.module_finder[root]
                 dlg.cbxFeatType.addItemWithCheckState(ftype, 0)
 
+
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
-        # apply setWindowModality(2) here
-        # prevent any action that interferes with deletion process
+        from concurrent.futures import ThreadPoolExecutor
+        from queue import Queue
         dlg = cdbLoader.deleter_dlg
+        dlg.setWindowModality(2)
+        dlg.btnDropLayers.setDisabled(True)
         with cdbLoader.conn.cursor() as cur:
 
             # delete from db using feature types
             # using feature type to obtain classname and id
             # from table objectclass
+            ids = []
             if len(dlg.cbxFeatType.checkedItems()):
                     for ftype in dlg.cbxFeatType.checkedItems():
                         for item in c.ftype_class_finder[ftype]:
@@ -550,25 +555,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                                               co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
                                                                    WHERE classname = '{item}')'''
                             cur.execute(id_query)
-
-                            ids = [idx[0] for idx in cur.fetchall()]
-                            if len(ids):
-                                cdbLoader.fids = ids
-                                cdbLoader.thread.started.connect(cdbLoader.thread.delete_features)
-                                #cdbLoader.worker = DeleteWorker(cdbLoader)
-                                #cdbLoader.worker.moveToThread(cdbLoader.thread)
-                                #cdbLoader.worker.finished.connect(cdbLoader.thread.quit)
-                                #cdbLoader.worker.finished.connect(cdbLoader.worker.deleteLater)
-                                #cdbLoader.thread.finished.connect(cdbLoader.thread.deleteLater)
-                                #cdbLoader.thread.started.connect(cdbLoader.worker.delete_thread)
-                                cdbLoader.thread.start()
+                            ids += [idx[0] for idx in cur.fetchall()]
 
 
             # delete from db using root classes
             # using feature root class to obtain classname and id
             # from table objectclass
             if len(dlg.mComboBox_2.checkedItems()):
-                    for root in dlg.mComboBox_2.checkedItems():
+                    for root in dlg.mComboBox_2.checkedItems(): # check if feature type present OR disable delete by root class
                         for item in c.frc_class_finder[root]:
                             # better to have this query executed on a separate thread
                             # prevents momentary freezing of qgis while the ids
@@ -580,14 +574,29 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                                               co.objectclass_id = (SELECT id FROM {cdbLoader.CDB_SCHEMA}.objectclass
                                                                    WHERE classname = '{item}')'''
                             cur.execute(gmlid_query)
+                            ids += [idx[0] for idx in cur.fetchall()]
 
-                            ids = [idx[0] for idx in cur.fetchall()]
-                            if len(ids):
-                                cdbLoader.fids = ids
-                                cdbLoader.thread.start()
-                                #delete_query = f'''SELECT {cdbLoader.CDB_SCHEMA}.del_cityobject(ARRAY {ids})'''
-                                #cur.execute(delete_query)
-                                #cdbLoader.conn.commit()
+            cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.DelLayout, position=0)
+            dlg.bar.setMaximum(len(ids))
+            dlg.bar.setAlignment(Qt.AlignVCenter)
+            dlg.bar.setStyleSheet("text-align: center;")
+            q = Queue()
+            qt = ThreadPoolExecutor()
+            qt.map(lambda a: q.put(a), ids)
+            qt.shutdown()
+            # t2 = Thread(target=uc_tf.delete_feature,args=(q,cdbLoader))
+            # t2.start()
+            worker = DelWorker(cdbLoader, q)
+            worker.setAutoDelete(True)
+            worker.signal.progress.connect(lambda i: dlg.bar.setValue(i))
+            worker.signal.progress.connect(lambda i: dlg.bar.setFormat(f'''Deleted {i}/{len(ids)} features'''))
+            worker.signal.progress.connect(lambda i: dlg.msg_bar.clearWidgets() if (i == len(ids)) else None)
+            #msg = dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=cdbLoader.USR_SCHEMA))
+            #dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+            worker.signal.progress.connect(lambda i: dlg.btnDropLayers.setDisabled(False) if (i == len(ids)) else None)
+            self.p = QThreadPool()
+            self.p.waitForDone(20)
+            self.p.start(worker)
 
 
 
