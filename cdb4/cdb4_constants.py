@@ -220,3 +220,4 @@ ftype_class_finder = {'Building': ('Building','BuildingPart','BuildingInstallati
 frc_class_finder = {'Building': ('Building','BuildingPart','BuildingInstallation','IntBuildingInstallation','BuildingCeilingSurface',
                                  'InteriorBuildingWallSurface','BuildingFloorSurface','BuildingRoofSurface','BuildingWallSurface',
                                  'BuildingGroundSurface','BuildingClosureSurface','BuildingWindow','BuildingDoor','BuildingFurniture','BuildingRoom')}
+
