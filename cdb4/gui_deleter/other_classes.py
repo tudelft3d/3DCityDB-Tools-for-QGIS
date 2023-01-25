@@ -63,8 +63,13 @@ class CDBGeocoderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.close()
 
+class Signals(QObject):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal()
 
-class DeleteWorker(QThread):
+
+class DeleteWorker(QObject):
+    signals = Signals()
 
     def __init__(self, cdbLoader: CDBLoader):
         super().__init__()
@@ -72,9 +77,11 @@ class DeleteWorker(QThread):
 
     def delete_features(self):
         with self.plugin.conn.cursor() as cur:
-            for idx in self.plugin.fids:
+            for i,idx in enumerate(self.plugin.fids):
                 cur.execute(f'''SELECT {self.plugin.CDB_SCHEMA}.del_cityobject({idx})''')
+                self.signals.progress.emit(i)
         self.plugin.conn.commit()
+        self.signals.finished.emit()
 
     def cleanup(self):
         with self.plugin.conn.cursor() as cur:
