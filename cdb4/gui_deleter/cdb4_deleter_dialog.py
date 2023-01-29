@@ -35,7 +35,7 @@ import psycopg2
 import sys
 
 from ...cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from .other_classes import DeleterDialogRequirements, DeleterDialogSettings, CDBGeocoderDialog, DeleteWorker
+from .other_classes import DeleterDialogRequirements, DeleterDialogSettings, DeleteWorker, CDBGeoDialog
 
 from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
 from ..gui_db_connector.new_db_connection_dialog import DBConnectorDialog
@@ -164,6 +164,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.gbxFeatSel.clicked.connect(lambda: self.evt_gbxFeatSel_clicked(cdbLoader))
         self.btnDropLayers.clicked.connect(lambda: self.evt_btnDropLayers(cdbLoader))
         self.btnPlaceSearch.clicked.connect(lambda: self.evt_btnPlaceSearch_clicked(cdbLoader))
+        self.cbxFeatType.checkedItemsChanged.connect(lambda: self.evt_FeatTypeSelected(cdbLoader))
+        self.mComboBox_2.checkedItemsChanged.connect(lambda: self.evt_FeatRootClassSelected(cdbLoader))
+        self.groupBox_2.toggled.connect(lambda i: self.gbxBasemapC.setDisabled(not(i)))
 
         ################################################
         ### SIGNALS (end) ##############################
@@ -442,7 +445,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             dlg.qgbxExtents.setDisabled(False)
             dlg.btnCityExtents.setDisabled(False)
             dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text.format(sch="layers extents"))
-        
+
+        dlg.gbxBasemapC.setDisabled(True)
+
         return None
 
     def evt_groupBox_clicked(self, cdbLoader: CDBLoader):
@@ -478,6 +483,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.worker.signals.finished.connect(self.worker.deleteLater)
             cdbLoader.thread.started.connect(self.worker.cleanup)
             cdbLoader.thread.start()
+
         else:
             return
 
@@ -488,9 +494,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         if dlg.gbxFeatSel.isChecked():
             dlg.groupBox.setDisabled(True)
             dlg.btnDropLayers.setDisabled(False)
+            dlg.cbxFeatType.setDisabled(False)
+            dlg.mComboBox_2.setDisabled(False)
         if not(dlg.gbxFeatSel.isChecked()):
             dlg.groupBox.setDisabled(False)
             dlg.btnDropLayers.setDisabled(True)
+            dlg.cbxFeatType.clear()
+            dlg.mComboBox_2.clear()
+
 
         extent = None
         if self.delete_extent:
@@ -517,7 +528,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         # Variable to store the plugin main dialog.
         dlg = cdbLoader.deleter_dlg
+
+        # disable 'drop features' and enable 'feature selection' containers
         dlg.btnDropLayers.setDisabled(False)
+        dlg.mComboBox_2.setDisabled(False)
+        dlg.cbxFeatType.setDisabled(False)
+
         # Get canvas's current extent
         extent: QgsRectangle = self.CANVAS_C.extent()
         self.delete_extent = extent
@@ -525,6 +541,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg.qgbxExtentsC.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS)
         dlg.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
 
+        # populate 'feature selection' containers if feature selection is enabled
         if bool(self.delete_extent.xMaximum()) and dlg.gbxFeatSel.isChecked():
             dlg.mComboBox_2.clear()
             dlg.cbxFeatType.clear()
@@ -535,24 +552,43 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 ftype = c.module_finder[root]
                 dlg.cbxFeatType.addItemWithCheckState(ftype, 0)
 
+    # slot to disable root class selection if user checks at least one feature type to delete
+    def evt_FeatTypeSelected(self,cdbLoader):
+        dlg = cdbLoader.deleter_dlg
+        if len(dlg.cbxFeatType.checkedItems()) > 0:
+            dlg.mComboBox_2.setDisabled(True)
+        else:
+            dlg.mComboBox_2.setDisabled(False)
+
+    # slot to disable feature type selection if user checks at least one root class to delete
+    def evt_FeatRootClassSelected(self,cdbLoader):
+        dlg = cdbLoader.deleter_dlg
+        if len(dlg.mComboBox_2.checkedItems()):
+            dlg.cbxFeatType.setDisabled(True)
+        else:
+            dlg.cbxFeatType.setDisabled(False)
+
 
     def evt_btnDropLayers(self,cdbLoader: CDBLoader):
 
-        from concurrent.futures import ThreadPoolExecutor
-        from queue import Queue
-        from threading import Thread
+        #from concurrent.futures import ThreadPoolExecutor
+        #from queue import Queue
+        #from threading import Thread
         dlg = cdbLoader.deleter_dlg
         dlg.setWindowModality(2)
-        #dlg.gbxFeatSel.setChecked(False)
         dlg.btnDropLayers.setDisabled(True)
+        dlg.groupBox_2.setChecked(False)
         with cdbLoader.conn.cursor() as cur:
 
             # delete from db using feature types
             # using feature type to obtain classname and id
             # from table objectclass
             ids = []
-            if len(dlg.cbxFeatType.checkedItems()):
-                    for ftype in dlg.cbxFeatType.checkedItems():
+            if len(dlg.cbxFeatType.checkedItems()):  # AND ISCHECKED(): REMOVE ITEMS FROM OTHER
+                count = dlg.mComboBox_2.count()
+                for j in range(count):
+                    dlg.mComboBox_2.removeItem(j)
+                    for idx,ftype in enumerate(dlg.cbxFeatType.checkedItems()):
                         for item in c.ftype_class_finder[ftype]:
                             # better to have this query executed on a separate thread
                             # prevents momentary freezing of qgis while the ids
@@ -565,13 +601,17 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                                                                    WHERE classname = '{item}')'''
                             cur.execute(id_query)
                             ids += [idx[0] for idx in cur.fetchall()]
+                            dlg.cbxFeatType.removeItem(idx)
 
 
             # delete from db using root classes
             # using feature root class to obtain classname and id
             # from table objectclass
-            if len(dlg.mComboBox_2.checkedItems()):
-                    for root in dlg.mComboBox_2.checkedItems(): # check if feature type present OR disable delete by root class
+            if len(dlg.mComboBox_2.checkedItems()): # AND ISCHECKED(): REMOVE ITEMS FROM OTHER
+                count = dlg.cbxFeatType.count()
+                for j in range(count):
+                    dlg.cbxFeatType.removeItem(j)
+                    for idx,root in enumerate(dlg.mComboBox_2.checkedItems()): # check if feature type present OR disable delete by root class
                         for item in c.frc_class_finder[root]:
                             # better to have this query executed on a separate thread
                             # prevents momentary freezing of qgis while the ids
@@ -584,6 +624,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                                                                    WHERE classname = '{item}')'''
                             cur.execute(gmlid_query)
                             ids += [idx[0] for idx in cur.fetchall()]
+                            dlg.mComboBox_2.removeItem(idx)
 
             ''' 
                 THREADS NOT RELEASED
@@ -609,6 +650,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             #self.p.start(worker)
             
             '''
+            if len(ids) == 0:
+                res = QtWidgets.QMessageBox.information(dlg, "Unsuccessful","No features selected for deletion.")
+                if res == 1024:
+                    dlg.cbxFeatType.setDisabled(False)
+                    dlg.mComboBox_2.setDisabled(False)
+                    return
             cdbLoader.create_progress_bar(dialog=dlg, layout=dlg.DelLayout, position=0)
             dlg.bar.setMaximum(len(ids))
             dlg.bar.setAlignment(Qt.AlignVCenter)
@@ -621,11 +668,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.worker.signals.finished.connect(self.worker.deleteLater)
             self.worker.signals.progress.connect(lambda i: dlg.bar.setValue(i))
             self.worker.signals.progress.connect(lambda i: dlg.bar.setFormat(f'''Deleted {i}/{len(ids)} features'''))
-            self.worker.signals.finished.connect(lambda : dlg.msg_bar.clearWidgets())
+            self.worker.signals.finished.connect(lambda: dlg.msg_bar.clearWidgets())
+            self.worker.signals.enable_canvas.connect(lambda f: dlg.groupBox_2.setChecked(f))
+            self.worker.signals.enable_canvas.connect(lambda f: dlg.cbxFeatType.setDisabled(not(f)))
+            self.worker.signals.enable_canvas.connect(lambda f: dlg.mComboBox_2.setDisabled(not (f)))
             cdbLoader.thread.finished.connect(cdbLoader.thread.deleteLater)
             cdbLoader.thread.started.connect(self.worker.delete_features)
-            dlg.cbxFeatType.clear()
-            dlg.mComboBox_2.clear()
             cdbLoader.thread.start()
 
 
@@ -642,7 +690,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def evt_btnPlaceSearch_clicked(self,cdbLoader: CDBLoader):
 
-        dlgGeocoder = CDBGeocoderDialog(cdbLoader)
+        #dlgGeocoder = CDBGeocoderDialog(cdbLoader)
+        #dlgGeocoder.setWindowModality(2)
+        #dlgGeocoder.show()
+        #dlgGeocoder.exec_()
+
+        dlgGeocoder = CDBGeoDialog(cdbLoader)
         dlgGeocoder.setWindowModality(2)
         dlgGeocoder.show()
         dlgGeocoder.exec_()
