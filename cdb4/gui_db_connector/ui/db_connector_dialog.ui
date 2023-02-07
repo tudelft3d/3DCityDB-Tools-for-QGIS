@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Define a new PostgreSQL connection</string>
+   <string>New PostgreSQL connection</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
