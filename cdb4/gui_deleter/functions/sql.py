@@ -3,47 +3,114 @@
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
-import psycopg2
+import psycopg2, psycopg2.sql as pysql
+from psycopg2.extras import NamedTupleCursor
 
-from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
+from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
 
 from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 
-def get_root_classes(cdbLoader, extent):
-    with cdbLoader.conn.cursor() as cur:
-        root_class_query = f'''SELECT distinct classname
-                               FROM {cdbLoader.CDB_SCHEMA}.objectclass as oc
-                               JOIN {cdbLoader.CDB_SCHEMA}.cityobject as co 
-                               ON oc.id = co.objectclass_id
-                               WHERE (co.envelope && ST_MakeEnvelope({extent.xMinimum()}, {extent.yMinimum()}, 
-                               {extent.xMaximum()}, {extent.yMaximum()},28992))
-                               AND oc.is_toplevel = 1'''
-        cur.execute(root_class_query)
-        return [f[0] for f in cur.fetchall()]
+def exec_list_cdb_schemas_extended(cdbMain: CDBToolsMain) -> list:
+    """SQL function that retrieves the database cdb_schemas for the current database, 
+    included the privileges status for the selected usr_name
 
-def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
+    *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
+         and the user's privileges for each cdb_schema in the current database
+        :rtype: list(tuple(cdb_schema, co_number, priv_type))
+    """
+    query = pysql.SQL("""
+        SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(cdbMain.DB.username)
+        )
+
+    try:
+        with cdbMain.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        if not res:
+            res = []
+            return res
+        else:
+            return res
+    
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_cdb_schemas_extended,
+            location=FILE_LOCATION,
+            header="Retrieving list of cdb_schemas with their privileges",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def is_superuser(cdbMain: CDBToolsMain) -> bool:
+    """SQL query that determines whether the connecting user has administrations privileges.
+
+    *   :returns: Admin status
+        :rtype: bool
+    """
+    # Think whether you can use the function in the qgis_pkg or not, 
+    # because we may have not yet installed the qgis_pkg
+    # This one does not depend on the qgis_pkg
+
+    query = pysql.SQL("""
+        SELECT 1 FROM pg_user WHERE usesuper IS TRUE AND usename = {_usr_name};
+        """).format(
+        _usr_name = pysql.Literal(cdbMain.DB.username)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchone() # as (1,) or None
+        cdbMain.conn.commit()
+
+        if res:
+            return True
+        else:
+            return False
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=is_superuser,
+            location=FILE_LOCATION,
+            header=f"Checking whether the current user is a database superuser",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def fetch_precomputed_extents(cdbMain: CDBToolsMain, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
     """SQL query that reads and retrieves extents stored in {usr_schema}.extents
 
     *   :returns: Extents as WKT or None if the entry is empty.
         :rtype: str
     """
+    # Get cdb_schema extents from server as WKT.
+    query = pysql.SQL("""
+        SELECT ST_AsText(envelope) FROM {_usr_schema}.extents 
+        WHERE cdb_schema = {_cdb_schema} AND bbox_type = {_ext_type};
+        """).format(
+        _usr_schema = pysql.Identifier(usr_schema),
+        _cdb_schema = pysql.Literal(cdb_schema),
+        _ext_type = pysql.Literal(ext_type)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Get cdb_schema extents from server as WKT.
-            cur.execute(query= f"""
-                                   SELECT ST_AsText(envelope) FROM "{usr_schema}".extents 
-                                   WHERE cdb_schema = '{cdb_schema}' AND bbox_type = '{ext_type}';
-                                """)
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
             extents = cur.fetchone()
             # extents = (None,) when the envelope is Null,
             # BUT extents = None when the query returns NO results.
             if type(extents) == tuple:
                 extents = extents[0] # Get the value without trailing comma.
 
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
         return extents
 
     except (Exception, psycopg2.Error) as error:
@@ -52,22 +119,28 @@ def fetch_precomputed_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema:
             location=FILE_LOCATION,
             header=f"Retrieving extents of schema {cdb_schema}",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
 
-def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
+def fetch_cdb_schema_srid(cdbMain: CDBToolsMain) -> int:
     """SQL query that reads and retrieves the current schema's srid from {cdb_schema}.database_srs
 
     *   :returns: srid number
         :rtype: int
     """
-    srid: int
+    # Get database srid
+    query = pysql.SQL("""
+        SELECT srid FROM {_cdb_schema}.database_srs LIMIT 1;
+        """).format(
+        _cdb_schema = pysql.Identifier(cdbMain.CDB_SCHEMA)
+        )
+   
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Get database srid
-            cur.execute(query= f"""SELECT srid FROM "{cdbLoader.CDB_SCHEMA}".database_srs LIMIT 1;""")
+        with cdbMain.conn.cursor() as cur:
+
+            cur.execute(query)
             srid = cur.fetchone()[0] # Tuple has trailing comma.
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
         return srid
 
     except (Exception, psycopg2.Error) as error:
@@ -76,55 +149,28 @@ def fetch_cdb_schema_srid(cdbLoader: CDBLoader) -> int:
             location=FILE_LOCATION,
             header="Retrieving srid",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
 
-def fetch_layer_metadata(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, cols: str="*") -> tuple:
-    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
-    By default it retrieves all columns.
-
-    *   :param cols: The columns to retrieve from the table.
-            Note: to fetch multiple columns use: ",".join([col1,col2,col3])
-        :type cols: str
-
-    *   :returns: metadata of the layers combined with a collection of
-        the attributes names
-        :rtype: tuple(attribute_names, metadata)
-    """
-    try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.execute(f"""
-                        SELECT {cols} FROM "{usr_schema}".layer_metadata
-                        WHERE cdb_schema = '{cdb_schema}'
-                        ORDER BY feature_type, lod, root_class, layer_name;
-                        """)
-            metadata = cur.fetchall()
-            # Attribute names
-            colnames = [desc[0] for desc in cur.description]
-        cdbLoader.conn.commit()
-        return colnames, metadata
-
-    except (Exception, psycopg2.Error) as error:
-        gen_f.critical_log(
-            func=fetch_layer_metadata,
-            location=FILE_LOCATION,
-            header="Retrieving layers metadata",
-            error=error)
-        cdbLoader.conn.rollback()
-
-
-def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
+def exec_compute_cdb_schema_extents(cdbMain: CDBToolsMain) -> tuple:
     """Calls the qgis_pkg function that computes the cdb_schema extents.
 
     *   :returns: is_geom_null, x_min, y_min, x_max, y_max, srid
         :rtype: tuple
     """
+    # Prepar query to execute server function to compute the schema's extents
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _cdb_schema = pysql.Literal(cdbMain.CDB_SCHEMA)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Execute server function to compute the schema's extents
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.compute_cdb_schema_extents""",[cdbLoader.CDB_SCHEMA])
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
             values = cur.fetchone()
-            cdbLoader.conn.commit()
+            cdbMain.conn.commit()
             if values:
                 is_geom_null, x_min, y_min, x_max, y_max, srid = values
                 return is_geom_null, x_min, y_min, x_max, y_max, srid
@@ -135,12 +181,12 @@ def exec_compute_cdb_schema_extents(cdbLoader: CDBLoader) -> tuple:
         gen_f.critical_log(
             func=exec_compute_cdb_schema_extents,
             location=FILE_LOCATION,
-            header=f"Computing extents of the schema '{cdbLoader.CDB_SCHEMA}'",
+            header=f"Computing extents of the schema '{cdbMain.CDB_SCHEMA}'",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
 
-def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, bbox_type: str, extents_wkt_2d_poly: str) -> int:
+def exec_upsert_extents(cdbMain: CDBToolsMain, bbox_type: str, extents_wkt_2d_poly: str) -> int:
     """Calls a QGIS Package function to insert (or update) the extents geometry in table qgis_{usr}.extents.
 
     *   :param bbox_type: one of ['db_schema', 'm_view', 'qgis']
@@ -152,10 +198,22 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
     *   :returns: upserted_id
         :rtype: int
     """
+    # Prepare query to upsert the extents of the current cdb_schema
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_schema = pysql.Literal(cdbMain.USR_SCHEMA),
+        _cdb_schema = pysql.Literal(cdbMain.CDB_SCHEMA),
+        _bbox_type = pysql.Literal(bbox_type),
+        _extents = pysql.Literal(extents_wkt_2d_poly)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            upserted_id = cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents_wkt_2d_poly])
-        cdbLoader.conn.commit()
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            upserted_id = cur.fetchone()[0] # Tuple has trailing comma.
+        cdbMain.conn.commit()
         if upserted_id:
             return upserted_id
         else:
@@ -167,4 +225,117 @@ def exec_upsert_extents(cdbLoader: CDBLoader, usr_schema: str, cdb_schema: str, 
             location=FILE_LOCATION,
             header=f"Upserting '{bbox_type}' extents",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
+
+
+def fetch_feature_types_checker(cdbMain: CDBToolsMain) -> tuple:
+    """SQL query that retrieves the available feature types 
+
+    *   :returns: Dictionary with feature type as key and populated status as boolean value.
+        :rtype: tuple
+    """
+    dlg = cdbMain.deleter_dlg
+
+    if dlg.CDB_SCHEMA_EXTENTS == dlg.DELETE_EXTENTS:
+        extents = None
+    else:
+        # Convert QgsRectangle into WKT polygon format
+        extents: str = dlg.CURRENT_EXTENTS.asWktPolygon()  
+
+    query = pysql.SQL("""
+        SELECT feature_type 
+        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_extents}) 
+        WHERE exists_in_db IS TRUE 
+        ORDER BY feature_type;
+        """).format(
+        _cdb_schema = pysql.Literal(cdbMain.CDB_SCHEMA),
+        _extents = pysql.Literal(extents)
+        )  
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            result = cur.fetchall()
+        cdbMain.conn.commit()
+        feat_types = tuple(zip(*result))[0]
+        return feat_types
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_feature_types_checker,
+            location=FILE_LOCATION,
+            header="Retrieving list of available feature types in selected area",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def cleanup_cdb_schema(cdbMain: CDBToolsMain) -> bool:
+    """SQL query that cleans up the cdb_schema (truncates all tables) in the current database
+    """
+    query = pysql.SQL("""
+        SELECT {_qgis_pgk_schema}.cleanup_schema({_cdb_schema});
+        """).format(
+        _qgis_pgk_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _cdb_schema = pysql.Literal(cdbMain.CDB_SCHEMA)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            # res = cur.execute(query)
+        cdbMain.conn.commit()
+        # print('from database:', res) # should be None is all goes well
+        return True
+    
+    except (Exception, psycopg2.Error) as error:
+        cdbMain.conn.rollback()
+        gen_f.critical_log(
+            func=cleanup_cdb_schema,
+            location=FILE_LOCATION,
+            header=f"Cleaning up cdb_schema '{cdbMain.CDB_SCHEMA}'",
+            error=error)
+        return False
+
+
+def fetch_root_class_features_counter(cdbMain: CDBToolsMain, extents_wkt_2d: str) -> list:
+    """SQL query that retrieves the number of available root-class features 
+
+    *   :returns: List of named tuples, each one corresponding to a record.
+        :rtype: list of named tuples (RECORD)
+    """
+    root_class_features = [] # empty list
+
+    query = pysql.SQL("""
+        SELECT feature_type, root_class, objectclass_id, n_feature 
+        FROM qgis_pkg.root_class_counter({_cdb_schema},{_extents}) 
+        WHERE n_feature > 0 
+        ORDER BY feature_type, root_class;
+        """).format(
+        _cdb_schema = pysql.Literal(cdbMain.CDB_SCHEMA),
+        _extents = pysql.Literal(extents_wkt_2d)
+        )  
+
+    try:
+        with cdbMain.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+        # print ("from the db", res)
+
+        if not res:
+            root_class_features = []
+        else: 
+            root_class_features = res
+        
+        return root_class_features 
+
+    except (Exception, psycopg2.Error) as error:
+        cdbMain.conn.rollback()
+        gen_f.critical_log(
+            func=fetch_root_class_features_counter,
+            location=FILE_LOCATION,
+            header="Retrieving list and quantity of available root-class features in selected area",
+            error=error)
+        
+
+       
