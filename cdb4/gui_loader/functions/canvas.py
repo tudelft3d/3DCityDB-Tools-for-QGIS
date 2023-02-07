@@ -3,10 +3,10 @@ from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
-from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
-from ... import cdb4_constants as c
+from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
+from .. import loader_constants as c
 
-def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
+def canvas_setup(cdbMain: CDBToolsMain, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
     """Function to set up the additional map canvas that shows the extents.
     For the basemap it uses a OSM maps WMS layer,         
     (in 'User Connection' tab)
@@ -23,18 +23,24 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
 
     *   :param clear: Clear map registry from old OSM layers.
         :type clear: bool
-    """    
+    """
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    if canvas==cdbLoader.loader_dlg.CANVAS_C: # in 'User Connection' tab
-        # Put extents coordinates into the widget. Signal emitted for qgbxExtentsC.
-        cdbLoader.loader_dlg.qgbxExtentsC.setOutputCrs(crs)
-        cdbLoader.loader_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs)
-    elif canvas==cdbLoader.loader_dlg.CANVAS_L: # in 'Layers' tab
+    if canvas == cdbMain.loader_dlg.CANVAS_C: # in 'User Connection' tab
+        # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtentsC.
+        # In order to avoid firing twice the signar, we temporarily block the first one.
+        cdbMain.loader_dlg.qgbxExtentsC.blockSignals(True)
+        cdbMain.loader_dlg.qgbxExtentsC.setOutputCrs(crs)  # Signal emitted for qgbxExtentsC.
+        cdbMain.loader_dlg.qgbxExtentsC.blockSignals(False)
+        cdbMain.loader_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtentsC.
+
+    elif canvas == cdbMain.loader_dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtents.
-        cdbLoader.loader_dlg.qgbxExtents.setOutputCrs(crs)
-        cdbLoader.loader_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
+        cdbMain.loader_dlg.qgbxExtents.blockSignals(True)
+        cdbMain.loader_dlg.qgbxExtents.setOutputCrs(crs)
+        cdbMain.loader_dlg.qgbxExtents.blockSignals(False)
+        cdbMain.loader_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)
@@ -60,18 +66,19 @@ def canvas_setup(cdbLoader: CDBLoader, canvas: QgsMapCanvas, extents: QgsRectang
 
     return None
 
-def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoordinateReferenceSystem, width: int, color: Qt.GlobalColor = Qt.red) -> None:
+
+def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoordinateReferenceSystem, width: int, color: Qt.GlobalColor = c.LAYER_EXTENTS_COLOUR) -> None:
     """Function that insert a rubber band corresponding to an extent.
     The rubber band is inserted into the additional map canvas created to show the extents.
     Use different colors to represent different extent types, e.g.
-    +   Qt.blue = citydb schema extents
-    +   Qt.red = Layers extents
-    +   Qt.green = User defined extents, pressing the buttons
+    +   c.CDB_EXTENTS_COLOUR = citydb schema extents
+    +   c.LAYER_EXTENTS_COLOUR = Layers extents
+    +   c.QGIS_EXTENTS_COLOUR = User defined extents, pressing the buttons
 
         or from qgis_pkg.extents
-    +   Qt.blue = db_schema extents
-    +   Qt.red = m_view extents
-    +   Qt.green = qgis extents
+    +   c.CDB_EXTENTS_COLOUR = db_schema extents
+    +   c.LAYER_EXTENTS_COLOUR = m_view extents
+    +   c.QGIS_EXTENTS_COLOUR = qgis extents
 
     *   :param canvas: Canvas to draw the rubber band on.
         :type extents: QgsMapCanvas
