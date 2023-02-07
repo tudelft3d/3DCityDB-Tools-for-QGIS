@@ -3,7 +3,7 @@
 --      QGIS Package for the CityGML 3D City Database (for PostgreSQL)
 --
 --
---                        Copyright 2022
+--                        Copyright 2023
 --
 -- Delft University of Technology, The Netherlands
 -- 3D Geoinformation Group
@@ -48,13 +48,13 @@ force_layer_creation boolean
 ) 
 RETURNS text AS $$
 DECLARE
-feature_type CONSTANT varchar := 'Generics';
-qgis_user_group_name CONSTANT varchar := 'qgis_pkg_usrgroup';
-l_type				varchar := 'VectorLayer';
-usr_schema      	varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
-usr_names_array     varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
-usr_schemas_array 	varchar[] := (SELECT array_agg(s.usr_schema) FROM qgis_pkg.list_usr_schemas() AS s);
-cdb_schemas_array 	varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
+feature_type		CONSTANT varchar := 'Generics';
+l_type				CONSTANT varchar := 'VectorLayer';
+qgis_user_group_name CONSTANT varchar := (SELECT qgis_pkg.create_qgis_pkg_usrgroup_name());
+usr_schema      	CONSTANT varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
+usr_names_array     CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
+usr_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.usr_schema) FROM qgis_pkg.list_usr_schemas() AS s);
+cdb_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s); 
 srid                integer;
 num_features    	bigint;
 root_class			varchar; curr_class varchar;
@@ -78,7 +78,7 @@ sql_ins			text := NULL;
 sql_trig		text := NULL;
 sql_layer	 	text := NULL;
 sql_statement	text := NULL;
-sql_co_atts varchar := '
+sql_co_atts CONSTANT varchar := '
   co.id::bigint,
   co.gmlid,
   co.gmlid_codespace,
@@ -93,7 +93,7 @@ sql_co_atts varchar := '
   co.updating_person,
   co.reason_for_update,
   co.lineage,';
-sql_cfu_atts varchar := '
+sql_cfu_atts CONSTANT varchar := '
   o.class,
   o.class_codespace,
   string_to_array(o.function, ''--/\--'')::varchar[] AS function,

@@ -3,7 +3,7 @@
 --      QGIS Package for the CityGML 3D City Database (for PostgreSQL)
 --
 --
---                        Copyright 2022
+--                        Copyright 2023
 --
 -- Delft University of Technology, The Netherlands
 -- 3D Geoinformation Group
@@ -33,50 +33,14 @@
 --
 -- ***********************************************************************
 
--- Add user group and template table(s)
-DO $MAINBODY$
-DECLARE
-BEGIN
-
-IF NOT EXISTS(SELECT 1 FROM information_schema.enabled_roles AS i WHERE i.role_name::varchar = 'qgis_user_ro') THEN
-	-- Add/create a default 3DCityDB read-only user
-	CREATE ROLE qgis_user_ro WITH
-		LOGIN
-		NOSUPERUSER
-		NOCREATEDB
-		NOCREATEROLE
-		INHERIT
-		NOREPLICATION
-		CONNECTION LIMIT -1
-		PASSWORD 'qgis_user_ro';
-	GRANT qgis_pkg_usrgroup TO qgis_user_ro;
-	COMMENT ON ROLE qgis_user_ro IS 'QGIS-Package user with read-only privileges for the 3DCityDB';
-END IF;
-
-IF NOT EXISTS(SELECT 1 FROM information_schema.enabled_roles AS i WHERE i.role_name::varchar = 'qgis_user_rw') THEN
-	-- Add/create a default 3DCityDB read & write user
-	CREATE ROLE qgis_user_rw WITH
-		LOGIN
-		NOSUPERUSER
-		NOCREATEDB
-		NOCREATEROLE
-		INHERIT
-		NOREPLICATION
-		CONNECTION LIMIT -1
-		PASSWORD 'qgis_user_rw';
-	GRANT qgis_pkg_usrgroup TO qgis_user_rw;
-	COMMENT ON ROLE qgis_user_rw IS 'QGIS-Package user with read/write privileges for the 3DCityDB';
-END IF;
-
-END $MAINBODY$;
-
--- Assign respective ro/rw priviles to the user regarding ALL existing citydb schemas
-SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_ro', 'ro');
-SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_rw', 'rw');
+-- Assign respective ro/rw priviles to the user regarding ALL existing citydb schemas (NULL parameter)
+-- Upon the first cdb_schema, it is also assigned to the "qgis_pkg_usrgroup_*" associated to the current database.
+-- SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_ro', 'ro', NULL);
+-- SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_rw', 'rw', NULL);
 
 -- Create default schemas for user qgis_user_ro and qgis_user_rw
-SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_ro');
-SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_rw');
+-- SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_ro');
+-- SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_rw');
 
 --**************************
 DO $MAINBODY$

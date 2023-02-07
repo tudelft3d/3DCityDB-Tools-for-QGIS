@@ -3,7 +3,7 @@
 --      QGIS Package for the CityGML 3D City Database (for PostgreSQL)
 --
 --
---                        Copyright 2022
+--                        Copyright 2023
 --
 -- Delft University of Technology, The Netherlands
 -- 3D Geoinformation Group
