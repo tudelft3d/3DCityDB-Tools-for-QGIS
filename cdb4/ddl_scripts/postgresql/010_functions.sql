@@ -588,7 +588,12 @@ RETURN QUERY
 	END AS priv_type
 	FROM qgis_pkg.list_cdb_schemas(FALSE) AS s
 	LEFT JOIN (
-		SELECT table_catalog AS curr_db, table_schema AS cdb_schema, grantee AS usr_name, array_agg(privilege_type) AS priv_array
+		SELECT 
+			table_catalog AS curr_db, 
+			table_schema AS cdb_schema, 
+			grantee AS usr_name,
+			-- array_agg(privilege_type) AS priv_array
+			array_agg(privilege_type::varchar) AS priv_array  -- type cast added for compatibility in PostgreSQL 10
 		FROM (
 			SELECT rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
 			FROM information_schema.role_table_grants AS rt
