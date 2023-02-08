@@ -194,10 +194,6 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Existing Connection' comboBox (cbxExistingConnC) current index changes.
         This function runs every time the current selection of 'Existing Connection' changes.
         """
-        # Close the current open connection.
-        if cdbMain.conn is not None:
-            cdbMain.conn.close()
-
         # Set the current database connection object variable
         cdbMain.DB: Connection = self.cbxExistingConnC.currentData()
         if not cdbMain.DB:
