@@ -46,7 +46,7 @@ homepage=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 category=Database
 
 # Path to the icon file
-icon=icons/plugin_icon_mini.png
+icon=icons/plugin_icon.png
 
 # experimental flag
 experimental=True
