@@ -14,7 +14,7 @@ The client-side part offers at the moment three GUI-based tools:
 - The **Bulk Deleter**, to delete features from the database, either at all at once, or by means of spatial and feature-related filters.
 - The **QGIS Package Administration**, to install the server-side part of the plugin, as well as to set up database user access and user privileges.
 
-In particular, the "Layer Loader" offers following functionalities:
+In particular, the **Layer Loader** offers following functionalities:
 - All CityGML modules are supported (Building, Bridge, Tunnel, Vegetation, Terrain, etc.)
 - All LoDs are supported, whenever applicable (LoD0 to LoD4)
 - Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Intersection Curves)
@@ -45,7 +45,7 @@ The plugin is currently developed by:
 - [Giorgio Agugiaro](mailto:g.agugiaro@tudelft.nl)
 - [Konstantinos Pantelios](mailto:konstantinospantelios@yahoo.com)
 
-with contributions from:
+with contributions by:
 - [Tendai Mbwanda](tendai.mbwanda@student.tudelft.nl)
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
