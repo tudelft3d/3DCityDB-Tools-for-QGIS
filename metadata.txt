@@ -31,12 +31,12 @@ repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog=0.7 extended Loader and Admin, added Deleter. Ships with qgis_pkg 0.9
- 0.6 further code cleaning and refactoring, ships with qgis_pkg 0.8
+changelog=0.7 extended Loader and Admin, added Deleter
+ 0.6 further code cleaning and refactoring
  0.5 major code cleaning and refactoring, moved to TUD GitHub
  0.4 first public release (Konstantinos' MSc thesis @ TUD)
  0.3 internal release: improved GUI, added dynamic ToC
- 0.2 internal release: added qgis_pkg back-end
+ 0.2 internal release: added PostgreSQL/PostGIS back-end
  0.1 first internal release
 
 # Tags are comma separated with spaces allowed
@@ -48,7 +48,7 @@ homepage=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 category=Database
 
 # Path to the icon file
-icon=icons/plugin_icon.png
+icon=icons/plugin_icon_mini.png
 
 # experimental flag
 experimental=True
