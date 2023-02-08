@@ -771,7 +771,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None # Exit and do nothing
 
         selected_priv = self.cbxSelPriv.currentText()
-        print ("Selected priv:", selected_priv)
+        # print ("Selected priv:", selected_priv)
 
         if selected_priv == "Revoke ALL privileges":
             sql.exec_revoke_qgis_usr_privileges(cdbMain, sel_usr_name, sel_cdb_schemas)
