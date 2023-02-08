@@ -248,9 +248,9 @@ class CDBToolsMain:
         """
         # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
         # admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
-        loader_icon_path  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "plugin_icon.png")
-        deleter_icon_path = os.path.join(self.PLUGIN_ABS_PATH, "icons", "delete_icon.png")
-        admin_icon_path   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "db_admin.png")
+        loader_icon_path  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "loader_icon.png")
+        deleter_icon_path = os.path.join(self.PLUGIN_ABS_PATH, "icons", "deleter_icon.png")
+        admin_icon_path   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "admin_icon.png")
 
         # Loader Dialog
         self.add_action(

@@ -100,7 +100,7 @@
       </property>
       <attribute name="icon">
        <iconset>
-        <normaloff>../../../../../../../../../../../../../../icons/db_admin.png</normaloff>../../../../../../../../../../../../../../icons/db_admin.png</iconset>
+        <normaloff>../../../icons/postgres_elephant.svg</normaloff>../../../icons/postgres_elephant.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>QGIS Package Installation</string>
@@ -1126,6 +1126,10 @@
       </layout>
      </widget>
      <widget class="QWidget" name="tabSettings">
+      <attribute name="icon">
+       <iconset>
+        <normaloff>../../../icons/settings_icon.svg</normaloff>../../../icons/settings_icon.svg</iconset>
+      </attribute>
       <attribute name="title">
        <string>Installation settings</string>
       </attribute>
