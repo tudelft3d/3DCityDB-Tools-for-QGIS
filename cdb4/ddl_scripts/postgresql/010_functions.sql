@@ -1060,7 +1060,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.list_usr_schemas() FROM public;
 DROP FUNCTION IF EXISTS    qgis_pkg.grant_qgis_usr_privileges(varchar, varchar, varchar) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.grant_qgis_usr_privileges(
 usr_name		varchar,
-priv_type		varchar,   	-- must be either 'ro' or 'rw'
+priv_type		varchar,   				-- must be either 'ro' or 'rw'
 cdb_schema		varchar DEFAULT NULL	-- NULL = all existing cdb_schemas, otherwise to the given schema (e.g. 'citydb').
 )
 RETURNS void
@@ -1102,21 +1102,25 @@ EXECUTE format('GRANT %I TO %I;', qgis_pkg_grp_name, usr_name);
 RAISE NOTICE 'Added user "%" to group "%"', usr_name, qgis_pkg_grp_name;
 
 IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
+	--RAISE NOTICE 'Working with user "%" as superuser', usr_name;
 	-- Revoke the privileges from a previous run, if any.
-	-- In the case of superusers, no need to worry about
+	-- In the case of superusers, no need to worry about being revoked access
+	-- to the database: They will always have, such privileges are not revoked.
 
 	EXECUTE format('SELECT qgis_pkg.revoke_qgis_usr_privileges(%L, %L);',  usr_name, cdb_schema);
 
 	IF cdb_schema IS NULL THEN
 		-- Recursively iterate for each cdb_schema in database
 		FOREACH sch_name IN ARRAY cdb_schemas_array LOOP
-			EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I;', sch_name, usr_name);
+			EXECUTE format('GRANT USAGE, CREATE ON SCHEMA %I TO %I;', sch_name, usr_name);
 			EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA %I TO %I;', sql_priv_type, sch_name, usr_name);
 			EXECUTE format('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I TO %I', sch_name, usr_name);
 
-			-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
-			EXECUTE format('GRANT TRUNCATE ON ALL TABLES IN SCHEMA %I TO %I', sch_name, usr_name);
-			RAISE NOTICE 'Granted TRUNCATE privileges to user "%" for tables in schema "%"', usr_name, sch_name; 
+			IF priv_type = 'rw' THEN
+				-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
+				EXECUTE format('GRANT TRUNCATE ON ALL TABLES IN SCHEMA %I TO %I', sch_name, usr_name);
+				RAISE NOTICE 'Granted TRUNCATE privileges to user "%" for tables in schema "%"', usr_name, sch_name; 
+			END IF;
 
 			RAISE NOTICE 'Granted "%" privileges to user "%" for schema "%"', priv_type, usr_name, sch_name; 		
 
@@ -1126,7 +1130,8 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 
 		-- Grant usage to citydb_pkg
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
-		EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- No tables in schema citydb_pkg (also also no sequences)
+		--EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 		-- Access/usage to qgis_pkg was granted at the moment of installing the usr_schema
 
@@ -1137,18 +1142,20 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 
 	ELSIF cdb_schema = ANY(cdb_schemas_array) THEN 
 		-- Grant privileges only for the selected cdb_schema.
-		EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I;', cdb_schema, usr_name);
+		EXECUTE format('GRANT USAGE, CREATE ON SCHEMA %I TO %I;', cdb_schema, usr_name);
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA %I TO %I;', sql_priv_type, cdb_schema, usr_name);
-
 		EXECUTE format('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I TO %I', cdb_schema, usr_name);
-		-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
-		EXECUTE format('GRANT TRUNCATE ON ALL TABLES IN SCHEMA %I TO %I', cdb_schema, usr_name);
 
-		-- (No need to iterate here)
-
+		IF priv_type = 'rw' THEN
+			-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
+			EXECUTE format('GRANT TRUNCATE ON ALL TABLES IN SCHEMA %I TO %I', cdb_schema, usr_name);
+			RAISE NOTICE 'Granted TRUNCATE privileges to user "%" for tables in schema "%"', usr_name, cdb_schema; 
+		END IF;
+		
 		-- Grant usage to citydb_pkg
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
-		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- No tables in schema citydb_pkg (also also no sequences)
+		--EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 		-- Access/usage to qgis_pkg was granted at the moment of installing the usr_schema
 		
@@ -1161,6 +1168,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 	END IF;
 
 ELSE -- any other non super-user
+	--RAISE NOTICE 'Working with user "%" as normal user', usr_name;
 	-- Revoke the privileges from a previous run, if any.
 	EXECUTE format('SELECT qgis_pkg.revoke_qgis_usr_privileges(%L, %L);',  usr_name, cdb_schema);
 
@@ -1171,7 +1179,9 @@ ELSE -- any other non super-user
 	IF cdb_schema IS NULL THEN
 		-- Recursively iterate for each cdb_schema in database
 		FOREACH sch_name IN ARRAY cdb_schemas_array LOOP
+			-- USAGE to connect, CREATE to create mviews and views
 			EXECUTE format('GRANT USAGE, CREATE ON SCHEMA %I TO %I;', sch_name, usr_name);
+			-- SELECT or ALL
 			EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA %I TO %I;', sql_priv_type, sch_name, usr_name);
 
 			IF priv_type = 'rw' THEN
@@ -1188,7 +1198,8 @@ ELSE -- any other non super-user
 		-- No need to iterate here
 		-- Grant access to the citydb_pkg schema
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
-		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- No tables in schema citydb_pkg
+		--EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 		-- Access/usage to qgis_pkg was granted at the moment of installing the usr_schema
 
@@ -1200,6 +1211,7 @@ ELSE -- any other non super-user
 		-- Grant privileges only for the selected cdb_schema.
 		EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I;', cdb_schema, usr_name);
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA %I TO %I;', sql_priv_type, cdb_schema, usr_name);
+		
 		IF priv_type = 'rw' THEN
 			EXECUTE format('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I TO %I', cdb_schema, usr_name);
 			-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
@@ -1209,7 +1221,8 @@ ELSE -- any other non super-user
 		-- (No need to iterate here)
 		-- Grant access to the citydb_pkg schema
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
-		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- No tables in citydb_pkg
+		--EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 		-- Access/usage to qgis_pkg was granted at the moment of installing the usr_schema
 
