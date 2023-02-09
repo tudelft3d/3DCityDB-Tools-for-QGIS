@@ -31,6 +31,9 @@ Further details, and a user guide, can be found in the \user_guide subfolder of 
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
+![Railway dataset example](/images/3dcitydb-tools_01.jpg)
+![Bulk Deleter and Admin](/images/3dcitydb-tools_02.jpg)
+
 # Requirements
 
 The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.22, including the recently released version 3.28. Please note that support and further development will focus only on LTR versions.
