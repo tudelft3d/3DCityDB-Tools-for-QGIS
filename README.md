@@ -27,12 +27,12 @@ In particular, the **Layer Loader** offers following functionalities:
 - Support for CityGML enumerations and codelists
 - All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
-Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBTools_UserGuide.pdf](/user_guide/3DCityDBTools_UserGuide.pdf)").
+Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDBTools_UserGuide.pdf](user_guide/3DCityDBTools_UserGuide.pdf)").
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
-![Railway dataset example](/images/3dcitydb-tools_01.jpg)
-![Bulk Deleter and Admin](/images/3dcitydb-tools_02.jpg)
+![Railway dataset example](images/3dcitydb-tools_01.jpg)
+![Bulk Deleter and Admin](images/3dcitydb-tools_02.jpg)
 
 # Requirements
 
