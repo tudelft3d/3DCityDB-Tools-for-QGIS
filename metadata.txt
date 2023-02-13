@@ -17,11 +17,11 @@ about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostG
 
  - "QGIS Package Administration": it allows to install the server-side part of the plug-in, and to manage database user privileges.
 
- Further details can be found in the \user_guide subfolder of the plugin installation directory (see file "3DCityDBTools_UserGuide.pdf").
+ Further details can be found in the PDF files contained in the \user_guide subfolder of the plugin installation directory.
  
-tracker=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
+tracker=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
-repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
+repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
 # End of mandatory metadata
 
@@ -40,7 +40,7 @@ changelog=0.7 extended Loader and Admin, added Deleter
 # Tags are comma separated with spaces allowed
 tags=PostgreSQL, 3DCityDB, CityGML
 
-homepage=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
+homepage=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
 # Category of the plugin: Raster, Vector, Database or Web
 category=Database
