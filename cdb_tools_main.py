@@ -329,6 +329,15 @@ class CDBToolsMain:
             # an event is fired (dlg.evt_cbxExistingConn_changed())
             conn_f.get_qgis_postgres_conn_list(self)
 
+        if not self.first_start_loader:
+            if self.conn != self.loader_dlg.prev_conn:
+                # print ('loader gotcha!!')
+                if self.conn:
+                    self.conn.close()
+                self.conn = None
+                self.DB = None
+                conn_f.get_qgis_postgres_conn_list(self)
+
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. 0, The window blocks input to other windows.
@@ -338,9 +347,12 @@ class CDBToolsMain:
         self.loader_dlg.show()
 
         # Run the dialog event loop.
-        res = self.loader_dlg.exec_() 
+        res = self.loader_dlg.exec_()
+
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
+            self.loader_dlg.prev_conn = self.conn
+            self.loader_dlg.prev_DB = self.DB
             pass
 
         return None
@@ -376,6 +388,15 @@ class CDBToolsMain:
             # an event is fired (dlg.evt_cbxExistingConn_changed())
             conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
 
+        if not self.first_start_deleter:
+            if self.conn != self.deleter_dlg.prev_conn:
+                # print ('deleter: gotcha!!')
+                if self.conn:
+                    self.conn.close()
+                self.conn = None
+                self.DB = None
+                conn_f.get_qgis_postgres_conn_list(self)
+
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         self.deleter_dlg.setWindowModality(Qt.ApplicationModal) # The window blocks input from other windows.
@@ -388,6 +409,8 @@ class CDBToolsMain:
         res = self.deleter_dlg.exec_() 
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
+            self.deleter_dlg.prev_conn = self.conn
+            self.deleter_dlg.prev_DB = self.DB
             pass
         
         return None
@@ -410,28 +433,29 @@ class CDBToolsMain:
             # Create the dialog with elements (after translation).
             self.admin_dlg = CDB4AdminDialog(cdbMain=self)
 
-            # Get existing connections from QGIS profile settings.
-            # They are added to the combo box (cbxExistingConn), and 
-            # an event is fired (dlg.evt_cbxExistingConn_changed())
-            conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
+
+        # Get existing connections from QGIS profile settings.
+        # They are added to the combo box (cbxExistingConn), and 
+        # an event is fired (dlg.evt_cbxExistingConn_changed())
+        conn_f.get_qgis_postgres_conn_list(self) # Stored in self.conn
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
         #self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows (for development purposes).
 
-
         # Show the dialog
         self.admin_dlg.show()
 
         # Run the dialog event loop.
         res = self.admin_dlg.exec_()
+      
         if not res: # Dialog has been closed (X button was pressed)
             # Reset the dialog widgets. (Closes the current open connection.)
             admin_ti_wf.tabInstall_reset(self)
             if self.conn:
                 self.conn.close()
-        
+
         return None
 
 

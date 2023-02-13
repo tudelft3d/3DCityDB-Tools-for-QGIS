@@ -24,7 +24,7 @@
 """
 import os
 from collections import namedtuple
-# from psycopg2.extensions import connection as pyconn
+from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas
@@ -77,10 +77,10 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_LOADER
 
-        # # Variable to store the current open connection of a database.
-        # self.conn: pyconn = None
-        # # Variable to store the existing connection parameters.
-        # self.DB: Connection = None
+        # # Variable to store the previous connection of a database.
+        self.prev_conn: pyconn = None
+        # # Variable to store the previous connection parameters.
+        self.prev_DB: Connection = None
 
         self.settings = LoaderDefaultSettings()
         self.checks = LoaderDialogChecks()
@@ -627,7 +627,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Disable the Feature Type selection checkbox.
                 tc_wf.gbxFeatSel_reset(cdbMain)
 
-                # Backup the original Layer extents (red)
+                # Backup the original Layer extents
                 # (They will be changed by the event evt_qgbxExtentsC_ext_changed later on)
                 layer_extents_wkt: str = self.LAYER_EXTENTS.asWktPolygon()
                 temp_layer_extents: QgsRectangle = QgsRectangle().fromWkt(layer_extents_wkt)
@@ -636,7 +636,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 cdb_extents_union: QgsRectangle = QgsRectangle(cdb_extents_old)
                 cdb_extents_union.combineExtentWith(cdb_extents_new)
 
-                # Create new rubber band
+                # Create new rubber band, with dahed line style
                 cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
                 cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
 
@@ -644,51 +644,48 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
                 canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=cdb_extents_union, crs=self.CRS, clear=False)
 
+                # Drop the rubber band of the layers extents, it will be redone later.
+                self.RUBBER_LAYERS_C.reset()
+
                 # Reset the red layer extents to the original size
                 self.LAYER_EXTENTS = temp_layer_extents
 
                 # Add the rubber bands
                 canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-                canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
                 canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-                canvas.insert_rubber_band(band=self.RUBBER_LAYERS_C, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
 
-                # Zoom to the rubber band of the new cdb_extents.
-                # Fires evt_canvas_ext_changed
+                # Zoom to the rubber band of the new cdb_extents. Fires evt_canvas_ext_changed
                 canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=cdb_extents_union)
 
+                msg: str = f"Extents of '{cdbMain.CDB_SCHEMA}' have changed (black dashed line). Now they will be automatically updated."
+                QMessageBox.warning(cdbMain.loader_dlg, "Extents changed!", msg)
+
+                # Drop the existing rubber bands, they need to be redone
+                cdb_extents_new_rubber_band.reset()
+                self.RUBBER_CDB_SCHEMA_C.reset()
+
                 if cdb_extents_new.contains(self.LAYER_EXTENTS):
-
-                    msg: str = f"Extents of '{cdbMain.CDB_SCHEMA}' have changed (black dashed line). Now they will be automatically updated."
-                    QMessageBox.warning(cdbMain.loader_dlg, "Extents changed!", msg)
-
-                    # Update the cdb_extents, leave the layer_extents and the layers
-                    # Update the canvas and the rubber bands in both tabs.
 
                     # Update the cdb_extents in the database
                     sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
 
-                    # Update canvas and rubber bands in TAB Connection
+                    # Update the canvas and the rubber bands in both tabs.
 
-                    # Drop the existing rubber bands, they need to be redone
-                    cdb_extents_new_rubber_band.reset()
-                    self.RUBBER_CDB_SCHEMA_C.reset()
-                    self.RUBBER_LAYERS_C.reset()
-
+                    # In CONNECTION TAB, update canvas:
                     self.CDB_SCHEMA_EXTENTS = cdb_extents_new
 
-                    # Set up the canvas to the new extents of the cdb_schema.
-                    # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
+                    # Set up the canvas to the new extents of the cdb_schema. Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
                     canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, clear=False)
                     # Reset the layer extents after the previous function modifies them
                     self.LAYER_EXTENTS = temp_layer_extents
 
+                    # Show only the cdb extents and the layer extents, no need anymore for the dashed line.
                     canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
                     canvas.insert_rubber_band(band=self.RUBBER_LAYERS_C, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
 
                     canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
 
-                    # Update canvas and rubber bands in TAB Layer
+                    # In LAYER TAB, update canvas:
 
                     # Drop the existing rubber bands, they need to be redone
                     self.RUBBER_CDB_SCHEMA_L.reset()
@@ -698,28 +695,22 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                     canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_L, extents=self.LAYER_EXTENTS, crs=self.CRS, clear=False)
                     # Reset the layer extents after the previous function modifies them
                     self.LAYER_EXTENTS = temp_layer_extents
-
                     self.QGIS_EXTENTS = self.LAYER_EXTENTS
 
                     canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_L, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
                     canvas.insert_rubber_band(band=self.RUBBER_LAYERS_L, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
-                    canvas.insert_rubber_band(band=self.RUBBER_QGIS_L, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
+                    canvas.insert_rubber_band(band=self.RUBBER_QGIS_L, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.QGIS_EXTENTS_COLOUR)
 
                     canvas.zoom_to_extents(canvas=self.CANVAS_L, extents=self.LAYER_EXTENTS)
                     
                     return None # Exit
                 
-                else: # The new cdb_extents do not contain the old ones.
+                else: # The new cdb_extents do not contain the old ones, it is completely somewhere else (e.g. dropped all old data, added new data somewhere else)
 
                     # Update the cdb_extents in the database to the new ones
                     sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
                     # Update the layer_extents and set them to null
                     sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
-
-                    # Update canvas and rubber bands in TAB Connection
-                    cdb_extents_new_rubber_band.reset()
-                    self.RUBBER_CDB_SCHEMA_C.reset()
-                    self.RUBBER_LAYERS_C.reset()
 
                     self.CDB_SCHEMA_EXTENTS = cdb_extents_new
                     self.LAYER_EXTENTS = cdb_extents_new
@@ -737,6 +728,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbMain)
                     if has_layers_in_current_schema:
+                        msg: str = f"To align with the next extents of '{cdbMain.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).\n\nYou may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
+                        QMessageBox.warning(cdbMain.loader_dlg, "Extents changed!", msg)
+
                         thr.run_drop_layers_thread(cdbMain) # this eventually checks the layer status
     
                     return None # Exit

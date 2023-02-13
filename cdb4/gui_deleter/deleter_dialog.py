@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 import os
-# from psycopg2.extensions import connection as pyconn
+from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas
@@ -74,10 +74,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_DELETER
 
-        # # Variable to store the current open connection of a database.
-        # self.conn: pyconn = None
-        # # Variable to store the existing connection parameters.
-        # self.DB: Connection = None
+        # # Variable to store the previous connection of a database.
+        self.prev_conn: pyconn = None
+        # # Variable to store the previous connection parameters.
+        self.prev_DB: Connection = None
 
         self.settings = DeleterDefaultSettings()
         self.checks = DeleterDialogChecks()
@@ -236,7 +236,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the plugin main dialog.
         dlg = cdbMain.deleter_dlg
 
-        error_msg: str = None
+        msg: str = None
 
         # In 'Connection Status' groupbox
         # Activate the connection status box (red/green checks)
@@ -281,8 +281,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblConnToDbC_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
             self.checks.is_conn_successful = False
 
-            error_msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
-            QMessageBox.warning(self, "Connection error", error_msg)
+            msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
+            QMessageBox.warning(self, "Connection error", msg)
 
             ts_wf.tabSettings_reset(cdbMain)
             tc_wf.tabConnection_reset(cdbMain)
@@ -305,8 +305,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            error_msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.\n\nEither way, please contact your database administrator."
-            QMessageBox.warning(self, "Unavailable QGIS Package", error_msg)
+            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.\n\nEither way, please contact your database administrator."
+            QMessageBox.warning(self, "Unavailable QGIS Package", msg)
 
             ts_wf.tabSettings_reset(cdbMain)
             tc_wf.tabConnection_reset(cdbMain)
@@ -348,8 +348,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            error_msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
-            QMessageBox.warning(dlg, "Unsupported version of QGIS Package", error_msg)
+            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            QMessageBox.warning(dlg, "Unsupported version of QGIS Package", msg)
 
             ts_wf.tabSettings_reset(cdbMain)
             tc_wf.tabConnection_reset(cdbMain)
@@ -377,8 +377,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbMain.DB.username}")))
             self.checks.is_usr_pkg_installed = False
 
-            error_msg = f"The required user schema 'qgis_{cdbMain.DB.username}' is missing. Please contact your database administrator to install it."
-            QMessageBox.warning(dlg, "User schema not found", error_msg)
+            msg = f"The required user schema 'qgis_{cdbMain.DB.username}' is missing. Please contact your database administrator to install it."
+            QMessageBox.warning(dlg, "User schema not found", msg)
 
             ts_wf.tabSettings_reset(cdbMain)
             tc_wf.tabConnection_reset(cdbMain)
