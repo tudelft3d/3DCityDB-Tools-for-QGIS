@@ -3,25 +3,28 @@
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
-import psycopg2
+import psycopg2, psycopg2.sql as pysql
+from psycopg2.extras import NamedTupleCursor
+
 from qgis.core import Qgis, QgsMessageLog
 
-from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
+from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
+
 from . import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def fetch_3dcitydb_version(cdbLoader: CDBLoader) -> str:
+def fetch_3dcitydb_version(cdbMain: CDBToolsMain) -> str:
     """SQL query that reads and retrieves the 3DCityDB version.
 
     *   :returns: 3DCityDB version.
         :rtype: str
     """
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.execute(query="""SELECT version FROM citydb_pkg.citydb_version();""")
+        with cdbMain.conn.cursor() as cur:
+            cur.execute("""SELECT version FROM citydb_pkg.citydb_version();""")
             version: str = cur.fetchone()[0] # Tuple has trailing comma.
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
         return version
 
     except (Exception, psycopg2.Error) as error:
@@ -30,20 +33,31 @@ def fetch_3dcitydb_version(cdbLoader: CDBLoader) -> str:
             location=FILE_LOCATION,
             header="Retrieving 3DCityDB version",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
-def exec_create_qgis_usr_schema_name(cdbLoader: CDBLoader, usr_name: str = None) -> str:
+
+def exec_create_qgis_usr_schema_name(cdbMain: CDBToolsMain, usr_name: str = None) -> str:
     """Calls the qgis_pkg function that derives the name of the usr_schema from the usr_name.
     """
     if usr_name is None:
-        usr_name: str = cdbLoader.DB.username
+        usr_name: str = cdbMain.DB.username
+
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.create_qgis_usr_schema_name({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name)
+        )
 
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.create_qgis_usr_schema_name""", [usr_name])
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
             usr_schema: str = cur.fetchone()[0] # Trailing comma
-        cdbLoader.USR_SCHEMA = usr_schema
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
+
+        # Asign the value to the variable in the plugin
+        cdbMain.USR_SCHEMA = usr_schema
+
         return usr_schema
 
     except (Exception, psycopg2.Error) as error:
@@ -52,20 +66,28 @@ def exec_create_qgis_usr_schema_name(cdbLoader: CDBLoader, usr_name: str = None)
             location=FILE_LOCATION,
             header=f"Deriving user schema name for user {usr_name}",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
-def is_qgis_pkg_installed(cdbLoader: CDBLoader) -> bool:
+
+def is_qgis_pkg_installed(cdbMain: CDBToolsMain) -> bool:
     """SQL query that searches for schema 'qgis_pkg' in the current database
 
     *   :returns: Search result
         :rtype: bool
     """
+    query = pysql.SQL("""
+        SELECT schema_name 
+        FROM information_schema.schemata 
+        WHERE schema_name = {_qgis_pkg_schema};
+        """).format(
+        _qgis_pkg_schema = pysql.Literal(cdbMain.QGIS_PKG_SCHEMA)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Search for qgis_pkg schema
-            cur.execute(query=f"""SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{cdbLoader.QGIS_PKG_SCHEMA}';""")
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
             pkg_name = cur.fetchone()
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
 
         if pkg_name:
             return True
@@ -75,43 +97,60 @@ def is_qgis_pkg_installed(cdbLoader: CDBLoader) -> bool:
         gen_f.critical_log(
             func=is_qgis_pkg_installed,
             location=FILE_LOCATION,
-            header=f"Searching for schema {cdbLoader.QGIS_PKG_SCHEMA} in current database",
+            header=f"Searching for schema {cdbMain.QGIS_PKG_SCHEMA} in current database",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
-def exec_qgis_pkg_version(cdbLoader: CDBLoader) -> tuple:
+
+def exec_qgis_pkg_version(cdbMain: CDBToolsMain) -> tuple:
     """SQL function that reads and retrieves the qgis_pkg version
 
     *   :returns: The qgis_pkg version.
-        :rtype: tuple
+        :rtype: named tuple
     """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.qgis_pkg_version();
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.qgis_pkg_version""", [])
-            version: tuple = cur.fetchone() # this is a tuple containing: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-        cdbLoader.conn.commit()
+        with cdbMain.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            # this is a named tuple containing: 
+            # version, full_version, major_version, minor_version, minor_revision, code_name, release_date
+            version: tuple = cur.fetchone()
+        cdbMain.conn.commit()
         return version
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=exec_qgis_pkg_version,
             location=FILE_LOCATION,
-            header=f"Retrieving {cdbLoader.QGIS_PKG_SCHEMA} version",
+            header=f"Retrieving {cdbMain.QGIS_PKG_SCHEMA} version",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
-def is_usr_schema_installed(cdbLoader: CDBLoader) -> bool:
+
+def is_usr_schema_installed(cdbMain: CDBToolsMain) -> bool:
     """SQL query that checks whether schema qgis_{usr} is installed in the current database.
 
     *   :returns: Search result
         :rtype: bool
     """
+    query = pysql.SQL("""
+        SELECT schema_name 
+        FROM information_schema.schemata 
+        WHERE schema_name = {_usr_schema};
+        """).format(
+        _usr_schema = pysql.Literal(cdbMain.USR_SCHEMA)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Get qgis_{user} schema from database
-            cur.execute(query=f"""SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{cdbLoader.USR_SCHEMA}';""")
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
             usr_schema = cur.fetchone()
-        cdbLoader.conn.commit()
+        cdbMain.conn.commit()
 
         if usr_schema:
             return True
@@ -121,31 +160,163 @@ def is_usr_schema_installed(cdbLoader: CDBLoader) -> bool:
         gen_f.critical_log(
             func=is_usr_schema_installed,
             location=FILE_LOCATION,
-            header=f"Checking whether schema '{cdbLoader.USR_SCHEMA}' is installed in current database",
+            header=f"Checking whether schema '{cdbMain.USR_SCHEMA}' is installed in current database",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
-def exec_list_cdb_schemas_all(cdbLoader: CDBLoader, only_non_empty: bool = False) -> tuple:
-    """SQL function that reads and retrieves all cdb_schemas, even the empty ones
 
-    *   :returns: A list with all cdb_schemas in the database
-        :rtype: tuple(str)
+def exec_list_cdb_schemas_all(cdbMain: CDBToolsMain, only_non_empty: bool = False) -> tuple:
+    """SQL function that reads and retrieves all cdb_schemas, even the empty ones,
+    and their number of cityobjects
+
+    *   :returns: Two tuples
+        :rtype: tuple(str), tuple(int)
     """
+    query = pysql.SQL("""
+            SELECT * FROM {_qgis_pkg_schema}.list_cdb_schemas({_only_non_empty});
+            """).format(
+            _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+            _only_non_empty = pysql.Literal(only_non_empty)
+            )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.list_cdb_schemas""", [only_non_empty])
-            result = cur.fetchall()
-        cdbLoader.conn.commit()
-        schema_names = tuple(zip(*result))[0] # trailing comma
-        schema_nums = tuple(zip(*result))[1] # trailing comma        
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+        schema_names = tuple(zip(*res))[0] # trailing comma
+        schema_nums = tuple(zip(*res))[1] # trailing comma        
 
     except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"No citydb schemas could be retrieved from the database.", cdbLoader.PLUGIN_NAME, level=Qgis.Warning)
-        cdbLoader.conn.rollback()
+        QgsMessageLog.logMessage(f"No citydb schemas could be retrieved from the database.", cdbMain.PLUGIN_NAME, level=Qgis.Warning)
+        cdbMain.conn.rollback()
         schema_names = tuple() # create an empty tuple
         schema_nums = tuple()  # create an empty tuple
 
     return schema_names, schema_nums
+
+
+def exec_upsert_settings(cdbMain: CDBToolsMain, usr_schema: str, dialog_name: str, settings_list: list) -> int:
+    """SQL function that upserts the settings to the qgis_xxx.settings table
+
+    *   :returns: None
+        :rtype:
+    """
+    # "settings_list is a list of dictionaries structured as follows:
+    # The data_type is integer, the data_value is any, but will be converted to string
+    # settings_list = [
+    # {'name' : "minArea", 'data_type' : 2, 'data_value' : '15', 'label': 'info text....'},
+    # {'name' : "decPrec", 'data_type' : 2, 'data_value' : '3' , 'label': 'info text....'},
+    # ... etc.
+    # ]
+
+    s: dict
+    for s in settings_list:
+        for k, v in s.items():
+            if k == "data_value":
+                s.update({k: str(v)})
+
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.upsert_settings({_usr_schema},{_dialog_name},{_name},{_data_type},{_data_value},{_description});
+        """).format(
+            _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+            _usr_schema = pysql.Literal(usr_schema),
+            _dialog_name = pysql.Literal(dialog_name),
+            _name = pysql.Placeholder("name"),
+            _data_type = pysql.Placeholder("data_type"),
+            _data_value = pysql.Placeholder("data_value"),
+            _description = pysql.Placeholder("label")
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            # the cur.executemany drops by default all results, so we cannot get anything back for checking
+            # Check the psycopg documentation for more details.
+            # Therefore we stay with the normal iteration over cur.execute of a single query.
+            # cur.executemany(query, settings_list)
+            for setting in settings_list:
+                cur.execute(query,  setting)
+
+            last_upserted_id = cur.fetchone()[0]
+        cdbMain.conn.commit()
+
+        # print("Last upserted id:", res)
+
+        if not last_upserted_id:
+            return None
+        else:
+            return last_upserted_id
+
+    except (Exception, psycopg2.Error):
+        QgsMessageLog.logMessage(f"Could not upsert values to table {usr_schema}.settings.", cdbMain.PLUGIN_NAME, level=Qgis.Warning)
+        cdbMain.conn.rollback()
+
+
+def exec_read_settings(cdbMain: CDBToolsMain, usr_schema: str, dialog_name: str) -> list:
+    """SQL function that reads settings from the qgis_xxx.settings table
+
+    *   :returns: list
+        :rtype: list(dict)
+    """
+    # "settings_list is a list of dictionaries structured as follows:
+    # The data_type is integer, the data_value is is read as string but will be converted
+    # settings_list = [
+    # {'name' : "decPrec", 'data_type' : 2, 'data_value' : 3},
+    # {'name' : "minArea", 'data_type' : 3, 'data_value' : 0.001},
+    # ... etc.
+    # ]
+
+    query = pysql.SQL("""
+        SELECT name, data_type, data_value
+        FROM {_usr_schema}.settings
+        WHERE dialog_name = {_dialog_name};
+        """).format(
+            _usr_schema = pysql.Identifier(usr_schema),
+            _dialog_name = pysql.Literal(dialog_name)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            col_names = [desc[0] for desc in cur.description]
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        settings_list = [dict(zip(col_names, values)) for values in res]
+
+        s: dict
+        for s in settings_list:
+            dt = s["data_type"]
+            v = s["data_value"]
+            if dt == 1:
+                pass # nothing to do, it's already a string
+            elif dt == 2:
+                s["data_value"] = int(v)
+            elif dt == 3:
+                s["data_value"] = float(v)
+            elif dt == 4:
+                s["data_value"] = bool(int(v))
+            elif dt == 5:
+                pass # to do in case of date or other data types
+            else:
+                pass
+
+        # print("Retrieved from db:\n", settings_list)
+
+        return settings_list
+
+    except (Exception, psycopg2.Error):
+        QgsMessageLog.logMessage(f"Could not retrieve values from table {usr_schema}.settings.", cdbMain.PLUGIN_NAME, level=Qgis.Warning)
+        cdbMain.conn.rollback()
+
+    return None
+
+
+
+
+
+
+
 
 
 

@@ -1,38 +1,54 @@
 """This module contains functions that relate to the server side operations.
 They communicate and fetch data from the database with sql queries or sql function calls.
 """
-import psycopg2
+import psycopg2, psycopg2.sql as pysql
+from psycopg2.extras import NamedTupleCursor
 
-from ....cdb_loader import CDBLoader # Used only to add the type of the function parameters
+from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
+
 from ...shared.functions import general_functions as gen_f
 from ...shared.functions import sql as sh_sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def fetch_list_usr_schemas(cdbLoader: CDBLoader) -> tuple:
-    """SQL function that retrieves the database usr_schemas
 
-    *   :returns: A list with all usr_schemas in the database
-        :rtype: list(str)
+def is_superuser(cdbMain: CDBToolsMain, usr_name: str) -> bool:
+    """SQL query that determines whether the connecting user has administrations privileges.
+
+    *   :returns: Admin status
+        :rtype: bool
     """
+    # Think whether you can use the function in the qgis_pkg or not, 
+    # because we may have not yet installed the qgis_pkg
+    # This one does not depend on the qgis_pkg
+    
+    query = pysql.SQL("""
+        SELECT 1 FROM pg_user WHERE usesuper IS TRUE AND usename = {_usr_name};
+        """).format(
+        _usr_name = pysql.Literal(usr_name)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.list_usr_schemas""",[])
-            schemas = cur.fetchall()
-        schemas = tuple(zip(*schemas))[0] # trailing comma
-        cdbLoader.conn.commit()
-        return schemas
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            result_bool = cur.fetchone() # as (1,) or None
+        cdbMain.conn.commit()
+
+        if result_bool:
+            return True
+        else:
+            return False
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_list_usr_schemas,
+            func=is_superuser,
             location=FILE_LOCATION,
-            header="Retrieving list of usr_schemas",
+            header=f"Checking whether the current user '{usr_name}' is a database superuser",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()  
 
 
-def is_3dcitydb_installed(cdbLoader: CDBLoader) -> bool:
+def is_3dcitydb_installed(cdbMain: CDBToolsMain) -> bool:
     """Function that checks whether the current database has the 
     3DCityDB installed. The check is done by querying the 3DCityDB
     version from citydb_pkg.version().
@@ -40,101 +56,364 @@ def is_3dcitydb_installed(cdbLoader: CDBLoader) -> bool:
     On 3DCityDB absence a database error is emitted which means that
     it is not installed.
     """
-    version: str = sh_sql.fetch_3dcitydb_version(cdbLoader)
+    version: str = sh_sql.fetch_3dcitydb_version(cdbMain)
 
     if version: # Could be None
         # Store version into the connection object.
-        cdbLoader.DB.citydb_version = version
+        cdbMain.DB.citydb_version = version
         return True
     return False
 
 
-def is_superuser(cdbLoader: CDBLoader) -> bool:
-    """SQL query that determines whether the connecting user has administrations privileges.
+def exec_create_qgis_pkg_usrgroup_name(cdbMain: CDBToolsMain) -> str:
+    """SQL function that retrieves the name of the qgis_pkg_usrgroup_* group
+    associated to the current database
 
-    *   :returns: Admin status
-        :rtype: bool
+    *   :returns: The name of the group
+        :rtype: tuple(str)
     """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.create_qgis_pkg_usrgroup_name();
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.execute(query= f"""SELECT 1 FROM pg_user WHERE usesuper IS TRUE AND usename = '{cdbLoader.DB.username}';""")
-            result_bool = cur.fetchone() # as (1,) or None
-        cdbLoader.conn.commit()
-        if result_bool:
-            return result_bool[0]
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            grp_name = cur.fetchone()[0]
+        cdbMain.conn.commit()
+
+        # Asign the value to the variable in the plugin
+        cdbMain.GROUP_NAME = grp_name
+
+        # print('Group name (assigned):', cdbMain.GROUP_NAME)
+
+        return grp_name
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_create_qgis_pkg_usrgroup_name,
+            location=FILE_LOCATION,
+            header="Retrieving the name of the qgis_pkg_usrgroup_*",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_list_usr_schemas(cdbMain: CDBToolsMain) -> tuple:
+    """SQL function that retrieves the database usr_schemas
+
+    *   :returns: A list with all usr_schemas in the database
+        :rtype: tuple(str)
+    """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.list_usr_schemas();
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        schemas = tuple(elem[0] for elem in res)
+        return schemas
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_usr_schemas,
+            location=FILE_LOCATION,
+            header="Retrieving list of usr_schemas",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_list_cdb_schemas_extended(cdbMain: CDBToolsMain, usr_name: str) -> list:
+    """SQL function that retrieves the database cdb_schemas for the current database, 
+    included the privileges status for the selected usr_name
+
+    *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
+         and the user's privileges for each cdb_schema in the current database
+        :rtype: list(tuple(cdb_schema, co_number, priv_type))
+    """
+    query = pysql.SQL("""
+        SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name)
+        )
+
+    try:
+        with cdbMain.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        # print('from database:', res)
+
+        if not res:
+            res = []
+            return res
+        else:
+            return res
+    
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_cdb_schemas_extended,
+            location=FILE_LOCATION,
+            header="Retrieving list of cdb_schemas with their privileges",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+# def exec_list_cdb_schemas_with_privileges(cdbMain: CDBToolsMain, usr_name: str) -> tuple:
+#     """SQL function that retrieves the database cdb_schemas for the current database, 
+#     included the privileges status for the selected usr_name
+
+#     *   :returns: A list with all usr_schemas in the database
+#         :rtype: list(str)
+#     """
+#     query = pysql.SQL("""
+#         SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+#         """).format(
+#         _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+#         _usr_name = pysql.Literal(usr_name)                                
+#         )
+
+#     try:
+#         with cdbMain.conn.cursor() as cur:
+#             cur.execute(query)
+#             res = cur.fetchall()
+#         cdbMain.conn.commit()
+    
+#         # cdb_schemas, priv_label = zip(*res)
+#         # c = tuple(zip(*res))[0]
+#         return res
+    
+#     except (Exception, psycopg2.Error) as error:
+#         gen_f.critical_log(
+#             func=exec_list_cdb_schemas_with_privileges,
+#             location=FILE_LOCATION,
+#             header="Retrieving list of cdb_schemas with their privileges",
+#             error=error)
+#         cdbMain.conn.rollback()
+
+        
+def exec_list_qgis_pkg_usrgroup_members(cdbMain: CDBToolsMain) -> tuple:
+    """SQL function that retrieves the members of the database group "qgis_usrgroup"
+
+    *   :returns: A tuple with user members of group "qgis_usrgroup"
+        :rtype: tuple(str)
+    """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.list_qgis_pkg_usrgroup_members();
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        if not res:
+            return None
+        else:
+            usr_names  = tuple(elem[0] for elem in res)
+            return usr_names
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_qgis_pkg_usrgroup_members,
+            location=FILE_LOCATION,
+            header="Retrieving list of available users",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_list_qgis_pkg_non_usrgroup_members(cdbMain: CDBToolsMain) -> tuple:
+    """SQL function that retrieves the members of the database
+    that do not belong to the group "qgis_usrgroup"
+
+    *   :returns: A tuple with use names
+        :rtype: tuple(str)
+    """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.list_qgis_pkg_non_usrgroup_members();
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        # print('Result from list NON group members()', res)
+
+        if not res:
+            return None
+        else:
+            user_names  = tuple(elem[0] for elem in res)
+            return user_names
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_qgis_pkg_non_usrgroup_members,
+            location=FILE_LOCATION,
+            header="Retrieving list of available users",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_add_user_to_qgis_pkg_usrgroup(cdbMain: CDBToolsMain, usr_name: str) -> None:
+    """SQL function that add the user to database group "qgis_usrgroup"
+    """
+    query = pysql.SQL("""
+	    SELECT {_qgis_pkg_schema}.add_user_to_qgis_pkg_usrgroup({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
         return None
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=is_superuser,
+            func=exec_add_user_to_qgis_pkg_usrgroup,
             location=FILE_LOCATION,
-            header=f"Checking whether user is a database superuser",
+            header="Adding '{usr_name}' to the 'qgis_pkg_usrgroup_*' corresponding to the current database",
             error=error)
-        cdbLoader.conn.rollback()    
+        cdbMain.conn.rollback()
 
-        
-def fetch_list_qgis_pkg_usrgroup_members(cdbLoader: CDBLoader) -> tuple:
-    """SQL function that retrieves the members of the database group "qgis_usrgroup"
 
-    *   :returns: A list with user members of group "qgis_usrgroup"
-        :rtype: tuple(str)
+def exec_remove_user_from_qgis_pkg_usrgroup(cdbMain: CDBToolsMain, usr_name: str) -> None:
+    """SQL function that add the user to database group "qgis_usrgroup"
     """
+    query = pysql.SQL("""
+	    SELECT {_qgis_pkg_schema}.remove_user_from_qgis_pkg_usrgroup({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.list_qgis_pkg_usrgroup_members""", [])
-            users = cur.fetchall()
-        users = tuple(zip(*users))[0] # trailing comma
-        cdbLoader.conn.commit()
-        return users
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
+        return None
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_list_qgis_pkg_usrgroup_members,
+            func=exec_remove_user_from_qgis_pkg_usrgroup,
             location=FILE_LOCATION,
-            header="Retrieving list of available users",
+            header=f"Removing user '{usr_name}' from group '{cdbMain.GROUP_NAME}'",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
- 
-def exec_create_qgis_usr_schema(cdbLoader: CDBLoader) -> None:
+
+def exec_create_qgis_usr_schema(cdbMain: CDBToolsMain) -> None:
     """Calls the qgis_pkg function that creates the {usr_schema} for a selected user.
     """
-    user: str = cdbLoader.admin_dlg.cbxUser.currentText()
-    
+    usr_name = cdbMain.admin_dlg.cbxUser.currentText()
+    # Prepare the query to create the qgis_{usr} schema
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.create_qgis_usr_schema({_usr_name});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Execute server function to create the qgis_{usr} schema
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.create_qgis_usr_schema""",[user])
-        cdbLoader.conn.commit()
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=exec_create_qgis_usr_schema,
             location=FILE_LOCATION,
-            header=f"Creating user schema for {user}",
+            header=f"Creating user schema for {usr_name}",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
 
-def exec_revoke_qgis_usr_privileges(cdbLoader: CDBLoader, usr_name: str, cdb_schema: str) -> None:
+def exec_revoke_qgis_usr_privileges(cdbMain: CDBToolsMain, usr_name: str, cdb_schemas: list = None) -> None:
     """Calls the qgis_pkg function that revokes the user privileges.
+    
+    - priv_type: str MUST be either 'rw' or 'ro'
+
+    - cdb_schema: str is either one cdb_schema, or None, which stands for ALL existing ones
     """
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.revoke_qgis_usr_privileges(usr_name := {_usr_name}, cdb_schemas := {_cdb_schemas});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name),
+        _cdb_schemas = pysql.Literal(cdb_schemas)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            # Revoke user privileges
-            cur.callproc(f"""{cdbLoader.QGIS_PKG_SCHEMA}.revoke_qgis_usr_privileges""",[usr_name, cdb_schema])
-        cdbLoader.conn.commit()
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
 
     except (Exception, psycopg2.Error) as error:
+        if not cdb_schemas:
+            msg: str = f"Revoking privileges of ALL cdb_schemas from user {usr_name}"
+        else:
+            msg: str = f"Revoking privileges of cdb_schema {cdb_schemas} from user {usr_name}"
         gen_f.critical_log(
-            func=exec_revoke_qgis_usr_privileges,
+            func=exec_grant_qgis_usr_privileges,
             location=FILE_LOCATION,
-            header=f"Revoking privileges of user {usr_name} for schema {cdb_schema}.",
+            header=msg,
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
 
 
-def exec_drop_db_schema(cdbLoader: CDBLoader, schema: str, close_connection: bool = True) -> None:
+def exec_grant_qgis_usr_privileges(cdbMain: CDBToolsMain, usr_name: str, priv_type: str, cdb_schemas: list = None) -> None:
+    """Calls the qgis_pkg function that grants the user privileges.
+
+    - priv_type: str MUST be either 'rw' or 'ro'
+
+    - cdb_schema: str is either one cdb_schema, or None, which stands for ALL existing ones
+    """
+    query = pysql.SQL("""
+        SELECT {_qgis_pkg_schema}.grant_qgis_usr_privileges(usr_name:= {_usr_name}, priv_type := {_priv_type}, cdb_schemas := {_cdb_schemas});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_name = pysql.Literal(usr_name),
+        _priv_type = pysql.Literal(priv_type),
+        _cdb_schemas = pysql.Literal(cdb_schemas)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
+
+    except (Exception, psycopg2.Error) as error:
+        if not cdb_schemas:
+            msg: str = f"Granting privileges to user {usr_name} for ALL cdb_schemas"
+        else:
+            msg: str = f"Granting privileges to user {usr_name} for cdb_schema {cdb_schemas}"
+        gen_f.critical_log(
+            func=exec_grant_qgis_usr_privileges,
+            location=FILE_LOCATION,
+            header=msg,
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_drop_db_schema(cdbMain: CDBToolsMain, schema: str, close_connection: bool = True) -> None:
     """SQL query that drops plugin packages from the database.
     As the plugin cannot function without its package, the function
     also closes the connection.
@@ -147,18 +426,92 @@ def exec_drop_db_schema(cdbLoader: CDBLoader, schema: str, close_connection: boo
             state is True.
         :type close_connection: bool
     """
+    query = pysql.SQL("""
+        DROP SCHEMA IF EXISTS {_schema} CASCADE;
+        """).format(
+        _schema = pysql.Identifier(schema)
+        )
+
     try:
-        with cdbLoader.conn.cursor() as cur:
-            cur.execute(f"""DROP SCHEMA IF EXISTS "{schema}" CASCADE;""")
-        cdbLoader.conn.commit()
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+        cdbMain.conn.commit()
 
         if close_connection:
-            cdbLoader.conn.close()
+            cdbMain.conn.close()
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=exec_drop_db_schema,
             location=FILE_LOCATION,
-            header="Dropping schema {schema} from current database",
+            header=f"Dropping schema {schema} from current database",
             error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.conn.rollback()
+
+
+def fetch_unique_cdb_schema_feature_types_in_layer_metadata(cdbMain: CDBToolsMain, usr_schema: str) -> tuple:
+    """SQL query that retrieves the available feature types in all cdb_schemas
+
+    *   :returns: list of tuples containing the name of the citydb and the feature type.
+        :rtype: list[tuple]
+    """
+    query = pysql.SQL("""
+        SELECT DISTINCT cdb_schema, feature_type 
+        FROM {_usr_schema}.layer_metadata
+        ORDER BY cdb_schema, feature_type ASC;
+        """).format(
+        _usr_schema = pysql.Identifier(usr_schema)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        if not res:
+            return None
+        else:
+            return res
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_unique_cdb_schema_feature_types_in_layer_metadata,
+            location=FILE_LOCATION,
+            header=f"Retrieving unique cdb_schemas and Feature Types in {cdbMain.USR_SCHEMA}.layer_metadata",
+            error=error)
+        cdbMain.conn.rollback()
+
+
+def exec_list_feature_types(cdbMain: CDBToolsMain, usr_schema: str = None) -> tuple:
+    """SQL query that retrieves the available feature types from table
+    qgis_{usr}.layer_metadata in all usr_schemas
+
+    *   :returns: list of tuples containing the name of the usr_schema, cdb_schema, feature type.
+        :rtype: list[tuple]
+    """
+    query = pysql.SQL("""
+        SELECT * FROM {_qgis_pkg_schema}.list_feature_types({_usr_schema});
+        """).format(
+        _qgis_pkg_schema = pysql.Identifier(cdbMain.QGIS_PKG_SCHEMA),
+        _usr_schema = pysql.Literal(usr_schema)
+        )
+
+    try:
+        with cdbMain.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        cdbMain.conn.commit()
+
+        if not res:
+            return None
+        else:
+            return res
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=exec_list_feature_types,
+            location=FILE_LOCATION,
+            header=f"Retrieving unique cdb_schemas and Feature Types in {cdbMain.USR_SCHEMA}.layer_metadata",
+            error=error)
+        cdbMain.conn.rollback()

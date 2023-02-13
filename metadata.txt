@@ -1,22 +1,24 @@
 # This file contains metadata for your plugin.
-# This file should be included when you package your plugin.
-
 # Mandatory items:
 
 [general]
-name=3DCityDB-Loader
-qgisMinimumVersion=3.20
-description=Visualization and manipulation of CityGML data stored in the 3D City Database
-version=0.6.0
-author=Konstantinos Pantelios, Giorgio Agugiaro
-email=konstantinospantelios@yahoo.com, g.agugiaro@tudelft.nl
+name=3DCityDB Tools
+qgisMinimumVersion=3.22
+description=Tools to visualize and manipulate CityGML data stored in the 3D City Database
+version=0.7.0 (February 2023)
+author=Giorgio Agugiaro, Konstantinos Pantelios
+email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
-about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostGIS and  loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited, changes are stored back directly into the database. 
+about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostGIS. It consists of:
+ 
+ - The "Layer Loader": it loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited, changes are stored back directly into the database;
 
- Further details can be found in the \user_guide subfolder of the plugin installation directory (see file "3DCityDBLoader_UserGuide.pdf"). 
+ - A "Bulk Deleter": it allows to cleanup the database, or to delete selected feature types;
 
- Some datasets for testing purposes are delivered, too, and are contained in the \test_datasets subfolder. 
+ - "QGIS Package Administration": it allows to install the server-side part of the plug-in, and to manage database user privileges.
 
+ Further details can be found in the \user_guide subfolder of the plugin installation directory (see file "3DCityDBTools_UserGuide.pdf").
+ 
 tracker=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 
 repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
@@ -27,11 +29,12 @@ repository=https://github.com/tudelft3d/3DCityDB-QGIS-Loader
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog=0.6 further code cleaning and refactoring, ships with qgis_pkg 0.8
+changelog=0.7 extended Loader and Admin, added Deleter
+ 0.6 further code cleaning and refactoring
  0.5 major code cleaning and refactoring, moved to TUD GitHub
- 0.4 first public release (Kostantinos' MSc thesis @ TUD)
+ 0.4 first public release (Konstantinos' MSc thesis @ TUD)
  0.3 internal release: improved GUI, added dynamic ToC
- 0.2 internal release: added qgis_pkg backend
+ 0.2 internal release: added PostgreSQL/PostGIS back-end
  0.1 first internal release
 
 # Tags are comma separated with spaces allowed

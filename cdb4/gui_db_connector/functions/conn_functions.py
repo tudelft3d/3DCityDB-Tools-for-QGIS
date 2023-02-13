@@ -1,20 +1,17 @@
-
-###
-#from qgis.core import QgsMessageLog, Qgis
-###
-
 import psycopg2
+from psycopg2.extensions import connection as pyconn
+
 from qgis.core import QgsSettings
 
-from .... import main_constants as main_c
-from ....cdb_loader import CDBLoader  # Used only to add the type of the function parameters
+from .... import cdb_tools_main_constants as main_c
+from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
 from ...shared.functions import general_functions as gen_f
-from ..connection import Connection
+from ..other_classes import Connection
 from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
-def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
+def get_qgis_postgres_conn_list(cdbMain: CDBToolsMain) -> None:
     """Function that reads the QGIS user settings to look for existing connections
 
     All existing connections are stored in a 'Connection'
@@ -22,10 +19,12 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
     or 'cbxExistingConn' widget
     """
     # Clear the contents of the comboBox from previous runs
-    if cdbLoader.usr_dlg:
-        cdbLoader.usr_dlg.cbxExistingConnC.clear()
-    if cdbLoader.admin_dlg:
-        cdbLoader.admin_dlg.cbxExistingConn.clear()
+    if cdbMain.loader_dlg:
+        cdbMain.loader_dlg.cbxExistingConnC.clear()
+    if cdbMain.deleter_dlg:
+        cdbMain.deleter_dlg.cbxExistingConnC.clear()
+    if cdbMain.admin_dlg:
+        cdbMain.admin_dlg.cbxExistingConn.clear()
 
     qsettings = QgsSettings()
 
@@ -51,15 +50,19 @@ def get_qgis_postgres_conn_list(cdbLoader: CDBLoader) -> None:
         
         qsettings.endGroup()
 
-        # For 'User Connection' tab.
-        if cdbLoader.usr_dlg:
-            cdbLoader.usr_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
-        # For 'Database Administration' tab.
-        if cdbLoader.admin_dlg:
-            cdbLoader.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
+        # For 'Database Administration' dialog
+        if cdbMain.admin_dlg:
+            cdbMain.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
+        # For 'Loader' dialog
+        if cdbMain.loader_dlg:
+            cdbMain.loader_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
+        # For 'Deleter' dialog
+        if cdbMain.deleter_dlg:
+            cdbMain.deleter_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
 
-def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
-    """Open a connection to PostgreSQL database.
+
+def create_db_connection(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
+    """Create a new database session and returns a new instance of the psycopg connection class.
 
     *   :param db: The connection custom object
         :rtype: Connection
@@ -68,18 +71,30 @@ def connect(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME):
         :rtype: str
 
     *   :returns: The connection psycopg2 object (opened)
-        :rtype: psycopg2.connection
+        :rtype: psycopg2.extensions.connection
     """
-    return psycopg2.connect(
-            dbname           = db_connection.database_name,
-            user             = db_connection.username,
-            password         = db_connection.password,
-            host             = db_connection.host,
-            port             = db_connection.port,
-            application_name = app_name)
+    open_conn: pyconn = None
 
-def open_and_set_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_NAME) -> bool:
-    """Opens a connection using the parameters stored in CDBLoader.DB
+    try:
+        open_conn = psycopg2.connect(dbname          = db_connection.database_name,
+                                    user             = db_connection.username,
+                                    password         = db_connection.password,
+                                    host             = db_connection.host,
+                                    port             = db_connection.port,    
+                                    application_name = app_name)
+        
+        return open_conn
+    
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=create_db_connection,
+            location=FILE_LOCATION,
+            header="Invalid connection settings",
+            error=error)
+
+
+def open_connection(cdbMain: CDBToolsMain, app_name: str = main_c.PLUGIN_NAME_LABEL) -> bool:
+    """Opens a connection using the parameters stored in cdbMain.DB
     and retrieves the server version. The server version is stored
     in 'pg_server_version' attribute of the Connection object.
 
@@ -89,24 +104,17 @@ def open_and_set_connection(cdbLoader: CDBLoader, app_name: str = main_c.PLUGIN_
     *   :returns: connection attempt results
         :rtype: bool
     """
-    try:
-        # Open and set the connection.
-        cdbLoader.conn = connect(db_connection=cdbLoader.DB, app_name=app_name)
-        cdbLoader.conn.commit() # This seems redundant.
-
+    cdbMain.conn: pyconn = None
+    
+    # Open and set the connection.
+    cdbMain.conn = create_db_connection(db_connection=cdbMain.DB, app_name=app_name)
+    
+    if cdbMain.conn:
+        cdbMain.conn.commit() # This seems redundant.
         # Get server version.
-        version: str = sql.fetch_posgresql_server_version(cdbLoader)
-
+        version: str = sql.fetch_posgresql_server_version(cdbMain)
         # Store version into the connection object.
-        cdbLoader.DB.pg_server_version = version
-
-    except (Exception, psycopg2.Error) as error:
-        gen_f.critical_log(
-            func=open_and_set_connection,
-            location=FILE_LOCATION,
-            header="Attempting connection",
-            error=error)
-        cdbLoader.conn.rollback()
+        cdbMain.DB.pg_server_version = version
+        return True
+    else:
         return False
-
-    return True
