@@ -150,7 +150,6 @@ class CleanUpSchemaWorker(QObject):
         steps_tot = len(table_names) + 1
         dlg.bar.setMaximum(steps_tot)
         curr_step: int = 0
-        print("steps_tot", steps_tot)
         
         try:
             # Open new temp session, reserved for installation.
