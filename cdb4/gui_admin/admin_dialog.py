@@ -276,7 +276,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None # Exit
 
             # Check whether the user is an admin.
-            is_superuser: bool = sql.is_superuser(cdbMain)
+            is_superuser: bool = sql.is_superuser(cdbMain, cdbMain.DB.username)
 
             if is_superuser:
                 # Update the label in the Connection status

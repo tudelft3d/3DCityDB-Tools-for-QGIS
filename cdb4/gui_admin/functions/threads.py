@@ -672,15 +672,23 @@ class QgisPackageUninstallWorker(QObject):
         # usr_names = sql.exec_list_qgis_pkg_usrgroup_members(cdbMain=self.plugin)
         # print("uninstall usr_names:", usr_names)
 
-        # Get users
+        curr_usr = self.plugin.DB.username # this is a superuser, as he has succesfully logged in and is using the GUI.
+
+        # Get users that are members of the group
         usr_names_all = sql.exec_list_qgis_pkg_usrgroup_members(cdbMain=self.plugin)
-        # print("uninstall usr_names:", usr_names_all)
+        print("usr_names_all:", usr_names_all)
+        
         usr_names = []
+        usr_names_su = ["postgres"]
+
         if usr_names_all:
             usr_names = [elem for elem in usr_names_all if elem != 'postgres']
-        else:
-            usr_names = usr_names_all
-        # print("uninstall usr_names:", usr_names)
+            if curr_usr != "postgres":
+                usr_names = [elem for elem in usr_names_all if elem != curr_usr]
+                usr_names_su.append(curr_usr)
+
+        print("usr_names:", usr_names)
+        print("usr_names_su:", usr_names_su)
 
         drop_tuples = sql.exec_list_feature_types(self.plugin, usr_schema=None) # get 'em all!!
         # print("uninstall drop_tuples:", drop_tuples)
@@ -691,27 +699,30 @@ class QgisPackageUninstallWorker(QObject):
 
         # Set progress bar goal:
         # revoke privileges: 1 x len(usr_names) actions
+        # reset privileges for superusers: 1 * len(usr_names_su) actions
         # drop feature types (layers): len(drop_tuples)
         # drop usr_schemas: 1 x len(usr_schemas)
         # drop the qgis_pkg_usrgroup_*: +1
         # drop 'qgis_pkg': +1
 
         if not usr_names:
-            usr_names_num = 0
+            usr_names_num: int = 0
         else:
-            usr_names_num = len(usr_names)
+            usr_names_num: int = len(usr_names)
+
+        usr_names_su_num: int = len(usr_names) # Will always be at least 1 because of "postgres" user.
 
         if not drop_tuples:
-            drop_tuples_num = 0
+            drop_tuples_num: int = 0
         else:
-            drop_tuples_num = len(drop_tuples)
+            drop_tuples_num: int = len(drop_tuples)
 
         if not usr_schemas:
-            usr_schemas_num = 0
+            usr_schemas_num: int = 0
         else:
-            usr_schemas_num = len(usr_schemas)
+            usr_schemas_num: int = len(usr_schemas)
 
-        steps_tot = usr_names_num + drop_tuples_num + usr_schemas_num + 2
+        steps_tot = usr_names_num + usr_names_su_num + drop_tuples_num + usr_schemas_num + 2
         self.plugin.admin_dlg.bar.setMaximum(steps_tot)
 
         curr_step: int = 0
@@ -721,7 +732,7 @@ class QgisPackageUninstallWorker(QObject):
             temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_ADMIN, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
-                # 1) revoke privileges: for all users
+                # 1) revoke privileges: for all normal users
                 if usr_names_num == 0:
                     pass # nothing to do 
                 else:
@@ -754,7 +765,40 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
-                # 2) drop feature types (layers)
+                # 2) reset privileges for superusers ("postgres" and, in case, the current user)
+                if usr_names_su_num == 0:
+                    pass # nothing to do 
+                else:
+                    for usr_name in usr_names_su:
+
+                        query = pysql.SQL("""
+                            SELECT {_qgis_pkg_schema}.grant_qgis_usr_privileges(usr_name := {_usr_name}, priv_type := 'rw', cdb_schemas := NULL);
+                            """).format(
+                            _qgis_pkg_schema = pysql.Identifier(self.plugin.QGIS_PKG_SCHEMA),
+                            _usr_name = pysql.Literal(usr_name)
+                            )
+
+                        # Update progress bar
+                        msg = f"Resetting privileges for user: {usr_name}"
+                        curr_step += 1
+                        self.sig_progress.emit(self.plugin.DLG_NAME_ADMIN, curr_step, msg)
+
+                        try:
+                            with temp_conn.cursor() as cur:
+                                cur.execute(query)
+                            temp_conn.commit()               
+
+                        except (Exception, psycopg2.Error) as error:
+                            temp_conn.rollback()
+                            fail_flag = True
+                            gen_f.critical_log(
+                                func=self.uninstall_thread,
+                                location=FILE_LOCATION,
+                                header=f"Resetting privileges from superusers",
+                                error=error)
+                            self.sig_fail.emit()
+
+                # 3) drop feature types (layers)
                 if drop_tuples_num == 0:
                     pass # nothing to do 
                 else:
@@ -794,7 +838,7 @@ class QgisPackageUninstallWorker(QObject):
                             temp_conn.rollback()
                             self.sig_fail.emit()
 
-                # 3) drop usr_schemas
+                # 4) drop usr_schemas
                 if usr_schemas_num == 0:
                     pass # nothing to do 
                 else:
@@ -826,7 +870,7 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
-                # 4) Drop database group
+                # 5) Drop database group
                 if not self.plugin.GROUP_NAME:
                     self.plugin.GROUP_NAME = sql.exec_create_qgis_pkg_usrgroup_name(self.plugin)
 
@@ -856,7 +900,7 @@ class QgisPackageUninstallWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-                # 5) drop qgis_pkg schema
+                # 6) drop qgis_pkg schema
                 query = pysql.SQL("""
                     DROP SCHEMA IF EXISTS {_qgis_pkg_schema} CASCADE;
                     """).format(
@@ -1038,22 +1082,25 @@ class DropUsrSchemaWorker(QObject):
         """Execution method that uninstalls the {usr_schema} from the current database
         """
          # Flag to help us break from a failing installation.
+        dlg = self.plugin
         fail_flag: bool = False
-        qgis_pkg_schema: str = self.plugin.QGIS_PKG_SCHEMA
+        qgis_pkg_schema: str = dlg.QGIS_PKG_SCHEMA
         
-        usr_name: str = self.plugin.admin_dlg.cbxUser.currentText()
+        usr_name: str = dlg.admin_dlg.cbxUser.currentText()
+        is_superuser: bool = sql.is_superuser(dlg, usr_name)
 
-        usr_schema = self.plugin.USR_SCHEMA
+        usr_schema = dlg.USR_SCHEMA
+
+        drop_tuples = sql.exec_list_feature_types(dlg, dlg.USR_SCHEMA)
 
         # Overview of the procedure:
-        # 1) revoke privileges for selected user
+        # 1a) revoke privileges for selected user
+        # 1b) reset privileges for superuser(s)
         # 2) drop feature types (layers)
         # 3) drop usr_schema of the selected user
 
-        drop_tuples = sql.exec_list_feature_types(self.plugin, self.plugin.USR_SCHEMA)
-
         # Set progress bar goal:
-        # revoke privileges: 1 action (not needed with postgres)
+        # reset/revoke privileges: 1 action
         # drop feature types (layers): len(drop_tuples)
         # drop usr schema: 1
 
@@ -1065,27 +1112,37 @@ class DropUsrSchemaWorker(QObject):
             drop_tuples_num = len(drop_tuples)
 
         steps_tot = usr_names_num + drop_tuples_num + 1
-        self.plugin.admin_dlg.bar.setMaximum(steps_tot)
+        dlg.admin_dlg.bar.setMaximum(steps_tot)
 
         curr_step: int = 0
 
         try:
             # Open new temp session, reserved for usr_schema installation.
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_ADMIN, "(User schema Uninstallation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.PLUGIN_NAME_ADMIN, "(User schema Uninstallation)"]))
             with temp_conn:
 
-                # 1) revoke privileges for selected user
-                query = pysql.SQL("""
-                    SELECT {_qgis_pkg_schema}.revoke_qgis_usr_privileges(usr_name := {_usr_name}, cdb_schema := NULL);
-                    """).format(
-                    _qgis_pkg_schema = pysql.Identifier(self.plugin.QGIS_PKG_SCHEMA),
-                    _usr_name = pysql.Literal(usr_name)
-                    )
+                if is_superuser:
+                    # 1b) reset privileges for superuser for all cdb_schemas
+                    query = pysql.SQL("""
+                        SELECT {_qgis_pkg_schema}.grant_qgis_usr_privileges(usr_name := {_usr_name}, priv_type := 'rw', cdb_schema := NULL);
+                        """).format(
+                        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                        _usr_name = pysql.Literal(usr_name)
+                        )
+
+                else:
+                    # 1a) revoke privileges for selected user from all cdb_schemas
+                    query = pysql.SQL("""
+                        SELECT {_qgis_pkg_schema}.revoke_qgis_usr_privileges(usr_name := {_usr_name}, cdb_schema := NULL);
+                        """).format(
+                        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                        _usr_name = pysql.Literal(usr_name)
+                        )
 
                 # Update progress bar
-                msg = f"Revoking privileges from user: {usr_name}"
+                msg = f"Revoking/resetting privileges of user: {usr_name}"
                 curr_step += 1
-                self.sig_progress.emit(self.plugin.DLG_NAME_ADMIN, curr_step, msg)
+                self.sig_progress.emit(dlg.DLG_NAME_ADMIN, curr_step, msg)
 
                 try:
                     with temp_conn.cursor() as cur:
@@ -1109,7 +1166,7 @@ class DropUsrSchemaWorker(QObject):
                     for usr_schema, cdb_schema, feat_type in drop_tuples:
 
                         ft: FeatureType
-                        ft = self.plugin.admin_dlg.FeatureTypesRegistry[feat_type]
+                        ft = dlg.admin_dlg.FeatureTypesRegistry[feat_type]
                         module_drop_func = ft.layers_drop_function
 
                         query = pysql.SQL("""
@@ -1124,7 +1181,7 @@ class DropUsrSchemaWorker(QObject):
                         # Update progress bar
                         msg = f"In {usr_schema}: dropping {feat_type} layers for {cdb_schema}"
                         curr_step += 1
-                        self.sig_progress.emit(self.plugin.DLG_NAME_ADMIN, curr_step, msg)
+                        self.sig_progress.emit(dlg.DLG_NAME_ADMIN, curr_step, msg)
 
                         try:
                             with temp_conn.cursor() as cur:
@@ -1151,7 +1208,7 @@ class DropUsrSchemaWorker(QObject):
                 # Update progress bar with current step and script.
                 msg = f"Dropping user schema: {usr_schema}"
                 curr_step += 1
-                self.sig_progress.emit(self.plugin.DLG_NAME_ADMIN, curr_step, msg)
+                self.sig_progress.emit(dlg.DLG_NAME_ADMIN, curr_step, msg)
 
                 try:
                     with temp_conn.cursor() as cur:

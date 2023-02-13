@@ -12,7 +12,7 @@ from ...shared.functions import sql as sh_sql
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 
-def is_superuser(cdbMain: CDBToolsMain) -> bool:
+def is_superuser(cdbMain: CDBToolsMain, usr_name: str) -> bool:
     """SQL query that determines whether the connecting user has administrations privileges.
 
     *   :returns: Admin status
@@ -25,7 +25,7 @@ def is_superuser(cdbMain: CDBToolsMain) -> bool:
     query = pysql.SQL("""
         SELECT 1 FROM pg_user WHERE usesuper IS TRUE AND usename = {_usr_name};
         """).format(
-        _usr_name = pysql.Literal(cdbMain.DB.username)
+        _usr_name = pysql.Literal(usr_name)
         )
 
     try:
@@ -35,15 +35,15 @@ def is_superuser(cdbMain: CDBToolsMain) -> bool:
         cdbMain.conn.commit()
 
         if result_bool:
-            return result_bool[0]
+            return True
         else:
-            return None
+            return False
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=is_superuser,
             location=FILE_LOCATION,
-            header=f"Checking whether the current user is a database superuser",
+            header=f"Checking whether the current user '{usr_name}' is a database superuser",
             error=error)
         cdbMain.conn.rollback()  
 
