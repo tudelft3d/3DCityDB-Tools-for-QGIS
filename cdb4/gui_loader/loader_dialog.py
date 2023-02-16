@@ -27,10 +27,10 @@ from collections import namedtuple
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
-from qgis.gui import QgsRubberBand, QgsMapCanvas
+from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtCore import Qt, QThread
+from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
 from ...cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 
@@ -75,12 +75,33 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ## From here you can add your variables or constants
         ############################################################
 
+        # QGIS current version
+        self.QGIS_VERSION_STR: str = Qgis.version() 
+        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
+        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
+
+        # Variable to store the plugin name
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
+        # Variable to store the qgis_pkg
+        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
+
         self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_LOADER
 
-        # # Variable to store the previous connection of a database.
-        self.prev_conn: pyconn = None
-        # # Variable to store the previous connection parameters.
-        self.prev_DB: Connection = None
+        # Variable to store the current open connection of a database.
+        self.conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        self.DB: Connection = None
+
+        # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
+        self.GROUP_NAME: str = None
+        # Variable to store the selected cdb_schema name.
+        self.CDB_SCHEMA: str = None
+        # Variable to store the selected usr_schema name.
+        self.USR_SCHEMA: str = None
+
+        self.msg_bar: QgsMessageBar
+        self.bar: QProgressBar
+        self.thread: QThread
 
         self.settings = LoaderDefaultSettings()
         self.checks = LoaderDialogChecks()
@@ -105,14 +126,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.QGIS_EXTENTS = QgsRectangle()
 
         # Variable to store an additional canvas (to show the extents in the CONNECTION TAB).
-        self.CANVAS_C: QgsMapCanvas = QgsMapCanvas()
-        self.CANVAS_C.enableAntiAliasing(True)
-        self.CANVAS_C.setMinimumWidth(300)
-        self.CANVAS_C.setMaximumHeight(350)
+        self.CANVAS: QgsMapCanvas = QgsMapCanvas()
+        self.CANVAS.enableAntiAliasing(True)
+        self.CANVAS.setMinimumWidth(300)
+        self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
 
         # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
         self.CANVAS_L: QgsMapCanvas = QgsMapCanvas()
@@ -129,7 +150,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # This is used in order to revert to the original state in reset operations when original text has already changed.
 
         ### TAB Connection
-        self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
+        self.btnConnectToDb.init_text = c.btnConnectToDB_t
         self.btnRefreshCDBExtents.init_text = c.btnRefreshCDBExtents_t
         self.btnCityExtents.init_text = c.btnCityExtents_t
         self.btnCreateLayers.init_text = c.btnCreateLayers_t
@@ -141,100 +162,151 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnLayerExtentsL.init_text = c.btnLayerExtentsL_t
         self.ccbxLayers.init_text = c.ccbxFeatures_t
 
+
         ### SIGNALS (start) ############################
 
         #### 'User Connection' tab
         # 'Connection' group box signals
-        self.cbxExistingConnC.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbMain))
-        self.btnNewConnC.clicked.connect(self.evt_btnNewConn_clicked)
+        self.cbxExistingConn.currentIndexChanged.connect(self.evt_cbxExistingConn_changed)
+        self.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
 
         # 'Database' group box signals
-        self.btnConnectToDbC.clicked.connect(lambda: self.evt_btnConnectToDb_clicked(cdbMain))
-        self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbMain))
+        self.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
+        self.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
 
         # Basemap (OSM) group box signals
         # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
-        self.qgbxExtentsC.setMapCanvas(canvas=self.CANVAS_C, drawOnCanvasOption=False)
-        # Draw on Canvas tool is disabled. Check notes in tc_wf.qgbxExtentsC_setup()
-        self.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
-
-        # 'Extents' groupbox signals
-        self.btnRefreshCDBExtents.clicked.connect(lambda: self.evt_btnRefreshCDBExtents_clicked(cdbMain))
-
-        self.btnCityExtents.clicked.connect(lambda: self.evt_btnCityExtents_clicked(cdbMain))
-        self.CANVAS_C.extentsChanged.connect(self.evt_canvasC_ext_changed)
-        self.qgbxExtentsC.extentChanged.connect(lambda: self.evt_qgbxExtentsC_ext_changed(cdbMain))
-        self.btnGeoCoder.clicked.connect(self.evt_btnGeoCoder_clicked)
-
-        self.gbxFeatSel.toggled.connect(lambda: self.evt_gbxFeatSel_toggled(cdbMain))
-
-        self.btnCreateLayers.clicked.connect(lambda: self.evt_btnCreateLayers_clicked(cdbMain))
-        self.btnRefreshLayers.clicked.connect(lambda: self.evt_btnRefreshLayers_clicked(cdbMain))
-        self.btnDropLayers.clicked.connect(lambda: self.evt_btnDropLayers_clicked(cdbMain))
-
-        self.btnCloseConnC.clicked.connect(lambda: self.evt_btnCloseConnC_clicked(cdbMain))
-
-        #### 'Layer' tab
-        # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
-        self.qgbxExtents.setMapCanvas(canvas=self.CANVAS_L, drawOnCanvasOption=False)
-        # Draw on Canvas tool is disabled. Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
+        self.qgbxExtents.setMapCanvas(canvas=self.CANVAS, drawOnCanvasOption=False)
+        # Draw on Canvas tool is disabled. Check notes in tc_wf.qgbxExtents_setup()
         self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
 
         # 'Extents' groupbox signals
-        self.qgbxExtents.extentChanged.connect(lambda: self.evt_qgbxExtentsL_ext_changed(cdbMain))
-        self.btnLayerExtentsL.clicked.connect(lambda: self.evt_btnLayerExtentsL_clicked(cdbMain))          
+        self.btnRefreshCDBExtents.clicked.connect(self.evt_btnRefreshCDBExtents_clicked)
+
+        self.btnCityExtents.clicked.connect(self.evt_btnCityExtents_clicked)
+        self.CANVAS.extentsChanged.connect(self.evt_canvasC_ext_changed)
+        self.qgbxExtents.extentChanged.connect(self.evt_qgbxExtents_ext_changed)
+        self.btnGeoCoder.clicked.connect(self.evt_btnGeoCoder_clicked)
+
+        self.gbxFeatSel.toggled.connect(self.evt_gbxFeatSel_toggled)
+
+        self.btnCreateLayers.clicked.connect(self.evt_btnCreateLayers_clicked)
+        self.btnRefreshLayers.clicked.connect(self.evt_btnRefreshLayers_clicked)
+        self.btnDropLayers.clicked.connect(self.evt_btnDropLayers_clicked)
+
+        self.btnCloseConn.clicked.connect(self.evt_btnCloseConn_clicked)
+
+        #### 'Layer' tab
+        # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
+        self.qgbxExtentsL.setMapCanvas(canvas=self.CANVAS_L, drawOnCanvasOption=False)
+        # Draw on Canvas tool is disabled. Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtentsL_setup
+        self.qgbxExtentsL.setOutputCrs(outputCrs=self.CRS)
+
+        # 'Extents' groupbox signals
+        self.qgbxExtentsL.extentChanged.connect(self.evt_qgbxExtentsL_ext_changed)
+        self.btnLayerExtentsL.clicked.connect(self.evt_btnLayerExtentsL_clicked)          
 
         # 'Parameters' groupbox signals
-        self.cbxFeatureType.currentIndexChanged.connect(lambda: self.evt_cbxFeatureType_changed(cdbMain))
-        self.cbxLod.currentIndexChanged.connect(lambda: self.evt_cbxLod_changed(cdbMain))
+        self.cbxFeatureType.currentIndexChanged.connect(self.evt_cbxFeatureType_changed)
+        self.cbxLod.currentIndexChanged.connect(self.evt_cbxLod_changed)
 
         # 'Features to Import' groupbox signals
-        self.ccbxLayers.checkedItemsChanged.connect(lambda: self.evt_cbxLayers_changed(cdbMain))
-        self.btnImport.clicked.connect(lambda: self.evt_btnImport_clicked(cdbMain))
+        self.ccbxLayers.checkedItemsChanged.connect(self.evt_cbxLayers_changed)
+        self.btnImport.clicked.connect(self.evt_btnImport_clicked)
 
         #### 'Settings' tab
         self.gbxGeomSimp.toggled.connect(self.evt_cbxGeoSimp_toggled)
 
-        self.btnResetToDefault.clicked.connect(lambda: self.evt_btnResetToDefault_clicked(cdbMain))
-        self.btnSaveSettings.clicked.connect(lambda: self.evt_btnSaveSettings_clicked(cdbMain))
-        self.btnLoadSettings.clicked.connect(lambda: self.evt_btnLoadSettings_clicked(cdbMain))
+        self.btnResetToDefault.clicked.connect(self.evt_btnResetToDefault_clicked)
+        self.btnSaveSettings.clicked.connect(self.evt_btnSaveSettings_clicked)
+        self.btnLoadSettings.clicked.connect(self.evt_btnLoadSettings_clicked)
 
         ### SIGNALS (end) ##############################
 
-    ################################################
+    def create_progress_bar(self, layout: QVBoxLayout, position: int) -> None:
+        """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
+
+        *   :param layout: QLayout of the gui where the bar is to be
+                assigned.
+            :type layout: QBoxLayout
+
+        *   :param position: The place (index) in the layout to place
+                the progress bar
+            :type position: int
+        """
+        # Create QgsMessageBar instance.
+        self.msg_bar = QgsMessageBar()
+
+        # Add the message bar into the input layer and position.
+        layout.insertWidget(position, self.msg_bar)
+
+        # Create QProgressBar instance into QgsMessageBar.
+        self.bar = QProgressBar(parent=self.msg_bar)
+
+        # Setup progress bar.
+        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.bar.setStyleSheet("text-align: left;")
+
+        # Show progress bar in message bar.
+        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+
+
+    def evt_update_bar(self, step: int, text: str) -> None:
+        """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
+        in self.msg_bar: QgsMessageBar and self.bar: QProgressBar.
+        This event is not linked to any widet_setup function as it isn't responsible for changes in different 
+        widgets in the GUI.
+
+        *   :param dialog: The dialog to hold the bar.
+            e.g. "admin_dlg" or "loader_dlg"
+            :type step: str
+
+        *   :param step: Current value of the progress
+            :type step: int
+
+        *   :param text: Text to display on the bar
+            :type text: str
+        """
+        # Show text instead of completed percentage.
+        if text:
+            self.bar.setFormat(text)
+
+        # Update progress with current step
+        self.bar.setValue(step)
+
     ### EVENTS (start) ############################
 
     ## Events for 'User connection' tab BEGIN
 
     #'Connection' group box events (in 'User Connection' tab)
-    def evt_cbxExistingConn_changed(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the 'Existing Connection' comboBox (cbxExistingConnC) current index changes.
+    def evt_cbxExistingConn_changed(self) -> None:
+        """Event that is called when the 'Existing Connection' comboBox (cbxExistingConn) current index changes.
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
-        cdbMain.DB: Connection = self.cbxExistingConnC.currentData()
-        if not cdbMain.DB:
+        self.DB: Connection = self.cbxExistingConn.currentData()
+        if not self.DB:
             return None
 
         # Reset the tabs
-        tl_wf.tabLayers_reset(cdbMain)
-        ts_wf.tabSettings_reset(cdbMain)
-        tc_wf.tabConnection_reset(cdbMain)
+        tl_wf.tabLayers_reset(self)
+        ts_wf.tabSettings_reset(self)
+        tc_wf.tabConnection_reset(self)
 
         # Reset and (re)enable the "3D City Database" connection box and buttons
         self.gbxDatabase.setDisabled(False)   # Activate the group box
-        self.btnConnectToDbC.setText(self.btnConnectToDbC.init_text.format(db=cdbMain.DB.database_name))  # set the label
-        self.btnConnectToDbC.setDisabled(False)  # Activate the button 
+        self.btnConnectToDb.setText(self.btnConnectToDb.init_text.format(db=self.DB.database_name))  # set the label
+        self.btnConnectToDb.setDisabled(False)  # Activate the button 
         self.lblConnectToDB.setDisabled(False)   # Activate the label
 
         # Close the current open connection.
-        if cdbMain.conn is not None:
-            cdbMain.conn.close()
+        if self.conn is not None:
+            self.conn.close()
 
 
     def evt_btnNewConn_clicked(self) -> None:
         """Event that is called when the 'New Connection' pushButton
-        (btnNewConnC) is pressed.
+        (btnNewConn) is pressed.
 
         Responsible to add a new VALID connection to the 'Existing connections'.
         """
@@ -246,19 +318,19 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Add new connection to the Existing connections
         if dlgConnector.conn_params:
-            self.cbxExistingConnC.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
+            self.cbxExistingConn.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
 
 
     # 'Database' group box events (in 'User Connection' tab)
-    def evt_btnConnectToDb_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnConnectToDb_clicked(self) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
-        (btnConnectToDbC) is pressed. It sets up the GUI after a click signal is emitted.
+        (btnConnectToDb) is pressed. It sets up the GUI after a click signal is emitted.
         """
         msg: str = None
 
         # In 'Connection Status' groupbox
-        self.gbxConnStatusC.setDisabled(False) # Activate the connection status box (red/green checks)
-        self.btnCloseConnC.setDisabled(False) # Activate the close connection button at the bottom
+        self.gbxConnStatus.setDisabled(False) # Activate the connection status box (red/green checks)
+        self.btnCloseConn.setDisabled(False) # Activate the close connection button at the bottom
 
         # -------------------------------------------------------------------------------------------
         # Series of tests to be carried out when I connect as user.
@@ -273,41 +345,41 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 1) Can I connect to the database? If yes, continue
 
-        # Attempt to connect to the database, returns True/False, and if successful, store connection in cdbMain.conn
-        # Additionally, set cdbMain.DB.pg_server_version
-        successful_connection: bool = conn_f.open_connection(cdbMain)
+        # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
+        # Additionally, set self.DB.pg_server_version
+        successful_connection: bool = conn_f.open_connection(self)
 
         if successful_connection:
             # Show database name
-            self.lblConnToDbC_out.setText(c.success_html.format(text=cdbMain.DB.database_name))
+            self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
 
-            if cdbMain.DB.pg_server_version is not None:
+            if self.DB.pg_server_version is not None:
                 # Show server version
-                self.lblPostInstC_out.setText(c.success_html.format(text=cdbMain.DB.pg_server_version))
+                self.lblPostInst_out.setText(c.success_html.format(text=self.DB.pg_server_version))
                 self.checks.is_postgis_installed = True
             else:
-                self.lblPostInstC_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
+                self.lblPostInst_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
                 self.checks.is_postgis_installed = False
                 return None # Exit
 
         else: # Connection failed!
-            tc_wf.gbxConnStatus_reset(cdbMain)
-            self.gbxConnStatusC.setDisabled(False)
-            self.lblConnToDbC_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
+            tc_wf.gbxConnStatus_reset(self)
+            self.gbxConnStatus.setDisabled(False)
+            self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
             self.checks.is_conn_successful = False
             self.checks.is_postgis_installed = False
 
             msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
@@ -317,26 +389,26 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # This checks that:
         # a) I have been granted usage of the database AND
         # b) the QGIS Package has been indeed installed.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(cdbMain)
+        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(self)
 
         if is_qgis_pkg_installed:
             # I can now access the functions of the qgis_pkg (at least the public ones)
             # Set the current user schema name.
-            sh_sql.exec_create_qgis_usr_schema_name(cdbMain)
+            sh_sql.exec_create_qgis_usr_schema_name(self)
         else:
-            self.lblMainInstC_out.setText(c.failure_html.format(text=c.NO_DB_ACCESS_MSG))
+            self.lblMainInst_out.setText(c.failure_html.format(text=c.NO_DB_ACCESS_MSG))
             self.checks.is_qgis_pkg_installed = False
 
             msg = f"You are not allowed to connect to this database.\n\nPlease contact your database administrator."
             QMessageBox.warning(self, "Unable to connect to database", msg)
 
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
@@ -344,7 +416,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the current qgis_pkg version and check that it is compatible.
         # Named tuple: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(cdbMain)
+        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(self)
 
         # print(qgis_pkg_curr_version)
         qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version
@@ -364,53 +436,53 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV)):
 
             # Show message in Connection Status the Qgis Package is installed (and version)
-            self.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=cdbMain.QGIS_PKG_SCHEMA)))
+            self.lblMainInst_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=self.QGIS_PKG_SCHEMA)))
             self.checks.is_qgis_pkg_installed = True
         else:
-            self.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
+            self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
             msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\n\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
         # 4) Is my usr_schema installed? If yes, continue.
 
         # Check if qgis_{usr} schema (e.g. qgis_giorgio) is installed in the database.
-        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(cdbMain)
+        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(self)
 
         if is_usr_schema_inst:
             # Show message in Connection Status the 3DCityDB version if installed
-            cdbMain.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(cdbMain)
-            self.lbl3DCityDBInstC_out.setText(c.success_html.format(text=cdbMain.DB.citydb_version))
+            self.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(self)
+            self.lbl3DCityDBInst_out.setText(c.success_html.format(text=self.DB.citydb_version))
             self.checks.is_3dcitydb_installed = True
 
             # Show message in Connection Status that the qgis_{usr} schema is installed               
-            self.lblUserInstC_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=self.USR_SCHEMA)))
             self.checks.is_usr_pkg_installed = True
         else:
-            self.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbMain.DB.username}")))
+            self.lblUserInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{self.DB.username}")))
             self.checks.is_usr_pkg_installed = False
 
-            msg = f"The required user schema 'qgis_{cdbMain.DB.username}' is missing.\n\nPlease contact your database administrator to install it."
+            msg = f"The required user schema 'qgis_{self.DB.username}' is missing.\n\nPlease contact your database administrator to install it."
             QMessageBox.warning(self, "User schema not found", msg)
 
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
@@ -418,7 +490,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
         # Namedtuple with: cdb_schema, co_number, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(cdbMain)
+        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
@@ -435,41 +507,41 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.\n\nPlease contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
 
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
         else:
             if len(cdb_schemas) == 0:
-                tc_f.fill_cdb_schemas_box(cdbMain, None)
+                tc_f.fill_cdb_schemas_box(self, None)
                 # Inform the use that all available cdb_schemas are empty.
                 msg = "The available citydb schema(s) is/are all empty.\n\nPlease load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
-                tl_wf.tabLayers_reset(cdbMain)
-                ts_wf.tabSettings_reset(cdbMain)
-                tc_wf.tabConnection_reset(cdbMain)
+                tl_wf.tabLayers_reset(self)
+                ts_wf.tabSettings_reset(self)
+                tc_wf.tabConnection_reset(self)
                 # Close the current open connection.
-                if cdbMain.conn is not None:
-                    cdbMain.conn.close()
+                if self.conn is not None:
+                    self.conn.close()
 
                 return None
 
             else: # Finally, we have all conditions to fill the cdb_schema combobox
-                tc_f.fill_cdb_schemas_box(cdbMain, cdb_schemas)
+                tc_f.fill_cdb_schemas_box(self, cdb_schemas)
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
                 # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
         return None # Exit
 
 
-    def evt_cbxSchema_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxSchema_changed(self) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema) current index changes.
         Function to setup the GUI after an 'indexChanged' signal is emitted from the cbxSchema combo box.
         This function runs every time the selected schema is changed (in 'User Connection' tab)
@@ -483,8 +555,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         sel_cdb_schema: tuple = self.cbxSchema.currentData()
 
         # Set the current schema variable
-        cdbMain.CDB_SCHEMA: str = sel_cdb_schema.cdb_schema
-        # print(cdbMain.CDB_SCHEMA)
+        self.CDB_SCHEMA: str = sel_cdb_schema.cdb_schema
+        # print(self.CDB_SCHEMA)
 
         # Set the current schema privileges
         self.CDBSchemaPrivileges = sel_cdb_schema.priv_type
@@ -495,15 +567,15 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # print("n_cityobjects", self.n_cityobjects)
 
         # Reset the Layer and Settings tabs in case they were open/changed from before 
-        tl_wf.tabLayers_reset(cdbMain) # Reset the Layers tab
-        ts_wf.tabSettings_reset(cdbMain) # Reset the Settings tab to the Default settings
+        tl_wf.tabLayers_reset(self) # Reset the Layers tab
+        ts_wf.tabSettings_reset(self) # Reset the Settings tab to the Default settings
 
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         self.LAYER_EXTENTS = QgsRectangle()
         self.QGIS_EXTENTS = QgsRectangle()
 
         # Initialize/create the FeatureTypeRegistry
-        tc_f.initialize_feature_type_registry(cdbMain)
+        tc_f.initialize_feature_type_registry(self)
 
         # Clear status of previous schema.
         self.lblLayerExist_out.clear()
@@ -514,19 +586,19 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.lblSchema.setDisabled(False)
 
         # Update labels with the name of the selected cdb_schema
-        self.btnRefreshCDBExtents.setText(self.btnRefreshCDBExtents.init_text.format(sch=cdbMain.CDB_SCHEMA))
-        self.btnCityExtents.setText(self.btnCityExtents.init_text.format(sch=cdbMain.CDB_SCHEMA))
+        self.btnRefreshCDBExtents.setText(self.btnRefreshCDBExtents.init_text.format(sch=self.CDB_SCHEMA))
+        self.btnCityExtents.setText(self.btnCityExtents.init_text.format(sch=self.CDB_SCHEMA))
 
-        self.btnCreateLayers.setText(self.btnCreateLayers.init_text.format(sch=cdbMain.CDB_SCHEMA))
-        self.btnRefreshLayers.setText(self.btnRefreshLayers.init_text.format(sch=cdbMain.CDB_SCHEMA))
-        # self.btnDropLayers.setText(self.btnDropLayers.init_text.format(sch=cdbMain.CDB_SCHEMA))
+        self.btnCreateLayers.setText(self.btnCreateLayers.init_text.format(sch=self.CDB_SCHEMA))
+        self.btnRefreshLayers.setText(self.btnRefreshLayers.init_text.format(sch=self.CDB_SCHEMA))
+        # self.btnDropLayers.setText(self.btnDropLayers.init_text.format(sch=self.CDB_SCHEMA))
 
         # Setup the 'Basemap (OSM)' groupbox.
-        tc_wf.gbxBasemapC_setup(cdbMain)
+        tc_wf.gbxBasemap_setup(self)
         # This fires an update of the medatada library
 
         # Check whether layers exist, have been refreshed, and set up the GUI elements accordinly
-        tc_f.check_layers_status(cdbMain)
+        tc_f.check_layers_status(self)
 
         return None
 
@@ -534,23 +606,23 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_canvasC_ext_changed(self) -> None:
         """Event that is called when the current canvas extents (pan over map) changes.
         Reads the new current extents from the map and sets it in the 'Extents'
-        (qgbxExtentsC) widget.
+        (qgbxExtents) widget.
         """
         # Get canvas's current extent
-        extent: QgsRectangle = self.CANVAS_C.extent()
+        extent: QgsRectangle = self.CANVAS.extent()
 
         # Set the current extent to show in the 'extent' widget.
-        self.qgbxExtentsC.blockSignals(True)
-        self.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtentsC. Avoid double signal blocking signals
-        self.qgbxExtentsC.blockSignals(False)
-        self.qgbxExtentsC.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtentsC
+        self.qgbxExtents.blockSignals(True)
+        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal blocking signals
+        self.qgbxExtents.blockSignals(False)
+        self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
 
-    def evt_qgbxExtentsC_ext_changed(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the 'Extents' groubBox (qgbxExtentsC) extent in widget changes.
+    def evt_qgbxExtents_ext_changed(self) -> None:
+        """Event that is called when the 'Extents' groubBox (qgbxExtents) extent in widget changes.
         """
         # Update current extents variable with the ones that fired the signal.
-        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtentsC.outputExtent()
+        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtents.outputExtent()
 
         if self.CURRENT_EXTENTS.isNull() or self.CDB_SCHEMA_EXTENTS.isNull():
             return None
@@ -563,20 +635,20 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.LAYER_EXTENTS: QgsRectangle = self.CURRENT_EXTENTS
 
             # Draw the red rubber band
-            canvas.insert_rubber_band(band=self.RUBBER_LAYERS_C, extents=self.LAYER_EXTENTS, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
+            canvas.insert_rubber_band(band=self.RUBBER_LAYERS, extents=self.LAYER_EXTENTS, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
 
             # Update the existence status of the Feature Type metadata
-            tc_f.update_feature_type_registry_exists(cdbMain)
+            tc_f.update_feature_type_registry_exists(self)
             # If the Feature Type checkable combobox is activated, refresh its contents
             if self.gbxFeatSel.isChecked():
                 # (Re)fill 'Feature type' checkable combobox
-                tc_f.fill_feature_types_box(cdbMain)
+                tc_f.fill_feature_types_box(self)
 
         else:
-            QMessageBox.critical(self, "Warning", f"Pick a region intersecting the extents of '{cdbMain.CDB_SCHEMA}' (black area).")
+            QMessageBox.critical(self, "Warning", f"Pick a region intersecting the extents of '{self.CDB_SCHEMA}' (black area).")
 
 
-    def evt_btnRefreshCDBExtents_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnRefreshCDBExtents_clicked(self) -> None:
         """Event that is called when the button (btnRefreshCDBExtents) is pressed.
         It will check whether the cdb_extents
         - are null, i.e. the database has been emptied (reset all, the cdb_schema will disappear from the list)
@@ -585,13 +657,13 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
         """
         # Recount the number of cityobjects
-        new_n_cityobjects = sql.count_cityobjects_in_cdb_schema(cdbMain)
+        new_n_cityobjects = sql.count_cityobjects_in_cdb_schema(self)
 
         if self.n_cityobjects != new_n_cityobjects:
             self.n_cityobjects = new_n_cityobjects
             # Create a namedtuple to inser in the combobox
             new_sel_cdb_schema = namedtuple("RECORD", "cdb_schema, co_number, priv_type")
-            new_sel_cdb_schema.cdb_schema = cdbMain.CDB_SCHEMA
+            new_sel_cdb_schema.cdb_schema = self.CDB_SCHEMA
             new_sel_cdb_schema.co_number = self.n_cityobjects
             new_sel_cdb_schema.priv_type = self.CDBSchemaPrivileges
             # Update the entry in the cdb_schema combobox
@@ -602,7 +674,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.cbxSchema.setItemText(i, label)
                     self.cbxSchema.setItemData(i, new_sel_cdb_schema)
 
-        is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(cdbMain=cdbMain)
+        is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(dlg=self)
         srid = None # Discard unneeded variable.
 
         if not is_geom_null:
@@ -620,15 +692,15 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if cdb_extents_new == cdb_extents_old:
                 # Do nothing, the extents have not changed. No need to do anything
-                QgsMessageLog.logMessage(f"Extents of '{cdbMain.CDB_SCHEMA}' are unchanged. No need to update them.", cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
                 return None
             else: # The extents have changed. Show them on the map as dashed line
 
                 # Disable the Feature Type selection checkbox.
-                tc_wf.gbxFeatSel_reset(cdbMain)
+                tc_wf.gbxFeatSel_reset(self)
 
                 # Backup the original Layer extents
-                # (They will be changed by the event evt_qgbxExtentsC_ext_changed later on)
+                # (They will be changed by the event evt_qgbxExtents_ext_changed later on)
                 layer_extents_wkt: str = self.LAYER_EXTENTS.asWktPolygon()
                 temp_layer_extents: QgsRectangle = QgsRectangle().fromWkt(layer_extents_wkt)
 
@@ -637,53 +709,53 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 cdb_extents_union.combineExtentWith(cdb_extents_new)
 
                 # Create new rubber band, with dahed line style
-                cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+                cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
                 cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
 
                 # Set up the canvas to the new extents of the cdb_schema.
-                # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
-                canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=cdb_extents_union, crs=self.CRS, clear=False)
+                # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
+                canvas.canvas_setup(self=self, canvas=self.CANVAS, extents=cdb_extents_union, crs=self.CRS, clear=False)
 
                 # Drop the rubber band of the layers extents, it will be redone later.
-                self.RUBBER_LAYERS_C.reset()
+                self.RUBBER_LAYERS.reset()
 
                 # Reset the red layer extents to the original size
                 self.LAYER_EXTENTS = temp_layer_extents
 
                 # Add the rubber bands
                 canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-                canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
+                canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
                 # Zoom to the rubber band of the new cdb_extents. Fires evt_canvas_ext_changed
-                canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=cdb_extents_union)
+                canvas.zoom_to_extents(canvas=self.CANVAS, extents=cdb_extents_union)
 
-                msg: str = f"Extents of '{cdbMain.CDB_SCHEMA}' have changed (black dashed line). Now they will be automatically updated."
-                QMessageBox.warning(cdbMain.loader_dlg, "Extents changed!", msg)
+                msg: str = f"Extents of '{self.CDB_SCHEMA}' have changed (black dashed line). Now they will be automatically updated."
+                QMessageBox.warning(self, "Extents changed!", msg)
 
                 # Drop the existing rubber bands, they need to be redone
                 cdb_extents_new_rubber_band.reset()
-                self.RUBBER_CDB_SCHEMA_C.reset()
+                self.RUBBER_CDB_SCHEMA.reset()
 
                 if cdb_extents_new.contains(self.LAYER_EXTENTS):
 
                     # Update the cdb_extents in the database
-                    sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
+                    sql.exec_upsert_extents(dlg=self, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
 
                     # Update the canvas and the rubber bands in both tabs.
 
                     # In CONNECTION TAB, update canvas:
                     self.CDB_SCHEMA_EXTENTS = cdb_extents_new
 
-                    # Set up the canvas to the new extents of the cdb_schema. Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
-                    canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, clear=False)
+                    # Set up the canvas to the new extents of the cdb_schema. Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
+                    canvas.canvas_setup(dlg=self, canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, clear=False)
                     # Reset the layer extents after the previous function modifies them
                     self.LAYER_EXTENTS = temp_layer_extents
 
                     # Show only the cdb extents and the layer extents, no need anymore for the dashed line.
-                    canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-                    canvas.insert_rubber_band(band=self.RUBBER_LAYERS_C, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
+                    canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
+                    canvas.insert_rubber_band(band=self.RUBBER_LAYERS, extents=temp_layer_extents, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
 
-                    canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
+                    canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS)
 
                     # In LAYER TAB, update canvas:
 
@@ -692,7 +764,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.RUBBER_LAYERS_L.reset()
                     self.RUBBER_QGIS_L.reset()
 
-                    canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_L, extents=self.LAYER_EXTENTS, crs=self.CRS, clear=False)
+                    canvas.canvas_setup(dlg=self, canvas=self.CANVAS_L, extents=self.LAYER_EXTENTS, crs=self.CRS, clear=False)
                     # Reset the layer extents after the previous function modifies them
                     self.LAYER_EXTENTS = temp_layer_extents
                     self.QGIS_EXTENTS = self.LAYER_EXTENTS
@@ -708,67 +780,67 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 else: # The new cdb_extents do not contain the old ones, it is completely somewhere else (e.g. dropped all old data, added new data somewhere else)
 
                     # Update the cdb_extents in the database to the new ones
-                    sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
+                    sql.exec_upsert_extents(dlg=self, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new.asWktPolygon())
                     # Update the layer_extents and set them to null
-                    sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
+                    sql.exec_upsert_extents(dlg=self, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
 
                     self.CDB_SCHEMA_EXTENTS = cdb_extents_new
                     self.LAYER_EXTENTS = cdb_extents_new
 
                     # Set up the canvas to the new extents of the cdb_schema.
-                    # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
-                    canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, clear=False)
+                    # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
+                    canvas.canvas_setup(dlg=self, canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, clear=False)
                     # Reset the layer extents after the previous function modifies them
                     self.LAYER_EXTENTS = cdb_extents_new
 
-                    canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA_C, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-                    canvas.insert_rubber_band(band=self.RUBBER_LAYERS_C, extents=self.LAYER_EXTENTS, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
+                    canvas.insert_rubber_band(band=self.RUBBER_CDB_SCHEMA, extents=self.CDB_SCHEMA_EXTENTS, crs=self.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
+                    canvas.insert_rubber_band(band=self.RUBBER_LAYERS, extents=self.LAYER_EXTENTS, crs=self.CRS, width=2, color=c.LAYER_EXTENTS_COLOUR)
 
-                    canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
+                    canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS)
 
-                    has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbMain)
+                    has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(self)
                     if has_layers_in_current_schema:
-                        msg: str = f"To align with the next extents of '{cdbMain.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).\n\nYou may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
-                        QMessageBox.warning(cdbMain.loader_dlg, "Extents changed!", msg)
+                        msg: str = f"To align with the next extents of '{self.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).\n\nYou may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
+                        QMessageBox.warning(self, "Extents changed!", msg)
 
-                        thr.run_drop_layers_thread(cdbMain) # this eventually checks the layer status
+                        thr.run_drop_layers_thread(self) # this eventually checks the layer status
     
                     return None # Exit
 
         else: # This is the case when the database has been emptied.
 
             # Inform the user
-            msg: str = f"The '{cdbMain.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu until you upload new data again."
+            msg: str = f"The '{self.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu until you upload new data again."
             QMessageBox.information(self, "Extents changed!", msg)
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
             # Reset to null the cdb_extents in the extents table in PostgreSQL
-            sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+            sql.exec_upsert_extents(dlg=self, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
             # Reset to null the layers_extents in the extents table in PostgreSQL
-            sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
+            sql.exec_upsert_extents(dlg=self, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
 
             # Drop the layers (if necessary)
-            has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbMain)
+            has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(self)
             if has_layers_in_current_schema:
-                thr.run_drop_layers_thread(cdbMain)
+                thr.run_drop_layers_thread(self)
 
             # Reset the tabs
-            tl_wf.tabLayers_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            tl_wf.tabLayers_reset(self)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
 
             # Close the connection
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
         
-    def evt_btnCityExtents_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCityExtents_clicked(self) -> None:
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtents) is pressed.
         """
         # Get the extents stored in server (already computed at this point).
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg=self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
 
         # Convert extents format to QgsRectangle object.
         cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
@@ -777,19 +849,19 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CURRENT_EXTENTS = cdb_extents
 
         # Put extents coordinates into the widget.
-        self.qgbxExtentsC.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
+        self.qgbxExtents.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
         # At this point an extentChanged signal is emitted.
 
         # Update the existence status of the Feature Type metadata
-        tc_f.update_feature_type_registry_exists(cdbMain)
+        tc_f.update_feature_type_registry_exists(self)
         
         # If the Feature Type checkable combobox is activated, refresh its contents
         if self.gbxFeatSel.isChecked():
             # (Re)fill 'Feature type' checkable combobox
-            tc_f.fill_feature_types_box(cdbMain)
+            tc_f.fill_feature_types_box(self)
 
         # Zoom to layer extents
-        canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
+        canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS)
 
 
     def evt_btnGeoCoder_clicked(self) -> None:
@@ -797,7 +869,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         dlg_crs = self.CRS
         dlg_cdb_extents = self.CDB_SCHEMA_EXTENTS
-        dlg_canvas = self.CANVAS_C
+        dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs, dlg_cdb_extents, dlg_canvas)
         dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. 2 = The window blocks input to all other windows.
@@ -807,29 +879,29 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxFeatSel_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_gbxFeatSel_toggled(self) -> None:
         """Event that is called when the groupbox 'Feature Selection' is toggled.
         """
         status: bool = self.gbxFeatSel.isChecked()
 
         if status:
             # Fill 'Feature type' checkable combobox
-            tc_f.fill_feature_types_box(cdbMain)
+            tc_f.fill_feature_types_box(self)
             # Activate comboboxes
             self.cbxFeatType.setDisabled(False)
         else:
             # reset the FeatureTypeMetadata to is_selected True for all, and take care of the widget status
-            tc_wf.gbxFeatSel_reset(cdbMain)
+            tc_wf.gbxFeatSel_reset(self)
 
         return None
 
 
-    def evt_btnCreateLayers_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCreateLayers_clicked(self) -> None:
         """Event that is called when the 'Create layers for schema {sch}' pushButton (btnCreateLayers) is pressed.
         """
         if self.gbxFeatSel.isChecked():
             # Update the FeatureTypeMetadata with the information about the selected ones
-            tc_f.update_feature_type_registry_is_selected(cdbMain)
+            tc_f.update_feature_type_registry_is_selected(self)
       
             selected_feat_types: list = gen_f.get_checkedItemsData(self.cbxFeatType)
 
@@ -842,35 +914,35 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             None
 
         # Start the thread to create the layers (materialized views)
-        thr.run_create_layers_thread(cdbMain)
+        thr.run_create_layers_thread(self)
 
         return None # Exit
 
 
-    def evt_btnRefreshLayers_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnRefreshLayers_clicked(self) -> None:
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.\nDo you want to proceed?")
         if res == 16384: #YES
-            thr.run_refresh_layers_thread(cdbMain)
+            thr.run_refresh_layers_thread(self)
 
         return None
 
 
-    def evt_btnDropLayers_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnDropLayers_clicked(self) -> None:
         """Event that is called when the 'Drop layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
-        thr.run_drop_layers_thread(cdbMain)
+        thr.run_drop_layers_thread(self)
 
         return None
 
 
-    def evt_btnCloseConnC_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCloseConn_clicked(self) -> None:
         """Event that is called when the 'Close current connection' pushButton (btnCloseConn) is pressed.
         """
-        tc_wf.tabConnection_reset(cdbMain)
-        tl_wf.tabLayers_reset(cdbMain)
-        ts_wf.tabSettings_reset(cdbMain)
+        tc_wf.tabConnection_reset(self)
+        tl_wf.tabLayers_reset(self)
+        ts_wf.tabSettings_reset(self)
 
         return None
 
@@ -881,8 +953,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     ## Events for Layer tab BEGIN
 
     # 'Parameters' group box events (in 'Layers' tab)
-    def evt_qgbxExtentsL_ext_changed(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the 'Extents' groubBox (qgbxExtents) extent changes.
+    def evt_qgbxExtentsL_ext_changed(self) -> None:
+        """Event that is called when the 'Extents' groubBox (qgbxExtentsL) extent changes.
         """
         # NOTE: 'Draw on Canvas'* has an undesired effect.
         # There is a hardcoded True value that causes the parent dialog to
@@ -897,7 +969,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # https://qgis.org/pyqgis/3.16/gui/QgsExtentWidget.html
 
         # Update extents variable with the ones that fired the signal.
-        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtents.outputExtent()
+        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtentsL.outputExtent()
 
         # Draw the extents in the addtional canvas (basemap)
         canvas.insert_rubber_band(band=self.RUBBER_QGIS_L, extents=self.CURRENT_EXTENTS, crs=self.CRS, width=2, color=c.QGIS_EXTENTS_COLOUR)
@@ -920,21 +992,21 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             QMessageBox.critical(self, "Warning", f"Pick a region inside the layers extents (blue area).")          
             return None
 
-        tl_wf.gbxLayerSelection_reset(cdbMain)
+        tl_wf.gbxLayerSelection_reset(self)
         self.gbxLayerSelection.setDisabled(False)
         
         # Operations cascade to a lot of functions from here!
         # Based on the selected extents fill out the Feature Types combo box.
-        tl_f.fill_feature_type_box(cdbMain)
+        tl_f.fill_feature_type_box(self)
 
         return None
 
 
-    def evt_btnLayerExtentsL_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnLayerExtentsL_clicked(self) -> None:
         """Event that is called when the current 'Set to layers extents' pushButton (btnCityExtents) is pressed.
         """
         # Get the layer extents stored in server (already computed at this point).
-        extents_str: str = sql.fetch_precomputed_extents(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
+        extents_str: str = sql.fetch_precomputed_extents(dlg=self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
 
         # Convert extents format to QgsRectangle object.
         extents: QgsRectangle = QgsRectangle.fromWkt(extents_str)
@@ -943,16 +1015,16 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.QGIS_EXTENTS = extents
 
         # Put extents coordinates into the widget.
-        self.qgbxExtents.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
+        self.qgbxExtentsL.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
         # At this point an extentChanged signal is emitted.
 
         # Zoom to layer extents.
-        canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.QGIS_EXTENTS)
+        canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.QGIS_EXTENTS)
 
         return None
 
 
-    def evt_cbxFeatureType_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxFeatureType_changed(self) -> None:
         """Event that is called when the 'Feature Type'comboBox (cbxFeatureType) current index changes.
         """
         # Clear 'Geometry Level' combo box from previous runs.
@@ -962,12 +1034,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cbxLod.setDisabled(False)
 
         # Fill out the LoDs, based on the selected extents and Feature Type.
-        tl_f.fill_lod_box(cdbMain)
+        tl_f.fill_lod_box(self)
 
         return None
 
 
-    def evt_cbxLod_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxLod_changed(self) -> None:
         """Event that is called when the 'Geometry Level'comboBox (cbxLod) current index changes.
         """
         # Enable 'Features to Import' group box.
@@ -980,12 +1052,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.ccbxLayers.setDefaultText(self.ccbxLayers.init_text)
 
         # Fill out the features.
-        tl_f.fill_layers_box(cdbMain)
+        tl_f.fill_layers_box(self)
 
         return None
 
 
-    def evt_cbxLayers_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxLayers_changed(self) -> None:
         """Event that is called when the 'Available Layers' checkable ComboBox (ccbxLayers) current index changes.
         """
         # Get all the selected layers (views).
@@ -1001,7 +1073,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnImport_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnImport_clicked(self) -> None:
         """Event that is called when the 'Import Features' pushButton (btnImport) is pressed.
         """
         # Get the datsa that is checked from 'ccbxLayers'
@@ -1023,22 +1095,22 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         if counter > self.settings.max_features_to_import_default:
             res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
             if res == 16384: # YES, proceed with importing layers
-                success = tl_f.add_selected_layers_to_ToC(cdbMain, layers=selected_layers)
+                success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
                 return None #Import Cancelled
         else:
-            success = tl_f.add_selected_layers_to_ToC(cdbMain, layers=selected_layers)
+            success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
 
         if not success:
             QgsMessageLog.logMessage(
                 message="Something went wrong while importing the layer(s)!",
-                tag=cdbMain.PLUGIN_NAME,
+                tag=self.PLUGIN_NAME,
                 level=Qgis.Critical,
                 notifyUser=True)
             return None
 
         # Structure 'Table of Contents' tree.
-        db_group = tl_f.get_citydb_node(cdbMain)
+        db_group = tl_f.get_citydb_node(self)
         tl_f.sort_ToC(db_group)
         tl_f.send_to_ToC_top(db_group)
 
@@ -1051,7 +1123,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # A final success message.
         QgsMessageLog.logMessage(
                 message="",
-                tag=cdbMain.PLUGIN_NAME,
+                tag=self.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
 
@@ -1085,17 +1157,17 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnResetToDefault_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnResetToDefault_clicked(self) -> None:
         """Event that is called when the button 'Reset to default values' is clicked
         """
-        ts_wf.tabSettings_reset(cdbMain) # This also disables it and the buttons.
+        ts_wf.tabSettings_reset(self) # This also disables it and the buttons.
         # Reactivate it, as well as the buttons
         self.tabSettings.setDisabled(False)
         
         return None
 
 
-    def evt_btnSaveSettings_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnSaveSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
         geomSimpEn = self.gbxGeomSimp.isChecked()
@@ -1121,7 +1193,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
             return None # Exit
 
         settings_list = [
@@ -1134,31 +1206,31 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(cdbMain, cdbMain.USR_SCHEMA, self.DIALOG_NAME, settings_list)
+        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DIALOG_NAME, settings_list)
 
         if not res:
             # Inform the user
             msg: str = f"Settings for '{self.DIALOG_NAME}' could not be saved!"
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
             return None # Exit
 
         # Inform the user
         msg: str = f"Settings for '{self.DIALOG_NAME}' have been saved!"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
         return None
 
 
-    def evt_btnLoadSettings_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnLoadSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
-        settings_list = sh_sql.exec_read_settings(cdbMain, cdbMain.USR_SCHEMA, self.DIALOG_NAME)
+        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DIALOG_NAME)
         # print(settings_list)
 
         if not settings_list:
             # Inform the user
             msg: str = f"Settings for '{self.DIALOG_NAME}' could not be loaded!"
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
             return None # Exit without updating the settings
 
         s: dict
@@ -1181,7 +1253,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Inform the user
         msg: str = f"Settings for '{self.DIALOG_NAME}' have been loaded!"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
         return None
 

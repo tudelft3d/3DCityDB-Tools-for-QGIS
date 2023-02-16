@@ -1,17 +1,27 @@
+from typing import Union
+
 import psycopg2
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import QgsSettings
+# from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt.QtWidgets import QDialog
+
+# from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
+# from ...gui_admin.admin_dialog import CDB4AdminDialog
+# from ...gui_loader.loader_dialog import CDB4LoaderDialog
+# from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
 from .... import cdb_tools_main_constants as main_c
-from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
+
 from ...shared.functions import general_functions as gen_f
 from ..other_classes import Connection
 from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
-def get_qgis_postgres_conn_list(cdbMain: CDBToolsMain) -> None:
+# def get_qgis_postgres_conn_list(cdbMain: CDBToolsMain) -> None:
+def get_qgis_postgres_conn_list(dlg: QDialog) -> None:
     """Function that reads the QGIS user settings to look for existing connections
 
     All existing connections are stored in a 'Connection'
@@ -19,12 +29,7 @@ def get_qgis_postgres_conn_list(cdbMain: CDBToolsMain) -> None:
     or 'cbxExistingConn' widget
     """
     # Clear the contents of the comboBox from previous runs
-    if cdbMain.loader_dlg:
-        cdbMain.loader_dlg.cbxExistingConnC.clear()
-    if cdbMain.deleter_dlg:
-        cdbMain.deleter_dlg.cbxExistingConnC.clear()
-    if cdbMain.admin_dlg:
-        cdbMain.admin_dlg.cbxExistingConn.clear()
+    dlg.cbxExistingConn.clear()
 
     qsettings = QgsSettings()
 
@@ -40,25 +45,17 @@ def get_qgis_postgres_conn_list(cdbMain: CDBToolsMain) -> None:
         connectionInstance = Connection()
 
         qsettings.beginGroup(conn)
-
         connectionInstance.connection_name = conn
         connectionInstance.database_name = qsettings.value('database')
         connectionInstance.host = qsettings.value('host')
         connectionInstance.port = qsettings.value('port')
         connectionInstance.username = qsettings.value('username')
         connectionInstance.password = qsettings.value('password')
-        
         qsettings.endGroup()
 
-        # For 'Database Administration' dialog
-        if cdbMain.admin_dlg:
-            cdbMain.admin_dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
-        # For 'Loader' dialog
-        if cdbMain.loader_dlg:
-            cdbMain.loader_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
-        # For 'Deleter' dialog
-        if cdbMain.deleter_dlg:
-            cdbMain.deleter_dlg.cbxExistingConnC.addItem(f'{conn}', connectionInstance)
+        dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
+    
+    return None
 
 
 def create_db_connection(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
@@ -92,8 +89,8 @@ def create_db_connection(db_connection: Connection, app_name: str = main_c.PLUGI
             header="Invalid connection settings",
             error=error)
 
-
-def open_connection(cdbMain: CDBToolsMain, app_name: str = main_c.PLUGIN_NAME_LABEL) -> bool:
+# def open_connection(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], app_name: str = main_c.PLUGIN_NAME_LABEL) -> bool:
+def open_connection(dlg: QDialog, app_name: str = main_c.PLUGIN_NAME_LABEL) -> bool:
     """Opens a connection using the parameters stored in cdbMain.DB
     and retrieves the server version. The server version is stored
     in 'pg_server_version' attribute of the Connection object.
@@ -104,17 +101,17 @@ def open_connection(cdbMain: CDBToolsMain, app_name: str = main_c.PLUGIN_NAME_LA
     *   :returns: connection attempt results
         :rtype: bool
     """
-    cdbMain.conn: pyconn = None
+    dlg.conn: pyconn = None
     
     # Open and set the connection.
-    cdbMain.conn = create_db_connection(db_connection=cdbMain.DB, app_name=app_name)
+    dlg.conn = create_db_connection(db_connection=dlg.DB, app_name=app_name)
     
-    if cdbMain.conn:
-        cdbMain.conn.commit() # This seems redundant.
+    if dlg.conn:
+        dlg.conn.commit() # This seems redundant.
         # Get server version.
-        version: str = sql.fetch_posgresql_server_version(cdbMain)
+        version: str = sql.fetch_posgresql_server_version(dlg)
         # Store version into the connection object.
-        cdbMain.DB.pg_server_version = version
+        dlg.DB.pg_server_version = version
         return True
     else:
         return False

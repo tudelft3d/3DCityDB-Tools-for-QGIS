@@ -65,7 +65,7 @@ LAYER_DR_SUCC_MSG: str  = "Layers removed from schema '{sch}'"
 LAYER_DR_ERROR_MSG: str = "Error while removing layers from schema '{sch}'"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
-btnConnectToDbC_t: str  = "Connect to database '{db}'"
+btnConnectToDB_t: str  = "Connect to database '{db}'"
 btnRefreshCDBExtents_t: str  = "Refresh '{sch}' extents"
 btnCityExtents_t: str  = "Set to schema '{sch}'"
 btnCreateLayers_t: str  = "Create layers for schema '{sch}'"
@@ -101,9 +101,3 @@ crit_warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/critical_warning_icon.svg',
     color_hex='#DA4453', # pale red
     addtional_text='{text}')
-
-# menu_html: str = icon_msg_core.format(
-#     image_rc=':/plugins/citydb_loader/icons/plugin_icon.png',
-#     color_hex='#000000',  # black
-#     addtional_text='{text}')
-

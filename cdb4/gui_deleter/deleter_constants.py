@@ -48,7 +48,7 @@ LAYER_DR_SUCC_MSG: str  = "Layers removed from schema '{sch}'"
 LAYER_DR_ERROR_MSG: str = "Error while removing layers from schema '{sch}'"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
-btnConnectToDbC_t: str  = "Connect to database '{db}'"
+btnConnectToDB_t: str  = "Connect to database '{db}'"
 
 btnCleanUpSchema_t:str = "Truncate ALL tables in schema '{sch}'"
 

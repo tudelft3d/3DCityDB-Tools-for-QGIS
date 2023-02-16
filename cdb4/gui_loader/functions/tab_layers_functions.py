@@ -1,6 +1,10 @@
 """This module contains functions that relate to the 'Import Tab' (in the GUI look for the plugin logo).
 These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from collections import OrderedDict
 
@@ -12,17 +16,18 @@ from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup,
 from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from ..other_classes import CDBLayer, FeatureType
 
+from .... import cdb_tools_main_constants as main_c
 from .. import loader_constants as c
 from . import sql
 
-def has_matviews(cdbMain: CDBToolsMain) -> bool:
+def has_matviews(dlg: CDB4LoaderDialog) -> bool:
     """Function that checks the existence of materialised views in the database.
 
     *   :returns: Whether the database has populated mat views.
         :rtype: bool
     """
     # Get materialised views names.
-    mat_views = sql.fetch_mat_views(cdbMain)
+    mat_views = sql.fetch_mat_views(dlg)
 
     # Check if materialised views names exist.
     if mat_views:
@@ -30,18 +35,16 @@ def has_matviews(cdbMain: CDBToolsMain) -> bool:
     return False
 
 
-def add_layers_to_register(cdbMain: CDBToolsMain) -> None:
+def add_layers_to_register(dlg: CDB4LoaderDialog) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
     """
-    dlg = cdbMain.loader_dlg
-
     # Clean up the layers in the registry from previous runs
     feat_type: FeatureType
     for feat_type in dlg.FeatureTypesRegistry.values():
         feat_type.layers = [] # Empty the list the will contain CDBLayer objects
 
     # Get field names and metadata values from server.
-    col_names, layer_metadata = sql.fetch_layer_metadata(cdbMain, cdbMain.USR_SCHEMA, cdbMain.CDB_SCHEMA)
+    col_names, layer_metadata = sql.fetch_layer_metadata(dlg, dlg.USR_SCHEMA, dlg.CDB_SCHEMA)
 
     # Format metadata into a list of dictionaries where each element is a layer.
     layer_metadata_dict_items: list = [dict(zip(col_names, values)) for values in layer_metadata]
@@ -62,7 +65,7 @@ def add_layers_to_register(cdbMain: CDBToolsMain) -> None:
         layer = CDBLayer(*layer_metadata_dict_item.values())
 
         # Count the number of features that the layer has in the current extents.
-        sql.exec_gview_counter(cdbMain, layer) # Stores number in layer.n_selected.
+        sql.exec_gview_counter(dlg, layer) # Stores number in layer.n_selected.
 
         # Get the FeatureType object of the current layer
         curr_FeatureType: FeatureType = dlg.FeatureTypesRegistry[layer_metadata_dict_item['feature_type']]
@@ -73,14 +76,13 @@ def add_layers_to_register(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def fill_feature_type_box(cdbMain: CDBToolsMain) -> None:
+def fill_feature_type_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills out the 'Feature Types' combo box.
     Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
     """
     # Create 'Feature Type' and 'View' objects
-    add_layers_to_register(cdbMain)
+    add_layers_to_register(dlg)
     
-    dlg = cdbMain.loader_dlg
     ft: FeatureType
     layer: CDBLayer
 
@@ -96,11 +98,9 @@ def fill_feature_type_box(cdbMain: CDBToolsMain) -> None:
                 break # We need only one view to have > 0 features.
 
 
-def fill_lod_box(cdbMain: CDBToolsMain) -> None:
+def fill_lod_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills out the 'Geometry Level' combo box (LoD).
     """
-    dlg = cdbMain.loader_dlg
-
     # Get 'FeatureType' object from combo box data.
     selected_ft: FeatureType = dlg.cbxFeatureType.currentData()
     if not selected_ft:
@@ -120,12 +120,9 @@ def fill_lod_box(cdbMain: CDBToolsMain) -> None:
        dlg.cbxLod.addItem(lod, lod)
 
 
-def fill_layers_box(cdbMain: CDBToolsMain) -> None:
+def fill_layers_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills the 'Layers' checkable combo box.
     """
-    # Variable to store the plugin main dialog.
-    dlg = cdbMain.loader_dlg
-
     selected_ft: FeatureType
     # Get current 'Feature Type' from widget.
     selected_ft = dlg.cbxFeatureType.currentData()
@@ -200,7 +197,7 @@ def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -
     return None
 
 
-def create_layer_relation_to_lookup_tables(cdbMain: CDBToolsMain, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_lookup_tables(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function that sets up the ValueRelation widget for the look-up tables.
     #Note: Currently the look-up table names are hardcoded.
 
@@ -209,14 +206,14 @@ def create_layer_relation_to_lookup_tables(cdbMain: CDBToolsMain, layer: QgsVect
     """
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(cdbMain.DB.database_name)
-    schema_node = db_node.findGroup("@".join([cdbMain.DB.username, cdbMain.CDB_SCHEMA]))
+    db_node = root.findGroup(dlg.DB.database_name)
+    schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
     look_node = schema_node.findGroup("Look-up tables")
     look_layers = look_node.findLayers()
     enum_layer_id = [i.layerId() for i in look_layers if c.enumerations_table in i.layerId()][0]
 
     #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also imported with every layer (if it doesn\'t already exist)."
-    #assert enum_layer_id, assertion_msg.format(f'{cdbMain.CDB_SCHEMA}_v_enumeration_value')
+    #assert enum_layer_id, assertion_msg.format(f'{dlg.CDB_SCHEMA}_v_enumeration_value')
     #QgsMessageLog.logMessage(f"enum_layer_id: {enum_layer_id}", "3DCityDB-Loader", level=Qgis.Info)
 
     for field in layer.fields():
@@ -228,7 +225,7 @@ def create_layer_relation_to_lookup_tables(cdbMain: CDBToolsMain, layer: QgsVect
             layer.setEditorWidgetSetup(field_idx, value_rel_widget(Layer=enum_layer_id, Key='value', Value='description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
 
 
-def create_layer_relation_to_genericattrib_table(cdbMain: CDBToolsMain, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function to set up the relation for an input layer (e.g. a view).
     - A new relation object is created that references the generic attributes.
     - Relations are also set for 'Value Relation' widget.
@@ -242,13 +239,13 @@ def create_layer_relation_to_genericattrib_table(cdbMain: CDBToolsMain, layer: Q
 
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(cdbMain.DB.database_name)
-    schema_node = db_node.findGroup("@".join([cdbMain.DB.username,cdbMain.CDB_SCHEMA]))
+    db_node = root.findGroup(dlg.DB.database_name)
+    schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
     generics_node = schema_node.findGroup("Generic Attributes")
     genericAtt_layer = generics_node.findLayers()[0]
 
     #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also  imported with every layer (if it doesn\'t already exist)."
-    #assert genericAtt_layer, assertion_msg.format(f'{cdbMain.CDB_SCHEMA}_cityobject_generic_attrib')
+    #assert genericAtt_layer, assertion_msg.format(f'{dlg.CDB_SCHEMA}_cityobject_generic_attrib')
 
     # Create new Relation object for referencing generic attributes table
     rel = QgsRelation()
@@ -258,29 +255,31 @@ def create_layer_relation_to_genericattrib_table(cdbMain: CDBToolsMain, layer: Q
     rel.generateId() # i.e. the (QGIS  internal) id of the relation object
     rel.setName('re_' + layer.name())
 
-    #QgsMessageLog.logMessage(f"QGIS version {cdbMain.QGIS_VERSION_MAJOR}.{cdbMain.QGIS_VERSION_MINOR}", cdbMain.PLUGIN_NAME, level=Qgis.Info)
+    #QgsMessageLog.logMessage(f"QGIS version {dlg.QGIS_VERSION_MAJOR}.{dlg.QGIS_VERSION_MINOR}", dlg.PLUGIN_NAME, level=Qgis.Info)
+
+
 
     ## Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
-    if cdbMain.QGIS_VERSION_MAJOR == 3 and cdbMain.QGIS_VERSION_MINOR < 28:
+    if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
         rel.setStrength(0) # integer, 0 is association, 1 composition
     else:
         rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
         #print(rel_strength)
         rel.setStrength(rel_strength)
 
-    #QgsMessageLog.logMessage(f"**** The current relation has strength: {rel.strength()}", cdbMain.PLUGIN_NAME, level=Qgis.Info)  
+    #QgsMessageLog.logMessage(f"**** The current relation has strength: {rel.strength()}", dlg.PLUGIN_NAME, level=Qgis.Info)  
 
     if rel.isValid(): # Success
         QgsProject.instance().relationManager().addRelation(rel)
         QgsMessageLog.logMessage(
             message=f"Create relation: {rel.name()}",
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Success,
             notifyUser=True)
     else:
         QgsMessageLog.logMessage(
             message=f"Invalid relation: {rel.name()}",
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
 
@@ -317,13 +316,13 @@ def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> 
     return False
 
 
-def add_lookup_tables_to_ToC(cdbMain: CDBToolsMain) -> None:
+def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
     """Function to import the look-up tables into the qgis project.
     """
     # Just to shorten the variables names.
-    db = cdbMain.DB
-    cdb_schema: str = cdbMain.CDB_SCHEMA
-    usr_schema: str = cdbMain.USR_SCHEMA
+    db = dlg.DB
+    cdb_schema: str = dlg.CDB_SCHEMA
+    usr_schema: str = dlg.USR_SCHEMA
 
     # Add look-up tables into their own group in ToC.
     node_cdb_schema = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
@@ -331,11 +330,11 @@ def add_lookup_tables_to_ToC(cdbMain: CDBToolsMain) -> None:
     lookups_node = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name="Look-up tables")
 
     # Get look-up tables names from the server.
-    lookup_tables = sql.fetch_lookup_tables(cdbMain)
+    lookup_tables = sql.fetch_lookup_tables(dlg)
 
     for lookup_table in lookup_tables:
         # Create ONLY new layers.
-        if not is_layer_already_in_ToC_group(group=lookups_node, layer_name=f"{cdbMain.CDB_SCHEMA}_{lookup_table}"):
+        if not is_layer_already_in_ToC_group(group=lookups_node, layer_name=f"{dlg.CDB_SCHEMA}_{lookup_table}"):
             uri = QgsDataSourceUri()
             uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
             uri.setDataSource(aSchema=usr_schema, aTable=lookup_table, aGeometryColumn=None, aKeyColumn="id")
@@ -345,38 +344,38 @@ def add_lookup_tables_to_ToC(cdbMain: CDBToolsMain) -> None:
                 QgsProject.instance().addMapLayer(layer, False)
                 QgsMessageLog.logMessage(
                     message=f"Look-up table import: {cdb_schema}_{lookup_table}",
-                    tag=cdbMain.PLUGIN_NAME,
+                    tag=dlg.PLUGIN_NAME,
                     level=Qgis.Success, notifyUser=True)
             else: # Fail
                 QgsMessageLog.logMessage(
                     message=f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}",
-                    tag=cdbMain.PLUGIN_NAME,
+                    tag=dlg.PLUGIN_NAME,
                     level=Qgis.Critical, notifyUser=True)
 
     # After loading all look-ups, sort them by name.
     sort_ToC(lookups_node)
 
 
-def add_genericattrib_table_to_ToC(cdbMain: CDBToolsMain) -> None:
+def add_genericattrib_table_to_ToC(dlg: CDB4LoaderDialog) -> None:
     """Function to import the 'generic attributes' table into the qgis project.
     """
     # Just to shorten the variables names.
-    db = cdbMain.DB
-    cdb_schema = cdbMain.CDB_SCHEMA
+    db = dlg.DB
+    cdb_schema = dlg.CDB_SCHEMA
 
     # Add generics tables into their own group in ToC.
     root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
     generics_node = add_group_node_to_ToC(parent_node=root, child_name=c.generics_alias)
 
     # Add it ONLY if it doesn't already exists.
-    if not is_layer_already_in_ToC_group(generics_node, f"{cdbMain.CDB_SCHEMA}_{c.generics_table}"):
+    if not is_layer_already_in_ToC_group(generics_node, f"{dlg.CDB_SCHEMA}_{c.generics_table}"):
         uri = QgsDataSourceUri()
         uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
         uri.setDataSource(aSchema=cdb_schema,
             aTable=c.generics_table,
             aGeometryColumn=None,
             aKeyColumn="")
-        layer = QgsVectorLayer(uri.uri(False), f"{cdbMain.CDB_SCHEMA}_{c.generics_table}", "postgres")
+        layer = QgsVectorLayer(uri.uri(False), f"{dlg.CDB_SCHEMA}_{c.generics_table}", "postgres")
         if layer or layer.isValid(): # Success
             # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
             # WARNING: hardcoded index (15: cityobject_id)
@@ -386,19 +385,19 @@ def add_genericattrib_table_to_ToC(cdbMain: CDBToolsMain) -> None:
             QgsProject.instance().addMapLayer(layer, False)
 
             QgsMessageLog.logMessage(
-                message=f"Layer import: {cdbMain.CDB_SCHEMA}_{c.generics_table}",
-                tag=cdbMain.PLUGIN_NAME,
+                message=f"Layer import: {dlg.CDB_SCHEMA}_{c.generics_table}",
+                tag=dlg.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
         else:
             QgsMessageLog.logMessage(
-                message=f"Layer failed to properly load: {cdbMain.CDB_SCHEMA}_{c.generics_table}",
-                tag=cdbMain.PLUGIN_NAME,
+                message=f"Layer failed to properly load: {dlg.CDB_SCHEMA}_{c.generics_table}",
+                tag=dlg.PLUGIN_NAME,
                 level=Qgis.Critical,
                 notifyUser=True)
 
 
-def create_qgis_vector_layer(cdbMain: CDBToolsMain, layer_name: str) -> QgsVectorLayer:
+def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVectorLayer:
     """Function that creates a PostgreSQL layer based on the input layer name. This function is used to import
     updatable views from the usr_schema queried to the selected spatial extents.
 
@@ -409,15 +408,15 @@ def create_qgis_vector_layer(cdbMain: CDBToolsMain, layer_name: str) -> QgsVecto
         :rtype: QgsVectorLayer
     """
     # Shorten the variable names.
-    db = cdbMain.DB
-    usr_schema = cdbMain.USR_SCHEMA
-    extents = cdbMain.loader_dlg.QGIS_EXTENTS.asWktPolygon()
-    crs = cdbMain.loader_dlg.CRS
+    db = dlg.DB
+    usr_schema = dlg.USR_SCHEMA
+    extents = dlg.QGIS_EXTENTS.asWktPolygon()
+    crs = dlg.CRS
 
     uri = QgsDataSourceUri()
     uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
 
-    if cdbMain.loader_dlg.QGIS_EXTENTS == cdbMain.loader_dlg.LAYER_EXTENTS:  
+    if dlg.QGIS_EXTENTS == dlg.LAYER_EXTENTS:  
         # No need to apply a spatial filter in QGIS
         uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aKeyColumn="id")
     else:
@@ -462,14 +461,14 @@ def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
         send_to_ToC_bottom(child)
 
 
-def get_citydb_node(cdbMain: CDBToolsMain) -> QgsLayerTreeGroup:
+def get_citydb_node(dlg: CDB4LoaderDialog) -> QgsLayerTreeGroup:
     """Function that finds the citydb node in the project's 'Table of Contents' tree (by name).
 
     *   :returns: citydb node (qgis group)
         :rtype: QgsLayerTreeGroup
     """
     root = QgsProject.instance().layerTreeRoot()
-    cdb_node = root.findGroup(cdbMain.DB.database_name)
+    cdb_node = root.findGroup(dlg.DB.database_name)
     return cdb_node
 
 
@@ -477,8 +476,8 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
     """Recursive function to sort the entire 'Table of Contents' tree,
     including both groups and underlying layers.
     """
-    # Germán Carrillo: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree #
-    LayerNamesEnumDict=lambda listCh:{listCh[q[0]].name()+str(q[0]):q[1] for q in enumerate(listCh)}
+    # Germán Carrillo BEGIN: https://gis.stackexchange.com/questions/397789/sorting-layers-by-name-in-one-specific-group-of-qgis-layer-tree #
+    LayerNamesEnumDict = lambda listCh:{listCh[q[0]].name() + str(q[0]):q[1] for q in enumerate(listCh)}
 
     # group instead of root
     mLNED = LayerNamesEnumDict(group.children())
@@ -488,7 +487,7 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
     group.insertChildNodes(0,mLNEDsorted)  # group instead of root
     for n in mLNED.values():
         group.removeChildNode(n)  # group instead of root
-    # Germán Carrillo #
+    # Germán Carrillo END #
 
     group.setExpanded(True)
     for child in group.children():
@@ -522,7 +521,7 @@ def add_group_node_to_ToC(parent_node: QgsLayerTreeGroup, child_name: str) -> Qg
     return node
 
 
-def add_layer_node_to_ToC(cdbMain: CDBToolsMain, layer: CDBLayer) -> QgsLayerTreeGroup:
+def add_layer_node_to_ToC(dlg: CDB4LoaderDialog, layer: CDBLayer) -> QgsLayerTreeGroup:
     """Function that populates the project's 'Table of Contents' tree.
 
     *   :param view: The view used to build the ToC.
@@ -533,9 +532,9 @@ def add_layer_node_to_ToC(cdbMain: CDBToolsMain, layer: CDBLayer) -> QgsLayerTre
     """
     root = QgsProject.instance().layerTreeRoot()
     # Database group (e.g. delft)
-    node_cdb = add_group_node_to_ToC(parent_node=root, child_name=cdbMain.DB.database_name)
+    node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.database_name)
     # Schema group (e.g. citydb)
-    node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([cdbMain.DB.username, layer.cdb_schema]))
+    node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([dlg.DB.username, layer.cdb_schema]))
     # FeatureType group (e.g. Building)
     node_featureType = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=f"FeatureType: {layer.feature_type}")
     # Feature group (e.g. Building Part)
@@ -546,7 +545,7 @@ def add_layer_node_to_ToC(cdbMain: CDBToolsMain, layer: CDBLayer) -> QgsLayerTre
     return node_lod # Node where the view has been added
 
 
-def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
+def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
     """Function to imports the selected layer(s) in the user's qgis project.
 
     *   :param layers: A list containing View object that correspond to the server views.
@@ -560,9 +559,8 @@ def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
         return None # Exit
 
     # Just to shorten the variables names.
-    dlg = cdbMain.loader_dlg
-    db = cdbMain.DB
-    cdb_schema: str = cdbMain.CDB_SCHEMA
+    db = dlg.DB
+    cdb_schema: str = dlg.CDB_SCHEMA
 
     root = QgsProject.instance().layerTreeRoot()
     node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
@@ -602,17 +600,17 @@ def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
     # Get the look-up tables if they are not already loaded 
     if not genattrib_found:
         node_genatt = add_group_node_to_ToC(node_cdb_schema, c.generics_alias) 
-        add_lookup_tables_to_ToC(cdbMain)
+        add_lookup_tables_to_ToC(dlg)
     else:
-        #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Get the generic attributes table if it is not already loaded 
     if not lookup_found:
         node_lookup = add_group_node_to_ToC(node_cdb_schema, "Look-up tables") 
-        add_genericattrib_table_to_ToC(cdbMain)
+        add_genericattrib_table_to_ToC(dlg)
     else:
-        #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Start loading the selected layer(s)
@@ -633,24 +631,24 @@ def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
                             layer_found = True
 
         if layer_found:
-            QgsMessageLog.logMessage(f"Layer {layer.layer_name} already in Layer Tree: skip reloading", cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(f"Layer {layer.layer_name} already in Layer Tree: skip reloading", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
             continue
 
         # Build the Table of Contents Tree or Restructure it.
-        node_lod = add_layer_node_to_ToC(cdbMain, layer)
+        node_lod = add_layer_node_to_ToC(dlg, layer)
 
-        new_layer: QgsVectorLayer = create_qgis_vector_layer(cdbMain, layer_name=layer.layer_name)
+        new_layer: QgsVectorLayer = create_qgis_vector_layer(dlg, layer_name=layer.layer_name)
 
         if new_layer or new_layer.isValid(): # Success
             QgsMessageLog.logMessage(
                 message=f"Layer imported: {layer.layer_name}",
-                tag=cdbMain.PLUGIN_NAME,
+                tag=dlg.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
         else: # Fail
             QgsMessageLog.logMessage(
                 message=f"Failed to properly load: {layer.layer_name}",
-                tag=cdbMain.PLUGIN_NAME,
+                tag=dlg.PLUGIN_NAME,
                 level=Qgis.Critical,
                 notifyUser=True)
             return False
@@ -668,7 +666,7 @@ def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
         if layer.qml_symb:
             new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
 
-        if cdbMain.loader_dlg.cbxEnable3D.isChecked():
+        if dlg.cbxEnable3D.isChecked():
             # Attach '3d symbology' from QML file.
             if layer.qml_3d:
                 new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
@@ -681,9 +679,9 @@ def add_selected_layers_to_ToC(cdbMain: CDBToolsMain, layers: list) -> bool:
         QgsProject.instance().addMapLayer(new_layer, False)
 
         # Setup the relations for this layer to the look-up (enumeration) tables
-        create_layer_relation_to_lookup_tables(cdbMain, layer=new_layer)
+        create_layer_relation_to_lookup_tables(dlg, layer=new_layer)
 
         # Setup the relations for this layer to the generic attributes table
-        create_layer_relation_to_genericattrib_table(cdbMain, layer=new_layer)
+        create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
 
     return True # All went well

@@ -24,13 +24,13 @@ import os
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
-from qgis.gui import QgsRubberBand, QgsMapCanvas
+from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtCore import Qt, QThread
+from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ...cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
+from ...cdb_tools_main import CDBToolsMain
 
 from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
@@ -72,12 +72,33 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         ## From here you can add your variables or constants
         ############################################################
 
+        # Variable to store the plugin name
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
+        # Variable to store the qgis_pkg
+        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
+
         self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_DELETER
 
-        # # Variable to store the previous connection of a database.
-        self.prev_conn: pyconn = None
-        # # Variable to store the previous connection parameters.
-        self.prev_DB: Connection = None
+        # Variable to store the current open connection of a database.
+        self.conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        self.DB: Connection = None
+
+        # Variable to store the current open connection of a database.
+        # self.prev_conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        # self.prev_DB: Connection = None
+
+        # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
+        self.GROUP_NAME: str = None
+        # Variable to store the selected cdb_schema name.
+        self.CDB_SCHEMA: str = None
+        # Variable to store the selected usr_schema name.
+        self.USR_SCHEMA: str = None
+
+        self.msg_bar: QgsMessageBar
+        self.bar: QProgressBar
+        self.thread: QThread
 
         self.settings = DeleterDefaultSettings()
         self.checks = DeleterDialogChecks()
@@ -97,22 +118,22 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.DELETE_EXTENTS = QgsRectangle()
 
         # Variable to store an additional canvas (to show the extents in the CONNECTION TAB).
-        self.CANVAS_C: QgsMapCanvas = QgsMapCanvas()
-        self.CANVAS_C.enableAntiAliasing(True)
-        self.CANVAS_C.setMinimumWidth(300)
-        self.CANVAS_C.setMaximumHeight(350)
+        self.CANVAS: QgsMapCanvas = QgsMapCanvas()
+        self.CANVAS.enableAntiAliasing(True)
+        self.CANVAS.setMinimumWidth(300)
+        self.CANVAS.setMaximumHeight(350)
 
         # print("canvas", self.CANVAS_C.extent)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_DELETE_C = QgsRubberBand(self.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_DELETE = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
 
         # Enhance various Qt Objects with their initial text. 
         # This is used in order to revert to the original state in reset operations when original text has already changed.
 
         ### TAB Connection
-        self.btnConnectToDbC.init_text = c.btnConnectToDbC_t
+        self.btnConnectToDb.init_text = c.btnConnectToDB_t
 
         self.btnCleanUpSchema.init_text = c.btnCleanUpSchema_t
 
@@ -127,93 +148,139 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         #### 'User Connection' tab
 
         # 'Connection' group box signals
-        self.cbxExistingConnC.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbMain))
+        self.cbxExistingConn.currentIndexChanged.connect(self.evt_cbxExistingConn_changed)
         
-        self.btnNewConnC.clicked.connect(self.evt_btnNewConn_clicked)
+        self.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
 
         # 'Database' group box signals
-        self.btnConnectToDbC.clicked.connect(lambda: self.evt_btnConnectToDb_clicked(cdbMain))
-        self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbMain))
+        self.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
+        self.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
 
         # 'Cleanup schema' group box signals
-        self.gbxCleanUpSchema.toggled.connect(lambda: self.evt_gbxCleanUpSchema_toggled(cdbMain))
-        self.btnCleanUpSchema.clicked.connect(lambda: self.evt_btnCleanUpSchema_clicked(cdbMain))
+        self.gbxCleanUpSchema.toggled.connect(self.evt_gbxCleanUpSchema_toggled)
+        self.btnCleanUpSchema.clicked.connect(self.evt_btnCleanUpSchema_clicked)
 
 
         # Basemap (OSM) group box signals
         # 'Base map' group box signals    
-        self.gbxBasemapC.toggled.connect(lambda: self.evt_gbxBasemapC_toggled(cdbMain))
+        self.gbxBasemap.toggled.connect(self.evt_gbxBasemap_toggled)
 
         # Link the additional canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
-        self.qgbxExtentsC.setMapCanvas(canvas=self.CANVAS_C, drawOnCanvasOption=False)
+        self.qgbxExtents.setMapCanvas(canvas=self.CANVAS, drawOnCanvasOption=False)
 
         # Draw on Canvas tool is disabled.
         # Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
-        self.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS)
+        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
         # 'Extents' groupbox signals
-        self.qgbxExtentsC.extentChanged.connect(lambda: self.evt_qgbxExtentsC_ext_changed(cdbMain))
-        self.CANVAS_C.extentsChanged.connect(self.evt_canvasC_ext_changed)
+        self.qgbxExtents.extentChanged.connect(self.evt_qgbxExtents_ext_changed)
+        self.CANVAS.extentsChanged.connect(self.evt_canvasC_ext_changed)
 
-        self.btnRefreshCDBExtents.clicked.connect(lambda: self.evt_btnRefreshCDBExtents_clicked(cdbMain))
-        self.btnCityExtents.clicked.connect(lambda: self.evt_btnCityExtents_clicked(cdbMain))
+        self.btnRefreshCDBExtents.clicked.connect(self.evt_btnRefreshCDBExtents_clicked)
+        self.btnCityExtents.clicked.connect(self.evt_btnCityExtents_clicked)
 
         self.btnGeoCoder.clicked.connect(self.evt_btnGeoCoder_clicked)
 
 
         # 'Feature selection' group box signals    
-        self.gbxFeatSel.toggled.connect(lambda: self.evt_gbxFeatSel_toggled(cdbMain))
+        self.gbxFeatSel.toggled.connect(self.evt_gbxFeatSel_toggled)
 
-        self.gbxFeatType.toggled.connect(lambda: self.evt_gbxFeatType_toggled(cdbMain))
-        # self.ccbxFeatType.currentIndexChanged.connect(lambda: self.evt_ccbxFeatType_changed(cdbMain))
-        self.ckbFeatTypeAll.toggled.connect(lambda: self.evt_ckbFeatTypeAll_toggled(cdbMain))
+        self.gbxFeatType.toggled.connect(self.evt_gbxFeatType_toggled)
+        self.ckbFeatTypeAll.toggled.connect(self.evt_ckbFeatTypeAll_toggled)
 
-        self.gbxRootClass.toggled.connect(lambda: self.evt_gbxRootClass_toggled(cdbMain))
-        # self.ccbxRootClass.currentIndexChanged.connect(lambda: self.evt_ccbxRootClass_changed(cdbMain))
-        self.ckbRootClassAll.toggled.connect(lambda: self.evt_ckbRootClassAll_toggled(cdbMain))
+        self.gbxRootClass.toggled.connect(self.evt_gbxRootClass_toggled)
+        self.ckbRootClassAll.toggled.connect(self.evt_ckbRootClassAll_toggled)
 
-        self.btnDelSelFeatures.clicked.connect(lambda: self.evt_btnDelSelFeatures_clicked(cdbMain))
+        self.btnDelSelFeatures.clicked.connect(self.evt_btnDelSelFeatures_clicked)
 
         # 'Close connection' group box signals  
-        self.btnCloseConnC.clicked.connect(lambda: self.evt_btnCloseConnC_clicked(cdbMain))
+        self.btnCloseConn.clicked.connect(self.evt_btnCloseConn_clicked)
 
         #### 'Settings' tab
-        self.btnResetToDefault.clicked.connect(lambda: self.evt_btnResetToDefault_clicked(cdbMain))
-        self.btnSaveSettings.clicked.connect(lambda: self.evt_btnSaveSettings_clicked(cdbMain))
-        self.btnLoadSettings.clicked.connect(lambda: self.evt_btnLoadSettings_clicked(cdbMain))
+        self.btnResetToDefault.clicked.connect(self.evt_btnResetToDefault_clicked)
+        self.btnSaveSettings.clicked.connect(self.evt_btnSaveSettings_clicked)
+        self.btnLoadSettings.clicked.connect(self.evt_btnLoadSettings_clicked)
 
         ### SIGNALS (end) ##############################
-        ################################################
 
-    ################################################
+    def create_progress_bar(self, layout: QVBoxLayout, position: int) -> None:
+        """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
+
+        *   :param layout: QLayout of the gui where the bar is to be
+                assigned.
+            :type layout: QBoxLayout
+
+        *   :param position: The place (index) in the layout to place
+                the progress bar
+            :type position: int
+        """
+        # Create QgsMessageBar instance.
+        self.msg_bar = QgsMessageBar()
+
+        # Add the message bar into the input layer and position.
+        layout.insertWidget(position, self.msg_bar)
+
+        # Create QProgressBar instance into QgsMessageBar.
+        self.bar = QProgressBar(parent=self.msg_bar)
+
+        # Setup progress bar.
+        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.bar.setStyleSheet("text-align: left;")
+
+        # Show progress bar in message bar.
+        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+
+
+    def evt_update_bar(self, step: int, text: str) -> None:
+        """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
+        in self.msg_bar: QgsMessageBar and self.bar: QProgressBar.
+        This event is not linked to any widet_setup function as it isn't responsible for changes in different 
+        widgets in the GUI.
+
+        *   :param dialog: The dialog to hold the bar.
+            e.g. "admin_dlg" or "loader_dlg"
+            :type step: str
+
+        *   :param step: Current value of the progress
+            :type step: int
+
+        *   :param text: Text to display on the bar
+            :type text: str
+        """
+        # Show text instead of completed percentage.
+        if text:
+            self.bar.setFormat(text)
+
+        # Update progress with current step
+        self.bar.setValue(step)
+
     ### EVENTS (start) ############################
 
     ## Events for 'User connection' tab BEGIN
 
-    #'Connection' group box events (in 'User Connection' tab)
-    def evt_cbxExistingConn_changed(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the 'Existing Connection' comboBox (cbxExistingConnC) current index changes.
+    def evt_cbxExistingConn_changed(self) -> None:
+        """Event that is called when the 'Existing Connection' comboBox (cbxExistingConn) current index changes.
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
-        cdbMain.DB: Connection = self.cbxExistingConnC.currentData()
-        if not cdbMain.DB:
+        self.DB: Connection = self.cbxExistingConn.currentData()
+        if not self.DB:
             return None
 
         # Reset the tabs
-        ts_wf.tabSettings_reset(cdbMain)
-        tc_wf.tabConnection_reset(cdbMain)
+        ts_wf.tabSettings_reset(self)
+        tc_wf.tabConnection_reset(self)
 
         # Reset and (re)enable the "3D City Database" connection box and buttons
         # Enable the group box "Database" and reset the label, enable the Connect button, e
         self.gbxDatabase.setDisabled(False)   
-        self.btnConnectToDbC.setText(self.btnConnectToDbC.init_text.format(db=cdbMain.DB.database_name))
-        self.btnConnectToDbC.setDisabled(False)  # Enable the button 
+        self.btnConnectToDb.setText(self.btnConnectToDb.init_text.format(db=self.DB.database_name))
+        self.btnConnectToDb.setDisabled(False)  # Enable the button 
         # self.lblConnectToDB.setDisabled(False)
 
 
     def evt_btnNewConn_clicked(self) -> None:
         """Event that is called when the 'New Connection' pushButton
-        (btnNewConnC) is pressed.
+        (btnNewConn) is pressed.
 
         Responsible to add a new VALID connection to the 'Existing connections'.
         """
@@ -225,24 +292,21 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Add new connection to the Existing connections
         if dlgConnector.conn_params:
-            self.cbxExistingConnC.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
+            self.cbxExistingConn.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
 
 
-    # 'Database' group box events (in 'User Connection' tab)
-    def evt_btnConnectToDb_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnConnectToDb_clicked(self) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton
-        (btnConnectToDbC) is pressed. It sets up the GUI after a click signal is emitted.
+        (btnConnectToDb) is pressed. It sets up the GUI after a click signal is emitted.
         """
         # Variable to store the plugin main dialog.
-        dlg = cdbMain.deleter_dlg
-
         msg: str = None
 
         # In 'Connection Status' groupbox
         # Activate the connection status box (red/green checks)
-        self.gbxConnStatusC.setDisabled(False)
+        self.gbxConnStatus.setDisabled(False)
         # Activate the close connection button at the bottom 
-        self.btnCloseConnC.setDisabled(False) 
+        self.btnCloseConn.setDisabled(False) 
 
         # -------------------------------------------------------------------------------------------
         # Series of tests to be carried out when I connect as user.
@@ -259,60 +323,60 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 1) Can I connect to the database? If yes, continue
 
-        # Attempt to connect to the database, returns True/False, and if successful, store connection in cdbMain.conn
-        # Additionally, set cdbMain.DB.pg_server_version
-        successful_connection: bool = conn_f.open_connection(cdbMain)
+        # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
+        # Additionally, set self.DB.pg_server_version
+        successful_connection: bool = conn_f.open_connection(self)
 
         if successful_connection:
             # Show database name
-            self.lblConnToDbC_out.setText(c.success_html.format(text=cdbMain.DB.database_name))
+            self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
 
-            if cdbMain.DB.pg_server_version is not None:
+            if self.DB.pg_server_version is not None:
                 # Show server version
-                self.lblPostInstC_out.setText(c.success_html.format(text=cdbMain.DB.pg_server_version))
+                self.lblPostInst_out.setText(c.success_html.format(text=self.DB.pg_server_version))
             else:
-                self.lblPostInstC_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
+                self.lblPostInst_out.setText(c.failure_html.format(text=c.PG_SERVER_FAIL_MSG))
                 return None # Exit
 
         else: # Connection failed!
-            tc_wf.gbxConnStatus_reset(cdbMain)
-            self.gbxConnStatusC.setDisabled(False)
-            self.lblConnToDbC_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
+            tc_wf.gbxConnStatus_reset(self)
+            self.gbxConnStatus.setDisabled(False)
+            self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
             self.checks.is_conn_successful = False
 
             msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
         # 2) Can I connect to the qgis_pkg (and access its functions?) If yes, continue.
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(cdbMain)
+        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(self)
 
         if is_qgis_pkg_installed:
             # I can now access the functions of the qgis_pkg (at least the public ones)
-            # Set the current usr_schema name in cdbMain.USR_SCHEMA.
-            sh_sql.exec_create_qgis_usr_schema_name(cdbMain)
+            # Set the current usr_schema name in self.USR_SCHEMA.
+            sh_sql.exec_create_qgis_usr_schema_name(self)
         else:
-            self.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
+            self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
 
             msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.\n\nEither way, please contact your database administrator."
             QMessageBox.warning(self, "Unavailable QGIS Package", msg)
 
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
@@ -320,7 +384,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the current qgis_pkg version and check that it is compatible.
         # Named tuple: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(cdbMain)
+        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(self)
 
         # print(qgis_pkg_curr_version)
         qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version
@@ -342,49 +406,49 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV)):
 
             # Show message in Connection Status the Qgis Package is installed (and version)
-            self.lblMainInstC_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=cdbMain.QGIS_PKG_SCHEMA)))
+            self.lblMainInst_out.setText(c.success_html.format(text=" ".join([c.INST_MSG, f"(v.{qgis_pkg_curr_version_txt})"]).format(pkg=self.QGIS_PKG_SCHEMA)))
             self.checks.is_qgis_pkg_installed = True
         else:
-            self.lblMainInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
+            self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
             msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
-            QMessageBox.warning(dlg, "Unsupported version of QGIS Package", msg)
+            QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
         # 4) Is my usr_schema installed? If yes, continue.
 
         # Check if qgis_{usr} schema (e.g. qgis_giorgio) is installed in the database.
-        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(cdbMain)
+        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(self)
 
         if is_usr_schema_inst:
             # Show message in Connection Status the 3DCityDB version if installed
-            cdbMain.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(cdbMain)
-            self.lbl3DCityDBInstC_out.setText(c.success_html.format(text=cdbMain.DB.citydb_version))
+            self.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(self)
+            self.lbl3DCityDBInst_out.setText(c.success_html.format(text=self.DB.citydb_version))
             self.checks.is_3dcitydb_installed = True
 
             # Show message in Connection Status that the qgis_{usr} schema is installed               
-            self.lblUserInstC_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_MSG.format(pkg=self.USR_SCHEMA)))
             self.checks.is_usr_pkg_installed = True
         else:
-            self.lblUserInstC_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{cdbMain.DB.username}")))
+            self.lblUserInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{self.DB.username}")))
             self.checks.is_usr_pkg_installed = False
 
-            msg = f"The required user schema 'qgis_{cdbMain.DB.username}' is missing. Please contact your database administrator to install it."
-            QMessageBox.warning(dlg, "User schema not found", msg)
+            msg = f"The required user schema 'qgis_{self.DB.username}' is missing. Please contact your database administrator to install it."
+            QMessageBox.warning(self, "User schema not found", msg)
 
-            ts_wf.tabSettings_reset(cdbMain)
-            tc_wf.tabConnection_reset(cdbMain)
+            ts_wf.tabSettings_reset(self)
+            tc_wf.tabConnection_reset(self)
             # Close the current open connection.
-            if cdbMain.conn is not None:
-                cdbMain.conn.close()
+            if self.conn is not None:
+                self.conn.close()
 
             return None # Exit
 
@@ -393,7 +457,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
         # Namedtuple with: cdb_schema, co_number, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(cdbMain)
+        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
@@ -406,21 +470,21 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
             msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.\nPlease contact your database administrator."
-            QMessageBox.warning(dlg, "No accessible citydb schemas found", msg)
+            QMessageBox.warning(self, "No accessible citydb schemas found", msg)
             return None # Exit
         else:
             if len(cdb_schemas) == 0:
-                tc_f.fill_cdb_schemas_box(cdbMain, None)
+                tc_f.fill_cdb_schemas_box(self, None)
                 
                 # Inform the use that all available cdb_schemas are empty.
                 msg = "The available citydb schema(s) is/are all empty. Please load data into the database first."
-                QMessageBox.warning(dlg, "Empty citydb schema(s)", msg)
+                QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
-                ts_wf.tabSettings_reset(cdbMain)
-                tc_wf.tabConnection_reset(cdbMain)
+                ts_wf.tabSettings_reset(self)
+                tc_wf.tabConnection_reset(self)
                 # Close the current open connection.
-                if cdbMain.conn is not None:
-                    cdbMain.conn.close()
+                if self.conn is not None:
+                    self.conn.close()
 
                 return None
             else: # Finally, we have all conditions to proceed: 
@@ -432,44 +496,44 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 # We can start:
 
                 # 1) Initialize the registries
-                tc_f.initialise_root_class_features_registry(cdbMain)
-                tc_f.initialize_feature_types_registry(cdbMain)
+                tc_f.initialise_root_class_features_registry(self)
+                tc_f.initialize_feature_types_registry(self)
 
                 # 2) Fill the cdb_schema combobox
-                tc_f.fill_cdb_schemas_box(cdbMain, cdb_schemas)
+                tc_f.fill_cdb_schemas_box(self, cdb_schemas)
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
 
         return None # Exit
 
 
-    def evt_cbxSchema_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxSchema_changed(self) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema) current index changes.
         Function to setup the GUI after an 'indexChanged' signal is emitted from the cbxSchema combo box.
         This function runs every time the selected schema is changed (in 'User Connection' tab)
         Checks if the connection + schema meet the necessary requirements.
         """
         # Set the current schema variable
-        cdbMain.CDB_SCHEMA: str = self.cbxSchema.currentText()
+        self.CDB_SCHEMA: str = self.cbxSchema.currentText()
         # By now, the schema variable must have beeen assigned. Check:
         if not self.cbxSchema.currentData():
             return None
 
         # Reset the Settings tabs in case they were open/changed from before 
-        ts_wf.tabSettings_reset(cdbMain) # Reset the Settings tab to the Default settings
-        tc_wf.gbxCleanUpSchema_reset(cdbMain)
-        tc_wf.gbxBasemapC_reset(cdbMain)        
-        tc_wf.gbxFeatSel_reset(cdbMain)
+        ts_wf.tabSettings_reset(self) # Reset the Settings tab to the Default settings
+        tc_wf.gbxCleanUpSchema_reset(self)
+        tc_wf.gbxBasemap_reset(self)        
+        tc_wf.gbxFeatSel_reset(self)
 
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         self.DELETE_EXTENTS = QgsRectangle()
 
         # Update labels with the name of the selected cdb_schema
-        self.btnCleanUpSchema.setText(self.btnCleanUpSchema.init_text.format(sch=cdbMain.CDB_SCHEMA))
+        self.btnCleanUpSchema.setText(self.btnCleanUpSchema.init_text.format(sch=self.CDB_SCHEMA))
 
-        self.btnRefreshCDBExtents.setText(self.btnRefreshCDBExtents.init_text.format(sch=cdbMain.CDB_SCHEMA))
-        self.btnCityExtents.setText(self.btnCityExtents.init_text.format(sch=cdbMain.CDB_SCHEMA))
+        self.btnRefreshCDBExtents.setText(self.btnRefreshCDBExtents.init_text.format(sch=self.CDB_SCHEMA))
+        self.btnCityExtents.setText(self.btnCityExtents.init_text.format(sch=self.CDB_SCHEMA))
         
-        self.btnDelSelFeatures.setText(self.btnDelSelFeatures.init_text.format(sch=cdbMain.CDB_SCHEMA)) 
+        self.btnDelSelFeatures.setText(self.btnDelSelFeatures.init_text.format(sch=self.CDB_SCHEMA)) 
 
         # Enable the settings tab
         self.tabSettings.setDisabled(False)
@@ -477,35 +541,35 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Enable the Cleanup Schema groupbox
         self.gbxCleanUpSchema.setDisabled(False)
         # Enable the Base Map groupbox
-        self.gbxBasemapC.setDisabled(False)
+        self.gbxBasemap.setDisabled(False)
 
         # Enable the Feature Selection groupbox
         self.gbxFeatSel.setDisabled(False)
 
         # Setup the 'Basemap (OSM)' groupbox.
-        tc_wf.gbxBasemapC_setup(cdbMain)
-        # This will eventually fire a evt_qgbxExtentsC_ext_changed event
+        tc_wf.gbxBasemap_setup(self)
+        # This will eventually fire a evt_qgbxExtents_ext_changed event
 
-        tc_wf.gbxFeatType_reset(cdbMain)
-        tc_wf.gbxRootClass_reset(cdbMain)
+        tc_wf.gbxFeatType_reset(self)
+        tc_wf.gbxRootClass_reset(self)
 
         return None
 
 
-    def evt_gbxCleanUpSchema_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_gbxCleanUpSchema_toggled(self) -> None:
         """Event that is called when the groupbox 'Feature Selection' is toggled.
         """
         status: bool = self.gbxCleanUpSchema.isChecked()
 
-        tc_wf.gbxFeatType_reset(cdbMain)
-        tc_wf.gbxRootClass_reset(cdbMain)
+        tc_wf.gbxFeatType_reset(self)
+        tc_wf.gbxRootClass_reset(self)
 
         if status: # it is checked to be enabled
             # Enable the button
             self.btnCleanUpSchema.setDisabled(False)
 
-            # Disable the groupbox gbxBasemapC
-            self.gbxBasemapC.setDisabled(True)
+            # Disable the groupbox gbxBasemap
+            self.gbxBasemap.setDisabled(True)
 
             # Disable the FeatureSelection group box 
             self.gbxFeatSel.setDisabled(True)
@@ -514,40 +578,40 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable the button
             self.btnCleanUpSchema.setDisabled(True)
 
-            # Enable the groupbox gbxBasemapC
-            self.gbxBasemapC.setDisabled(False)
+            # Enable the groupbox gbxBasemap
+            self.gbxBasemap.setDisabled(False)
             # Enable the Feature Selection group box
             self.gbxFeatSel.setDisabled(False)
 
         return None
 
 
-    def evt_btnCleanUpSchema_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCleanUpSchema_clicked(self) -> None:
         """Event that is called when the 'Truncate tables' button (btnCleanUpSchema) is pressed.
         """
-        msg1: str = f"All tables in citydb schema {cdbMain.CDB_SCHEMA} will be truncated and all data will be deleted.\n\nDo you really want to proceed?"
-        msg2: str = f"ALL tables in citydb schema {cdbMain.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"ALL tables in citydb schema {cdbMain.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"All tables in citydb schema {self.CDB_SCHEMA} will be truncated and all data will be deleted.\n\nDo you really want to proceed?"
+        msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
+        msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
         if res == 16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
             if res == 16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
                 if res == 16384: #YES               
-                    thr.run_cleanup_schema_thread(cdbMain)
+                    thr.run_cleanup_schema_thread(self)
         return None
 
 
-    def evt_gbxBasemapC_toggled(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the groupbox 'gbxBasemapC' is toggled.
+    def evt_gbxBasemap_toggled(self) -> None:
+        """Event that is called when the groupbox 'gbxBasemap' is toggled.
         """
-        status: bool = self.gbxBasemapC.isChecked()
+        status: bool = self.gbxBasemap.isChecked()
 
         if status: # it is checked to be enabled
             # (Re) Setup the 'Basemap (OSM)' groupbox.
-            tc_wf.gbxBasemapC_setup(cdbMain) # fires a evt_qgbxExtentsC_ext_changed() event
-            self.gvCanvasC.setDisabled(False)
-            self.qgbxExtentsC.setDisabled(False)
+            tc_wf.gbxBasemap_setup(self) # fires a evt_qgbxExtents_ext_changed() event
+            self.gvCanvas.setDisabled(False)
+            self.qgbxExtents.setDisabled(False)
             # Enable the "Set to schema" button
             self.btnCityExtents.setDisabled(False)
             # Enable the Refresh extents button
@@ -555,8 +619,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Enable the "Geocoder" button
             self.btnGeoCoder.setDisabled(False)
 
-            # tc_wf.workaround_gbxFeatType(cdbMain)
-            # tc_wf.workaround_gbxRootClass(cdbMain)
+            # tc_wf.workaround_gbxFeatType(self)
+            # tc_wf.workaround_gbxRootClass(self)
 
             if self.gbxFeatSel.isChecked():
                 # Both are unchecked: leave them disabled
@@ -575,8 +639,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         else: # when unchecked, it disables itself automatically
             # We do not want to completely reset the groupbox (it would delete all, and clean the canvas, too)
             # So, we selectively disable some stuff.
-            self.gvCanvasC.setDisabled(True)
-            self.qgbxExtentsC.setDisabled(True)
+            self.gvCanvas.setDisabled(True)
+            self.qgbxExtents.setDisabled(True)
             # Disable the "Set to schema" button
             self.btnCityExtents.setDisabled(True)
             # Disable the Refresh extents button
@@ -584,18 +648,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable the "Geocoder" button
             self.btnGeoCoder.setDisabled(True)
 
-            # Remove extent rubber bands.
-            # self.RUBBER_CDB_SCHEMA_C.reset()
-            # self.RUBBER_DELETE_C.reset()
-
             # Reset the current extents to those of the cdb_schema
             self.CURRENT_EXTENTS = self.CDB_SCHEMA_EXTENTS
 
             # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event
-            canvas.canvas_setup(cdbMain=cdbMain, canvas=self.CANVAS_C, extents=self.CURRENT_EXTENTS, crs=self.CRS, clear=True)
+            canvas.canvas_setup(dlg=self, canvas=self.CANVAS, extents=self.CURRENT_EXTENTS, crs=self.CRS, clear=True)
 
             # Zoom to the cdb_schema extents
-            canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
+            canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS)
 
         return None
 
@@ -603,25 +663,25 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_canvasC_ext_changed(self) -> None:
         """Event that is called when the current canvas extents (pan over map) changes.
         Reads the new current extents from the map and sets it in the 'Extents'
-        (qgbxExtentsC) widget.
+        (qgbxExtents) widget.
         """
         # Get canvas's current extent
-        extent: QgsRectangle = self.CANVAS_C.extent()
+        extent: QgsRectangle = self.CANVAS.extent()
 
         # Set the current extent to show in the 'extents' widget.
-        self.qgbxExtentsC.blockSignals(True)
-        self.qgbxExtentsC.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtentsC. Avoid double signal blocking signals
-        self.qgbxExtentsC.blockSignals(False)
-        self.qgbxExtentsC.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtentsC
+        self.qgbxExtents.blockSignals(True)
+        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal blocking signals
+        self.qgbxExtents.blockSignals(False)
+        self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
         return None
 
 
-    def evt_qgbxExtentsC_ext_changed(self, cdbMain: CDBToolsMain) -> None:
-        """Event that is called when the 'Extents' groubBox extent (qgbxExtentsC) changes.
+    def evt_qgbxExtents_ext_changed(self) -> None:
+        """Event that is called when the 'Extents' groubBox extent (qgbxExtents) changes.
         """
         # Update current extents variable with the ones that fired the signal.
-        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtentsC.outputExtent()
+        self.CURRENT_EXTENTS: QgsRectangle = self.qgbxExtents.outputExtent()
 
         if self.CURRENT_EXTENTS.isNull() or self.CDB_SCHEMA_EXTENTS.isNull():
             return None
@@ -634,18 +694,18 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.DELETE_EXTENTS: QgsRectangle = self.CURRENT_EXTENTS
 
             # Draw the delete extents rubber band
-            canvas.insert_rubber_band(band=self.RUBBER_DELETE_C, extents=self.DELETE_EXTENTS, crs=self.CRS, width=2, color=c.DELETE_EXTENTS_COLOUR)
+            canvas.insert_rubber_band(band=self.RUBBER_DELETE, extents=self.DELETE_EXTENTS, crs=self.CRS, width=2, color=c.DELETE_EXTENTS_COLOUR)
 
-            # print("from: evt_qgbxExtentsC_ext_changed")
-            tc_f.refresh_registries(cdbMain)
+            # print("from: evt_qgbxExtents_ext_changed")
+            tc_f.refresh_registries(self)
 
         else:
-            QMessageBox.critical(self, "Warning", f"Pick a region intersecting the extents of '{cdbMain.CDB_SCHEMA}' (black area).")
+            QMessageBox.critical(self, "Warning", f"Pick a region intersecting the extents of '{self.CDB_SCHEMA}' (black area).")
 
         return None
 
 
-    def evt_btnRefreshCDBExtents_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnRefreshCDBExtents_clicked(self) -> None:
         """Event that is called when the button (btnRefreshCDBExtents) is pressed.
         It will check whether the cdb_extents
         - are null, i.e. the database has been emptied (reset all, the cdb_schema will disappear from the list)
@@ -653,16 +713,16 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         - have changed and the new cdb extents contain the old ones (only update the ribbons)
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
         """
-        tc_f.refresh_extents(cdbMain)
+        tc_f.refresh_extents(self)
 
         return None
    
  
-    def evt_btnCityExtents_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCityExtents_clicked(self) -> None:
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtents) is pressed.
         """
         # Get the extents stored in server (already computed at this point).
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
 
         # Convert extents format to QgsRectangle object.
         cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
@@ -671,10 +731,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CURRENT_EXTENTS = cdb_extents
 
         # Put extents coordinates into the widget.
-        self.qgbxExtentsC.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
+        self.qgbxExtents.setOutputExtentFromUser(self.CURRENT_EXTENTS, self.CRS)
         # At this point an extents_changed signal is emitted.
 
-        canvas.zoom_to_extents(canvas=self.CANVAS_C, extents=self.CDB_SCHEMA_EXTENTS)
+        canvas.zoom_to_extents(canvas=self.CANVAS, extents=self.CDB_SCHEMA_EXTENTS)
 
 
     def evt_btnGeoCoder_clicked(self) -> None:
@@ -682,7 +742,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         dlg_crs = self.CRS
         dlg_cdb_extents = self.CDB_SCHEMA_EXTENTS
-        dlg_canvas = self.CANVAS_C
+        dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs, dlg_cdb_extents, dlg_canvas)
         dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. 2 = The window blocks input to all other windows.
@@ -692,7 +752,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxFeatSel_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_gbxFeatSel_toggled(self) -> None:
         """Event that is called when the groupbox 'Feature Selection' is toggled.
         """
         status: bool = self.gbxFeatSel.isChecked()
@@ -702,15 +762,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             if self.gbxCleanUpSchema.isEnabled():
                 self.gbxCleanUpSchema.setDisabled(True)
 
-            if not self.gbxBasemapC.isEnabled():
-            # Enable the groupbox gbxBasemapC
-                self.gbxBasemapC.setDisabled(False)
+            if not self.gbxBasemap.isEnabled():
+            # Enable the groupbox gbxBasemap
+                self.gbxBasemap.setDisabled(False)
 
-            tc_wf.workaround_gbxFeatType(cdbMain)
-            tc_wf.workaround_gbxRootClass(cdbMain)
+            tc_wf.workaround_gbxFeatType(self)
+            tc_wf.workaround_gbxRootClass(self)
 
             # Set up/update the "Select Features" group box
-            tc_f.refresh_registries(cdbMain)
+            tc_f.refresh_registries(self)
 
             # Enable the groupbox FeatType
             self.gbxFeatType.setDisabled(False)
@@ -722,14 +782,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
         else: # when unchecked, it disables itself automatically
-            tc_wf.gbxFeatSel_reset(cdbMain) # it disables itself, I need to reenable it
+            tc_wf.gbxFeatSel_reset(self) # it disables itself, I need to reenable it
             # (Re)enable the gbxFeatSel groupbox
             self.gbxFeatSel.setDisabled(False)
 
-            # Uncheck the groupbox gbxBasemapC
-            # self.gbxBasemapC.setChecked(False)
-            # Disable the groupbox gbxBasemapC
-            self.gbxBasemapC.setDisabled(False)
+            # Uncheck the groupbox gbxBasemap
+            # self.gbxBasemap.setChecked(False)
+            # Disable the groupbox gbxBasemap
+            self.gbxBasemap.setDisabled(False)
 
             # Enable the gbxCleanUpSchema group
             self.gbxCleanUpSchema.setDisabled(False)
@@ -737,7 +797,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxFeatType_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_gbxFeatType_toggled(self) -> None:
         """Event that is called when the groupbox 'Feature Type' is toggled.
         """
         status: bool = self.gbxFeatType.isChecked()
@@ -777,7 +837,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_ckbFeatTypeAll_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_ckbFeatTypeAll_toggled(self) -> None:
         """Event that is called when the check box 'Feature Type All' is toggled.
         If checked, it will turn all entries to checked.
         If unchecked, it will set all entries to unchecked.
@@ -800,7 +860,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxRootClass_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_gbxRootClass_toggled(self) -> None:
         """Event that is called when the check box 'Root-Class Feature' is toggled.
         """
         status: bool = self.gbxRootClass.isChecked()
@@ -840,7 +900,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_ckbRootClassAll_toggled(self, cdbMain: CDBToolsMain) -> None:
+    def evt_ckbRootClassAll_toggled(self) -> None:
         """Event that is called when the check box 'Root-Class Feature All' is toggled.
         If checked, it will turn all entries to checked.
         If unchecked, it will set all entries to unchecked.
@@ -863,7 +923,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnDelSelFeatures_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnDelSelFeatures_clicked(self) -> None:
         """Event that is called when the 'Delete selected features from schema {sch}' button (btnDelSelFeatures) is pressed.
         """
         delete_mode: str = None # Eiter "del_FeatureTypes" or "del_RootClassFeatures"
@@ -887,7 +947,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None # Exit
             else:
                 delete_mode = "del_FeatureTypes"
-                tc_f.update_feature_type_registry_is_selected(cdbMain, sel_feat_types)
+                tc_f.update_feature_type_registry_is_selected(self, sel_feat_types)
 
         elif self.gbxRootClass.isChecked():
             # Get the list (tuple) of selected Root-class Features in the current cdb_schema
@@ -900,47 +960,38 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None # Exit
             else:
                 delete_mode = "del_RootClassFeatures"
-                tc_f.update_root_class_features_is_selected(cdbMain, sel_root_class_features)
+                tc_f.update_root_class_features_is_selected(self, sel_root_class_features)
 
         else:
             # This case should not happen.
-            print('This case should not happen.')
             return None # Exit
 
-        msg1: str = f"Data will be deleted from citydb schema {cdbMain.CDB_SCHEMA}.\n\nDo you really want to proceed?"
-        msg2: str = f"Data will be deleted from citydb schema {cdbMain.CDB_SCHEMA}.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"Data will be deleted from citydb schema {cdbMain.CDB_SCHEMA}.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you really want to proceed?"
+        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY want to proceed?"
+        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
         if res == 16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
             if res == 16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
                 if res == 16384: #YES               
-                    # print(f"\nDeleting selected features from '{cdbMain.CDB_SCHEMA}'\n")
-
                     # This thread will also take care of checking what happens after deletion,
                     # e.g. in case that the database is completely emptied.
                     # The user will be eventually informed
-                    thr.run_bulk_delete_thread(cdbMain, delete_mode)
-
-                    # print(f"\nDeleted selected features from '{cdbMain.CDB_SCHEMA}'\n")
-
-                    # Inform the user
-                    # msg: str = f"Data successfully deleted from citydb schema '{cdbMain.CDB_SCHEMA}'"
-                    # QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                    thr.run_bulk_delete_thread(self, delete_mode)
 
         return None
 
 
-    def evt_btnCloseConnC_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCloseConn_clicked(self) -> None:
         """Event that is called when the 'Close current connection' pushButton (btnCloseConn) is pressed.
         """
-        ts_wf.tabSettings_reset(cdbMain)
-        tc_wf.tabConnection_reset(cdbMain)
+        ts_wf.tabSettings_reset(self)
+        tc_wf.tabConnection_reset(self)
 
         # Close the current open connection.
-        if cdbMain.conn is not None:
-            cdbMain.conn.close()
+        if self.conn is not None:
+            self.conn.close()
 
     ## Events for User connection tab END
 
@@ -948,17 +999,17 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
     ## Events for Settings tab BEGIN
 
-    def evt_btnResetToDefault_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnResetToDefault_clicked(self) -> None:
         """Event that is called when the button 'Reset to default values' is clicked
         """
-        ts_wf.tabSettings_reset(cdbMain) # This also disables it and the buttons.
+        ts_wf.tabSettings_reset(self) # This also disables it and the buttons.
         # Reactivate it, as well as the buttons
         self.tabSettings.setDisabled(False)       
 
         return None
 
 
-    def evt_btnSaveSettings_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnSaveSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
         delArraySize = self.sbxArraySize.value()
@@ -967,7 +1018,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
             return None # Exit
 
         # Quick reminder:
@@ -982,32 +1033,32 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(cdbMain, cdbMain.USR_SCHEMA, self.DIALOG_NAME, settings_list)
+        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DIALOG_NAME, settings_list)
 
         if not res:
             # Inform the user
             msg: str = f"Settings for '{self.DIALOG_NAME}' could not be saved!"
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
             return None # Exit
 
         # Inform the user
         msg: str = f"Settings for '{self.DIALOG_NAME}' have been saved!"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
         return None
 
 
-    def evt_btnLoadSettings_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnLoadSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
         settings_list = []
-        settings_list = sh_sql.exec_read_settings(cdbMain, cdbMain.USR_SCHEMA, self.DIALOG_NAME)
+        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DIALOG_NAME)
         # print(settings_list)
 
         if not settings_list:
             # Inform the user
             msg: str = f"Settings for '{self.DIALOG_NAME}' could not be loaded!"
-            QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
             return None # Exit without updating the settings
 
         s: dict
@@ -1020,7 +1071,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Inform the user
         msg: str = f"Settings for '{self.DIALOG_NAME}' have been loaded!"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
         return None
 

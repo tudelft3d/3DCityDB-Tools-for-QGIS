@@ -17,13 +17,16 @@ This is done by assigning a working thread for the
 heavy process. In the main thread the progress bar is assigned to
 update following the heavy process taking place in the worker thread.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_loader.loader_dialog import CDB4LoaderDialog
+
 import time
 
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
-
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import general_functions as gen_f
@@ -40,65 +43,58 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 ##### CREATE LAYERS WORKER ##########################################################
 #####################################################################################
 
-def run_create_layers_thread(cdbMain: CDBToolsMain) -> None:
+def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that creates layers in the user schema in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbMain.loader_dlg
-
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
         if not widget:
             continue # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the installation procedure.
-            cdbMain.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
             break
    
     # Create new thread object.
-    cdbMain.thread = QThread()
+    dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    cdbMain.worker = CreateLayersWorker(cdbMain)
+    dlg.worker = CreateLayersWorker(dlg)
     # Move worker object to the be executed on the new thread.
-    cdbMain.worker.moveToThread(cdbMain.thread)
+    dlg.worker.moveToThread(dlg.thread)
 
     #-SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    cdbMain.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
     # Execute worker's 'run' method.
-    cdbMain.thread.started.connect(cdbMain.worker.create_layers_thread)
+    dlg.thread.started.connect(dlg.worker.create_layers_thread)
 
     # Capture progress to show in bar.
-    cdbMain.worker.sig_progress.connect(cdbMain.evt_update_bar)
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
 
     # Get rid of worker and thread objects.
-    cdbMain.worker.sig_finished.connect(cdbMain.thread.quit)
-    cdbMain.worker.sig_finished.connect(cdbMain.worker.deleteLater)
-    cdbMain.thread.finished.connect(cdbMain.thread.deleteLater)
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # Reenable the GUI
-    # cdbMain.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
-    # cdbMain.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
-    # cdbMain.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(False))
-    # cdbMain.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(False))
-    # cdbMain.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
-    cdbMain.thread.finished.connect(dlg.msg_bar.clearWidgets)
+    dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
-    cdbMain.worker.sig_success.connect(lambda: evt_create_layers_success(cdbMain))
-    cdbMain.worker.sig_fail.connect(lambda: evt_create_layers_fail(cdbMain))
+    dlg.worker.sig_success.connect(lambda: evt_create_layers_success(dlg))
+    dlg.worker.sig_fail.connect(lambda: evt_create_layers_fail(dlg))
 
     #-SIGNALS (end) #######################################################
 
     # Initiate worker thread
-    cdbMain.thread.start()
+    dlg.thread.start()
 
 
 class CreateLayersWorker(QObject):
@@ -106,18 +102,18 @@ class CreateLayersWorker(QObject):
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
-    sig_progress = pyqtSignal(str, int, str)
+    sig_progress = pyqtSignal(int, str)
     sig_success = pyqtSignal()
     sig_fail = pyqtSignal()
 
-    def __init__(self, cdbMain: CDBToolsMain):
+    def __init__(self, dlg: CDB4LoaderDialog):
         super().__init__()
-        self.plugin = cdbMain
+        self.dlg = dlg
 
     def create_layers_thread(self):
         """Execution method that creates the layers using function from the 'qgis_pkg' installation.
         """
-        dlg = self.plugin.loader_dlg
+        dlg = self.dlg
 
         # Flag to help us break from a failing loop.
         fail_flag: bool = False
@@ -128,7 +124,6 @@ class CreateLayersWorker(QObject):
             # Update the FeatureTypeMetadata with the information about the selected ones
             for ft in dlg.FeatureTypesRegistry.values():
                 if ft.is_selected and ft.name != "CityObjectGroup":
-                # if ft.is_selected and ft.name != "CityObjectGroup":
                     funcs_list.append(ft.layers_create_function)
         else:
             # Update the FeatureTypeMetadata with the information about the existing ones
@@ -156,8 +151,8 @@ class CreateLayersWorker(QObject):
 
         # Set function input
         params = [
-            self.plugin.DB.username,
-            self.plugin.CDB_SCHEMA,
+            dlg.DB.username,
+            dlg.CDB_SCHEMA,
             int(dlg.gbxGeomSimp.isChecked()), # 0 (False) or 1 (True)
             dlg.qspbDecimalPrec.value(),
             dlg.qspbMinArea.value(),
@@ -167,25 +162,25 @@ class CreateLayersWorker(QObject):
 
         try:
             # Open new temp session
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_LOADER, "(Create layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Create layers)"]))
             with temp_conn:
 
                 # Start measuring time
                 time_start = time.time()
 
-                for s, module_func in enumerate(funcs_list, start=1):
+                for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
                                 SELECT {_qgis_pkg_schema}.{_module_func}({_params});
                                 """).format(
-                                _qgis_pkg_schema = pysql.Identifier(self.plugin.QGIS_PKG_SCHEMA),
+                                _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
                                 _module_func = pysql.Identifier(module_func),
                                 _params = pysql.SQL(", ").join(pysql.Placeholder() * len(params))
                                 )
 
                     # Update progress bar
                     msg = f"Executing: {module_func}"
-                    self.sig_progress.emit(self.plugin.DLG_NAME_LOADER, s, msg)
+                    self.sig_progress.emit(step, msg)
 
                     try:
                         with temp_conn.cursor() as cur:
@@ -226,48 +221,41 @@ class CreateLayersWorker(QObject):
 
 ###--EVENTS (start)########################################################
 
-def evt_create_layers_success(cdbMain: CDBToolsMain) -> None:
+def evt_create_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer creation finishes successfully.
 
-    Shows success message at cdbMain.loader_dlg.msg_bar: QgsMessageBar
+    Shows success message at dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    dlg = cdbMain.loader_dlg
-
-    # Remove progress bar
-    # dlg.msg_bar.clearWidgets()
-
     # Update the layer extents in the corresponding table in the server.
-    sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=dlg.LAYER_EXTENTS.asWktPolygon())
+    sql.exec_upsert_extents(dlg=dlg, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=dlg.LAYER_EXTENTS.asWktPolygon())
 
     # Perform the activities related to checking layers status, and get the result
-    check_layers_refresh_status: bool = tc_f.check_layers_status(cdbMain)
+    check_layers_refresh_status: bool = tc_f.check_layers_status(dlg)
 
     if not check_layers_refresh_status:
-        evt_create_layers_fail(cdbMain) 
+        evt_create_layers_fail(dlg) 
 
     return None
 
-def evt_create_layers_fail(cdbMain: CDBToolsMain) -> None:
+def evt_create_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer creations
     emits a fail signal meaning that something went wrong with the process.
 
-    Shows fail message at cdbMain.loader_dlg.msg_bar: QgsMessageBar
+    Shows fail message at dlg.msg_bar: QgsMessageBar
     Shows fail message in Connection Status groupbox
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbMain.loader_dlg
-
     # Replace with Failure msg.
-    msg = dlg.msg_bar.createMessage(c.LAYER_CR_ERROR_MSG.format(sch=cdbMain.USR_SCHEMA))
+    msg = dlg.msg_bar.createMessage(c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA))
     dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
     # Inform user
-    dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbMain.CDB_SCHEMA)))
+    dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
     QgsMessageLog.logMessage(
-            message=c.LAYER_CR_ERROR_MSG.format(sch=cdbMain.USR_SCHEMA),
-            tag=cdbMain.PLUGIN_NAME,
+            message=c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
     
@@ -279,62 +267,60 @@ def evt_create_layers_fail(cdbMain: CDBToolsMain) -> None:
 ##### REFRESH LAYERS WORKER #########################################################
 #####################################################################################
 
-def run_refresh_layers_thread(cdbMain: CDBToolsMain) -> None:
+def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that refreshes the materialized views in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbMain.loader_dlg
-
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
         if not widget:
             continue
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the installation procedure.
-            cdbMain.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
             break
 
     # Create new thread object.
-    cdbMain.thread = QThread()
+    dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    cdbMain.worker = RefreshLayersWorker(cdbMain)
+    dlg.worker = RefreshLayersWorker(dlg)
     # Move worker object to the be executed on the new thread.
-    cdbMain.worker.moveToThread(cdbMain.thread)
+    dlg.worker.moveToThread(dlg.thread)
 
     #-SIGNALS---(start)--################################################################
     # Disable widgets to avoid queuing signals.
-    cdbMain.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
     # Execute worker's 'run' method.
-    cdbMain.thread.started.connect(cdbMain.worker.refresh_all_gviews_thread)
+    dlg.thread.started.connect(dlg.worker.refresh_all_gviews_thread)
 
     # Capture progress to show in bar.
-    cdbMain.worker.sig_progress.connect(cdbMain.evt_update_bar)
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
 
     # Get rid of worker and thread objects.
-    cdbMain.worker.sig_finished.connect(cdbMain.thread.quit)
-    cdbMain.worker.sig_finished.connect(cdbMain.worker.deleteLater)
-    cdbMain.thread.finished.connect(cdbMain.thread.deleteLater)
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # (Re)Enable widgets.
 
-    # cdbMain.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(False))
-    # cdbMain.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
-    cdbMain.thread.finished.connect(dlg.msg_bar.clearWidgets)
+    # dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(False))
+    # dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
-    cdbMain.worker.sig_finished.connect(lambda: evt_refresh_layers_success(cdbMain))
+    dlg.worker.sig_finished.connect(lambda: evt_refresh_layers_success(dlg))
     #-SIGNALS---(end)--################################################################
 
     # Initiate worker thread
-    cdbMain.thread.start()
+    dlg.thread.start()
 
     return None
 
@@ -345,26 +331,26 @@ class RefreshLayersWorker(QObject):
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
-    sig_progress = pyqtSignal(str, int, str)
+    sig_progress = pyqtSignal(int, str)
     sig_fail = pyqtSignal()
     # sig_success = pyqtSignal()
 
-    def __init__(self, cdbMain: CDBToolsMain):
+    def __init__(self, dlg: CDB4LoaderDialog):
         super().__init__()
-        self.plugin = cdbMain
+        self.dlg = dlg
 
     def refresh_all_gviews_thread(self):
         """Execution method that refreshes the materialized views in the server (for a specific schema).
         """
-        dlg = self.plugin.loader_dlg
-        usr_schema = self.plugin.USR_SCHEMA
+        dlg = self.dlg
+        usr_schema = dlg.USR_SCHEMA
 
         # Flag to help us break from a failing loop.
         fail_flag: bool = False
 
         # Get feature types from layer_metadata table.
         cols_to_fetch: list = ["feature_type","gv_name"]
-        col, feattype_geom_mview = sql.fetch_layer_metadata(cdbMain=self.plugin, usr_schema=self.plugin.USR_SCHEMA, cdb_schema=self.plugin.CDB_SCHEMA, cols_list=cols_to_fetch)
+        col, feattype_geom_mview = sql.fetch_layer_metadata(dlg=dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, cols_list=cols_to_fetch)
         col = None # Discard byproduct.
 
         # Set progress bar goal
@@ -372,13 +358,13 @@ class RefreshLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for mat refresh.
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_LOADER, "(Refresh layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Refresh layers)"]))
             with temp_conn:
 
                 # Start measuring time
                 time_start = time.time()
 
-                for s, (ftype, mview) in enumerate(feattype_geom_mview):
+                for step, (ftype, mview) in enumerate(feattype_geom_mview):
 
                     query = pysql.SQL("""
                         REFRESH MATERIALIZED VIEW {_usr_schema}.{_gv_name};
@@ -397,7 +383,7 @@ class RefreshLayersWorker(QObject):
 
                     # Update progress bar
                     msg = f"Refreshing {ftype} layers"
-                    self.sig_progress.emit(self.plugin.DLG_NAME_LOADER, s, msg)
+                    self.sig_progress.emit(step, msg)
 
                     try:
                         with temp_conn.cursor() as cur:
@@ -441,14 +427,14 @@ class RefreshLayersWorker(QObject):
 
 ###--EVENTS (start)########################################################
 
-def evt_refresh_layers_success(cdbMain: CDBToolsMain) -> None:
+def evt_refresh_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the refresh finishes successfully.
 
-    Shows success message at cdbMain.loader_dlg.msg_bar: QgsMessageBar
+    Shows success message at dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    tc_f.check_layers_status(cdbMain)    
+    tc_f.check_layers_status(dlg)    
 
     return None
 
@@ -458,12 +444,10 @@ def evt_refresh_layers_success(cdbMain: CDBToolsMain) -> None:
 ##### DROP LAYERS WORKER ############################################################
 #####################################################################################
 
-def run_drop_layers_thread(cdbMain: CDBToolsMain) -> None:
+def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that drops layers of the user schema in the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbMain.loader_dlg
-
     # The sole purpose of the loop here is to find the widget's index in
     # the layout, in order to put the progress bar just below it.
     for index in range(dlg.vLayoutUserConn.count()):
@@ -472,54 +456,54 @@ def run_drop_layers_thread(cdbMain: CDBToolsMain) -> None:
             continue
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the dropping procedure.
-            cdbMain.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
             break
 
     # Create new thread object.
-    cdbMain.thread = QThread()
+    dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    cdbMain.worker = DropLayersWorker(cdbMain)
+    dlg.worker = DropLayersWorker(dlg)
     # Move worker object to the be executed on the new thread.
-    cdbMain.worker.moveToThread(cdbMain.thread)
+    dlg.worker.moveToThread(dlg.thread)
 
     #-SIGNALS--(start)--################################################################
     # Disable widgets to avoid queuing signals.
-    cdbMain.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
-    cdbMain.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
     # Execute worker's 'run' method.
-    cdbMain.thread.started.connect(cdbMain.worker.drop_layers_thread)
+    dlg.thread.started.connect(dlg.worker.drop_layers_thread)
 
     # Capture progress to show in bar.
-    cdbMain.worker.sig_progress.connect(cdbMain.evt_update_bar)
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
 
     # Get rid of worker and thread objects.
-    cdbMain.worker.sig_finished.connect(cdbMain.thread.quit)
-    cdbMain.worker.sig_finished.connect(cdbMain.worker.deleteLater)
-    cdbMain.thread.finished.connect(cdbMain.thread.deleteLater)
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # (Re)Enable widgets.
 
-    # cdbMain.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
-    cdbMain.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(True))
-    cdbMain.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
-    cdbMain.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(True))
-    cdbMain.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
-    cdbMain.thread.finished.connect(dlg.msg_bar.clearWidgets)
+    # dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+    dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(True))
+    dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
-    cdbMain.worker.sig_success.connect(lambda: evt_drop_layers_success(cdbMain))
-    cdbMain.worker.sig_fail.connect(lambda: evt_drop_layers_fail(cdbMain))
+    dlg.worker.sig_success.connect(lambda: evt_drop_layers_success(dlg))
+    dlg.worker.sig_fail.connect(lambda: evt_drop_layers_fail(dlg))
     #-SIGNALS--(end)---################################################################
 
     # Initiate worker thread
-    cdbMain.thread.start()
+    dlg.thread.start()
 
     return None
 
@@ -528,23 +512,23 @@ class DropLayersWorker(QObject):
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
-    sig_progress = pyqtSignal(str, int, str)
+    sig_progress = pyqtSignal(int, str)
     sig_success = pyqtSignal()
     sig_fail = pyqtSignal()
 
-    def __init__(self, cdbMain: CDBToolsMain):
+    def __init__(self, dlg: CDB4LoaderDialog):
         super().__init__()
-        self.plugin = cdbMain
+        self.dlg = dlg
 
     def drop_layers_thread(self):
-        dlg = self.plugin.loader_dlg
+        dlg = self.dlg
         """Execution method that drops the layers using functions from the qgis_pkg.
         """
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
 
         feat_type = ()
-        feat_types = sql.fetch_unique_feature_types_in_layer_metadata(self.plugin)
+        feat_types = sql.fetch_unique_feature_types_in_layer_metadata(dlg)
 
         if not feat_types:
             self.sig_finished.emit()
@@ -563,26 +547,26 @@ class DropLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for dropping layers.
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_LOADER, "(Drop layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Drop layers)"]))
             with temp_conn:
 
                 # Start measuring time
                 time_start = time.time()
 
-                for s, module_func in enumerate(funcs_list, start=1):
+                for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
                                 SELECT {_qgis_pkg_schema}.{_module_func}({_usr_schema}, {_cdb_schema});
                                 """).format(
-                                _qgis_pkg_schema = pysql.Identifier(self.plugin.QGIS_PKG_SCHEMA),
+                                _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
                                 _module_func = pysql.Identifier(module_func),
-                                _usr_schema = pysql.Literal(self.plugin.USR_SCHEMA),
-                                _cdb_schema = pysql.Literal(self.plugin.CDB_SCHEMA)
+                                _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
+                                _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
                                 )
 
                     # Update progress bar
                     msg = f"Executing: {module_func}"
-                    self.sig_progress.emit(self.plugin.DLG_NAME_LOADER, s, msg)
+                    self.sig_progress.emit(step, msg)
                     
                     try:
                         with temp_conn.cursor() as cur:
@@ -623,57 +607,53 @@ class DropLayersWorker(QObject):
 
 ###--EVENTS (start)########################################################
 
-def evt_drop_layers_success(cdbMain: CDBToolsMain) -> None:
+def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer dropping finishes successfully.
 
-    Shows success message at cdbMain.loader_dlg.msg_bar: QgsMessageBar
+    Shows success message at dlg.msg_bar: QgsMessageBar
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    dlg = cdbMain.loader_dlg
-
-    layers_exist_status: bool = tc_f.check_layers_status(cdbMain)
+    layers_exist_status: bool = tc_f.check_layers_status(dlg)
 
     if not layers_exist_status: # i.e. we have successfully dropped all layers
 
         # Replace with Success msg.
-        msg = dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=cdbMain.USR_SCHEMA))
+        msg = dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA))
         dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
         # Inform user that now there aren't any layers in its schema
-        dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbMain.CDB_SCHEMA)))
+        dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.lblLayerRefr_out
         QgsMessageLog.logMessage(
-                message=c.LAYER_DR_SUCC_MSG.format(sch=cdbMain.USR_SCHEMA),
-                tag=cdbMain.PLUGIN_NAME,
+                message=c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA),
+                tag=dlg.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
 
     else:
-        evt_drop_layers_fail(cdbMain)
+        evt_drop_layers_fail(dlg)
 
     return None
 
 
-def evt_drop_layers_fail(cdbMain: CDBToolsMain) -> None:
+def evt_drop_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer dropping
     emits a fail signal meaning that something went wrong with the process.
 
-    Shows fail message at cdbMain.loader_dlg.msg_bar: QgsMessageBar
+    Shows fail message at dlg.msg_bar: QgsMessageBar
     Shows fail message in Connection Status groupbox
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbMain.loader_dlg
-
     # Replace with Failure msg.
-    msg = dlg.msg_bar.createMessage(c.LAYER_DR_ERROR_MSG.format(sch=cdbMain.USR_SCHEMA))
+    msg = dlg.msg_bar.createMessage(c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA))
     dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
     # Inform user that the layers are now corrupted.
-    dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=cdbMain.USR_SCHEMA)))
+    dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA)))
     QgsMessageLog.logMessage(
-            message=c.LAYER_DR_ERROR_MSG.format(sch=cdbMain.USR_SCHEMA),
-            tag=cdbMain.PLUGIN_NAME,
+            message=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
 

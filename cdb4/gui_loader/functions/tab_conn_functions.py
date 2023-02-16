@@ -1,9 +1,10 @@
 """This module contains functions that relate to the 'Connection Tab'
-(in the GUI look for the elephant).
-
-These functions are usually called from widget_setup functions
-relating to child widgets of the 'Connection Tab'.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_loader.loader_dialog import CDB4LoaderDialog
+
 from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from ...shared.functions import general_functions as gen_f
 from ..other_classes import FeatureType
@@ -11,11 +12,9 @@ from .. import loader_constants as c
 from . import tab_layers_widget_functions as tl_wf
 from . import sql
 
-def fill_cdb_schemas_box(cdbMain: CDBToolsMain, cdb_schemas: tuple = None) -> None:
+def fill_cdb_schemas_box(dlg: CDB4LoaderDialog, cdb_schemas: tuple = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
     """
-    dlg = cdbMain.loader_dlg
-
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
 
@@ -36,11 +35,9 @@ def fill_cdb_schemas_box(cdbMain: CDBToolsMain, cdb_schemas: tuple = None) -> No
     return None
 
 
-def fill_feature_types_box(cdbMain: CDBToolsMain) -> None:
+def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills feature types checkable combo box
     """
-    dlg = cdbMain.loader_dlg
-
     # Clear combo box from previous entries
     dlg.cbxFeatType.clear()
     dlg.cbxFeatType.setDefaultText('Select feature type(s)')
@@ -71,11 +68,9 @@ def fill_feature_types_box(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def initialize_feature_type_registry(cdbMain: CDBToolsMain) -> None:
+def initialize_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
-    dlg = cdbMain.loader_dlg
-
     dlg.FeatureTypesRegistry: dict = {
         "Bridge"          : FeatureType(name="Bridge"         , alias='bridge'         ),
         "Building"        : FeatureType(name="Building"       , alias='building'       ),
@@ -93,13 +88,11 @@ def initialize_feature_type_registry(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def update_feature_type_registry_exists(cdbMain: CDBToolsMain) -> None:
+def update_feature_type_registry_exists(dlg: CDB4LoaderDialog) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    dlg = cdbMain.loader_dlg
-   
     # Get the list (tuple) of available Feature Types in the current cdb_schema
-    feat_types: tuple = sql.fetch_feature_types_checker(cdbMain)
+    feat_types: tuple = sql.fetch_feature_types_checker(dlg)
 
     ft: FeatureType
     # Reset the status from potential previous checks
@@ -114,11 +107,9 @@ def update_feature_type_registry_exists(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def update_feature_type_registry_is_selected(cdbMain: CDBToolsMain) -> None:
+def update_feature_type_registry_is_selected(dlg: CDB4LoaderDialog) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    dlg = cdbMain.loader_dlg
-
     # Get the list (tuple) of available Feature Types in the current cdb_schema
     feat_types: list = gen_f.get_checkedItemsData(dlg.cbxFeatType)
 
@@ -134,7 +125,8 @@ def update_feature_type_registry_is_selected(cdbMain: CDBToolsMain) -> None:
 
     return None
 
-def check_layers_status(cdbMain: CDBToolsMain) -> bool:
+
+def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
     """ Function that takes care of:
         1) checking whether layers were created, i.e. they exist or not
         2) Depending on this, checking whether they were refreshed
@@ -143,22 +135,20 @@ def check_layers_status(cdbMain: CDBToolsMain) -> bool:
 
     Returns a boolean telling whether layers exist or not
     """
-    dlg = cdbMain.loader_dlg
-
     # Check if user package has already some layers corresponding to the current schema.
-    has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(cdbMain)
+    has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(dlg)
 
     if not has_layers_in_current_schema: # There are no layers
         # Set the labels in the connection tab: There are no layers
-        dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=cdbMain.CDB_SCHEMA)))
+        dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.checks.layers_exist = False
         # There are no layers to refresh at all
         dlg.lblLayerRefr_out.clear()
         dlg.checks.layers_refreshed = False
 
         # Enable the BaseMap groupbox, so the user can select the extents
-        dlg.gbxBasemapC.setDisabled(False)
-        dlg.qgbxExtentsC.setDisabled(False)
+        dlg.gbxBasemap.setDisabled(False)
+        dlg.qgbxExtents.setDisabled(False)
         dlg.btnCityExtents.setDisabled(False)
         dlg.btnGeoCoder.setDisabled(False)
         dlg.btnRefreshCDBExtents.setDisabled(False)
@@ -174,11 +164,11 @@ def check_layers_status(cdbMain: CDBToolsMain) -> bool:
     
     else:   # There are already layers from before
         # Set the labels in the connection tab: There are layers
-        dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=cdbMain.CDB_SCHEMA)))
+        dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.checks.layers_exist = True
 
         # Now check whether layers were already refreshed/populated
-        refresh_date = sql.fetch_layer_metadata(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, cols_list=["refresh_date"])
+        refresh_date = sql.fetch_layer_metadata(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, cols_list=["refresh_date"])
         # Extract a date.
         date = list(set(refresh_date[1]))[0][0]
 
@@ -194,8 +184,8 @@ def check_layers_status(cdbMain: CDBToolsMain) -> bool:
 
         # In both cases that the layers already exist:
         # Disable everything but the Refresh button and the MapCanvas 
-        dlg.gbxBasemapC.setDisabled(False)
-        dlg.qgbxExtentsC.setDisabled(True)
+        dlg.gbxBasemap.setDisabled(False)
+        dlg.qgbxExtents.setDisabled(True)
         dlg.btnCityExtents.setDisabled(True)
         dlg.btnGeoCoder.setDisabled(True)
         # But keep the RefreshExtents button enabled, in case it is needed!
@@ -213,11 +203,11 @@ def check_layers_status(cdbMain: CDBToolsMain) -> bool:
     if dlg.checks.are_requirements_fulfilled():
         # We are done here with the 'User Connection' tab, we can now activate the Layer Tab
         # Set up the Layers Tab
-        dlg.lblInfoText.setText(dlg.lblInfoText.init_text.format(db=cdbMain.DB.database_name, usr=cdbMain.DB.username, sch=cdbMain.CDB_SCHEMA))
+        dlg.lblInfoText.setText(dlg.lblInfoText.init_text.format(db=dlg.DB.database_name, usr=dlg.DB.username, sch=dlg.CDB_SCHEMA))
         dlg.lblInfoText.setDisabled(False)
-        tl_wf.gbxBasemapL_setup(cdbMain)
-        dlg.gbxBasemap.setDisabled(False)
-        dlg.qgbxExtents.setDisabled(False)
+        tl_wf.gbxBasemapL_setup(dlg)
+        dlg.gbxBasemapL.setDisabled(False)
+        dlg.qgbxExtentsL.setDisabled(False)
         dlg.btnLayerExtentsL.setDisabled(False)
         dlg.tabLayers.setDisabled(False)
         dlg.btnImport.setDisabled(True)
@@ -225,6 +215,6 @@ def check_layers_status(cdbMain: CDBToolsMain) -> bool:
         dlg.tabSettings.setDisabled(False)
 
     else:
-        tl_wf.tabLayers_reset(cdbMain) # it disables itself, too
+        tl_wf.tabLayers_reset(dlg) # it disables itself, too
 
     return has_layers_in_current_schema

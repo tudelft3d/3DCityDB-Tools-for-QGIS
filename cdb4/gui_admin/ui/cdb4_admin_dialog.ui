@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CDBAdminDialog</class>
- <widget class="QDialog" name="CDBAdminDialog">
+ <class>CDB4AdminDialog</class>
+ <widget class="QDialog" name="CDB4AdminDialog">
   <property name="enabled">
    <bool>true</bool>
   </property>

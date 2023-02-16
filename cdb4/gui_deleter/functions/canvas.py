@@ -1,12 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+
 from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from .. import deleter_constants as c
 
-def canvas_setup(cdbMain: CDBToolsMain, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
+def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
     """Function to set up the additional map canvas that shows the extents.
     For the basemap it uses a OSM maps WMS layer
 
@@ -25,10 +29,10 @@ def canvas_setup(cdbMain: CDBToolsMain, canvas: QgsMapCanvas, extents: QgsRectan
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    cdbMain.deleter_dlg.qgbxExtentsC.blockSignals(True)
-    cdbMain.deleter_dlg.qgbxExtentsC.setOutputCrs(crs)  # Signal emitted for qgbxExtentsC.
-    cdbMain.deleter_dlg.qgbxExtentsC.blockSignals(False)
-    cdbMain.deleter_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtentsC.
+    dlg.qgbxExtents.blockSignals(True)
+    dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
+    dlg.qgbxExtents.blockSignals(False)
+    dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)
@@ -93,7 +97,7 @@ def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
     This funtion does not cause the passed extents variable to be changed
     to a larger area - which happens with the native metod canvas.zoomToFeatureExtent().
 
-    This function DOES NOT fires an event of type evt_qgbxExtentsC_ext_changed()
+    This function DOES NOT fires an event of type evt_qgbxExtents_ext_changed()
 
     *   :param canvas: Canvas to draw the rubber band on.
         :type extents: QgsMapCanvas

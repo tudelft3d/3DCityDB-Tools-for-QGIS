@@ -17,6 +17,11 @@ This is done by assigning a working thread for the
 heavy process. In the main thread the progress bar is assigned to
 update following the heavy process taking place in the worker thread.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING  #, Union
+if TYPE_CHECKING:       
+    from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+
 import math, time
 
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -39,12 +44,10 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 ##### CLEAN UP SCHEMA ###############################################################
 #####################################################################################
 
-def run_cleanup_schema_thread(cdbMain: CDBToolsMain) -> None:
+def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     """Function that uninstalls the qgis_pkg schema from the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Add a new progress bar to follow the installation procedure.
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
@@ -52,41 +55,41 @@ def run_cleanup_schema_thread(cdbMain: CDBToolsMain) -> None:
             continue # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxCleanUpSchema":
             # Add a new progress bar to follow the deletion procedure.
-            cdbMain.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
             break
 
     # Create new thread object.
-    cdbMain.thread = QThread()
+    dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    cdbMain.worker = CleanUpSchemaWorker(cdbMain)
+    dlg.worker = CleanUpSchemaWorker(dlg)
     # Move worker object to the be executed on the new thread.
-    cdbMain.worker.moveToThread(cdbMain.thread)
+    dlg.worker.moveToThread(dlg.thread)
 
     #-SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
     # ...
 
     # Execute worker's 'run' method.
-    cdbMain.thread.started.connect(cdbMain.worker.clean_up_schema_thread)
+    dlg.thread.started.connect(dlg.worker.clean_up_schema_thread)
 
     # Capture progress to show in bar.
-    cdbMain.worker.sig_progress.connect(cdbMain.evt_update_bar)
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
 
     # Get rid of worker and thread objects.
-    cdbMain.worker.sig_finished.connect(cdbMain.thread.quit)
-    cdbMain.worker.sig_finished.connect(cdbMain.worker.deleteLater)
-    cdbMain.thread.finished.connect(cdbMain.thread.deleteLater)
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # Reenable the GUI
-    cdbMain.thread.finished.connect(dlg.msg_bar.clearWidgets)
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
-    cdbMain.worker.sig_success.connect(lambda: evt_clean_up_schema_success(cdbMain))
-    cdbMain.worker.sig_fail.connect(lambda: evt_clean_up_schema_fail(cdbMain))
+    dlg.worker.sig_success.connect(lambda: evt_clean_up_schema_success(dlg))
+    dlg.worker.sig_fail.connect(lambda: evt_clean_up_schema_fail(dlg))
     #-SIGNALS (end) #######################################################
 
     # Initiate worker thread
-    cdbMain.thread.start()
+    dlg.thread.start()
 
 
 class CleanUpSchemaWorker(QObject):
@@ -95,20 +98,20 @@ class CleanUpSchemaWorker(QObject):
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
-    sig_progress = pyqtSignal(str, int, str)
+    sig_progress = pyqtSignal(int, str)
     sig_success = pyqtSignal()
     sig_fail = pyqtSignal()
 
-    def __init__(self, cdbMain: CDBToolsMain):
+    def __init__(self, dlg: CDB4DeleterDialog):
         super().__init__()
-        self.plugin = cdbMain
+        self.dlg = dlg
 
     def clean_up_schema_thread(self):
         """Execution method that truncates all tables in the current citydb schema.
         """
-        dlg = self.plugin.deleter_dlg
-        qgis_pkg_schema: str = self.plugin.QGIS_PKG_SCHEMA
-        cdb_schema: str = self.plugin.CDB_SCHEMA
+        dlg = self.dlg
+        qgis_pkg_schema: str = dlg.QGIS_PKG_SCHEMA
+        cdb_schema: str = dlg.CDB_SCHEMA
 
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
@@ -153,7 +156,7 @@ class CleanUpSchemaWorker(QObject):
         
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_DELETER, "(Clean up schema (TRUNCATE)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Clean up schema (TRUNCATE)"]))
             with temp_conn:
                 # Start measuring time
                 time_start = time.time()                
@@ -170,7 +173,7 @@ class CleanUpSchemaWorker(QObject):
                     # Update progress bar
                     msg = f"Truncating {cdb_schema}.{table_name}"
                     curr_step += 1
-                    self.sig_progress.emit(self.plugin.DLG_NAME_DELETER, curr_step, msg)
+                    self.sig_progress.emit(curr_step, msg)
 
                     try:
                         with temp_conn.cursor() as cur:
@@ -203,7 +206,7 @@ class CleanUpSchemaWorker(QObject):
                 # Update progress bar
                 msg = "Finalizing the clean up"
                 curr_step += 1
-                self.sig_progress.emit(self.plugin.DLG_NAME_DELETER, curr_step, msg)
+                self.sig_progress.emit(curr_step, msg)
 
                 try:
                     with temp_conn.cursor() as cur:
@@ -246,16 +249,14 @@ class CleanUpSchemaWorker(QObject):
 
 #--EVENTS  (start)  ##############################################################
 
-def evt_clean_up_schema_success(cdbMain: CDBToolsMain) -> None:
+def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation finishes successfully.
     It emits a success signal meaning that all went fine.
 
-    Shows success message at cdbMain.deleter_dlg.msg_bar: QgsMessageBar
+    Shows success message at dlg.msg_bar: QgsMessageBar
     Shows success message in QgsMessageLog
     """
-    dlg = cdbMain.deleter_dlg
-
-    cdb_schema = cdbMain.CDB_SCHEMA
+    cdb_schema = dlg.CDB_SCHEMA
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.TRUNC_SUCC_MSG.format(sch=cdb_schema))
@@ -264,32 +265,32 @@ def evt_clean_up_schema_success(cdbMain: CDBToolsMain) -> None:
     # Inform user
     QgsMessageLog.logMessage(
             message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Success,
             notifyUser=True)
 
-    tc_f.refresh_extents(cdbMain)
+    tc_f.refresh_extents(dlg)
 
     return None
 
 
-def evt_clean_up_schema_fail(cdbMain: CDBToolsMain, error: str = 'Clean-up error') -> None:
+def evt_clean_up_schema_fail(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation fails
     It emits a fail signal meaning that something went wrong.
 
-    Shows fail message at cdbMain.deleter_dlg.msg_bar: QgsMessageBar
+    Shows fail message at dlg.msg_bar: QgsMessageBar
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbMain.deleter_dlg
+    error: str = 'Clean-up error'
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
     dlg.msg_bar.pushWidget(msg, Qgis.Critical, 4)
-
+    
     # Inform user
     QgsMessageLog.logMessage(
             message=error,
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
     
@@ -299,12 +300,10 @@ def evt_clean_up_schema_fail(cdbMain: CDBToolsMain, error: str = 'Clean-up error
 ##### BULK FEATURE DELETER ##########################################################
 #####################################################################################
 
-def run_bulk_delete_thread(cdbMain: CDBToolsMain, delete_mode: str) -> None:
+def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     """Function that uninstalls the qgis_pkg schema from the database
     by branching a new Worker thread to execute the operation on.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Add a new progress bar to follow the installation procedure.
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
@@ -312,42 +311,41 @@ def run_bulk_delete_thread(cdbMain: CDBToolsMain, delete_mode: str) -> None:
             continue # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxFeatSel":
             # Add a new progress bar to follow the deletion procedure.
-            cdbMain.create_progress_bar(dialog=dlg, layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
             break
 
     # Create new thread object.
-    cdbMain.thread = QThread()
+    dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    cdbMain.worker = BulkDeleteWorker(cdbMain, delete_mode)
+    dlg.worker = BulkDeleteWorker(dlg, delete_mode)
     # Move worker object to the be executed on the new thread.
-    cdbMain.worker.moveToThread(cdbMain.thread)
+    dlg.worker.moveToThread(dlg.thread)
 
     #-SIGNALS--(start)--################################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
     # ...
 
     # Execute worker's 'run' method.
-    cdbMain.thread.started.connect(cdbMain.worker.bulk_delete_thread)
-    # cdbMain.thread.started.connect(cdbMain.worker.bulk_delete_thread)
+    dlg.thread.started.connect(dlg.worker.bulk_delete_thread)
 
     # Capture progress to show in bar.
-    cdbMain.worker.sig_progress.connect(cdbMain.evt_update_bar)
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
 
     # Get rid of worker and thread objects.
-    cdbMain.worker.sig_finished.connect(cdbMain.thread.quit)
-    cdbMain.worker.sig_finished.connect(cdbMain.worker.deleteLater)
-    cdbMain.thread.finished.connect(cdbMain.thread.deleteLater)
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # Reenable the GUI
-    cdbMain.thread.finished.connect(dlg.msg_bar.clearWidgets)
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
-    cdbMain.worker.sig_success.connect(lambda: evt_bulk_delete_success(cdbMain))
-    cdbMain.worker.sig_fail.connect(lambda: evt_buld_delete_fail(cdbMain))
+    dlg.worker.sig_success.connect(lambda: evt_bulk_delete_success(dlg))
+    dlg.worker.sig_fail.connect(lambda: evt_buld_delete_fail(dlg))
     #-SIGNALS--(end)---################################################################
 
     # Initiate worker thread
-    cdbMain.thread.start()
+    dlg.thread.start()
 
 
 class BulkDeleteWorker(QObject):
@@ -356,24 +354,24 @@ class BulkDeleteWorker(QObject):
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
-    sig_progress = pyqtSignal(str, int, str)
+    sig_progress = pyqtSignal(int, str)
     sig_success = pyqtSignal()
     sig_fail = pyqtSignal()
 
-    def __init__(self, cdbMain: CDBToolsMain, delete_mode: str):
+    def __init__(self, dlg: CDB4DeleterDialog, delete_mode: str):
         super().__init__()
-        self.plugin = cdbMain
+        self.dlg = dlg
         self.delete_mode = delete_mode
 
 
     def bulk_delete_thread(self):
         """Execution method that bulk deletes the features.
         """
-        dlg = self.plugin.deleter_dlg
+        dlg = self.dlg
 
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
-        cdb_schema: str = self.plugin.CDB_SCHEMA
+        cdb_schema: str = dlg.CDB_SCHEMA
         co_id_array_length: int = dlg.settings.max_del_array_length_default
 
         sql_where: str
@@ -473,13 +471,13 @@ class BulkDeleteWorker(QObject):
         # clean up global appearances: 1 action
 
         steps_tot = tot_del_iter + 1
-        self.plugin.deleter_dlg.bar.setMaximum(steps_tot)
+        dlg.bar.setMaximum(steps_tot)
         curr_step: int = 0
         # print("steps_tot", steps_tot)
 
         # Open new temp session, reserved for installation.
         try:
-            temp_conn = conn_f.create_db_connection(db_connection=self.plugin.DB, app_name=" ".join([self.plugin.PLUGIN_NAME_DELETER, "(Bulk Deleter)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Bulk Deleter)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -511,7 +509,7 @@ class BulkDeleteWorker(QObject):
                         # Update progress bar
                         msg = f"Deleting '{rcf.name}' objects"
                         curr_step += 1
-                        self.sig_progress.emit(self.plugin.DLG_NAME_DELETER, curr_step, msg)
+                        self.sig_progress.emit(curr_step, msg)
 
                         try:
                             with temp_conn.cursor() as cur:
@@ -542,7 +540,7 @@ class BulkDeleteWorker(QObject):
                 # Update progress bar
                 msg = f"Cleaning up global appearances"
                 curr_step += 1
-                self.sig_progress.emit(self.plugin.DLG_NAME_DELETER, curr_step, msg)
+                self.sig_progress.emit(curr_step, msg)
 
                 try:
                     with temp_conn.cursor() as cur:
@@ -560,9 +558,6 @@ class BulkDeleteWorker(QObject):
                     self.sig_fail.emit()
 
                 # print(f"cleaned up appearances, step {curr_step}/{steps_tot}")
-
-                # if curr_step < steps_tot:
-                    # print('Problems with the message bar counter') # Take care of fixing the counter for the progress bar
 
             # Measure elapsed time
             print(f"Delete process completed in {round((time.time() - time_start), 4)} seconds")
@@ -587,16 +582,14 @@ class BulkDeleteWorker(QObject):
 
 #--EVENTS  (start)  ##############################################################
 
-def evt_bulk_delete_success(cdbMain: CDBToolsMain) -> None:
+def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation finishes successfully.
     It emits a success signal meaning that all went fine.
 
-    Shows success message at cdbMain.deleter_dlg.msg_bar: QgsMessageBar
+    Shows success message at dlg.msg_bar: QgsMessageBar
     Shows success message in QgsMessageLog
     """
-    dlg = cdbMain.deleter_dlg
-
-    cdb_schema = cdbMain.CDB_SCHEMA
+    cdb_schema = dlg.CDB_SCHEMA
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema))
@@ -605,23 +598,23 @@ def evt_bulk_delete_success(cdbMain: CDBToolsMain) -> None:
     # Inform user
     QgsMessageLog.logMessage(
             message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Success,
             notifyUser=True)
 
-    tc_f.refresh_extents(cdbMain)
+    tc_f.refresh_extents(dlg)
 
     return None
 
 
-def evt_buld_delete_fail(cdbMain: CDBToolsMain, error: str = 'Bulk Delete error') -> None:
+def evt_buld_delete_fail(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation fails
     It emits a fail signal meaning that something went wrong.
 
-    Shows fail message at cdbMain.deleter_dlg.msg_bar: QgsMessageBar
+    Shows fail message at dlg.msg_bar: QgsMessageBar
     Shows fail message in QgsMessageLog
     """
-    dlg = cdbMain.deleter_dlg
+    error: str = 'Bulk Delete error'
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
@@ -630,7 +623,7 @@ def evt_buld_delete_fail(cdbMain: CDBToolsMain, error: str = 'Bulk Delete error'
     # Inform user
     QgsMessageLog.logMessage(
             message=error,
-            tag=cdbMain.PLUGIN_NAME,
+            tag=dlg.PLUGIN_NAME,
             level=Qgis.Critical,
             notifyUser=True)
     
