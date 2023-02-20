@@ -13,7 +13,7 @@ about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostG
  
  - The "Layer Loader": it loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited, changes are stored back directly into the database;
 
- - A "Bulk Deleter": it allows to cleanup the database, or to delete selected feature types;
+ - A "Bulk Deleter": it allows to clean up the database, or to delete selected feature types;
 
  - "QGIS Package Administration": it allows to install the server-side part of the plug-in, and to manage database user privileges.
 
