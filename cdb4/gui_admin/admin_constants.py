@@ -62,8 +62,3 @@ crit_warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/critical_warning_icon.svg',
     color_hex='#DA4453', # pale red
     addtional_text='{text}')
-
-# menu_html: str = icon_msg_core.format(
-#     image_rc=':/plugins/citydb_loader/icons/plugin_icon.png',
-#     color_hex='#000000',  # black
-#     addtional_text='{text}')

@@ -7,7 +7,7 @@ The reset functions consist of clearing text or changed text to original state,
 clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
@@ -21,8 +21,8 @@ def tabSettings_reset(dlg: CDB4AdminDialog) -> None:
     dlg.tabSettings.setDisabled(True)
     gbxDefaultUsers_reset(dlg)
     dlg.btnResetToDefault.setDisabled(True)
-    #dlg.btnSaveSettings.setDisabled(True)
-    #dlg.btnLoadSettings.setDisabled(True)
+
+    return None
 
 def gbxDefaultUsers_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Default Users' groupBox
@@ -32,3 +32,5 @@ def gbxDefaultUsers_reset(dlg: CDB4AdminDialog) -> None:
     dlg.ckbUserROAccess.setChecked(dlg.settings.enable_ro_user_access_default)
     dlg.ckbUserRW.setChecked(dlg.settings.enable_rw_user_default)
     dlg.ckbUserRWAccess.setChecked(dlg.settings.enable_rw_user_access_default)
+
+    return None

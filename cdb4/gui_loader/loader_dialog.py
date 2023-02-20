@@ -25,11 +25,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-     from ...cdb_tools_main import CDBToolsMain
-#     from ...gui_admin.admin_dialog import CDB4AdminDialog
-#     from ...gui_loader.loader_dialog import CDB4LoaderDialog
-#     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-     from ..gui_db_connector.other_classes import Connection
+    from ...cdb_tools_main import CDBToolsMain
+    from ..gui_db_connector.other_classes import Connection
+    from .other_classes import CDBLayer
 
 import os
 from collections import namedtuple
@@ -44,18 +42,16 @@ from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
-
 from ..gui_db_connector.functions import conn_functions as conn_f
 from ..shared.functions import general_functions as gen_f
 from ..shared.functions import sql as sh_sql
-
 from .functions import tab_conn_widget_functions as tc_wf
 from .functions import tab_conn_functions as tc_f
 from .functions import tab_layers_widget_functions as tl_wf
 from .functions import tab_layers_functions as tl_f
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import canvas, sql, threads as thr
-from .other_classes import LoaderDialogChecks, LoaderDefaultSettings, CDBLayer
+from .other_classes import LoaderDialogChecks, LoaderDefaultSettings
 
 from . import loader_constants as c
 
@@ -79,20 +75,17 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## From here you can add your variables or constants
+        ## "Standard" variables or constants
         ############################################################
 
         self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
         # Variable to store the qgis_pkg
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
-        self.DIALOG_NAME: str = main_c.PLUGIN_NAME_LOADER_LABEL
-        self.DIALOG_VAR_NAME: str = main_c.DLG_NAME_LOADER
-
-        # Variable to store the current open connection of a database.
-        self.conn: pyconn = None
-        # Variable to store the existing connection parameters.
-        self.DB: Connection = None
+        # Variable to store the label of this dialog
+        self.DIALOG_NAME: str = main_c.DLG_NAME_LOADER_LABEL
+        # Variable to store the variable name (in cdbMain) of this dialog
+        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_LOADER
 
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
@@ -101,14 +94,23 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
 
-        # QGIS current version
-        self.QGIS_VERSION_STR: str = Qgis.version() 
-        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
-        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
+        # Variable to store the current open connection of a database.
+        self.conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        self.DB: Connection = None
 
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
         self.thread: QThread
+
+        ############################################################
+        ## From here you can add your variables or constants
+        ############################################################
+
+        # QGIS current version
+        self.QGIS_VERSION_STR: str = Qgis.version() 
+        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
+        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
 
         self.settings = LoaderDefaultSettings()
         self.checks = LoaderDialogChecks()

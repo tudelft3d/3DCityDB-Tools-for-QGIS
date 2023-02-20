@@ -5,16 +5,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
+    from ..other_classes import FeatureType
 
 from collections import OrderedDict
-
 from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup, 
                         QgsVectorLayer, QgsDataSourceUri, QgsAttributeEditorElement,
                         QgsAttributeEditorRelation, Qgis, QgsLayerTreeGroup,
                         QgsRelation, QgsAttributeEditorContainer, QgsMapLayer)
 
-from ..other_classes import CDBLayer, FeatureType
-
+from ..other_classes import CDBLayer
 from .. import loader_constants as c
 from . import sql
 

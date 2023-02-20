@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+    from ..other_classes import FeatureType, RootClassFeature
 
 import math, time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -29,7 +30,6 @@ import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import general_functions as gen_f
-from ..other_classes import FeatureType, RootClassFeature
 from .. import deleter_constants as c
 from . import tab_conn_functions as tc_f
 

@@ -25,6 +25,7 @@ Class DBConnectorDialog
 import os
 import psycopg2
 from psycopg2.extensions import connection as pyconn
+
 from qgis.core import Qgis, QgsSettings
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import QtWidgets, uic

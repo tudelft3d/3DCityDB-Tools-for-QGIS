@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
+    from ..other_classes import FeatureType
 
 import os
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -29,10 +30,9 @@ import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import sql as sh_sql, general_functions as gen_f
-from ..other_classes import FeatureType
 from .. import admin_constants as c
-from . import sql
 from . import tab_install_widget_functions as ti_wf
+from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
@@ -53,7 +53,14 @@ def run_install_qgis_pkg_thread(dlg: CDB4AdminDialog, sql_scripts_path: str, qgi
     """
     if qgis_pkg_schema == dlg.QGIS_PKG_SCHEMA:
         # Add a new progress bar to follow the installation procedure.
-        dlg.create_progress_bar(layout=dlg.vLayoutMainInst, position=-1)
+        for index in range(dlg.vLayoutTabInstall.count()):
+            widget = dlg.vLayoutTabInstall.itemAt(index).widget()
+            if not widget:
+                continue # Needed to avoid errors with layouts, vertical spacers, etc.
+            if widget.objectName() == "gbxMainInst":
+                # Add a new progress bar to follow the deletion procedure.
+                dlg.create_progress_bar(layout=dlg.vLayoutTabInstall, position=index+1)
+                break
 
     # Create new thread object.
     dlg.thread = QThread()
@@ -362,7 +369,14 @@ def run_uninstall_qgis_pkg_thread(dlg: CDB4AdminDialog) -> None:
     by branching a new Worker thread to execute the operation on.
     """
     # Add a new progress bar to follow the installation procedure.
-    dlg.create_progress_bar(layout=dlg.vLayoutMainInst, position=-1)
+    for index in range(dlg.vLayoutTabInstall.count()):
+        widget = dlg.vLayoutTabInstall.itemAt(index).widget()
+        if not widget:
+            continue # Needed to avoid errors with layouts, vertical spacers, etc.
+        if widget.objectName() == "gbxMainInst":
+            # Add a new progress bar to follow the deletion procedure.
+            dlg.create_progress_bar(layout=dlg.vLayoutTabInstall, position=index+1)
+            break
 
     # Create new thread object.
     dlg.thread = QThread()

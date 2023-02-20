@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extensions import connection as pyconn
 from qgis.core import QgsSettings
 
-from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout, QPushButton
+from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
 
 from .... import cdb_tools_main_constants as main_c
 from ...shared.functions import general_functions as gen_f
@@ -123,7 +123,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
     curr_DIALOG_NAME: str = dlg.DIALOG_VAR_NAME
     no_admin_dlgs: list = []
 
-    no_admin_dlgs = [dlg for k,dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_NAME_ADMIN, curr_DIALOG_NAME]]
+    no_admin_dlgs = [dlg for k,dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_VAR_NAME_ADMIN, curr_DIALOG_NAME]]
 
     # Conditions: 
     # 1) Connection exists, is open

@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
+    from ..other_classes import FeatureType
 
 import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -29,10 +30,7 @@ import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import general_functions as gen_f
-
 from .. import loader_constants as c
-from ..other_classes import FeatureType
-
 from . import tab_conn_functions as tc_f
 from . import sql
 

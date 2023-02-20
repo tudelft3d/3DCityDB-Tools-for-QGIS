@@ -24,9 +24,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
      from ...cdb_tools_main import CDBToolsMain
-#     from ...gui_admin.admin_dialog import CDB4AdminDialog
-#     from ...gui_loader.loader_dialog import CDB4LoaderDialog
-#     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
      from ..gui_db_connector.other_classes import Connection
 
 import os
@@ -39,7 +36,6 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-# from ...cdb_tools_main import CDBToolsMain
 from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
@@ -74,7 +70,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## From here you can add your variables or constants
+        ## "Standard" variables or constants
         ############################################################
 
         # Variable to store the plugin name
@@ -82,13 +78,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the qgis_pkg
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
-        self.DIALOG_NAME: str = main_c.PLUGIN_NAME_DELETER_LABEL
-        self.DIALOG_VAR_NAME: str = main_c.DLG_NAME_DELETER
-
-        # Variable to store the current open connection of a database.
-        self.conn: pyconn = None
-        # Variable to store the existing connection parameters.
-        self.DB: Connection = None
+        # Variable to store the label of this dialog
+        self.DIALOG_NAME: str = main_c.DLG_NAME_DELETER_LABEL
+        # Variable to store the variable name (in cdbMain) of this dialog
+        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_DELETER
 
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
@@ -97,9 +90,18 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
 
+        # Variable to store the current open connection of a database.
+        self.conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        self.DB: Connection = None
+
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
         self.thread: QThread
+
+        ############################################################
+        ## From here you can add your variables or constants
+        ############################################################
 
         self.settings = DeleterDefaultSettings()
         self.checks = DeleterDialogChecks()

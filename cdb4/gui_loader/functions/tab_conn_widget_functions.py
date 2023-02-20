@@ -10,11 +10,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
+    from ..other_classes import FeatureType
 
 from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
 
 from ...shared.functions import general_functions as gen_f
-from ..other_classes import FeatureType
 from .. import loader_constants as c
 from . import canvas, sql
 
