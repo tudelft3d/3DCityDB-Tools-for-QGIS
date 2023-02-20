@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING  #, Union
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
-# from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 #############################################
 # Reset widget functions
 #############################################

@@ -22,14 +22,21 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING, Union
+if TYPE_CHECKING:       
+    from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog
+    from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog
+    from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog    
+
 import os.path
 import typing
 
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QWidget, QProgressBar, QVBoxLayout, QDialog
+from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox
 from qgis.core import Qgis, QgsMessageLog
-from qgis.gui import QgisInterface, QgsMessageBar
+from qgis.gui import QgisInterface
 
 from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
@@ -55,48 +62,42 @@ class CDBToolsMain:
 
         # initialize plugin full path (including plugin directory).
         self.PLUGIN_ABS_PATH: str = os.path.normpath(os.path.dirname(__file__))
+        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
-        #Initialize constants
+        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
+
+        self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
+        self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
+        self.PLUGIN_VERSION_REV:   int = main_c.PLUGIN_VERSION_REV
+        self.PLUGIN_VERSION_TXT:   str = ".".join([str(self.PLUGIN_VERSION_MAJOR), str(self.PLUGIN_VERSION_MINOR), str(self.PLUGIN_VERSION_REV)])
+
         # QGIS current version
         self.QGIS_VERSION_STR: str = Qgis.version() 
         self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
         self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
         self.QGIS_VERSION_REV:   int = int(self.QGIS_VERSION_STR.split(".")[2].split("-")[0])
 
-        # Read and assign constants from main_constants file (main_c)
-        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
-        self.PLUGIN_NAME_ADMIN:   str = main_c.PLUGIN_NAME_ADMIN_LABEL
-        self.PLUGIN_NAME_LOADER:  str = main_c.PLUGIN_NAME_LOADER_LABEL
-        self.PLUGIN_NAME_DELETER: str = main_c.PLUGIN_NAME_DELETER_LABEL
-        
-        self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
-        self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
-        self.PLUGIN_VERSION_REV:   int = main_c.PLUGIN_VERSION_REV
-        self.PLUGIN_VERSION_TXT:   str = ".".join([str(self.PLUGIN_VERSION_MAJOR), str(self.PLUGIN_VERSION_MINOR), str(self.PLUGIN_VERSION_REV)])
-
         # Welcome message upon (re)loading
         msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} GIO-DEV</b> plugin for <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=False)
 
-        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
-        self.CDB4_PLUGIN_DIR: str = main_c.CDB4_PLUGIN_DIR
-
-        # Dialog names
-        self.DLG_NAME_ADMIN: str = main_c.DLG_NAME_ADMIN
-        self.DLG_NAME_LOADER: str = main_c.DLG_NAME_LOADER
-        self.DLG_NAME_DELETER: str = main_c.DLG_NAME_DELETER
-
         # Variable to store the loader dialog of the plugin.
-        self.loader_dlg = None
-        # Variable to store the deleter dialog of the plugin.
-        self.deleter_dlg = None
-        # Variable to store the admin dialog of the plugin.
-        self.admin_dlg = None
-
+        self.loader_dlg: CDB4LoaderDialog = None
         # Check if plugin was started the first time in current QGIS session. Must be set in initGui() to survive plugin reloads.
         self.first_start_loader: bool = True
+
+        # Variable to store the deleter dialog of the plugin.
+        self.deleter_dlg: CDB4DeleterDialog = None
+        # Check if plugin was started the first time in current QGIS session. Must be set in initGui() to survive plugin reloads.
         self.first_start_deleter: bool = True
+
+        # Variable to store the admin dialog of the plugin.
+        self.admin_dlg: CDB4AdminDialog = None
+        # Check if plugin was started the first time in current QGIS session. Must be set in initGui() to survive plugin reloads.
         self.first_start_admin: bool = True
+
+        self.DialogRegistry: dict = {}
+
 
         # initialize locale.
         locale = QSettings().value("locale/userLocale")[0:2]
@@ -240,7 +241,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = loader_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_LOADER),
-            txt = self.PLUGIN_NAME_LOADER,
+            txt = main_c.PLUGIN_NAME_LOADER_LABEL,
             callback = self.run_loader,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -250,7 +251,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = deleter_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_DELETER),
-            txt = self.PLUGIN_NAME_DELETER,
+            txt = main_c.PLUGIN_NAME_DELETER_LABEL,
             callback = self.run_deleter,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -260,7 +261,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = admin_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_ADMIN),
-            txt = self.PLUGIN_NAME_ADMIN,
+            txt = main_c.PLUGIN_NAME_ADMIN_LABEL,
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -313,30 +314,42 @@ class CDBToolsMain:
             # an event is fired (dlg.evt_cbxExistingConn_changed())
             conn_f.get_qgis_postgres_conn_list(dlg)
 
-        # if not self.first_start_loader:
-        #     if self.loader_dlg.conn != self.loader_dlg.prev_conn:
-        #         # print ('loader gotcha!!')
-        #         if self.loader_dlg.conn:
-        #             self.loader_dlg.conn.close()
-        #         self.loader_dlg.conn = None
-        #         self.loader_dlg.DB = None
-        #         conn_f.get_qgis_postgres_conn_list(self.loader_dlg)
+        self.DialogRegistry.update({self.loader_dlg.DIALOG_VAR_NAME: self.loader_dlg})
+
+        self.check_concurrent_connections(self.loader_dlg)
+
+        # if len(self.DialogRegistry) > 1:
+        #     close_admin_dlg = False
+        #     close_admin_conn = False
+        #     if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
+        #         if self.admin_dlg.isVisible():
+        #             close_admin_dlg: bool = True
+        #         if self.admin_dlg.conn:
+        #             if self.admin_dlg.conn.closed == 0:
+        #                 close_admin_conn: bool = True
+
+        #     if close_admin_dlg:
+        #         msg: str = f"In order to launch the '{self.loader_dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
+        #         res = QMessageBox.question(self.loader_dlg, "Concurrent dialogs", msg)
+        #         if res == 16384: #YES
+        #             if close_admin_conn:
+        #                 self.admin_dlg.conn.close()
+        #             if close_admin_dlg:
+        #                 self.admin_dlg.dlg_reset_all()
+        #                 self.admin_dlg.close()
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. 0, The window blocks input to other windows.
-        self.loader_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows (for development purposes).
+        self.loader_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.loader_dlg.show()
-
         # Run the dialog event loop.
         res = self.loader_dlg.exec_()
 
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
-            # self.loader_dlg.prev_conn = self.loader_dlg.conn
-            # self.loader_dlg.prev_DB = self.loader_dlg.DB
             pass
 
         return None
@@ -372,29 +385,42 @@ class CDBToolsMain:
             # an event is fired (dlg.evt_cbxExistingConn_changed())
             conn_f.get_qgis_postgres_conn_list(dlg) # Stored in self.conn
 
-        # if not self.first_start_deleter:
-        #     if self.deleter_dlg.conn != self.deleter_dlg.prev_conn:
-        #         # print ('deleter: gotcha!!')
-        #         if self.deleter_dlg.conn:
-        #             self.deleter_dlg.conn.close()
-        #         self.deleter_dlg.conn = None
-        #         self.deleter_dlg.DB = None
-        #         conn_f.get_qgis_postgres_conn_list(self.deleter_dlg)
+        self.DialogRegistry.update({self.deleter_dlg.DIALOG_VAR_NAME: self.deleter_dlg})
+
+        self.check_concurrent_connections(self.deleter_dlg)
+
+        # if len(self.DialogRegistry) > 1:
+        #     close_admin_dlg: bool = False
+        #     close_admin_conn: bool = False
+        #     if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
+        #         if self.admin_dlg.isVisible():
+        #             close_admin_dlg = True
+        #         if self.admin_dlg.conn:
+        #             if self.admin_dlg.conn.closed == 0:
+        #                 close_admin_conn = True
+
+        #     if close_admin_dlg:
+        #         msg: str = f"In order to launch the '{self.deleter_dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
+        #         res = QMessageBox.question(self.deleter_dlg, "Concurrent dialogs", msg)
+        #         if res == 16384: #YES
+        #             if close_admin_conn:
+        #                 self.admin_dlg.conn.close()
+        #             if close_admin_dlg:
+        #                 self.admin_dlg.dlg_reset_all()
+        #                 self.admin_dlg.close()
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.deleter_dlg.setWindowModality(Qt.ApplicationModal) # The window blocks input from other windows.
-        self.deleter_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows (for development purposes).
+        self.deleter_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.deleter_dlg.show()
-
         # Run the dialog event loop.
-        res = self.deleter_dlg.exec_() 
+        res = self.deleter_dlg.exec_()
+
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
-            # self.deleter_dlg.prev_conn = self.deleter_dlg.conn
-            # self.deleter_dlg.prev_DB = self.deleter_dlg.DB
             pass
         
         return None
@@ -417,87 +443,88 @@ class CDBToolsMain:
             # Create the dialog with elements (after translation).
             self.admin_dlg = CDB4AdminDialog(cdbMain=self)
 
-
         # Get existing connections from QGIS profile settings.
         # They are added to the combo box (cbxExistingConn), and 
         # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.admin_dlg) # Stored in self.conn
 
+        self.DialogRegistry.update({self.admin_dlg.DIALOG_VAR_NAME: self.admin_dlg})
+
+        if len(self.DialogRegistry) > 1:
+            close_dlg: bool = False
+            close_conn: bool = False
+
+            dlg: Union[CDB4AdminDialog, CDB4DeleterDialog, CDB4LoaderDialog]
+
+            # Check whether there are open dialogs and open connections
+            for key, dlg in self.DialogRegistry.items():
+                if key != self.admin_dlg.DIALOG_VAR_NAME:
+                    if dlg.isVisible():
+                        close_dlg = True
+                    if dlg.conn:
+                        if dlg.conn.closed == 0:
+                            close_conn = True
+
+            # If so, inform the user and then close them.
+            if close_dlg or close_conn:
+                msg: str = f"In order to launch the '{self.admin_dlg.DIALOG_NAME}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs. If you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
+                res = QMessageBox.question(self.admin_dlg, "Concurrent dialogs", msg)
+                if res == 16384: #YES
+
+                    for key, dlg in self.DialogRegistry.items():
+                        if key != self.admin_dlg.DIALOG_VAR_NAME:
+                            if dlg:
+                                if dlg.conn:
+                                    if dlg.conn.closed == 0:
+                                        dlg.conn.close() # close connection (if open)
+                                dlg.dlg_reset_all() # reset dialog
+                                dlg.close() # or dlg.reject()
+
+                else:
+                    return None # Exit and do nothing
+
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
-        self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows (for development purposes).
+        self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.admin_dlg.show()
-
         # Run the dialog event loop.
         res = self.admin_dlg.exec_()
       
         if not res: # Dialog has been closed (X button was pressed)
             # Reset the dialog widgets. (Closes the current open connection.)
-            admin_ti_wf.tabInstall_reset(self.admin_dlg)
+            self.admin_dlg.dlg_reset_all() 
             if self.admin_dlg.conn:
                 self.admin_dlg.conn.close()
 
         return None
+    
 
+    def check_concurrent_connections(self, dlg: Union[CDB4DeleterDialog, CDB4LoaderDialog]) -> None:
+        """ Before opening a user dialog (e.g. the Loader or the Deleter), it checks whether
+        the CDB4AdminDialog is open and whether its connection is open. If so, and the users wants to proceed,
+        they are both closed.
+        """
+        if len(self.DialogRegistry) > 1:
+            close_admin_dlg: bool = False
+            close_admin_conn: bool = False
+            if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
+                if self.admin_dlg.isVisible():
+                    close_admin_dlg = True
+                if self.admin_dlg.conn:
+                    if self.admin_dlg.conn.closed == 0:
+                        close_admin_conn = True
 
-    # def create_progress_bar(self, dlg: QDialog, layout: QVBoxLayout, position: int) -> None:
-    #     """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
+            if close_admin_dlg:
+                msg: str = f"In order to launch the '{dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
+                res = QMessageBox.question(dlg, "Concurrent dialogs", msg)
+                if res == 16384: #YES
+                    if close_admin_conn:
+                        self.admin_dlg.conn.close()
+                    if close_admin_dlg:
+                        self.admin_dlg.dlg_reset_all()
+                        self.admin_dlg.close()
 
-    #     *   :param layout: QLayout of the gui where the bar is to be
-    #             assigned.
-    #         :type layout: QBoxLayout
-
-    #     *   :param position: The place (index) in the layout to place
-    #             the progress bar
-    #         :type position: int
-    #     """
-    #     # Create QgsMessageBar instance.
-    #     dlg.msg_bar = QgsMessageBar()
-
-    #     # Add the message bar into the input layer and position.
-    #     layout.insertWidget(position, dlg.msg_bar)
-
-    #     # Create QProgressBar instance into QgsMessageBar.
-    #     dlg.bar = QProgressBar(parent=dlg.msg_bar)
-
-    #     # Setup progress bar.
-    #     dlg.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
-    #     dlg.bar.setStyleSheet("text-align: left;")
-
-    #     # Show progress bar in message bar.
-    #     dlg.msg_bar.pushWidget(dlg.bar, Qgis.Info)
-
-
-    # def evt_update_bar(self, dialog_name: str, step: int, text: str) -> None:
-    # # def evt_update_bar(self, dlg_progress_bar: QProgressBar, step: int, text: str) -> None:
-    #     """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
-    #     in cdbMain.msg_bar: QgsMessageBar and cdbMain.bar: QProgressBar.
-    #     This event is not linked to any widet_setup function as it isn't responsible for changes in different 
-    #     widgets in the gui.
-
-    #     *   :param dialog: The dialog to hold the bar.
-    #         e.g. "admin_dlg" or "loader_dlg"
-    #         :type step: str
-
-    #     *   :param step: Current value of the progress
-    #         :type step: int
-
-    #     *   :param text: Text to display on the bar
-    #         :type text: str
-    #     """
-    #     if dialog_name == self.DLG_NAME_ADMIN:         # "admin_dlg"
-    #         progress_bar = self.admin_dlg.bar
-    #     elif dialog_name == self.DLG_NAME_LOADER:      # "loader_dlg":
-    #         progress_bar = self.loader_dlg.bar
-    #     elif dialog_name == self.DLG_NAME_DELETER:     # "deleter_dlg":
-    #         progress_bar = self.deleter_dlg.bar
-
-    #     # Show text instead of completed percentage.
-    #     if text:
-    #         progress_bar.setFormat(text)
-
-    #     # Update progress with current step
-    #     progress_bar.setValue(step)
+            return None

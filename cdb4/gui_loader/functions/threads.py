@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 import time
-
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql

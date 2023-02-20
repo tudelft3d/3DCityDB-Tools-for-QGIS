@@ -13,10 +13,8 @@ from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup,
                         QgsAttributeEditorRelation, Qgis, QgsLayerTreeGroup,
                         QgsRelation, QgsAttributeEditorContainer, QgsMapLayer)
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from ..other_classes import CDBLayer, FeatureType
 
-from .... import cdb_tools_main_constants as main_c
 from .. import loader_constants as c
 from . import sql
 

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from ...shared.functions import general_functions as gen_f
 from ..other_classes import FeatureType
 from .. import loader_constants as c

@@ -12,7 +12,6 @@ import psycopg2, psycopg2.sql as pysql
 from psycopg2.extras import NamedTupleCursor
 
 from ...shared.functions import general_functions as gen_f
-
 from ..other_classes import CDBLayer
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)

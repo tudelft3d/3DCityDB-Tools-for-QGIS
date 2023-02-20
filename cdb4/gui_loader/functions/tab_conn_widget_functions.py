@@ -14,10 +14,8 @@ if TYPE_CHECKING:
 from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
 
 from ...shared.functions import general_functions as gen_f
-
 from ..other_classes import FeatureType
 from .. import loader_constants as c
-
 from . import canvas, sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)

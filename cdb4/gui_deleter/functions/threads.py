@@ -18,24 +18,19 @@ heavy process. In the main thread the progress bar is assigned to
 update following the heavy process taking place in the worker thread.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
 import math, time
-
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import general_functions as gen_f
-
 from ..other_classes import FeatureType, RootClassFeature
 from .. import deleter_constants as c
-
 from . import tab_conn_functions as tc_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)

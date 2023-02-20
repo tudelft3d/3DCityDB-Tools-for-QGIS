@@ -22,6 +22,15 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+     from ...cdb_tools_main import CDBToolsMain
+#     from ...gui_admin.admin_dialog import CDB4AdminDialog
+#     from ...gui_loader.loader_dialog import CDB4LoaderDialog
+#     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+     from ..gui_db_connector.other_classes import Connection
+
 import os
 from collections import namedtuple
 from psycopg2.extensions import connection as pyconn
@@ -32,9 +41,7 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ...cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
-from ..gui_db_connector.other_classes import Connection # Used only to add the type of the function parameters
+from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
 
@@ -75,17 +82,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ## From here you can add your variables or constants
         ############################################################
 
-        # QGIS current version
-        self.QGIS_VERSION_STR: str = Qgis.version() 
-        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
-        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
-
-        # Variable to store the plugin name
-        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
+        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
         # Variable to store the qgis_pkg
-        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
+        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
-        self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_LOADER
+        self.DIALOG_NAME: str = main_c.PLUGIN_NAME_LOADER_LABEL
+        self.DIALOG_VAR_NAME: str = main_c.DLG_NAME_LOADER
 
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
@@ -98,6 +100,11 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CDB_SCHEMA: str = None
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
+
+        # QGIS current version
+        self.QGIS_VERSION_STR: str = Qgis.version() 
+        self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
+        self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
 
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
@@ -172,7 +179,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 'Database' group box signals
         self.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
-        self.cbxSchema.currentIndexChanged.connect(self.evt_cbxSchema_changed)
+        self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbMain))
 
         # Basemap (OSM) group box signals
         # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
@@ -222,6 +229,19 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnLoadSettings.clicked.connect(self.evt_btnLoadSettings_clicked)
 
         ### SIGNALS (end) ##############################
+
+
+    ### Required functions BEGIN ############################
+
+    def dlg_reset_all(self) -> None:
+        """ Function that resets the whole dialog.
+        """
+        ts_wf.tabSettings_reset(self)
+        tl_wf.tabLayers_reset(self)
+        tc_wf.tabConnection_reset(self)
+
+        return None
+
 
     def create_progress_bar(self, layout: QVBoxLayout, position: int) -> None:
         """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
@@ -273,6 +293,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Update progress with current step
         self.bar.setValue(step)
+
+    ### Required functions END ############################
 
     ### EVENTS (start) ############################
 
@@ -347,9 +369,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
         # Additionally, set self.DB.pg_server_version
-        successful_connection: bool = conn_f.open_connection(self)
+        is_connection_successful: bool = conn_f.open_connection(self)
 
-        if successful_connection:
+        if is_connection_successful:
             # Show database name
             self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
@@ -541,12 +563,13 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         return None # Exit
 
 
-    def evt_cbxSchema_changed(self) -> None:
+    def evt_cbxSchema_changed(self, cdbMain: CDBToolsMain) -> None:
         """Event that is called when the 'schemas' comboBox (cbxSchema) current index changes.
         Function to setup the GUI after an 'indexChanged' signal is emitted from the cbxSchema combo box.
         This function runs every time the selected schema is changed (in 'User Connection' tab)
         Checks if the connection + schema meet the necessary requirements.
         """
+        
         # By now, the schema variable must have beeen assigned.
         if not self.cbxSchema.currentData():
             return None
@@ -556,7 +579,11 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Set the current schema variable
         self.CDB_SCHEMA: str = sel_cdb_schema.cdb_schema
-        # print(self.CDB_SCHEMA)
+
+        is_connection_unique: bool
+        is_connection_unique = conn_f.check_connection_uniqueness(dlg=self, cdbMain=cdbMain)
+        if not is_connection_unique:
+            return None # Stop and do not proceed
 
         # Set the current schema privileges
         self.CDBSchemaPrivileges = sel_cdb_schema.priv_type

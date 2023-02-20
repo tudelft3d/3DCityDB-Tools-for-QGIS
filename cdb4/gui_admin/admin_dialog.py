@@ -27,27 +27,22 @@ from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
-
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
 from ...cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from ... import cdb_tools_main_constants as main_c
-
 from ..gui_db_connector.other_classes import Connection
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
 from ..shared.functions import sql as sh_sql
 from ..shared.functions import general_functions as gen_f  
-
 from .other_classes import AdminDefaultSettings, FeatureType, AdminDialogChecks
 from .functions import sql
 from .functions import tab_install_widget_functions as ti_wf
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import threads as thr
-
-
 from . import admin_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -70,10 +65,13 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         ## From here you can add your variables or constants
         ############################################################
 
-        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
-        self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_ADMIN
+        # Variable to store the plugin name
+        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
         # Variable to store the qgis_pkg
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
+
+        self.DIALOG_NAME: str = main_c.PLUGIN_NAME_ADMIN_LABEL
+        self.DIALOG_VAR_NAME: str = main_c.DLG_NAME_ADMIN
 
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
@@ -155,6 +153,17 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #-SIGNALS  (end)  ################################################################
 
+    ### Required functions BEGIN ############################
+
+    def dlg_reset_all(self) -> None:
+        """ Function that resets the all dialog.
+        """
+        ts_wf.tabSettings_reset(self)
+        ti_wf.tabInstall_reset(self)
+
+        return None
+
+
     def create_progress_bar(self, layout: QVBoxLayout, position: int) -> None:
         """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
 
@@ -206,6 +215,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Update progress with current step
         self.bar.setValue(step)
+
+    ### Required functions END ############################
 
     # EVENT FUNCTIONS (begin)  #####################################################################
 
@@ -473,11 +484,6 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version.minor_version   # e.g. 9
             qgis_pkg_curr_version_minor_rev: int = qgis_pkg_curr_version.minor_revision  # e.g. 1
 
-            # qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version[0]
-            # qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version[2]
-            # qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version[3]
-            # qgis_pkg_curr_version_minor_rev: int = qgis_pkg_curr_version[4]
-
             ###########################################################
             # Only for testing purposes
             # qgis_pkg_curr_version_txt      : str = "0.7.3"
@@ -496,6 +502,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 # Show message in Connection Status the Qgis Package is installed (and version)
                 self.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + qgis_pkg_curr_version_txt + ")").format(pkg=self.QGIS_PKG_SCHEMA))
+
+                # Enable the close connection button
+                self.btnCloseConn.setDisabled(False)
 
                 # Get and assign the variable with the group name
                 # group name (qgis_pkg_usrgroup_*) assigned to self.GROUP_NAME

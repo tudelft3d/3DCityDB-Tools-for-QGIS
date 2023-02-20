@@ -7,7 +7,7 @@ The reset functions consist of clearing text or changed text to original state,
 clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 

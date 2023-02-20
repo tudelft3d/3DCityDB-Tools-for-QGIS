@@ -14,12 +14,8 @@ from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 
-
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 from ..other_classes import RootClassFeature, FeatureType
 from .. import deleter_constants as c
-
 from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
 from . import canvas, sql

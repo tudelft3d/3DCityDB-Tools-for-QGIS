@@ -198,6 +198,9 @@ def tabInstall_reset(dlg: CDB4AdminDialog) -> None:
     gbxMainInst_reset(dlg)
     gbxUserInst_reset(dlg)
     gbxConnStatus_reset(dlg)
+    dlg.btnCloseConn.setDisabled(True)
+
+    return None
 
 
 def gbxMainInst_reset(dlg: CDB4AdminDialog) -> None:
@@ -206,6 +209,8 @@ def gbxMainInst_reset(dlg: CDB4AdminDialog) -> None:
     dlg.gbxMainInst.setDisabled(True)
     dlg.btnMainInst.setText(dlg.btnMainInst.init_text)
     dlg.btnMainUninst.setText(dlg.btnMainUninst.init_text)
+
+    return None
 
 
 def gbxUserInst_reset(dlg: CDB4AdminDialog) -> None:
@@ -216,6 +221,8 @@ def gbxUserInst_reset(dlg: CDB4AdminDialog) -> None:
     gbxUserSchemaInst_reset(dlg)
     gbxPriv_reset(dlg)
 
+    return None
+
 
 def gbxGroupMemb_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Group membership' groupBox
@@ -224,6 +231,8 @@ def gbxGroupMemb_reset(dlg: CDB4AdminDialog) -> None:
     dlg.cbxSelUser4Grp.clear()
     dlg.cbxSelUser4Grp.setDisabled(False)
     dlg.btnAddUserToGrp.setDisabled(False)
+    
+    return None
 
 
 def gbxUserSchemaInst_reset(dlg: CDB4AdminDialog) -> None:
@@ -235,6 +244,8 @@ def gbxUserSchemaInst_reset(dlg: CDB4AdminDialog) -> None:
     #dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text)
     dlg.cbxUser.clear()
 
+    return None
+
 
 def gbxPriv_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Database privileges' groupBox
@@ -243,6 +254,8 @@ def gbxPriv_reset(dlg: CDB4AdminDialog) -> None:
     dlg.ccbSelCDBSch.clear() # This clears also the default text
     dlg.ccbSelCDBSch.setDefaultText('Select schema(s)')
     dlg.ckbSelAllCDBSch.setChecked(False)
+
+    return None
 
 
 def gbxConnStatus_reset(dlg: CDB4AdminDialog) -> None:
@@ -255,3 +268,5 @@ def gbxConnStatus_reset(dlg: CDB4AdminDialog) -> None:
     dlg.lbl3DCityDBInst_out.clear()
     dlg.lblMainInst_out.clear()
     dlg.lblUserInst_out.clear()
+    
+    return None

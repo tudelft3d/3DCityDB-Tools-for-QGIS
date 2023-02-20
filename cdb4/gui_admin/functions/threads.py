@@ -18,22 +18,19 @@ heavy process. In the main thread the progress bar is assigned to
 update following the heavy process taking place in the worker thread.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
 import os
-
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import sql as sh_sql, general_functions as gen_f
-
 from ..other_classes import FeatureType
 from .. import admin_constants as c
-
 from . import sql
 from . import tab_install_widget_functions as ti_wf
 

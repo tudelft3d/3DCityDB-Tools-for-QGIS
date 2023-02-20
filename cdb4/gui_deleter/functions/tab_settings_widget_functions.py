@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING  #, Union
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)

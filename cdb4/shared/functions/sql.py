@@ -9,21 +9,12 @@ if TYPE_CHECKING:
     from ...gui_admin.admin_dialog import CDB4AdminDialog
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-    # from ....cdb_tools_main import CDBToolsMain
-
-# Type used only for type checking in the function parameters
-# cdbToolDlg = Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]
 
 import psycopg2, psycopg2.sql as pysql
 from psycopg2.extras import NamedTupleCursor
-
 from qgis.core import Qgis, QgsMessageLog
 
-# from qgis.PyQt.QtWidgets import QDialog
-# from ....cdb_tools_main import CDBToolsMain  # Used only to add the type of the function parameters
-
 from .... import cdb_tools_main_constants as main_c
-
 from . import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)

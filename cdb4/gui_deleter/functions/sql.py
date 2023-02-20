@@ -160,7 +160,7 @@ def exec_compute_cdb_schema_extents(dlg: CDB4DeleterDialog) -> tuple:
     *   :returns: is_geom_null, x_min, y_min, x_max, y_max, srid
         :rtype: tuple
     """
-    # Prepar query to execute server function to compute the schema's extents
+    # Prepare query to execute server function to compute the schema's extents
     query = pysql.SQL("""
         SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema});
         """).format(
@@ -282,7 +282,7 @@ def cleanup_cdb_schema(dlg: CDB4DeleterDialog) -> bool:
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            # res = cur.execute(query)
+            res = cur.execute(query)
         dlg.conn.commit()
         # print('from database:', res) # should be None is all goes well
         return True

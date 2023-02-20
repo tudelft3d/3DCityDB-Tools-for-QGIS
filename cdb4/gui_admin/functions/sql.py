@@ -2,7 +2,7 @@
 They communicate and fetch data from the database with sql queries or sql function calls.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
@@ -21,7 +21,7 @@ def is_superuser(dlg: CDB4AdminDialog, usr_name: str) -> bool:
         :rtype: bool
     """
     # Think whether you can use the function in the qgis_pkg or not, 
-    # because we may have not yet installed the qgis_pkg
+    # because we may not have installed the qgis_pkg yet.
     # This one does not depend on the qgis_pkg
     
     query = pysql.SQL("""
