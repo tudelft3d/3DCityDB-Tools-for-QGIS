@@ -3,6 +3,11 @@
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 Test whether it makes to add an update statement to delete trigger functions to reduce number of features in table layer metadata
 
+2023-02-20
+----------
+Version 0.9.1
+Solved bug: Function qgis_pkg.cleanup_schema() now really resets sequences
+
 2023-02-10
 ----------
 Version 0.9.0
