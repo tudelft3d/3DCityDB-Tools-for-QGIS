@@ -29,7 +29,8 @@ def has_matviews(dlg: CDB4LoaderDialog) -> bool:
     # Check if materialised views names exist.
     if mat_views:
         return True
-    return False
+    else:
+        return False
 
 
 def add_layers_to_register(dlg: CDB4LoaderDialog) -> None:
@@ -146,36 +147,6 @@ def fill_layers_box(dlg: CDB4LoaderDialog) -> None:
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
 
 
-def value_rel_widget(
-        AllowMulti: bool = False,
-        AllowNull: bool = True,
-        FilterExpression: str = "",
-        Layer: str = "",
-        Key: str = "",
-        Value: str = "",
-        NofColumns: int = 1,
-        OrderByValue: bool = False,
-        UseCompleter: bool = False) -> QgsEditorWidgetSetup:
-    """Function to setup the configuration dictionary for the 'ValueRelation' widget.
-    .. Note:this function could probably be generalized for all available
-    ..      widgets of 'attribute from', but there is not need for this yet.
-
-    *   :returns: The object to set up the widget (ValueRelation)
-        :rtype: QgsEditorWidgetSetup
-    """
-    config = {'AllowMulti': AllowMulti,
-              'AllowNull': AllowNull,
-              'FilterExpression':FilterExpression,
-              'Layer': Layer,
-              'Key': Key,
-              'Value': Value,
-              'NofColumns': NofColumns,
-              'OrderByValue': OrderByValue,
-              'UseCompleter': UseCompleter}
-              
-    return QgsEditorWidgetSetup(type='ValueRelation', config=config)
-
-
 def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -> QgsAttributeEditorElement:
     """Function that retrieves a child object from an 'attribute form' container.
     
@@ -194,32 +165,58 @@ def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -
     return None
 
 
-def create_layer_relation_to_lookup_tables(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function that sets up the ValueRelation widget for the look-up tables.
-    #Note: Currently the look-up table names are hardcoded.
+    # Note: Currently the look-up table names are hardcoded.
 
     *   :param layer: Layer to search for and set up its 'Value Relation' widget according to the look-up tables.
         :type layer: QgsVectorLayer
     """
+
+    def qgsEditorWidgetSetup_factory(
+            allowMulti: bool = False,
+            allowNull: bool = True,
+            filterExpression: str = "",
+            layer_id: str = "",
+            key_column: str = "",
+            value_column: str = "",
+            nOfColumns: int = 1,
+            orderByValue: bool = False,
+            useCompleter: bool = False) -> QgsEditorWidgetSetup:
+        """Function to setup the configuration dictionary for the 'ValueRelation' widget.
+        .. Note:this function could probably be generalized for all available
+        ..      widgets of 'attribute from', but there is not need for this yet.
+
+        *   :returns: The object to set up the widget (ValueRelation)
+            :rtype: QgsEditorWidgetSetup
+        """
+        config = {'AllowMulti': allowMulti,
+                'AllowNull': allowNull,
+                'FilterExpression':filterExpression,
+                'Layer': layer_id,
+                'Key': key_column,
+                'Value': value_column,
+                'NofColumns': nOfColumns,
+                'OrderByValue': orderByValue,
+                'UseCompleter': useCompleter}
+                
+        return QgsEditorWidgetSetup(type='ValueRelation', config=config)
+
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
     db_node = root.findGroup(dlg.DB.database_name)
     schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
-    look_node = schema_node.findGroup("Look-up tables")
-    look_layers = look_node.findLayers()
-    enum_layer_id = [i.layerId() for i in look_layers if c.enumerations_table in i.layerId()][0]
-
-    #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also imported with every layer (if it doesn\'t already exist)."
-    #assert enum_layer_id, assertion_msg.format(f'{dlg.CDB_SCHEMA}_v_enumeration_value')
-    #QgsMessageLog.logMessage(f"enum_layer_id: {enum_layer_id}", "3DCityDB-Loader", level=Qgis.Info)
+    enums_node = schema_node.findGroup("Look-up tables")
+    enum_layers = enums_node.findLayers()
+    enum_layer_id = [i.layerId() for i in enum_layers if c.enumerations_table in i.layerId()][0]
 
     for field in layer.fields():
         field_name = field.name()
         field_idx = layer.fields().indexOf(field_name)
         if field_name == 'relative_to_terrain':
-            layer.setEditorWidgetSetup(field_idx, value_rel_widget(Layer=enum_layer_id, Key='value', Value='description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
+            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(layer_id=enum_layer_id, key_column='value', value_column='description', filterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
         elif field_name == 'relative_to_water':
-            layer.setEditorWidgetSetup(field_idx, value_rel_widget(Layer=enum_layer_id, Key='value', Value='description', FilterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
+            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(layer_id=enum_layer_id, key_column='value', value_column='description', filterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
 
 
 def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
@@ -241,9 +238,6 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
     generics_node = schema_node.findGroup("Generic Attributes")
     genericAtt_layer = generics_node.findLayers()[0]
 
-    #assertion_msg = "Layer '{}' doesn\'t exist in project. This layer is also  imported with every layer (if it doesn\'t already exist)."
-    #assert genericAtt_layer, assertion_msg.format(f'{dlg.CDB_SCHEMA}_cityobject_generic_attrib')
-
     # Create new Relation object for referencing generic attributes table
     rel = QgsRelation()
     rel.setReferencedLayer(id=layer.id())  # i.e. the (QGIS  internal) id of the CityObject layer
@@ -252,11 +246,7 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
     rel.generateId() # i.e. the (QGIS  internal) id of the relation object
     rel.setName('re_' + layer.name())
 
-    #QgsMessageLog.logMessage(f"QGIS version {dlg.QGIS_VERSION_MAJOR}.{dlg.QGIS_VERSION_MINOR}", dlg.PLUGIN_NAME, level=Qgis.Info)
-
-
-
-    ## Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
+    # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
     if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
         rel.setStrength(0) # integer, 0 is association, 1 composition
     else:
@@ -264,15 +254,13 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
         #print(rel_strength)
         rel.setStrength(rel_strength)
 
-    #QgsMessageLog.logMessage(f"**** The current relation has strength: {rel.strength()}", dlg.PLUGIN_NAME, level=Qgis.Info)  
-
     if rel.isValid(): # Success
         QgsProject.instance().relationManager().addRelation(rel)
-        QgsMessageLog.logMessage(
-            message=f"Create relation: {rel.name()}",
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.Success,
-            notifyUser=True)
+        # QgsMessageLog.logMessage(
+        #     message=f"Create relation: {rel.name()}",
+        #     tag=dlg.PLUGIN_NAME,
+        #     level=Qgis.Success,
+        #     notifyUser=True)
     else:
         QgsMessageLog.logMessage(
             message=f"Invalid relation: {rel.name()}",
@@ -339,10 +327,10 @@ def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
             if layer or layer.isValid(): # Success
                 lookups_node.addLayer(layer)
                 QgsProject.instance().addMapLayer(layer, False)
-                QgsMessageLog.logMessage(
-                    message=f"Look-up table import: {cdb_schema}_{lookup_table}",
-                    tag=dlg.PLUGIN_NAME,
-                    level=Qgis.Success, notifyUser=True)
+                # QgsMessageLog.logMessage(
+                #     message=f"Look-up table import: {cdb_schema}_{lookup_table}",
+                #     tag=dlg.PLUGIN_NAME,
+                #     level=Qgis.Success, notifyUser=True)
             else: # Fail
                 QgsMessageLog.logMessage(
                     message=f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}",
@@ -381,11 +369,11 @@ def add_genericattrib_table_to_ToC(dlg: CDB4LoaderDialog) -> None:
             generics_node.addLayer(layer)
             QgsProject.instance().addMapLayer(layer, False)
 
-            QgsMessageLog.logMessage(
-                message=f"Layer import: {dlg.CDB_SCHEMA}_{c.generics_table}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
-                notifyUser=True)
+            # QgsMessageLog.logMessage(
+            #     message=f"Layer import: {dlg.CDB_SCHEMA}_{c.generics_table}",
+            #     tag=dlg.PLUGIN_NAME,
+            #     level=Qgis.Success,
+            #     notifyUser=True)
         else:
             QgsMessageLog.logMessage(
                 message=f"Layer failed to properly load: {dlg.CDB_SCHEMA}_{c.generics_table}",
@@ -599,7 +587,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_genatt = add_group_node_to_ToC(node_cdb_schema, c.generics_alias) 
         add_lookup_tables_to_ToC(dlg)
     else:
-        #QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        # QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Get the generic attributes table if it is not already loaded 
@@ -607,7 +595,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_lookup = add_group_node_to_ToC(node_cdb_schema, "Look-up tables") 
         add_genericattrib_table_to_ToC(dlg)
     else:
-        #QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        # QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
     # Start loading the selected layer(s)
@@ -637,11 +625,12 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         new_layer: QgsVectorLayer = create_qgis_vector_layer(dlg, layer_name=layer.layer_name)
 
         if new_layer or new_layer.isValid(): # Success
-            QgsMessageLog.logMessage(
-                message=f"Layer imported: {layer.layer_name}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
-                notifyUser=True)
+            # QgsMessageLog.logMessage(
+            #     message=f"Layer imported: {layer.layer_name}",
+            #     tag=dlg.PLUGIN_NAME,
+            #     level=Qgis.Success,
+            #     notifyUser=True)
+            pass
         else: # Fail
             QgsMessageLog.logMessage(
                 message=f"Failed to properly load: {layer.layer_name}",
@@ -676,7 +665,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         QgsProject.instance().addMapLayer(new_layer, False)
 
         # Setup the relations for this layer to the look-up (enumeration) tables
-        create_layer_relation_to_lookup_tables(dlg, layer=new_layer)
+        create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
         # Setup the relations for this layer to the generic attributes table
         create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)

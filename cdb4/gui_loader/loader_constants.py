@@ -42,8 +42,8 @@ OSM_INIT_EXTS = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS = QgsCoordinateReferenceSystem("EPSG:3857")
 
 # 3DCityDB constants
-generics_table: str     = "cityobject_genericattrib"
 generics_alias: str     = "Generic Attributes"
+generics_table: str     = "cityobject_genericattrib"
 enumerations_table: str = "v_enumeration_value"
 codelists_table: str    = "v_codelist_value"
 

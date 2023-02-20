@@ -1151,7 +1151,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # A final success message.
         QgsMessageLog.logMessage(
-                message="",
+                message="Layer(s) successfully imported",
                 tag=self.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
