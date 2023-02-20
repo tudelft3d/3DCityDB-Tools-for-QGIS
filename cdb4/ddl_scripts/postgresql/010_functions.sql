@@ -100,9 +100,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 9;
-minor_revision := 0;
-code_name      := 'Venice Carnival';
-release_date   := '2023-02-15'::date;
+minor_revision := 1;
+code_name      := 'Fritole e galani :o)';
+release_date   := '2023-02-20'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -203,7 +203,20 @@ FOR rec IN
     AND table_name <> 'aggregation_info'
     AND table_name NOT LIKE 'tmp_%'
   LOOP
-   	EXECUTE format('TRUNCATE TABLE %I.%I RESTART IDENTITY CASCADE', cdb_schema, rec.table_name);
+   	EXECUTE format('TRUNCATE TABLE %I.%I CASCADE', cdb_schema, rec.table_name);
+	-- This would suffice, if the tables were created using the IDENTITY clause.
+	--EXECUTE format('TRUNCATE TABLE %I.%I RESTART IDENTITY CASCADE', cdb_schema, rec.table_name);
+  END LOOP;
+
+FOR rec IN 
+    SELECT sequence_name FROM information_schema.sequences where sequence_schema = cdb_schema
+    AND sequence_name <> 'ade_seq'
+    AND sequence_name <> 'schema_seq'
+  LOOP
+	-- The user must be owner of the sequence to RESTART it.
+	-- EXECUTE format('ALTER SEQUENCE %I.%I RESTART', cdb_schema, rec.sequence_name);
+	-- In this way, the user can reset it to 1 even without ownership.
+    EXECUTE format('SELECT setval(''%I.%I'', 1, false)', cdb_schema, rec.sequence_name);
   END LOOP;
 
 EXCEPTION
