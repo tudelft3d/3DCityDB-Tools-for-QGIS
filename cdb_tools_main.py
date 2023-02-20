@@ -78,7 +78,7 @@ class CDBToolsMain:
         self.QGIS_VERSION_REV:   int = int(self.QGIS_VERSION_STR.split(".")[2].split("-")[0])
 
         # Welcome message upon (re)loading
-        msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} GIO-DEV</b> plugin for <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>.<br>-----------------------------<br>"
+        msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plugin running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=False)
 
         # Variable to store the loader dialog of the plugin.
@@ -97,7 +97,6 @@ class CDBToolsMain:
         self.first_start_admin: bool = True
 
         self.DialogRegistry: dict = {}
-
 
         # initialize locale.
         locale = QSettings().value("locale/userLocale")[0:2]
@@ -241,7 +240,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = loader_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_LOADER),
-            txt = main_c.PLUGIN_NAME_LOADER_LABEL,
+            txt = main_c.DLG_NAME_LOADER_LABEL,
             callback = self.run_loader,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -251,7 +250,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = deleter_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_DELETER),
-            txt = main_c.PLUGIN_NAME_DELETER_LABEL,
+            txt = main_c.DLG_NAME_DELETER_LABEL,
             callback = self.run_deleter,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -261,11 +260,11 @@ class CDBToolsMain:
         self.add_action(
             icon_path = admin_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_ADMIN),
-            txt = main_c.PLUGIN_NAME_ADMIN_LABEL,
+            txt = main_c.DLG_NAME_ADMIN_LABEL,
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = True) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_admin(), run_loader(), run_deleter() etc.
         self.first_start_loader = True
@@ -318,26 +317,6 @@ class CDBToolsMain:
 
         self.check_concurrent_connections(self.loader_dlg)
 
-        # if len(self.DialogRegistry) > 1:
-        #     close_admin_dlg = False
-        #     close_admin_conn = False
-        #     if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
-        #         if self.admin_dlg.isVisible():
-        #             close_admin_dlg: bool = True
-        #         if self.admin_dlg.conn:
-        #             if self.admin_dlg.conn.closed == 0:
-        #                 close_admin_conn: bool = True
-
-        #     if close_admin_dlg:
-        #         msg: str = f"In order to launch the '{self.loader_dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
-        #         res = QMessageBox.question(self.loader_dlg, "Concurrent dialogs", msg)
-        #         if res == 16384: #YES
-        #             if close_admin_conn:
-        #                 self.admin_dlg.conn.close()
-        #             if close_admin_dlg:
-        #                 self.admin_dlg.dlg_reset_all()
-        #                 self.admin_dlg.close()
-
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. 0, The window blocks input to other windows.
@@ -388,26 +367,6 @@ class CDBToolsMain:
         self.DialogRegistry.update({self.deleter_dlg.DIALOG_VAR_NAME: self.deleter_dlg})
 
         self.check_concurrent_connections(self.deleter_dlg)
-
-        # if len(self.DialogRegistry) > 1:
-        #     close_admin_dlg: bool = False
-        #     close_admin_conn: bool = False
-        #     if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
-        #         if self.admin_dlg.isVisible():
-        #             close_admin_dlg = True
-        #         if self.admin_dlg.conn:
-        #             if self.admin_dlg.conn.closed == 0:
-        #                 close_admin_conn = True
-
-        #     if close_admin_dlg:
-        #         msg: str = f"In order to launch the '{self.deleter_dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
-        #         res = QMessageBox.question(self.deleter_dlg, "Concurrent dialogs", msg)
-        #         if res == 16384: #YES
-        #             if close_admin_conn:
-        #                 self.admin_dlg.conn.close()
-        #             if close_admin_dlg:
-        #                 self.admin_dlg.dlg_reset_all()
-        #                 self.admin_dlg.close()
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
@@ -485,8 +444,8 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        # self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
-        self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
+        self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
+        # self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.admin_dlg.show()
@@ -510,7 +469,7 @@ class CDBToolsMain:
         if len(self.DialogRegistry) > 1:
             close_admin_dlg: bool = False
             close_admin_conn: bool = False
-            if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
+            if main_c.DLG_VAR_NAME_ADMIN in self.DialogRegistry:
                 if self.admin_dlg.isVisible():
                     close_admin_dlg = True
                 if self.admin_dlg.conn:

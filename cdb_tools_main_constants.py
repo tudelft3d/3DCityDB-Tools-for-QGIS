@@ -9,8 +9,8 @@ import os.path
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
-PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV:   int = 0
+PLUGIN_VERSION_MINOR: int = 7
+PLUGIN_VERSION_REV:   int = 1
 
 # Paths
 PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
@@ -22,21 +22,13 @@ QGIS_PKG_SCHEMA: str = "qgis_pkg"
 # Root folder for cdb4
 CDB4_PLUGIN_DIR: str = "cdb4"
 
-# Plugin labels
-PLUGIN_NAME_LABEL: str = "3DCityDB Tools"
-PLUGIN_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
-PLUGIN_NAME_LOADER_LABEL: str  = "Layer Loader"
-PLUGIN_NAME_DELETER_LABEL: str = "Bulk Deleter"
+# Plugin and dialog labels
+PLUGIN_NAME_LABEL: str      = "3DCityDB Tools"
+DLG_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
+DLG_NAME_LOADER_LABEL: str  = "Layer Loader"
+DLG_NAME_DELETER_LABEL: str = "Bulk Deleter"
 
-# CDB4 dialog names
-DLG_NAME_ADMIN: str   = "admin_dlg"
-DLG_NAME_LOADER: str  = "loader_dlg"
-DLG_NAME_DELETER: str = "deleter_dlg"
-
-
-
-
-
-
-
-
+# Dialog variable names
+DLG_VAR_NAME_ADMIN: str   = "admin_dlg"
+DLG_VAR_NAME_LOADER: str  = "loader_dlg"
+DLG_VAR_NAME_DELETER: str = "deleter_dlg"
