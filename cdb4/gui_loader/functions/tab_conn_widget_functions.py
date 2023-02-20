@@ -6,15 +6,16 @@ objects or as block of objects, depending on the needs.
 The reset functions consist of clearing text or changed text to original state,
 clearing widget items or selections and deactivating widgets.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_loader.loader_dialog import CDB4LoaderDialog
+    from ..other_classes import FeatureType
+
 from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 from ...shared.functions import general_functions as gen_f
-
-from ..other_classes import FeatureType
 from .. import loader_constants as c
-
 from . import canvas, sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
@@ -23,29 +24,28 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 ## Setup widget functions for 'User Connection' tab
 ####################################################
 
-def gbxBasemapC_setup(cdbMain: CDBToolsMain) ->  None:
+def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     """Function to setup the 'Basemap' groupbox.
     It uses an additional canvas instance to store an OSM map from which extents can be extracted
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
-    dlg = cdbMain.loader_dlg
     cdb_extents_wkt: str = None
 
     while not cdb_extents_wkt:
 
         # Get the extents stored in server.
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
 
         # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
             # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
             # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
-            sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+            sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
 
     # Check whether the layer extents were already computed and stored in the database before
     layer_extents_wkt: str = None
-    layer_extents_wkt = sql.fetch_precomputed_extents(cdbMain, usr_schema=cdbMain.USR_SCHEMA, cdb_schema=cdbMain.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
+    layer_extents_wkt = sql.fetch_precomputed_extents(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
    
     if not layer_extents_wkt:
         layer_extents_wkt = cdb_extents_wkt
@@ -62,7 +62,7 @@ def gbxBasemapC_setup(cdbMain: CDBToolsMain) ->  None:
         dlg.CURRENT_EXTENTS = dlg.LAYER_EXTENTS
 
     # Get the crs_id stored in the selected {cdb_schema}
-    srid: int = sql.fetch_cdb_schema_srid(cdbMain)
+    srid: int = sql.fetch_cdb_schema_srid(dlg)
 
     # Format CRS variable as QGIS Epsg code.
     crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
@@ -71,16 +71,16 @@ def gbxBasemapC_setup(cdbMain: CDBToolsMain) ->  None:
 
     # Draw the cdb extents in the canvas
     # First, create polygon rubber band corresponding to the cdb_schema extents
-    canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA_C, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
+    canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
     # First, create polygon rubber band corresponding to the cdb_schema extents
-    canvas.insert_rubber_band(band=dlg.RUBBER_LAYERS_C, extents=dlg.LAYER_EXTENTS, crs=dlg.CRS, width=3, color=c.LAYER_EXTENTS_COLOUR)
+    canvas.insert_rubber_band(band=dlg.RUBBER_LAYERS, extents=dlg.LAYER_EXTENTS, crs=dlg.CRS, width=3, color=c.LAYER_EXTENTS_COLOUR)
 
     # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event (of C or L)
-    canvas.canvas_setup(cdbMain=cdbMain, canvas=dlg.CANVAS_C, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
+    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Zoom to the cdb_schema extents
-    canvas.zoom_to_extents(canvas=dlg.CANVAS_C, extents=dlg.CDB_SCHEMA_EXTENTS)
+    canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
 
     return None
 
@@ -89,80 +89,77 @@ def gbxBasemapC_setup(cdbMain: CDBToolsMain) ->  None:
 ## Reset widget functions for 'User Connection' tab
 ####################################################
 
-def tabConnection_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Connection' tab.
-    Resets: gbxConnStatusC and gbxDatabase.
+def tabConnection_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Connection' tab and all dependent widgets.
     """
-    dlg = cdbMain.loader_dlg
-
     # Close the current open connection.
-    if cdbMain.conn is not None:
-        cdbMain.conn.close()
+    if dlg.conn is not None:
+        dlg.conn.close()
 
-    gbxDatabase_reset(cdbMain)
-    gbxConnStatus_reset(cdbMain)
-    gbxBasemapC_reset(cdbMain)
-    gbxFeatSel_reset(cdbMain)
+    gbxDatabase_reset(dlg)
+    gbxConnStatus_reset(dlg)
+    gbxBasemap_reset(dlg)
+    gbxFeatSel_reset(dlg)
     
-    btnCreateLayers_reset(cdbMain)
+    btnCreateLayers_reset(dlg)
     dlg.gbxFeatSel.setDisabled(True)
 
-    btnRefreshLayers_reset(cdbMain)
-    btnDropLayers_reset(cdbMain)
-    dlg.btnCloseConnC.setDisabled(True)
+    btnRefreshLayers_reset(dlg)
+    btnDropLayers_reset(dlg)
+    dlg.btnCloseConn.setDisabled(True)
+
+    return None
 
 
-def gbxDatabase_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Database' groupbox (in Connection tab).
+def gbxDatabase_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Database' groupbox.
     """
-    dlg = cdbMain.loader_dlg
-
     dlg.cbxSchema.clear()
     dlg.cbxSchema.setDisabled(True)
     dlg.lblSchema.setDisabled(True)
 
+    return None
 
-def gbxConnStatus_reset(cdbMain: CDBToolsMain) -> None:
+
+def gbxConnStatus_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Connection status' groupbox
     """
-    dlg = cdbMain.loader_dlg
-
-    dlg.gbxConnStatusC.setDisabled(True)
-    dlg.lblConnToDbC_out.clear()
-    dlg.lblPostInstC_out.clear()
-    dlg.lbl3DCityDBInstC_out.clear()
-    dlg.lblMainInstC_out.clear()
-    dlg.lblUserInstC_out.clear()
+    dlg.gbxConnStatus.setDisabled(True)
+    dlg.lblConnToDb_out.clear()
+    dlg.lblPostInst_out.clear()
+    dlg.lbl3DCityDBInst_out.clear()
+    dlg.lblMainInst_out.clear()
+    dlg.lblUserInst_out.clear()
     dlg.lblLayerExist_out.clear()
     dlg.lblLayerRefr_out.clear()
 
+    return None
 
-def gbxBasemapC_reset(cdbMain: CDBToolsMain) -> None:
+
+def gbxBasemap_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Basemap (OSM)' groupbox
     """
-    dlg = cdbMain.loader_dlg
-
-    dlg.gbxBasemapC.setDisabled(True)
+    dlg.gbxBasemap.setDisabled(True)
     dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text)
     dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text)
 
     # Remove extent rubber bands.
-    dlg.RUBBER_CDB_SCHEMA_C.reset()
-    dlg.RUBBER_LAYERS_C.reset()
+    dlg.RUBBER_CDB_SCHEMA.reset()
+    dlg.RUBBER_LAYERS.reset()
     dlg.RUBBER_QGIS_L.reset()
 
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     QgsProject.instance().removeMapLayers(registryLayers)
     # Refresh to show to re-render the canvas (as empty).
-    dlg.CANVAS_C.refresh()
+    dlg.CANVAS.refresh()
+
+    return None
 
 
-def gbxFeatSel_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Feature Selection' groupbox (in 'User Connection' tab).
+def gbxFeatSel_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Feature Selection' groupbox.
     """
-    dlg = cdbMain.loader_dlg
-
     ft: FeatureType
     # Reset the status from potential previous selections to the default one
     for ft in dlg.FeatureTypesRegistry.values():
@@ -175,31 +172,30 @@ def gbxFeatSel_reset(cdbMain: CDBToolsMain) -> None:
     # Uncheck the combobox itself
     dlg.gbxFeatSel.setChecked(False)
 
+    return None
 
-def btnCreateLayers_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Create layers' pushButton (in 'User Connection' tab).
+
+def btnCreateLayers_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Create layers' pushButton.
     """
-    dlg = cdbMain.loader_dlg
-
     dlg.btnCreateLayers.setDisabled(True)
     dlg.btnCreateLayers.setText(dlg.btnCreateLayers.init_text)
 
+    return None
 
-def btnRefreshLayers_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Refresh layers' pushButton (in 'User Connection' tab).
+
+def btnRefreshLayers_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Refresh layers' pushButton.
     """
-    dlg = cdbMain.loader_dlg
-
     dlg.btnRefreshLayers.setDisabled(True)
     dlg.btnRefreshLayers.setText(dlg.btnRefreshLayers.init_text)
 
+    return None
 
-def btnDropLayers_reset(cdbMain: CDBToolsMain) -> None:
-    """Function to reset the 'Drop layers' pushButton (in 'User Connection' tab).
+
+def btnDropLayers_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Drop layers' pushButton.
     """
-    dlg = cdbMain.loader_dlg
-
     dlg.btnDropLayers.setDisabled(True)
-    # dlg.btnDropLayers.setText(dlg.btnDropLayers.init_text)
 
-
+    return None

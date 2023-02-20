@@ -5,7 +5,7 @@
 name=3DCityDB Tools
 qgisMinimumVersion=3.22
 description=Tools to visualize and manipulate CityGML data stored in the 3D City Database
-version=0.7.0 (February 2023)
+version=0.7.1
 author=Giorgio Agugiaro, Konstantinos Pantelios
 email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
@@ -13,7 +13,7 @@ about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostG
  
  - The "Layer Loader": it loads data as "classical" layers into QGIS. All CityGML LoDs are supported, as well as multiple citydb schemas and multiple database users. Feature attributes can be edited, changes are stored back directly into the database;
 
- - A "Bulk Deleter": it allows to cleanup the database, or to delete selected feature types;
+ - A "Bulk Deleter": it allows to clean up the database, or to delete selected feature types;
 
  - "QGIS Package Administration": it allows to install the server-side part of the plug-in, and to manage database user privileges.
 
@@ -29,7 +29,8 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog=0.7 extended Loader and Admin, added Deleter
+changelog=0.7.1 Added logic to deal with concurrent dialogs
+ 0.7 extended Loader and Admin, added Deleter
  0.6 further code cleaning and refactoring
  0.5 major code cleaning and refactoring, moved to TUD GitHub
  0.4 first public release (Konstantinos' MSc thesis @ TUD)

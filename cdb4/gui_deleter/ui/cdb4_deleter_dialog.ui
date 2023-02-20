@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CDBDeleterDialog</class>
- <widget class="QDialog" name="CDBDeleterDialog">
+ <class>CDB4DeleterDialog</class>
+ <widget class="QDialog" name="CDB4DeleterDialog">
   <property name="windowModality">
    <enum>Qt::WindowModal</enum>
   </property>
@@ -125,7 +125,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="vLayoutUserConn">
        <item>
-        <widget class="QGroupBox" name="gbxConnectionC">
+        <widget class="QGroupBox" name="gbxConnection">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -155,7 +155,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout">
           <item row="2" column="0">
-           <widget class="QComboBox" name="cbxExistingConnC">
+           <widget class="QComboBox" name="cbxExistingConn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -198,7 +198,7 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QLabel" name="lblNewConnectionC">
+           <widget class="QLabel" name="lblNewConnection">
             <property name="minimumSize">
              <size>
               <width>150</width>
@@ -217,7 +217,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="lblExistingConnectionC">
+           <widget class="QLabel" name="lblExistingConnection">
             <property name="minimumSize">
              <size>
               <width>450</width>
@@ -236,7 +236,7 @@
            </widget>
           </item>
           <item row="2" column="2">
-           <widget class="QPushButton" name="btnNewConnC">
+           <widget class="QPushButton" name="btnNewConn">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -365,7 +365,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QPushButton" name="btnConnectToDbC">
+           <widget class="QPushButton" name="btnConnectToDb">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -424,7 +424,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="gbxBasemapC">
+        <widget class="QGroupBox" name="gbxBasemap">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -452,9 +452,9 @@
          <property name="checked">
           <bool>false</bool>
          </property>
-         <layout class="QGridLayout" name="gLayoutBasemapC">
+         <layout class="QGridLayout" name="gLayoutBasemap">
           <item row="0" column="1" rowspan="2">
-           <widget class="QGraphicsView" name="gvCanvasC">
+           <widget class="QGraphicsView" name="gvCanvas">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -479,7 +479,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QgsExtentGroupBox" name="qgbxExtentsC">
+           <widget class="QgsExtentGroupBox" name="qgbxExtents">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -904,7 +904,7 @@ border-color: rgb(255, 0, 0);</string>
         </spacer>
        </item>
        <item>
-        <widget class="QGroupBox" name="gbxConnStatusC">
+        <widget class="QGroupBox" name="gbxConnStatus">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -940,7 +940,7 @@ border-color: rgb(255, 0, 0);</string>
          </property>
          <layout class="QGridLayout" name="gLayoutConnStatusC">
           <item row="4" column="1">
-           <widget class="QLabel" name="lbl3DCityDBInstC_out">
+           <widget class="QLabel" name="lbl3DCityDBInst_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -953,7 +953,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLabel" name="lblConnToDbC_out">
+           <widget class="QLabel" name="lblConnToDb_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -969,7 +969,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="6" column="1">
-           <widget class="QLabel" name="lblUserInstC_out">
+           <widget class="QLabel" name="lblUserInst_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -991,7 +991,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="3" column="0">
-           <widget class="QLabel" name="lblPostInstC">
+           <widget class="QLabel" name="lblPostInst">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1004,7 +1004,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="lbl3DCityDBInstC">
+           <widget class="QLabel" name="lbl3DCityDBInst">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1017,7 +1017,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="6" column="0">
-           <widget class="QLabel" name="lblUserInstC">
+           <widget class="QLabel" name="lblUserInst">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1030,7 +1030,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="lblConnToDbC">
+           <widget class="QLabel" name="lblConnToDb">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1055,7 +1055,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QLabel" name="lblPostInstC_out">
+           <widget class="QLabel" name="lblPostInst_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1068,7 +1068,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="5" column="0">
-           <widget class="QLabel" name="lblMainInstC">
+           <widget class="QLabel" name="lblMainInst">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1081,7 +1081,7 @@ border-color: rgb(255, 0, 0);</string>
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QLabel" name="lblMainInstC_out">
+           <widget class="QLabel" name="lblMainInst_out">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1097,7 +1097,7 @@ border-color: rgb(255, 0, 0);</string>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btnCloseConnC">
+        <widget class="QPushButton" name="btnCloseConn">
          <property name="minimumSize">
           <size>
            <width>0</width>

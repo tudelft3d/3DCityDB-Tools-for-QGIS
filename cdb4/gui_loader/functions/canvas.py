@@ -1,12 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:       
+    from ...gui_loader.loader_dialog import CDB4LoaderDialog
+
 from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
 from .. import loader_constants as c
 
-def canvas_setup(cdbMain: CDBToolsMain, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
+def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
     """Function to set up the additional map canvas that shows the extents.
     For the basemap it uses a OSM maps WMS layer,         
     (in 'User Connection' tab)
@@ -27,20 +31,20 @@ def canvas_setup(cdbMain: CDBToolsMain, canvas: QgsMapCanvas, extents: QgsRectan
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    if canvas == cdbMain.loader_dlg.CANVAS_C: # in 'User Connection' tab
-        # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtentsC.
+    if canvas == dlg.CANVAS: # in 'User Connection' tab
+        # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtents.
         # In order to avoid firing twice the signar, we temporarily block the first one.
-        cdbMain.loader_dlg.qgbxExtentsC.blockSignals(True)
-        cdbMain.loader_dlg.qgbxExtentsC.setOutputCrs(crs)  # Signal emitted for qgbxExtentsC.
-        cdbMain.loader_dlg.qgbxExtentsC.blockSignals(False)
-        cdbMain.loader_dlg.qgbxExtentsC.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtentsC.
+        dlg.qgbxExtents.blockSignals(True)
+        dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
+        dlg.qgbxExtents.blockSignals(False)
+        dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
-    elif canvas == cdbMain.loader_dlg.CANVAS_L: # in 'Layers' tab
-        # Put extents coordinates into the widget. Signal emitted for qgbxExtents.
-        cdbMain.loader_dlg.qgbxExtents.blockSignals(True)
-        cdbMain.loader_dlg.qgbxExtents.setOutputCrs(crs)
-        cdbMain.loader_dlg.qgbxExtents.blockSignals(False)
-        cdbMain.loader_dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)
+    elif canvas == dlg.CANVAS_L: # in 'Layers' tab
+        # Put extents coordinates into the widget. Signal emitted for qgbxExtentsL.
+        dlg.qgbxExtentsL.blockSignals(True)
+        dlg.qgbxExtentsL.setOutputCrs(crs)
+        dlg.qgbxExtentsL.blockSignals(False)
+        dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs)

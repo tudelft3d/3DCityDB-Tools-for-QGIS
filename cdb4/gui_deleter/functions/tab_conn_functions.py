@@ -4,26 +4,25 @@
 These functions are usually called from widget_setup functions
 relating to child widgets of the 'Connection Tab'.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING  #, Union
+if TYPE_CHECKING:       
+    from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsWkbTypes
 from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 
-
-from ....cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
 from ..other_classes import RootClassFeature, FeatureType
 from .. import deleter_constants as c
-
 from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
 from . import canvas, sql
 
-def fill_cdb_schemas_box(cdbMain: CDBToolsMain, cdb_schemas: tuple = None) -> None:
+def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: tuple = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
     #dlg.cbxSchema.setDefaultText('Select citydb schema')
@@ -48,12 +47,10 @@ def fill_cdb_schemas_box(cdbMain: CDBToolsMain, cdb_schemas: tuple = None) -> No
     return None
 
 
-def fill_root_class_features_box(cdbMain: CDBToolsMain) -> None:
+def fill_root_class_features_box(dlg: CDB4DeleterDialog) -> None:
     """Function that fills the root class features checkable combo box
 
     """
-    dlg = cdbMain.deleter_dlg
-
     # Clear combo box from previous entries
     dlg.ccbxRootClass.clear()
     dlg.ccbxRootClass.setDefaultText('Select root-class feature(s)')
@@ -77,11 +74,9 @@ def fill_root_class_features_box(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def fill_feature_types_box(cdbMain: CDBToolsMain) -> None:
+def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
     """Function that fills feature types checkable combo box
     """
-    dlg = cdbMain.deleter_dlg
-
     # Clear combo box from previous entries
     dlg.ccbxFeatType.clear()
     dlg.ccbxFeatType.setDefaultText('Select feature type(s)')
@@ -105,11 +100,9 @@ def fill_feature_types_box(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def initialise_root_class_features_registry(cdbMain: CDBToolsMain) -> None:
+def initialise_root_class_features_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Clean up from possible previous runs
     dlg.RootClassFeaturesRegistry: dict = {}
     
@@ -139,16 +132,13 @@ def initialise_root_class_features_registry(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def update_root_class_features_registry_exists(cdbMain: CDBToolsMain, root_class_features: list) -> None:
+def update_root_class_features_registry_exists(dlg: CDB4DeleterDialog, root_class_features: list) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
 
     root_class_features is a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-
     """
-    dlg = cdbMain.deleter_dlg
-   
     # # Get the list (of namedtuples) of available Root Class Features the current cdb_schema
-    # root_class_features: list = sql.fetch_root_class_features_counter(cdbMain)
+    # root_class_features: list = sql.fetch_root_class_features_counter(dlg)
 
     rcf: RootClassFeature
     # Reset the status from potential previous checks
@@ -164,11 +154,9 @@ def update_root_class_features_registry_exists(cdbMain: CDBToolsMain, root_class
     return None
 
 
-def update_root_class_features_is_selected(cdbMain: CDBToolsMain, sel_root_class_features) -> None:
+def update_root_class_features_is_selected(dlg: CDB4DeleterDialog, sel_root_class_features) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    dlg = cdbMain.deleter_dlg
-
     rcf: RootClassFeature
     # Reset the status from potential previous checks
     for rcf in dlg.RootClassFeaturesRegistry.values():
@@ -183,11 +171,9 @@ def update_root_class_features_is_selected(cdbMain: CDBToolsMain, sel_root_class
     return None
 
 
-def initialize_feature_types_registry(cdbMain: CDBToolsMain) -> None:
+def initialize_feature_types_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Clean up from possible previous runs
     dlg.FeatureTypesRegistry: dict = {}
 
@@ -208,11 +194,9 @@ def initialize_feature_types_registry(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def update_feature_type_registry_exists(cdbMain: CDBToolsMain) -> None:
+def update_feature_type_registry_exists(dlg: CDB4DeleterDialog) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    dlg = cdbMain.deleter_dlg
-   
     ft: FeatureType
     # Reset the status from potential previous checks
     for ft in dlg.FeatureTypesRegistry.values():
@@ -232,11 +216,9 @@ def update_feature_type_registry_exists(cdbMain: CDBToolsMain) -> None:
     return None
 
 
-def update_feature_type_registry_is_selected(cdbMain: CDBToolsMain, sel_feat_types: list) -> None:
+def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_types: list) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    dlg = cdbMain.deleter_dlg
-
     ft: FeatureType
     # Reset the status from potential previous selections
     for ft in dlg.FeatureTypesRegistry.values():
@@ -251,13 +233,11 @@ def update_feature_type_registry_is_selected(cdbMain: CDBToolsMain, sel_feat_typ
     return None
 
 
-def refresh_extents(cdbMain: CDBToolsMain) ->  None:
+def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
     """Function to update the extents of the cdb_schema after deleting data.
     """
-    dlg = cdbMain.deleter_dlg
-
     # Recompute the extents
-    is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(cdbMain)
+    is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(dlg)
     srid = None # Discard unneeded variable.
 
     if not is_geom_null:
@@ -274,18 +254,18 @@ def refresh_extents(cdbMain: CDBToolsMain) ->  None:
             dlg.CURRENT_EXTENTS = dlg.CDB_SCHEMA_EXTENTS
 
             # Reset the rubber band
-            dlg.RUBBER_DELETE_C.reset()
+            dlg.RUBBER_DELETE.reset()
             # Re-add the rubber band
-            canvas.insert_rubber_band(band=dlg.RUBBER_DELETE_C, extents=dlg.DELETE_EXTENTS, crs=dlg.CRS, width=2, color=c.DELETE_EXTENTS_COLOUR)
+            canvas.insert_rubber_band(band=dlg.RUBBER_DELETE, extents=dlg.DELETE_EXTENTS, crs=dlg.CRS, width=2, color=c.DELETE_EXTENTS_COLOUR)
 
             # Just in case, (Re)zoom to the rubber band of the new cdb_extents.
-            # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
-            canvas.zoom_to_extents(canvas=dlg.CANVAS_C, extents=dlg.CDB_SCHEMA_EXTENTS)
+            # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
+            canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
 
-            QgsMessageLog.logMessage(f"Extents of '{cdbMain.CDB_SCHEMA}' are unchanged.", cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(f"Extents of '{dlg.CDB_SCHEMA}' are unchanged.", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
             # 2) Update the registries
-            refresh_registries(cdbMain)
+            refresh_registries(dlg)
 
             return None # Exit
 
@@ -298,11 +278,11 @@ def refresh_extents(cdbMain: CDBToolsMain) ->  None:
             temp_cdb_extents_new: QgsRectangle = QgsRectangle().fromWkt(cdb_extents_new_wkt)
 
             # Create new rubber band
-            cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(dlg.CANVAS_C, QgsWkbTypes.PolygonGeometry)
+            cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(dlg.CANVAS, QgsWkbTypes.PolygonGeometry)
             cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
 
             # Drop the old magenta one
-            dlg.RUBBER_DELETE_C.reset()
+            dlg.RUBBER_DELETE.reset()
 
             # Insert the dashed bounding box
             canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
@@ -310,14 +290,14 @@ def refresh_extents(cdbMain: CDBToolsMain) ->  None:
             vis_extents: QgsRectangle = QgsRectangle(cdb_extents_old)
             vis_extents.combineExtentWith(cdb_extents_new)
 
-            canvas.zoom_to_extents(canvas=dlg.CANVAS_C, extents=vis_extents)
+            canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=vis_extents)
 
             # Inform the user
-            msg: str = f"Extents of '{cdbMain.CDB_SCHEMA}' have changed, the blue dashed line represents the new ones. They will be automatically updated."
+            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' have changed, the blue dashed line represents the new ones. They will be automatically updated."
             QMessageBox.information(dlg, "Extents changed!", msg)
 
             # Update the the cdb_extents in the extents table in PostgreSQL
-            sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new_wkt)
+            sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new_wkt)
 
             # Define the new cdb_extents
             dlg.CDB_SCHEMA_EXTENTS = temp_cdb_extents_new
@@ -325,49 +305,49 @@ def refresh_extents(cdbMain: CDBToolsMain) ->  None:
             # Drop the dashed bbox 
             cdb_extents_new_rubber_band.reset()
             # Drop the old cdb_extents
-            dlg.RUBBER_CDB_SCHEMA_C.reset()
+            dlg.RUBBER_CDB_SCHEMA.reset()
 
             # Re-Reset the other extents to the new ones
             dlg.CDB_SCHEMA_EXTENTS = temp_cdb_extents_new
             dlg.DELETE_EXTENTS = temp_cdb_extents_new
             dlg.CURRENT_EXTENTS = temp_cdb_extents_new
 
-            canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA_C, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
+            canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
             # Set up the canvas to the new extents of the cdb_schema.
-            # Fires evt_qgbxExtentsC_ext_changed and evt_canvas_ext_changed
-            canvas.canvas_setup(cdbMain=cdbMain, canvas=dlg.CANVAS_C, extents=cdb_extents_new, crs=dlg.CRS, clear=True)
+            # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
+            canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=cdb_extents_new, crs=dlg.CRS, clear=True)
 
             return None
 
     else:
         # Inform the user
-        msg: str = f"Citydb schema '{cdbMain.CDB_SCHEMA}' is now empty and will disappear from the drop down menu till new data are loaded."
+        msg: str = f"Citydb schema '{dlg.CDB_SCHEMA}' is now empty and will disappear from the drop down menu till new data are loaded."
         QMessageBox.information(dlg, "All features deleted", msg)
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
 
         # Reset to null the cdb_extents in the extents table in PostgreSQL
-        sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+        sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
         # Reset to null the layer extents in table usr_schema.extents in PostgreSQL
-        sql.exec_upsert_extents(cdbMain=cdbMain, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
+        sql.exec_upsert_extents(dlg=dlg, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
 
         # Clean up everything, the user must start again now. There is nothing to do.
-        ts_wf.tabSettings_reset(cdbMain)
-        tc_wf.tabConnection_reset(cdbMain)
+        ts_wf.tabSettings_reset(dlg)
+        tc_wf.tabConnection_reset(dlg)
 
         # Close the current open connection.
-        if cdbMain.conn is not None:
-            cdbMain.conn.close()
+        if dlg.conn is not None:
+            dlg.conn.close()
 
 
     return None
 
 
-def refresh_registries(cdbMain: CDBToolsMain) ->  None:
+def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     """Function to set up the 'Feature Selection' groupbox, when it is checked.
     """
     # Overview
-    # 1) set the bounding box (depending on whether the gbxBasemapC is enabled or not)
+    # 1) set the bounding box (depending on whether the gbxBasemap is enabled or not)
     # 2) get the available Root Class Features in the proper bbox from the database
     # 3) set up/update the Root Feature Class registry
     # 4) set up/update the Feature Type registry
@@ -375,12 +355,11 @@ def refresh_registries(cdbMain: CDBToolsMain) ->  None:
     # 6) fill the Feature type checkable combobox    
     # 7) Now we are ready for the user to choose and click the delete selected features button.
 
-    dlg = cdbMain.deleter_dlg
     curr_extents_poly_wkt: str = None
     curr_extents = QgsRectangle()
 
-    # 1) set the bounding box (depending on whether the gbxBasemapC is enabled or not)
-    if dlg.gbxBasemapC.isChecked():
+    # 1) set the bounding box (depending on whether the gbxBasemap is enabled or not)
+    if dlg.gbxBasemap.isChecked():
         if dlg.CURRENT_EXTENTS == dlg.CDB_SCHEMA_EXTENTS:
             curr_extents = None
             curr_extents_poly_wkt = None
@@ -393,23 +372,23 @@ def refresh_registries(cdbMain: CDBToolsMain) ->  None:
 
     # 2) get the available Root Class Features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-    root_class_features = sql.fetch_root_class_features_counter(cdbMain, curr_extents_poly_wkt)
+    root_class_features = sql.fetch_root_class_features_counter(dlg, curr_extents_poly_wkt)
     # print('\n\nroot_class_features', root_class_features)
 
     # 3) set up/update the Root Feature Class registry (exits)
-    update_root_class_features_registry_exists(cdbMain, root_class_features)
+    update_root_class_features_registry_exists(dlg, root_class_features)
 
     # 4) set up/update the Feature Type registry (exits)
-    update_feature_type_registry_exists(cdbMain)
+    update_feature_type_registry_exists(dlg)
 
     # 5) Fill the Root Class Feature checkable combobox
-    fill_root_class_features_box(cdbMain)
+    fill_root_class_features_box(dlg)
 
     # 6) Fill the Feature type checkable combobox 
-    fill_feature_types_box(cdbMain)
+    fill_feature_types_box(dlg)
 
-    # msg: str = f"Registries of '{cdbMain.CDB_SCHEMA}' updated."
-    # QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+    # msg: str = f"Registries of '{dlg.CDB_SCHEMA}' updated."
+    # QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
     # print(msg)
 
     # Now the user is ready to select from the combo boxes and finally delete.

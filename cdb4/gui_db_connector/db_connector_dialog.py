@@ -24,6 +24,8 @@ Class DBConnectorDialog
 """
 import os
 import psycopg2
+from psycopg2.extensions import connection as pyconn
+
 from qgis.core import Qgis, QgsSettings
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import QtWidgets, uic
@@ -104,14 +106,14 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
             self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
             return None
         else:
-            temp_conn: psycopg2.connection = None
+            temp_conn: pyconn = None
             try:
                 temp_conn = create_db_connection(NewConnParams) # attempt to open connection and keep it open
                 # If successful, close it, otherwise an Exception will be raised.
                 temp_conn.close() # close connection after the test.
                 self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.Success, duration=3)
 
-            except (Exception, psycopg2.DatabaseError) as error:
+            except (Exception, psycopg2.Error) as error:
                 gen_f.critical_log(
                     func=self.evt_btnTestConn_clicked,
                     location=FILE_LOCATION,
@@ -145,7 +147,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
             self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
             return None
         else:
-            temp_conn: psycopg2.connection = None
+            temp_conn: pyconn = None
             try:
                 temp_conn = create_db_connection(NewConnParams) # attempt to open connection and keep it open
                 # If successful, close it, otherwise an Exception will be raised.
@@ -158,7 +160,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 if self.checkBox.isChecked():
                     self.store_conn_parameters()
                                 
-            except (Exception, psycopg2.DatabaseError) as error:
+            except (Exception, psycopg2.Error) as error:
                 gen_f.critical_log(
                     func=self.evt_btnTestConn_clicked,
                     location=FILE_LOCATION,

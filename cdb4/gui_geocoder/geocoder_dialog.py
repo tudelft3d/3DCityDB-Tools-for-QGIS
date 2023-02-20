@@ -24,22 +24,18 @@
  ***************************************************************************/
 """
 import os, requests
-
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtWidgets import QMessageBox
-
 from qgis.core import (
-        Qgis, 
-        QgsProject, 
-        QgsRectangle, 
-        QgsCoordinateReferenceSystem, 
-        QgsCoordinateTransform, 
-        QgsCoordinateReferenceSystem, 
-        QgsProject, 
-        QgsPointXY)
-
+            Qgis, 
+            QgsProject, 
+            QgsRectangle, 
+            QgsCoordinateReferenceSystem, 
+            QgsCoordinateTransform, 
+            QgsCoordinateReferenceSystem, 
+            QgsProject, 
+            QgsPointXY)
 from qgis.gui import QgsMapCanvas
-
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(

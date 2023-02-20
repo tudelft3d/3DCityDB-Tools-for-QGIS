@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CDBAdminDialog</class>
- <widget class="QDialog" name="CDBAdminDialog">
+ <class>CDB4AdminDialog</class>
+ <widget class="QDialog" name="CDB4AdminDialog">
   <property name="enabled">
    <bool>true</bool>
   </property>
@@ -105,7 +105,7 @@
       <attribute name="title">
        <string>QGIS Package Installation</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="vLayoutTabInstall">
        <item>
         <widget class="QGroupBox" name="gbxConnection">
          <property name="sizePolicy">
@@ -302,106 +302,102 @@
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="vLayoutMainInst">
-         <item>
-          <widget class="QGroupBox" name="gbxMainInst">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>Main installation</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayoutMainInst">
-            <item row="0" column="0">
-             <widget class="QPushButton" name="btnMainInst">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>200</width>
-                <height>23</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>Install the server-side QGIS Package to the database</string>
-              </property>
-              <property name="text">
-               <string>  Install to database {db}</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/plugins/citydb_loader/icons/install_icon.svg</normaloff>:/plugins/citydb_loader/icons/install_icon.svg</iconset>
-              </property>
-              <property name="checkable">
-               <bool>false</bool>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-              <property name="default">
-               <bool>false</bool>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <spacer name="horizontalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>10</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="0" column="2">
-             <widget class="QPushButton" name="btnMainUninst">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>200</width>
-                <height>23</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>Uninstall the server-side QGIS Package from the database</string>
-              </property>
-              <property name="text">
-               <string>  Uninstall from database {db}</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
-              </property>
-              <property name="default">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QGroupBox" name="gbxMainInst">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Main installation</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayoutMainInst">
+          <item row="0" column="0">
+           <widget class="QPushButton" name="btnMainInst">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Install the server-side QGIS Package to the database</string>
+            </property>
+            <property name="text">
+             <string>  Install to database {db}</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:/plugins/citydb_loader/icons/install_icon.svg</normaloff>:/plugins/citydb_loader/icons/install_icon.svg</iconset>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>10</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="btnMainUninst">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Uninstall the server-side QGIS Package from the database</string>
+            </property>
+            <property name="text">
+             <string>  Uninstall from database {db}</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</normaloff>:/plugins/citydb_loader/icons/uninstall_icon.svg</iconset>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <spacer name="verticalSpacer_2">

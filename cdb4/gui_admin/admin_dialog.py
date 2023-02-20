@@ -22,30 +22,31 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+     from ...cdb_tools_main import CDBToolsMain
+     from ..gui_db_connector.other_classes import Connection
+
 import os
-# from psycopg2.extensions import connection as pyconn
+from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
-
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtCore import Qt, QThread
+from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ...cdb_tools_main import CDBToolsMain # Used only to add the type of the function parameters
-
-from ..gui_db_connector.other_classes import Connection
+from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
-from ..shared.functions import sql as sh_sql 
+from ..shared.functions import sql as sh_sql
 from ..shared.functions import general_functions as gen_f  
-
 from .other_classes import AdminDefaultSettings, FeatureType, AdminDialogChecks
 from .functions import sql
 from .functions import tab_install_widget_functions as ti_wf
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import threads as thr
-
 from . import admin_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -65,15 +66,38 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## From here you can add your variables or constants
+        ## "Standard" variables or constants
         ############################################################
 
-        self.DIALOG_NAME: str = cdbMain.PLUGIN_NAME_ADMIN
+        # Variable to store the plugin name
+        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
+        # Variable to store the qgis_pkg
+        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
-        # # Variable to store the current open connection of a database.
-        # self.conn: pyconn = None
-        # # Variable to store the existing connection parameters.
-        # self.DB: Connection = None
+        # Variable to store the label of this dialog
+        self.DIALOG_NAME: str = main_c.DLG_NAME_ADMIN_LABEL
+        # Variable to store the variable name (in cdbMain) of this dialog
+        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_ADMIN
+
+        # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
+        self.GROUP_NAME: str = None
+        # Variable to store the selected cdb_schema name.
+        self.CDB_SCHEMA: str = None
+        # Variable to store the selected usr_schema name.
+        self.USR_SCHEMA: str = None
+
+        # Variable to store the current open connection of a database.
+        self.conn: pyconn = None
+        # Variable to store the existing connection parameters.
+        self.DB: Connection = None
+
+        self.msg_bar: QgsMessageBar
+        self.bar: QProgressBar
+        self.thread: QThread
+
+        ############################################################
+        ## From here you can add your variables or constants
+        ############################################################
 
         # Initialize classes containing requirements, settings, etc.
         self.settings = AdminDefaultSettings()
@@ -103,79 +127,141 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnMainInst.init_text = c.btnMainInst_t
         self.btnMainUninst.init_text=  c.btnMainUninst_t
         
-        # User installation button labels
-        # self.btnUsrInst.init_text = c.btnUsrInst_t
-        # self.btnUsrUninst.init_text = c.btnUsrUninst_t
-
         #- SIGNALS  (start)  ################################################################
 
         #### 'Admin Connection' tab
 
         # 'Connection' group box signals
-        self.cbxExistingConn.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbMain))
-        self.btnNewConn.clicked.connect(lambda: self.evt_btnNewConn_clicked(cdbMain))
-        self.btnConnectToDb.clicked.connect(lambda: self.evt_btnConnectToDb_clicked(cdbMain))
+        # self.cbxExistingConn.currentIndexChanged.connect(lambda: self.evt_cbxExistingConn_changed(cdbMain))
+        self.cbxExistingConn.currentIndexChanged.connect(self.evt_cbxExistingConn_changed)
+        self.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
+        self.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
 
         # 'Main Installation' group box signals
-        self.btnMainInst.clicked.connect(lambda: self.evt_btnMainInst_clicked(cdbMain))
-        self.btnMainUninst.clicked.connect(lambda: self.evt_btnMainUninst_clicked(cdbMain))
+        self.btnMainInst.clicked.connect(self.evt_btnMainInst_clicked)
+        self.btnMainUninst.clicked.connect(self.evt_btnMainUninst_clicked)
 
         # 'User Installation' group box signals
-        self.btnAddUserToGrp.clicked.connect(lambda: self.evt_btnAddUserToGrp_clicked(cdbMain))
+        self.btnAddUserToGrp.clicked.connect(self.evt_btnAddUserToGrp_clicked)
 
-        self.cbxUser.currentIndexChanged.connect(lambda: self.evt_cbxPluginUser_changed(cdbMain))
-        self.btnRemoveUserFromGrp.clicked.connect(lambda: self.evt_btnRemoveUserFromGrp_clicked(cdbMain))
-        self.btnUsrInst.clicked.connect(lambda: self.evt_btnUsrInst_clicked(cdbMain))
-        self.btnUsrUninst.clicked.connect(lambda: self.evt_btnUsrUninst_clicked(cdbMain))
+        self.cbxUser.currentIndexChanged.connect(self.evt_cbxPluginUser_changed)
+        self.btnRemoveUserFromGrp.clicked.connect(self.evt_btnRemoveUserFromGrp_clicked)
+        self.btnUsrInst.clicked.connect(self.evt_btnUsrInst_clicked)
+        self.btnUsrUninst.clicked.connect(self.evt_btnUsrUninst_clicked)
 
         self.ckbUserRO.toggled.connect(self.evt_ckbUserRO_toggled)
-        self.btnSetPriv.clicked.connect(lambda: self.evt_btnSetPriv_clicked(cdbMain))
+        self.btnSetPriv.clicked.connect(self.evt_btnSetPriv_clicked)
 
         # Close connection button
-        self.btnCloseConn.clicked.connect(lambda: self.evt_btnCloseConn_clicked(cdbMain))
+        self.btnCloseConn.clicked.connect(self.evt_btnCloseConn_clicked)
 
         #### 'Installation Settings' tab
         self.ckbSelAllCDBSch.toggled.connect(self.evt_ckbSelAllCDBSch_toggled)
         self.ckbUserRW.toggled.connect(self.evt_ckbUserRW_toggled)
 
-        self.btnResetToDefault.clicked.connect(lambda: self.evt_btnResetToDefault_clicked(cdbMain))
+        self.btnResetToDefault.clicked.connect(self.evt_btnResetToDefault_clicked)
 
         #-SIGNALS  (end)  ################################################################
+
+    ### Required functions BEGIN ############################
+
+    def dlg_reset_all(self) -> None:
+        """ Function that resets the all dialog.
+        """
+        ts_wf.tabSettings_reset(self)
+        ti_wf.tabInstall_reset(self)
+
+        return None
+
+
+    def create_progress_bar(self, layout: QVBoxLayout, position: int) -> None:
+        """Function that creates a QProgressBar embedded into a QgsMessageBar, in a specific position in the GUI.
+
+        *   :param layout: QLayout of the gui where the bar is to be
+                assigned.
+            :type layout: QBoxLayout
+
+        *   :param position: The place (index) in the layout to place
+                the progress bar
+            :type position: int
+        """
+        # Create QgsMessageBar instance.
+        self.msg_bar = QgsMessageBar()
+
+        # Add the message bar into the input layer and position.
+        layout.insertWidget(position, self.msg_bar)
+
+        # Create QProgressBar instance into QgsMessageBar.
+        self.bar = QProgressBar(parent=self.msg_bar)
+
+        # Setup progress bar.
+        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.bar.setStyleSheet("text-align: left;")
+
+        # Show progress bar in message bar.
+        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+
+
+    def evt_update_bar(self, step: int, text: str) -> None:
+    # def evt_update_bar(self, dlg_progress_bar: QProgressBar, step: int, text: str) -> None:
+        """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
+        in cdbMain.admin_gui.msg_bar: QgsMessageBar and cdbMain.admin_gui.bar: QProgressBar.
+        This event is not linked to any widet_setup function as it isn't responsible for changes in different 
+        widgets in the gui.
+
+        *   :param dialog: The dialog to hold the bar.
+            e.g. "admin_dlg" or "loader_dlg"
+            :type step: str
+
+        *   :param step: Current value of the progress
+            :type step: int
+
+        *   :param text: Text to display on the bar
+            :type text: str
+        """
+        # Show text instead of completed percentage.
+        if text:
+            self.bar.setFormat(text)
+
+        # Update progress with current step
+        self.bar.setValue(step)
+
+    ### Required functions END ############################
 
     # EVENT FUNCTIONS (begin)  #####################################################################
 
     #### Events for 'connection' TAB
 
     # 'Connection' group box events
-    def evt_cbxExistingConn_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxExistingConn_changed(self) -> None:
         """Event that is called when the 'Existing Connection' comboBox (cbxExistingConn) current index changes.
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Close the (previous?) open connection.
-        if cdbMain.conn:
-            cdbMain.conn.close()
+        if self.conn:
+            self.conn.close()
 
         # Set the current database connection object variable
-        cdbMain.DB: Connection = self.cbxExistingConn.currentData()
+        self.DB: Connection = self.cbxExistingConn.currentData()
 
         # Check that the connection parameters were set
-        if not cdbMain.DB:
+        if not self.DB:
             return None # Exit
 
         # Reset the Database Administration tab from previous runs
         # All tabs are also disabled first.
-        ti_wf.tabInstall_reset(cdbMain)
-        ts_wf.tabSettings_reset(cdbMain)
+        ti_wf.tabInstall_reset(self)
+        ts_wf.tabSettings_reset(self)
 
         # Enable Install tab.
         self.tabInstall.setDisabled(False)
 
         # Enable button to connect.
-        self.btnConnectToDb.setText(self.btnConnectToDb.init_text.format(db=cdbMain.DB.database_name))
+        self.btnConnectToDb.setText(self.btnConnectToDb.init_text.format(db=self.DB.database_name))
         self.btnConnectToDb.setDisabled(False)
 
     
-    def evt_btnNewConn_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnNewConn_clicked(self) -> None:
         """Event that is called when the 'New Connection' pushButton (btnNewConn) is pressed.
         Responsible to add VALID new connection to the 'Existing connections'.
         """
@@ -197,11 +283,11 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setWindowModality(Qt.ApplicationModal)
 
 
-    def evt_btnConnectToDb_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnConnectToDb_clicked(self) -> None:
         """Event that is called when the current 'Connect to {db}' pushButton (btnConnectToDb) is pressed.
         """
         # Variable to store the plugin main dialog.
-        db = cdbMain.DB
+        db = self.DB
 
         msg: str = None
 
@@ -233,9 +319,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 1) Can I connect to the database?
 
-        # Attempt to connect to the database, returns True/False, and if successful, store connection in cdbMain.conn
-        # Additionally, set cdbMain.DB.pg_server_version
-        is_connection_successful: bool = conn_f.open_connection(cdbMain, cdbMain.PLUGIN_NAME_ADMIN)
+        # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
+        # Additionally, set self.DB.pg_server_version
+        is_connection_successful: bool = conn_f.open_connection(self, self.DIALOG_NAME)
 
         if is_connection_successful:
             # Set/update the status check variable
@@ -268,15 +354,15 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 msg = f"You are connecting to PostgreSQL version {db.pg_server_version}. This version is not supported, you need version {c.PG_MIN_VERSION} or higher."
                 QMessageBox.critical(self, "Unsupported PostgreSQL version", msg)
 
-                ti_wf.tabInstall_reset(cdbMain)
-                ts_wf.tabSettings_reset(cdbMain)
-                if cdbMain.conn:
-                    cdbMain.conn.close()
+                ti_wf.tabInstall_reset(self)
+                ts_wf.tabSettings_reset(self)
+                if self.conn:
+                    self.conn.close()
 
                 return None # Exit
 
             # Check whether the user is an admin.
-            is_superuser: bool = sql.is_superuser(cdbMain, cdbMain.DB.username)
+            is_superuser: bool = sql.is_superuser(self, self.DB.username)
 
             if is_superuser:
                 # Update the label in the Connection status
@@ -289,10 +375,10 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 msg = f"User '{db.username}' is not a database superuser. Please contact your database administrator."
                 QMessageBox.critical(self, "Insufficient user privileges", msg)
 
-                ti_wf.tabInstall_reset(cdbMain)
-                ts_wf.tabSettings_reset(cdbMain)
-                if cdbMain.conn:
-                    cdbMain.conn.close()
+                ti_wf.tabInstall_reset(self)
+                ts_wf.tabSettings_reset(self)
+                if self.conn:
+                    self.conn.close()
 
                 return None # Exit
 
@@ -307,17 +393,17 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             error_msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", error_msg)
 
-            ti_wf.tabInstall_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            if cdbMain.conn:
-                cdbMain.conn.close()
+            ti_wf.tabInstall_reset(self)
+            ts_wf.tabSettings_reset(self)
+            if self.conn:
+                self.conn.close()
 
             return None # Exit
 
         # 2) Is the 3DCityDB installed? 
 
         # Check that database has 3DCityDB installed.
-        is_3dcitydb_installed: bool = sql.is_3dcitydb_installed(cdbMain)
+        is_3dcitydb_installed: bool = sql.is_3dcitydb_installed(self)
 
         ###########################################
         # Only for debugging purposes
@@ -351,10 +437,10 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 msg = f"The 3D City Database installed in this database is v. {db.citydb_version} and it is not supported. You need 3D City Database v. {c.CDB_MIN_VERSION}.x."
                 QMessageBox.critical(self, "Unsupported 3D City Database version", msg)
 
-                ti_wf.tabInstall_reset(cdbMain)
-                ts_wf.tabSettings_reset(cdbMain)
-                if cdbMain.conn:
-                    cdbMain.conn.close()
+                ti_wf.tabInstall_reset(self)
+                ts_wf.tabSettings_reset(self)
+                if self.conn:
+                    self.conn.close()
 
                 return None
         else:
@@ -368,10 +454,10 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             msg = f"The 3D City Database is not installed in this database."
             QMessageBox.critical(self, "No 3DCityDB found", msg)
 
-            ti_wf.tabInstall_reset(cdbMain)
-            ts_wf.tabSettings_reset(cdbMain)
-            if cdbMain.conn:
-                cdbMain.conn.close()
+            ti_wf.tabInstall_reset(self)
+            ts_wf.tabSettings_reset(self)
+            if self.conn:
+                self.conn.close()
 
             return None # Exit
 
@@ -387,7 +473,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.gbxMainInst.setDisabled(False)
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(cdbMain)
+        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(self)
 
         ##########################################
         # Only for debugging purposes
@@ -399,7 +485,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.checks.is_qgis_pkg_installed = True
            
             # Get the current qgis_pkg version and check that it is compatible.
-            qgis_pkg_curr_version: tuple = sh_sql.exec_qgis_pkg_version(cdbMain)
+            qgis_pkg_curr_version: tuple = sh_sql.exec_qgis_pkg_version(self)
 
             # Named tuple: full_version, major_version, minor_version, minor_revision, code_name, release_date
 
@@ -407,11 +493,6 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version.major_version   # e.g. 0
             qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version.minor_version   # e.g. 9
             qgis_pkg_curr_version_minor_rev: int = qgis_pkg_curr_version.minor_revision  # e.g. 1
-
-            # qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version[0]
-            # qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version[2]
-            # qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version[3]
-            # qgis_pkg_curr_version_minor_rev: int = qgis_pkg_curr_version[4]
 
             ###########################################################
             # Only for testing purposes
@@ -430,20 +511,23 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.checks.is_qgis_pkg_supported = True
 
                 # Show message in Connection Status the Qgis Package is installed (and version)
-                self.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + qgis_pkg_curr_version_txt + ")").format(pkg=cdbMain.QGIS_PKG_SCHEMA))
+                self.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + qgis_pkg_curr_version_txt + ")").format(pkg=self.QGIS_PKG_SCHEMA))
+
+                # Enable the close connection button
+                self.btnCloseConn.setDisabled(False)
 
                 # Get and assign the variable with the group name
-                # group name (qgis_pkg_usrgroup_*) assigned to cdbMain.GROUP_NAME
-                sql.exec_create_qgis_pkg_usrgroup_name(cdbMain)
-                # print('cdbMain.GROUP_NAME:', cdbMain.GROUP_NAME)
+                # group name (qgis_pkg_usrgroup_*) assigned to self.GROUP_NAME
+                sql.exec_create_qgis_pkg_usrgroup_name(self)
+                # print('self.GROUP_NAME:', self.GROUP_NAME)
 
                 # Set the current user schema name for the current db admin user (e.g. postgres)
-                # cdbMain.USR_SCHEMA is now set.
-                sh_sql.exec_create_qgis_usr_schema_name(cdbMain)
-                # print('cdbMain.USR_SCHEMA:', cdbMain.USR_SCHEMA)
+                # self.USR_SCHEMA is now set.
+                sh_sql.exec_create_qgis_usr_schema_name(self)
+                # print('self.USR_SCHEMA:', self.USR_SCHEMA)
 
                 # Finish setting up the GUI
-                ti_wf.setup_post_qgis_pkg_installation(cdbMain)
+                ti_wf.setup_post_qgis_pkg_installation(self)
 
             else: # Wrong (outdated?) version of QGIS Package
                 # Set/update the status check variable
@@ -459,70 +543,70 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Inform the user
                 msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported. Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
                 QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
-                # QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Warning)
+                # QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning)
 
         else:  # QGIS Package is not installed
             # Set/update the status check variable
             self.checks.is_qgis_pkg_installed = False
 
             # Update the label in the Connection status box (QGIS Package is not installed)
-            self.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=cdbMain.QGIS_PKG_SCHEMA)))
+            self.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=self.QGIS_PKG_SCHEMA)))
 
             # Fisish setting up the GUI
-            ti_wf.setup_post_qgis_pkg_uninstallation(cdbMain)
+            ti_wf.setup_post_qgis_pkg_uninstallation(self)
 
             
-    def evt_btnMainInst_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnMainInst_clicked(self) -> None:
         """Event that is called when the 'Install to database' pushButton (btnMainInst) is pressed.
         """
-        msg = f"Any previous installation of '{cdbMain.QGIS_PKG_SCHEMA}' will be replaced! Do you want to proceed?"
+        msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == 16384: #YES
-            thr.run_install_qgis_pkg_thread(cdbMain, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=cdbMain.QGIS_PKG_SCHEMA)
+            thr.run_install_qgis_pkg_thread(self, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=self.QGIS_PKG_SCHEMA)
 
         return None
 
 
-    def evt_btnMainUninst_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnMainUninst_clicked(self) -> None:
         """Event that is called when the 'Uninstall from database' pushButton (btnMainUninst) is pressed.
         """
-        msg = f"Uninstalling '{cdbMain.QGIS_PKG_SCHEMA}'! Do you want to proceed?"
+        msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'! Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == 16384: #YES
-            thr.run_uninstall_qgis_pkg_thread(cdbMain)
+            thr.run_uninstall_qgis_pkg_thread(self)
 
         return None
 
 
-    def evt_btnAddUserToGrp_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnAddUserToGrp_clicked(self) -> None:
         """ Event that is called when the button 'Add to qgis_user_group' is pressed (btnAddUserToGrp).
         """
         usr_name = self.cbxSelUser4Grp.currentText()
         index = self.cbxSelUser4Grp.currentIndex()
-        sql.exec_add_user_to_qgis_pkg_usrgroup(cdbMain, usr_name)
+        sql.exec_add_user_to_qgis_pkg_usrgroup(self, usr_name)
 
         # Remove the entry from the combox
         self.cbxSelUser4Grp.removeItem(index)
 
         if self.cbxSelUser4Grp.count() == 0:
-            ti_wf.fill_database_users_box(cdbMain, None) 
+            ti_wf.fill_database_users_box(self, None) 
             self.cbxSelUser4Grp.setDisabled(True)
             self.btnAddUserToGrp.setDisabled(True)
 
         # Update the list of the users that are part of the group in the Installation tab
-        usr_names = sql.exec_list_qgis_pkg_usrgroup_members(cdbMain)
+        usr_names = sql.exec_list_qgis_pkg_usrgroup_members(self)
 
         # Refill the combobox of the plugin users
-        ti_wf.fill_plugin_users_box(cdbMain, usr_names)
+        ti_wf.fill_plugin_users_box(self, usr_names)
 
         # Inform user
-        msg = f"User '{usr_name}' has been succesfully added to the database group '{cdbMain.GROUP_NAME}'"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info)
+        msg = f"User '{usr_name}' has been succesfully added to the database group '{self.GROUP_NAME}'"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info)
 
         return None
 
 
-    def evt_cbxPluginUser_changed(self, cdbMain: CDBToolsMain) -> None:
+    def evt_cbxPluginUser_changed(self) -> None:
         """Event that is called when the 'Selected User' comboBox (cbxUser) current index changes.
         """
         # Retrieve current user from combobox
@@ -540,19 +624,19 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             return None # Exit, as there is nothing to do.
         
         # Create the corresponding usr_schema, add the usr_name to the group (if it is not yet member), 
-        # set it to the cdbMain.USR_SCHEMA
-        sh_sql.exec_create_qgis_usr_schema_name(cdbMain, usr_name=usr_name)
+        # set it to the self.USR_SCHEMA
+        sh_sql.exec_create_qgis_usr_schema_name(self, usr_name=usr_name)
     
         # Set the labels of the buttons
         # self.btnUsrInst.setText(self.btnUsrInst.init_text.format(usr=usr_name))
         # self.btnUsrUninst.setText(self.btnUsrUninst.init_text.format(usr=usr_name))
         
         # Check if usr_schema is already installed in the database.
-        is_usr_pkg_installed: bool = sh_sql.is_usr_schema_installed(cdbMain)
+        is_usr_pkg_installed: bool = sh_sql.is_usr_schema_installed(self)
 
         if is_usr_pkg_installed:
             # Update the lable in the connection status box
-            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA)))
 
             # Disable the remove from group button
             self.btnRemoveUserFromGrp.setDisabled(True)
@@ -567,17 +651,17 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.gbxPriv.setDisabled(False)
 
             # Retrieve the list of cdb_schemas with their privileges status
-            # cdb_schemas_with_priv = sql.exec_list_cdb_schemas_with_privileges(cdbMain, usr_name)
+            # cdb_schemas_with_priv = sql.exec_list_cdb_schemas_with_privileges(self, usr_name)
             
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas = sql.exec_list_cdb_schemas_extended(cdbMain, usr_name)
+            cdb_schemas = sql.exec_list_cdb_schemas_extended(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(cdbMain, cdb_schemas)
+            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
 
         else:
             # Update the label in the connection status box
-            self.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA)))
  
             # Enable the remove from group button
             self.btnRemoveUserFromGrp.setDisabled(False)
@@ -587,17 +671,17 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.btnUsrUninst.setDisabled(True)
 
             # Reset and disable the user privileges groupbox
-            ti_wf.gbxPriv_reset(cdbMain) # this also disables it.
+            ti_wf.gbxPriv_reset(self) # this also disables it.
 
 
-    def evt_btnRemoveUserFromGrp_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnRemoveUserFromGrp_clicked(self) -> None:
         """ Event that is called when the button 'Remove from group' is pressed (btnRemoveUserFromGrp).
         """
         usr_name = self.cbxUser.currentText()
         index = self.cbxUser.currentIndex()
 
         # Remove user from the group in the database.
-        sql.exec_remove_user_from_qgis_pkg_usrgroup(cdbMain, usr_name)
+        sql.exec_remove_user_from_qgis_pkg_usrgroup(self, usr_name)
 
         # Remove the entry from the combox and update the current combobox
         # It automatically fires the event self.evt_cbxPluginUser_changed())
@@ -606,7 +690,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Update the current in case 
         if self.cbxUser.count() == 0:
             # Update the plugin users combobox
-            ti_wf.fill_plugin_users_box(cdbMain, None) # this also disables it
+            ti_wf.fill_plugin_users_box(self, None) # this also disables it
 
             # Disable the remove from group button
             self.btnRemoveUserFromGrp.setDisabled(True)
@@ -615,30 +699,30 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable the User schema Uninstall button
             self.btnUsrUninst.setDisabled(True)
             # Reset and disable the user privileges groupbox
-            ti_wf.gbxPriv_reset(cdbMain) # this also disables it.
+            ti_wf.gbxPriv_reset(self) # this also disables it.
 
         # Update the combobox with the database usr_names
 
         # Update the list of the users that are part of the group in the Installation tab
-        db_usr_names = sql.exec_list_qgis_pkg_non_usrgroup_members(cdbMain)
+        db_usr_names = sql.exec_list_qgis_pkg_non_usrgroup_members(self)
         # Refill the combobox of the plugin users
-        ti_wf.fill_database_users_box(cdbMain, db_usr_names)
+        ti_wf.fill_database_users_box(self, db_usr_names)
 
         # Inform user
-        msg = f"User '{usr_name}' has been succesfully removed from group '{cdbMain.GROUP_NAME}'"
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info)
+        msg = f"User '{usr_name}' has been succesfully removed from group '{self.GROUP_NAME}'"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info)
         # QMessageBox.information(self, "User added!", msg)
 
         return None
 
 
-    def evt_btnUsrInst_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnUsrInst_clicked(self) -> None:
         """Event that is called when the 'Create schema for user' pushButton (btnUsrInst) is pressed.
         """
-        msg = f"Any previous installation of '{cdbMain.USR_SCHEMA}' will be replaced! Do you want to proceed?"
+        msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == 16384: #YES
-            sql.exec_create_qgis_usr_schema(cdbMain)
+            sql.exec_create_qgis_usr_schema(self)
         if not res: # Query was canceled by user, or error occurred.
             return None
 
@@ -647,7 +731,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Add the message bar into the input layer and position.
         self.vLayoutUserInstGroup.insertWidget(2, self.msg_bar)
         
-        if sh_sql.is_usr_schema_installed(cdbMain):
+        if sh_sql.is_usr_schema_installed(self):
 
             # Retrieve current user from combobox
             usr_name: str = self.cbxUser.currentText()
@@ -665,19 +749,19 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas  = sql.exec_list_cdb_schemas_extended(cdbMain, usr_name)
+            cdb_schemas  = sql.exec_list_cdb_schemas_extended(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(cdbMain, cdb_schemas)
+            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
 
             # Replace with Success msg.
-            msg = self.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=cdbMain.USR_SCHEMA))
+            msg = self.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA))
             self.msg_bar.pushWidget(msg, Qgis.Success, 5)
 
             # Inform user
-            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA)))
             QgsMessageLog.logMessage(
-                    message=c.INST_SUCC_MSG.format(pkg=cdbMain.USR_SCHEMA),
-                    tag=cdbMain.PLUGIN_NAME,
+                    message=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA),
+                    tag=self.PLUGIN_NAME,
                     level=Qgis.Success,
                     notifyUser=True)
         else:
@@ -689,30 +773,30 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.btnUsrUninst.setDisabled(True)
 
             # Reset and disable the user privileges groupbox
-            ti_wf.gbxPriv_reset(cdbMain) # this also disables it.
+            ti_wf.gbxPriv_reset(self) # this also disables it.
 
             # Replace with Failure msg.
-            msg = self.msg_bar.createMessage(c.INST_FAIL_MSG.format(pkg=cdbMain.USR_SCHEMA))
+            msg = self.msg_bar.createMessage(c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA))
             self.msg_bar.pushWidget(msg, Qgis.Critical, 5)
 
             # Inform user
-            self.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=cdbMain.USR_SCHEMA)))
+            self.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA)))
             QgsMessageLog.logMessage(
-                    message=c.INST_FAIL_MSG.format(pkg=cdbMain.USR_SCHEMA),
-                    tag=cdbMain.PLUGIN_NAME,
+                    message=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA),
+                    tag=self.PLUGIN_NAME,
                     level=Qgis.Critical,
                     notifyUser=True)
 
 
-    def evt_btnUsrUninst_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnUsrUninst_clicked(self) -> None:
         """Event that is called when the 'Drop schema for user' pushButton
         (btnUsrUninst) is pressed.
         """
-        msg = f"Uninstalling user schema '{cdbMain.USR_SCHEMA}'!\nDo you want to proceed?"
+        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == 16384: #YES
             # Run scripts
-            thr.run_drop_usr_schema_thread(cdbMain)
+            thr.run_drop_usr_schema_thread(self)
         else: # Query was cancelled by user, or error occurred.
             return None
 
@@ -740,7 +824,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnSetPriv_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnSetPriv_clicked(self) -> None:
         """ Event that is called when the button 'Set (privileges)' is pressed (btnSetPriv).
         """
         # Get the selected plugin user
@@ -774,21 +858,21 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # print ("Selected priv:", selected_priv)
 
         if selected_priv == "Revoke ALL privileges":
-            sql.exec_revoke_qgis_usr_privileges(cdbMain, sel_usr_name, sel_cdb_schemas)
+            sql.exec_revoke_qgis_usr_privileges(self, sel_usr_name, sel_cdb_schemas)
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', privileges revoked from ALL citydb schemas."            
             else: 
                 msg = f"For user '{sel_usr_name}', privileges revoked from citydb schemas: {sel_cdb_schemas}"  
 
         elif selected_priv == "Grant Read-only":
-            sql.exec_grant_qgis_usr_privileges(cdbMain, sel_usr_name, "ro", sel_cdb_schemas)
+            sql.exec_grant_qgis_usr_privileges(self, sel_usr_name, "ro", sel_cdb_schemas)
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', read-only privileges granted to ALL citydb schemas."            
             else: 
                 msg = f"For user '{sel_usr_name}', read-only privileges granted to citydb schemas: {sel_cdb_schemas}"  
 
         elif selected_priv == "Grant Read & Write":
-            sql.exec_grant_qgis_usr_privileges(cdbMain, sel_usr_name, "rw", sel_cdb_schemas)
+            sql.exec_grant_qgis_usr_privileges(self, sel_usr_name, "rw", sel_cdb_schemas)
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', read & write privileges granted to ALL citydb schemas."            
             else: 
@@ -796,26 +880,28 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Retrieve again the list of cdb_schemas and their privileges status
         # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-        cdb_schemas = sql.exec_list_cdb_schemas_extended(cdbMain, sel_usr_name)
+        cdb_schemas = sql.exec_list_cdb_schemas_extended(self, sel_usr_name)
         # Fill the combobox of the cdb_schemas in the groupbox
-        ti_wf.fill_cdb_schemas_box(cdbMain, cdb_schemas)
+        ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
 
         # Inform the user
         QMessageBox.information(self, "Setting privileges", msg)
-        QgsMessageLog.logMessage(msg, cdbMain.PLUGIN_NAME, level=Qgis.Info)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info)
 
         return None
 
 
-    def evt_btnCloseConn_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnCloseConn_clicked(self) -> None:
         """Event that is called when the 'Close current connection' pushButton
         (btnCloseConn) is pressed.
         """
-        ts_wf.tabSettings_reset(cdbMain)
-        ti_wf.tabInstall_reset(cdbMain)
+        ts_wf.tabSettings_reset(self)
+        ti_wf.tabInstall_reset(self)
         # Close the current open connection.
-        if cdbMain.conn is not None:
-            cdbMain.conn.close()
+        if self.conn is not None:
+            self.conn.close()
+
+        return None
 
     ####  Events for 'Settings' TAB
 
@@ -847,11 +933,11 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnResetToDefault_clicked(self, cdbMain: CDBToolsMain) -> None:
+    def evt_btnResetToDefault_clicked(self) -> None:
         """Event that is called when the button 'Reset to default values' is clicked
         """
         # Reset and enables the Default Users groupbox
-        ts_wf.gbxDefaultUsers_reset(cdbMain) # also disables
+        ts_wf.gbxDefaultUsers_reset(self) # also disables
         self.gbxDefaultUsers.setDisabled(False)
 
         return None
