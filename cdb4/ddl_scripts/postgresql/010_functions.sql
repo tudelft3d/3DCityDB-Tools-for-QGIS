@@ -99,10 +99,10 @@ DECLARE
 
 BEGIN
 major_version  := 0;
-minor_version  := 9;
-minor_revision := 1;
-code_name      := 'Fritole e galani :o)';
-release_date   := '2023-02-20'::date;
+minor_version  := 10;
+minor_revision := 0;
+code_name      := 'April''s fool';
+release_date   := '2023-04-01'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -1673,7 +1673,7 @@ DECLARE
 	s				 	varchar;
 	query_sql			varchar;
 BEGIN
--- Check if the usr_schema exists (must habe been created before)
+-- Check if the usr_schema exists (must have been created before)
 IF (usr_schema IS NOT NULL) AND (NOT usr_schema = ANY(usr_schemas_array)) THEN
 	RAISE EXCEPTION 'usr_schema "%" does not exist in current database', usr_schema;
 END IF;
@@ -1687,7 +1687,8 @@ END IF;
 FOREACH s IN ARRAY usr_schemas LOOP
 	--RAISE NOTICE 'Searching for Feature Types in %.layer_metadata', s;
 	query_sql := format('SELECT DISTINCT %L::varchar AS usr_schema, cdb_schema, feature_type 
-						FROM %I.layer_metadata        
+						FROM %I.layer_metadata
+						WHERE feature_type IS NOT NULL
 						ORDER BY cdb_schema, feature_type ASC;', s, s);
 	--RAISE NOTICE 'SQL: %', query_sql;
 	RETURN QUERY EXECUTE query_sql;
@@ -1985,8 +1986,9 @@ cdb_schema varchar
 RETURNS boolean
 AS $$
 DECLARE
-where_cdb_name CONSTANT varchar := concat(cdb_schema,'%');
-
+--dt_prefix         CONSTANT varchar := 'dv';
+where_cdb_name    CONSTANT varchar := concat(cdb_schema,'_%');
+--where_cdb_name_dv CONSTANT varchar := concat(dt_prefix,'_',cdb_schema,'_%');
 BEGIN
 
 PERFORM t.table_name
@@ -1995,7 +1997,9 @@ PERFORM t.table_name
     WHERE 
 		quote_ident(t.table_schema) = quote_ident(usr_schema)
 		AND t.table_type = 'VIEW'
-		AND t.table_name::varchar LIKE where_cdb_name;
+		AND t.table_name::varchar LIKE where_cdb_name
+		--AND t.table_name::varchar NOT LIKE where_cdb_name_dv
+		;
 
 RETURN FOUND;
 

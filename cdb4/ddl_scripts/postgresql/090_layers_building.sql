@@ -160,6 +160,107 @@ FOR r IN
 	) AS t(class_name, class_id, class_label)
 LOOP
 
+
+---------------------------------------------------------------
+-- Create LAYER BUILDING(PART)_ADDRESS
+---------------------------------------------------------------
+	FOR s IN 
+		SELECT * FROM (VALUES
+		('Address'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'Address', NULL)::integer, 'address'::varchar)
+		) AS t(class_name, class_id, class_label)
+	LOOP
+		FOR t IN 
+			SELECT * FROM (VALUES
+			('LoDx'::varchar, 'lodx'::varchar)	
+			) AS t(lodx_name, lodx_label)
+		LOOP
+
+sql_feat_count := concat('
+	SELECT 
+		count(o.id) AS n_features
+	FROM 
+		',qi_cdb_schema,'.address AS o
+		INNER JOIN ',qi_cdb_schema,'.address_to_building AS o2 ON (o2.address_id = o.id)
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.building_id AND co.objectclass_id = ',r.class_id,' ',sql_where,');
+');
+EXECUTE sql_feat_count INTO num_features;
+
+RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class_name, t.lodx_name;
+
+curr_class := s.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label);
+av_name			:= concat('_a_',l_name);
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'address_form.qml';
+qml_symb_name	:= 'point_black_symb.qml';
+qml_3d_name		:= 'point_black_3d.qml';
+
+trig_f_suffix := 'address';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW (for geom)
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
+SELECT 
+	o.id::bigint AS co_id,
+	o.multi_point::geometry(MultiPointZ,',srid,') AS geom
+FROM 
+	',qi_cdb_schema,'.address AS o
+	INNER JOIN ',qi_cdb_schema,'.address_to_building AS o2 ON (o2.address_id = o.id)
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.building_id AND co.objectclass_id = ',r.class_id,' ',sql_where,')
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' in schema ',qi_cdb_schema,''';
+CREATE INDEX ',quote_ident(concat(gv_name,'_id_idx')),' ON ',qi_usr_schema,'.',qi_gv_name,' (co_id);
+CREATE INDEX ', quote_ident(concat(gv_name,'_geom_spx')),' ON ',qi_usr_schema,'.',qi_gv_name,' USING gist (geom);
+ALTER TABLE ',qi_usr_schema,'.',qi_gv_name,' OWNER TO ',qi_usr_name,';
+--DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.layer_name = ',ql_l_name,';
+--REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,';
+');
+
+
+-------
+--  VIEW (for atts + geom)
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
+SELECT 
+	o.id::bigint,
+	o.gmlid,
+	o.gmlid_codespace,
+	o.street,
+	o.house_number,
+	o.po_box,
+	o.zip_code,
+	o.city,
+	o.state,
+	o.country,
+	co.id AS cityobject_id,
+	g.geom::geometry(MultiPointZ,',srid,')
+FROM
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.address AS o ON (o.id = g.co_id )
+	INNER JOIN ',qi_cdb_schema,'.address_to_building AS o2 ON (o2.address_id = g.co_id)
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.building_id AND co.objectclass_id = ',r.class_id,');
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+--sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
+END IF;
+
+		END LOOP; -- address lodx
+	END LOOP; -- address
+
 ---------------------------------------------------------------
 -- Create LAYER BUILDING(PART)_LOD1-4 TerrainIntersectionCurve
 ---------------------------------------------------------------
@@ -1148,7 +1249,7 @@ END IF;
 	END LOOP; -- building installation
 
 ---------------------------------------------------------------
--- Create LAYER BUILDING(PART)_OPENING_LOD3-4
+-- Create LAYER BUILDING(PART)_OPENING
 ---------------------------------------------------------------
 	FOR s IN 
 		SELECT * FROM (VALUES
@@ -1156,6 +1257,114 @@ END IF;
 		('BuildingDoor'           , qgis_pkg.class_name_to_class_id(cdb_schema, 'BuildingDoor', NULL)         , 'door')		
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
+		IF s.class_name = 'BuildingDoor' THEN
+---------------------------------------------------------------
+-- Create LAYER BUILDING(PART)_DOOR_ADDRESS
+---------------------------------------------------------------
+			FOR t IN 
+				SELECT * FROM (VALUES
+				('LoDx'::varchar, 'lodx'::varchar)	
+				) AS t(lodx_name, lodx_label)
+			LOOP
+				FOR u IN 
+					SELECT * FROM (VALUES
+					('Address'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'Address', NULL)::integer, 'address'::varchar)
+					) AS t(class_name, class_id, class_label)
+				LOOP
+
+sql_feat_count := concat('
+	SELECT 
+		count(o.id) AS n_features
+	FROM 
+		',qi_cdb_schema,'.address AS o
+		INNER JOIN ',qi_cdb_schema,'.opening AS o2 ON (o2.address_id = o.id AND o2.objectclass_id = ',s.class_id,')
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.id AND co.objectclass_id = ',s.class_id,' ',sql_where,');
+');
+EXECUTE sql_feat_count INTO num_features;
+
+RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.class_name, t.lodx_name, u.class_name;
+
+curr_class := u.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',u.class_label);
+av_name			:= concat('_a_',l_name);
+gv_name			:= concat('_g_',l_name);
+qml_form_name	:= 'address_form.qml';
+qml_symb_name	:= 'point_black_symb.qml';
+qml_3d_name		:= 'point_black_3d.qml';
+
+trig_f_suffix := 'address';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW (for geom)
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
+SELECT 
+	o.id::bigint AS co_id,
+	o.multi_point::geometry(MultiPointZ,',srid,') AS geom
+FROM 
+	',qi_cdb_schema,'.address AS o
+	INNER JOIN ',qi_cdb_schema,'.opening AS o2 ON (o2.address_id = o.id AND o2.objectclass_id = ',s.class_id,')
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.id AND co.objectclass_id = ',s.class_id,' ',sql_where,')
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+CREATE INDEX ',quote_ident(concat(gv_name,'_id_idx')),' ON ',qi_usr_schema,'.',qi_gv_name,' (co_id);
+CREATE INDEX ', quote_ident(concat(gv_name,'_geom_spx')),' ON ',qi_usr_schema,'.',qi_gv_name,' USING gist (geom);
+ALTER TABLE ',qi_usr_schema,'.',qi_gv_name,' OWNER TO ',qi_usr_name,';
+--DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.layer_name = ',ql_l_name,';
+--REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,';
+');
+
+
+-------
+--  VIEW (for atts + geom)
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
+SELECT 
+	o.id::bigint,
+	o.gmlid,
+	o.gmlid_codespace,
+	o.street,
+	o.house_number,
+	o.po_box,
+	o.zip_code,
+	o.city,
+	o.state,
+	o.country,
+	o2.id AS cityobject_id,
+	g.geom::geometry(MultiPointZ,',srid,')
+FROM
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.address AS o ON (o.id = g.co_id )
+	INNER JOIN ',qi_cdb_schema,'.opening AS o2 ON (o2.address_id = g.co_id)
+	INNER JOIN ',qi_cdb_schema,'.opening_to_them_surface AS ots ON (ots.opening_id = o2.id)
+	INNER JOIN ',qi_cdb_schema,'.thematic_surface AS ts ON (ts.id = ots.thematic_surface_id)
+	INNER JOIN ',qi_cdb_schema,'.building AS b ON (b.id = ts.building_id AND b.objectclass_id = ',r.class_id,');
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',s.class_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+--sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
+END IF;
+
+				END LOOP; -- address lodx
+			END LOOP; -- address
+		END IF; -- end if door address
+
+---------------------------------------------------------------
+-- Create LAYER BUILDING(PART)_OPENING_LOD3-4
+---------------------------------------------------------------
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoD3'::varchar, 'lod3'::varchar),

@@ -33,14 +33,7 @@
 --
 -- ***********************************************************************
 
--- Assign respective ro/rw priviles to the user regarding ALL existing citydb schemas (NULL parameter)
--- Upon the first cdb_schema, it is also assigned to the "qgis_pkg_usrgroup_*" associated to the current database.
--- SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_ro', 'ro', NULL);
--- SELECT qgis_pkg.grant_qgis_usr_privileges('qgis_user_rw', 'rw', NULL);
-
--- Create default schemas for user qgis_user_ro and qgis_user_rw
--- SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_ro');
--- SELECT qgis_pkg.create_qgis_usr_schema('qgis_user_rw');
+-- AT THE MOMENT, nothing to do
 
 --**************************
 DO $MAINBODY$
