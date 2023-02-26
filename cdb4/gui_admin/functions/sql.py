@@ -450,7 +450,7 @@ def fetch_unique_cdb_schema_feature_types_in_layer_metadata(dlg: CDB4AdminDialog
         dlg.conn.rollback()
 
 
-def exec_list_feature_types(dlg: CDB4AdminDialog, usr_schema: str = None) -> tuple:
+def exec_list_feature_types(dlg: CDB4AdminDialog, usr_schema: str = None) -> list:
     """SQL query that retrieves the available feature types from table
     qgis_{usr}.layer_metadata in all usr_schemas
 
