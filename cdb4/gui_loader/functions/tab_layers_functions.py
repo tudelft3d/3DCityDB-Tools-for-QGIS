@@ -17,22 +17,6 @@ from ..other_classes import CDBLayer
 from .. import loader_constants as c
 from . import sql
 
-def has_matviews(dlg: CDB4LoaderDialog) -> bool:
-    """Function that checks the existence of materialised views in the database.
-
-    *   :returns: Whether the database has populated mat views.
-        :rtype: bool
-    """
-    # Get materialised views names.
-    mat_views = sql.fetch_mat_views(dlg)
-
-    # Check if materialised views names exist.
-    if mat_views:
-        return True
-    else:
-        return False
-
-
 def add_layers_to_register(dlg: CDB4LoaderDialog) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
     """
@@ -147,24 +131,6 @@ def fill_layers_box(dlg: CDB4LoaderDialog) -> None:
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
 
 
-def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -> QgsAttributeEditorElement:
-    """Function that retrieves a child object from an 'attribute form' container.
-    
-    *   :param container: An attribute form container object.
-        :type container: QgsAttributeEditorContainer
-
-    *   :param child_name: The name of the child to be found.
-        :type child_name: str
-
-    *   :returns: The 'attribute form' child element (when found)
-        :type child_name: QgsAttributeEditorElement | None
-    """
-    for child in container.children():
-        if child.name() == child_name:
-            return child
-    return None
-
-
 def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function that sets up the ValueRelation widget for the look-up tables.
     # Note: Currently the look-up table names are hardcoded.
@@ -206,7 +172,7 @@ def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVecto
     root = QgsProject.instance().layerTreeRoot()
     db_node = root.findGroup(dlg.DB.database_name)
     schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
-    enums_node = schema_node.findGroup("Look-up tables")
+    enums_node = schema_node.findGroup(c.lookup_tables_group_alias)
     enum_layers = enums_node.findLayers()
     enum_layer_id = [i.layerId() for i in enum_layers if c.enumerations_table in i.layerId()][0]
 
@@ -219,6 +185,26 @@ def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVecto
             layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(layer_id=enum_layer_id, key_column='value', value_column='description', filterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
 
 
+def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -> QgsAttributeEditorElement:
+    """Function that retrieves a child object from an 'attribute form' container.
+    
+    *   :param container: An attribute form container object.
+        :type container: QgsAttributeEditorContainer
+
+    *   :param child_name: The name of the child to be found.
+        :type child_name: str
+
+    *   :returns: The 'attribute form' child element (when found)
+        :type child_name: QgsAttributeEditorElement | None
+    """
+    # print('looking for ', child_name)
+    for child in container.children():
+        # print(child.name())
+        if child.name() == child_name:
+            return child
+    return None
+
+
 def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function to set up the relation for an input layer (e.g. a view).
     - A new relation object is created that references the generic attributes.
@@ -227,24 +213,26 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
     *   :param layer: vector layer to set up the relationships for.
         :type layer: QgsVectorLayer
     """
-    # Get the layer configuration
-    layer_configuration = layer.editFormConfig()
-    layer_root_container = layer_configuration.invisibleRootContainer()
-
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
     db_node = root.findGroup(dlg.DB.database_name)
     schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
-    generics_node = schema_node.findGroup("Generic Attributes")
-    genericAtt_layer = generics_node.findLayers()[0]
+    generics_node = schema_node.findGroup(c.detail_views_group_alias)
+    genericAtt_layer = generics_node.findLayers()[0] # Returns the layer (there is only one in the group)
+
+    # genericAtt_layer_id = genericAtt_layer.layerId()
+    # genericAtt_layer_name = genericAtt_layer.name()
 
     # Create new Relation object for referencing generic attributes table
     rel = QgsRelation()
     rel.setReferencedLayer(id=layer.id())  # i.e. the (QGIS  internal) id of the CityObject layer
     rel.setReferencingLayer(id=genericAtt_layer.layerId()) # i.e. the (QGIS  internal) id of the CityObject layer
     rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
-    rel.generateId() # i.e. the (QGIS  internal) id of the relation object
-    rel.setName('re_' + layer.name())
+    # ###################
+    rel.setName(name='re_' + layer.name() + "_" + genericAtt_layer.name())    
+    rel.setId(id="id_" + rel.name())
+    # ####################
+    # rel.generateId() # i.e. the (QGIS  internal) id of the relation object
 
     # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
     if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
@@ -268,14 +256,24 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
             level=Qgis.Critical,
             notifyUser=True)
 
-    # Find and store 'Generic Attributes' 'attribute form' element.
-    container_GA = get_attForm_child(container=layer_root_container, child_name='Generic Attributes')
+    # Now start working on the form attached to the layer
+
+    # Get the layer configuration
+    layer_configuration = layer.editFormConfig()
+    # print('layer_configuration', layer_configuration)
+
+    # Get the root container of all objects contained in the form (widgets, etc.)
+    layer_root_container = layer_configuration.invisibleRootContainer()
+    # print('layer_root_container', layer_root_container)
+
+    # Find the element containing the "Generic Attributes" in the form.
+    container_GA = get_attForm_child(container=layer_root_container, child_name="Generic Attributes")
     # Clean the element before inserting the relation
     container_GA.clear()
 
     # Create an 'attribute form' relation object from the 'relation' object
     relation_field = QgsAttributeEditorRelation(relation=rel, parent=container_GA)
-    relation_field.setLabel("Generic Attributes")
+    relation_field.setLabel(c.detail_views_group_alias)
     relation_field.setShowLabel(False) # No point setting a label then.
     # Add the relation to the 'Generic Attributes' container (tab).
     container_GA.addChildElement(relation_field)
@@ -284,134 +282,128 @@ def create_layer_relation_to_genericattrib_table(dlg: CDB4LoaderDialog, layer: Q
     layer.setEditFormConfig(layer_configuration)
 
 
-def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> bool:
-    """Function that checks whether a specific group has a specific underlying layer (by name).
+def create_layer_relation_to_address_bdg_table(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+    """Function to set up the relations for an input layer (e.g. a view).
+    - New relation objects are created that reference the generic attribute tables.
+    - Relations are also set for 'Value Relation' widget.
 
-    *   :param group: Node object to check for layer existence.
-        :type group: QgsLayerTreeGroup
-
-    *   :param layer_name: Layer name to check if it exists.
-        :type layer_name: str
-
-    *   :returns: Search result.
-        :rtype: bool
+    *   :param layer: vector layer to set up the relationships for.
+        :type layer: QgsVectorLayer
     """
-    if layer_name in [child.name() for child in group.children()]:
-        return True
-    return False
+
+    detail_views: list = [
+        "dv_address_bdg",
+        "dv_address_bri",
+        "dv_address_bdg_door",
+        "dv_address_bri_door",
+    ]
 
 
-def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
-    """Function to import the look-up tables into the qgis project.
-    """
-    # Just to shorten the variables names.
-    db = dlg.DB
-    cdb_schema: str = dlg.CDB_SCHEMA
-    usr_schema: str = dlg.USR_SCHEMA
+    # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
+    root = QgsProject.instance().layerTreeRoot()
+    db_node = root.findGroup(dlg.DB.database_name)
+    schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
+    detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
+    dt_layers: list = detail_views_node.findLayers()
 
-    # Add look-up tables into their own group in ToC.
-    node_cdb_schema = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
+    for dt_layer in dt_layers:
+        if dt_layer.name() == "dv_alderaan_address_bdg":
 
-    lookups_node = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name="Look-up tables")
+            # Create new Relation object for referencing generic attributes table
+            rel = QgsRelation()
+            rel.setReferencedLayer(id=layer.id())  # i.e. the (QGIS  internal) id of the CityObject layer
+            rel.setReferencingLayer(id=dt_layer.layerId()) # i.e. the (QGIS  internal) id of the Address layer
+            rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
+            rel.setName(name='re_' + layer.name() + "_" + dt_layer.name())    
+            rel.setId(id="id_" + rel.name())
 
-    # Get look-up tables names from the server.
-    lookup_tables = sql.fetch_lookup_tables(dlg)
+            # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
+            if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
+                rel.setStrength(0) # integer, 0 is association, 1 composition
+            else:
+                rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
+                # print(rel_strength)
+                rel.setStrength(rel_strength)
 
-    for lookup_table in lookup_tables:
-        # Create ONLY new layers.
-        if not is_layer_already_in_ToC_group(group=lookups_node, layer_name=f"{dlg.CDB_SCHEMA}_{lookup_table}"):
-            uri = QgsDataSourceUri()
-            uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
-            uri.setDataSource(aSchema=usr_schema, aTable=lookup_table, aGeometryColumn=None, aKeyColumn="id")
-            layer = QgsVectorLayer(uri.uri(False), f"{cdb_schema}_{lookup_table}", "postgres")
-            if layer or layer.isValid(): # Success
-                lookups_node.addLayer(layer)
-                QgsProject.instance().addMapLayer(layer, False)
-                # QgsMessageLog.logMessage(
-                #     message=f"Look-up table import: {cdb_schema}_{lookup_table}",
-                #     tag=dlg.PLUGIN_NAME,
-                #     level=Qgis.Success, notifyUser=True)
-            else: # Fail
+
+            # print("rel.is_valid", rel.isValid())
+            if rel.isValid(): # Success
+                QgsProject.instance().relationManager().addRelation(rel)
+            else:
                 QgsMessageLog.logMessage(
-                    message=f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}",
+                    message=f"Invalid relation: {rel.name()}",
                     tag=dlg.PLUGIN_NAME,
-                    level=Qgis.Critical, notifyUser=True)
+                    level=Qgis.Critical,
+                    notifyUser=True)
 
-    # After loading all look-ups, sort them by name.
-    sort_ToC(lookups_node)
+            ################################################
+            #
+            # Up till here
+            # 1) The relation is set and is valid
+            # 
+            #
+            # It remains to set the string which in the ui-file
+            # contains the name of the relation.
+            # In principle, we must access the widget in the UI file
+            # and set the attribute to the value = rel.name()
+            # 
+            # If set manually (as done for testing) the child table will show up
+            #  
+            ################################################
 
+            # genericAtt_layer_id = genericAtt_layer.layerId()
+            # genericAtt_layer_name = genericAtt_layer.name()
 
-def add_genericattrib_table_to_ToC(dlg: CDB4LoaderDialog) -> None:
-    """Function to import the 'generic attributes' table into the qgis project.
-    """
-    # Just to shorten the variables names.
-    db = dlg.DB
-    cdb_schema = dlg.CDB_SCHEMA
+            # Now start working on the form attached to the layer
 
-    # Add generics tables into their own group in ToC.
-    root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
-    generics_node = add_group_node_to_ToC(parent_node=root, child_name=c.generics_alias)
+            # Get the layer configuration
+            # layer_configuration = layer.editFormConfig()
+            # print('layer_configuration', layer_configuration)
 
-    # Add it ONLY if it doesn't already exists.
-    if not is_layer_already_in_ToC_group(generics_node, f"{dlg.CDB_SCHEMA}_{c.generics_table}"):
-        uri = QgsDataSourceUri()
-        uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
-        uri.setDataSource(aSchema=cdb_schema,
-            aTable=c.generics_table,
-            aGeometryColumn=None,
-            aKeyColumn="")
-        layer = QgsVectorLayer(uri.uri(False), f"{dlg.CDB_SCHEMA}_{c.generics_table}", "postgres")
-        if layer or layer.isValid(): # Success
-            # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
-            # WARNING: hardcoded index (15: cityobject_id)
-            layer.setEditorWidgetSetup(15, QgsEditorWidgetSetup('TextEdit',{}))
-
-            generics_node.addLayer(layer)
-            QgsProject.instance().addMapLayer(layer, False)
-
-            # QgsMessageLog.logMessage(
-            #     message=f"Layer import: {dlg.CDB_SCHEMA}_{c.generics_table}",
-            #     tag=dlg.PLUGIN_NAME,
-            #     level=Qgis.Success,
-            #     notifyUser=True)
-        else:
-            QgsMessageLog.logMessage(
-                message=f"Layer failed to properly load: {dlg.CDB_SCHEMA}_{c.generics_table}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Critical,
-                notifyUser=True)
+            # widget_config: dict = layer_configuration.widgetConfig()
 
 
-def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVectorLayer:
-    """Function that creates a PostgreSQL layer based on the input layer name. This function is used to import
-    updatable views from the usr_schema queried to the selected spatial extents.
+            # Get the root container of all objects contained in the form (widgets, etc.)
+            # layer_root_container = layer_configuration.invisibleRootContainer()
+            # print('layer_root_container', layer_root_container)
 
-    *   :param v_name: View name to connect to server.
-        :type v_name: str
+            # Find the element containing the "Address" in the form.
+            # address_form_elem = get_attForm_child(container=layer_root_container, child_name="Address")
+            # Clean the element before inserting the relation
+            # address_form_elem.clear()
 
-    *   :returns: the created layer object
-        :rtype: QgsVectorLayer
-    """
-    # Shorten the variable names.
-    db = dlg.DB
-    usr_schema = dlg.USR_SCHEMA
-    extents = dlg.QGIS_EXTENTS.asWktPolygon()
-    crs = dlg.CRS
+            # Create an 'attribute form' relation object from the 'relation' object
+            # relation_field = QgsAttributeEditorRelation(relation=rel, parent=address_form_elem)
+            # relation_field.setLabel(c.detail_views_group_alias)
+            # relation_field.setShowLabel(False) # No point setting a label then.
+            # Add the relation to the 'Generic Attributes' container (tab).
+            # address_form_elem.addChildElement(relation_field)
 
-    uri = QgsDataSourceUri()
-    uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
+            # layer.setEditFormConfig(layer_configuration)
 
-    if dlg.QGIS_EXTENTS == dlg.LAYER_EXTENTS:  
-        # No need to apply a spatial filter in QGIS
-        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aKeyColumn="id")
-    else:
-        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aSql=f"ST_GeomFromText('{extents}') && geom", aKeyColumn="id")
+            pass
 
-    new_layer = QgsVectorLayer(uri.uri(False), layer_name, "postgres")
-    new_layer.setCrs(crs)
+        elif dt_layer.name() == "address_bri":
 
-    return new_layer
+            pass
 
+        elif dt_layer.name() == "address_bdg_door":
+
+            pass
+
+        elif dt_layer.name() == "address_bri_door":
+
+            pass
+
+
+
+
+
+
+
+
+        
+    return None
 
 def send_to_ToC_top(group: QgsLayerTreeGroup) -> None: 
     """Function that send the input group to the top of the project's 'Table of Contents' tree.
@@ -420,8 +412,8 @@ def send_to_ToC_top(group: QgsLayerTreeGroup) -> None:
     # According to qgis docs, this is the prefered way.
     root = QgsProject.instance().layerTreeRoot()
     move_group =  group.clone()
-    root.insertChildNode(0, move_group)
-    root.removeChildNode(group)
+    root.insertChildNode(index=0, node=move_group)
+    root.removeChildNode(node=group)
 
 
 def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
@@ -429,17 +421,17 @@ def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
     #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
     """
     group = None
-    names = [ch.name() for ch in node.children()]
+    names = [child.name() for child in node.children()]
     if 'FeatureType: Relief' in names:
         for c,i in enumerate(node.children()):
-            if 'FeatureType: Relief' == i.name():
+            if i.name() == 'FeatureType: Relief':
                 group = i
                 break
         if group:
             idx=len(node.children())-2
-            move_group =  group.clone()
-            node.insertChildNode(idx, move_group)
-            node.removeChildNode(group)
+            move_group = group.clone()
+            node.insertChildNode(index=idx, node=move_group)
+            node.removeChildNode(node=group)
         return None
     
     for child in node.children():
@@ -530,7 +522,203 @@ def add_layer_node_to_ToC(dlg: CDB4LoaderDialog, layer: CDBLayer) -> QgsLayerTre
     return node_lod # Node where the view has been added
 
 
-def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
+def is_layer_already_in_ToC_group(group: QgsLayerTreeGroup, layer_name: str) -> bool:
+    """Function that checks whether a specific group has a specific underlying layer (by name).
+
+    *   :param group: Node object to check for layer existence.
+        :type group: QgsLayerTreeGroup
+
+    *   :param layer_name: Layer name to check if it exists.
+        :type layer_name: str
+
+    *   :returns: Search result.
+        :rtype: bool
+    """
+    if layer_name in [child.name() for child in group.children()]:
+        return True
+    return False
+
+
+def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
+    """Function to import the look-up tables into the qgis project.
+    """
+    # Just to shorten the variables names.
+    db = dlg.DB
+    cdb_schema: str = dlg.CDB_SCHEMA
+    usr_schema: str = dlg.USR_SCHEMA
+
+    # Add look-up tables into their own group in ToC.
+    node_cdb_schema = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
+
+    lookups_node = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=c.lookup_tables_group_alias)
+
+    # Get look-up tables names from the server.
+    lookup_tables = sql.fetch_lookup_tables(dlg)
+
+    for lookup_table in lookup_tables:
+        # Create ONLY new layers.
+        if not is_layer_already_in_ToC_group(group=lookups_node, layer_name=f"{dlg.CDB_SCHEMA}_{lookup_table}"):
+            uri = QgsDataSourceUri()
+            uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
+            uri.setDataSource(aSchema=usr_schema, aTable=lookup_table, aGeometryColumn=None, aKeyColumn="id")
+            layer = QgsVectorLayer(uri.uri(False), f"{cdb_schema}_{lookup_table}", "postgres")
+            if layer or layer.isValid(): # Success
+                lookups_node.addLayer(layer)
+                QgsProject.instance().addMapLayer(layer, False)
+                # QgsMessageLog.logMessage(
+                #     message=f"Look-up table import: {cdb_schema}_{lookup_table}",
+                #     tag=dlg.PLUGIN_NAME,
+                #     level=Qgis.Success, notifyUser=True)
+            else: # Fail
+                QgsMessageLog.logMessage(
+                    message=f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}",
+                    tag=dlg.PLUGIN_NAME,
+                    level=Qgis.Critical, notifyUser=True)
+
+    # After loading all look-ups, sort them by name.
+    sort_ToC(lookups_node)
+
+    return None
+
+
+def add_genericattrib_table_to_ToC(dlg: CDB4LoaderDialog) -> None:
+    """Function to import the 'generic attributes' table into the qgis project.
+    """
+    # Just to shorten the variables names.
+    db = dlg.DB
+    cdb_schema = dlg.CDB_SCHEMA
+
+    # Add generics tables into their own group in ToC.
+    root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
+    generics_node = add_group_node_to_ToC(parent_node=root, child_name=c.detail_views_group_alias)
+
+    # Add it ONLY if it doesn't already exists.
+    if not is_layer_already_in_ToC_group(generics_node, f"{dlg.CDB_SCHEMA}_{c.generics_table}"):
+        uri = QgsDataSourceUri()
+        uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
+        # uri.setDataSource(aSchema=cdb_schema, aTable=c.generics_table, aGeometryColumn=None, aKeyColumn="")
+        uri.setDataSource(aSchema=cdb_schema, aTable=c.generics_table, aGeometryColumn=None, aKeyColumn="id")
+        # Create a layer corresponding to the GenericAttributes table
+        layer = QgsVectorLayer(path=uri.uri(False), baseName=f"{dlg.CDB_SCHEMA}_{c.generics_table}", providerLib="postgres")
+        
+        if layer or layer.isValid(): # Success
+            # NOTE: Force cityobject_id to Text Edit (relation widget, automatically set by qgis)
+            # WARNING: hardcoded index (15: cityobject_id)
+            layer.setEditorWidgetSetup(index=15, setup=QgsEditorWidgetSetup('TextEdit',{}))
+
+            generics_node.addLayer(layer)
+            QgsProject.instance().addMapLayer(layer, False)
+
+            # QgsMessageLog.logMessage(
+            #     message=f"Layer import: {dlg.CDB_SCHEMA}_{c.generics_table}",
+            #     tag=dlg.PLUGIN_NAME,
+            #     level=Qgis.Success,
+            #     notifyUser=True)
+        else:
+            QgsMessageLog.logMessage(
+                message=f"Layer failed to properly load: {dlg.CDB_SCHEMA}_{c.generics_table}",
+                tag=dlg.PLUGIN_NAME,
+                level=Qgis.Critical,
+                notifyUser=True)
+
+    return None
+
+
+def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
+    """Function to import the 'detail view' tables into the qgis project.
+    """
+    # Just to shorten the variables names.
+    db = dlg.DB
+    cdb_schema = dlg.CDB_SCHEMA
+    usr_schema = dlg.USR_SCHEMA
+
+    # Add generics tables into their own group in ToC.
+    root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
+    detail_view_node = add_group_node_to_ToC(parent_node=root, child_name=c.detail_views_group_alias)
+
+    detail_views: list = [
+        "gen_attrib_string", 
+        "gen_attrib_real",
+        "gen_attrib_integer",
+        "gen_attrib_measure",
+        "gen_attrib_date",
+        "gen_attrib_uri",
+        "gen_attrib_blob",
+        "ext_ref_name",
+        "ext_ref_uri",
+        "address_bdg",
+        "address_bri",
+        "address_bdg_door",
+        "address_bri_door",
+    ]
+
+    for detail_view in detail_views:
+        detail_view_name = f"dv_{dlg.CDB_SCHEMA}_{detail_view}"
+
+        # Check that the detail view is not already loaded
+        if not is_layer_already_in_ToC_group(detail_view_node, detail_view_name):
+
+            uri = QgsDataSourceUri()
+            uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
+            uri.setDataSource(aSchema=usr_schema, aTable=detail_view_name, aGeometryColumn=None, aKeyColumn="id")
+            # Create a layer corresponding to the GenericAttributes table
+            layer = QgsVectorLayer(path=uri.uri(False), baseName=detail_view_name, providerLib="postgres")
+
+            if layer or layer.isValid(): # Success
+
+                # Get the index of the field "cityobject"
+                co_idx: int = layer.fields().indexOf("cityobject_id")
+                # print(f"co_id of {detail_view_name} id {co_idx}")
+
+                # Force cityobject_id to Text Edit (relation widget, automatically set by qgis) -- WHY DO WE REALLY NEED THIS?
+                layer.setEditorWidgetSetup(index=15, setup=QgsEditorWidgetSetup('TextEdit',{}))
+
+                # Add to layer tree node
+                detail_view_node.addLayer(layer)
+                QgsProject.instance().addMapLayer(layer, False)
+
+            else:
+                QgsMessageLog.logMessage(
+                    message=f"Layer failed to properly load: {detail_view_name}",
+                    tag=dlg.PLUGIN_NAME,
+                    level=Qgis.Critical,
+                    notifyUser=True)
+
+    return None
+
+
+def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVectorLayer:
+    """Function that creates a PostgreSQL layer based on the input layer name. This function is used to import
+    updatable views from the usr_schema queried to the selected spatial extents.
+
+    *   :param v_name: View name to connect to server.
+        :type v_name: str
+
+    *   :returns: the created layer object
+        :rtype: QgsVectorLayer
+    """
+    # Shorten the variable names.
+    db = dlg.DB
+    usr_schema = dlg.USR_SCHEMA
+    extents = dlg.QGIS_EXTENTS.asWktPolygon()
+    crs = dlg.CRS
+
+    uri = QgsDataSourceUri()
+    uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
+
+    if dlg.QGIS_EXTENTS == dlg.LAYER_EXTENTS:  
+        # No need to apply a spatial filter in QGIS
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aKeyColumn="id")
+    else:
+        uri.setDataSource(aSchema=usr_schema, aTable=layer_name, aGeometryColumn="geom", aSql=f"ST_GeomFromText('{extents}') && geom", aKeyColumn="id")
+
+    new_layer = QgsVectorLayer(uri.uri(False), layer_name, "postgres")
+    new_layer.setCrs(crs)
+
+    return new_layer
+    
+
+def add_selected_layers_to_ToC_orig(dlg: CDB4LoaderDialog, layers: list) -> bool:
     """Function to imports the selected layer(s) in the user's qgis project.
 
     *   :param layers: A list containing View object that correspond to the server views.
@@ -562,15 +750,15 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_cdb_schema = root.findGroup("@".join([db.username, cdb_schema]))
         if node_cdb_schema:
             # Check whether the generic attribute table is already loaded
-            node_genatt = node_cdb_schema.findGroup(c.generics_alias)
+            node_genatt = node_cdb_schema.findGroup(c.detail_views_group_alias)
             if node_genatt:
                 ga_layers: list = node_genatt.findLayers()
                 for ga_layer in ga_layers:  
                     if ga_layer.name() == "_".join([cdb_schema, c.generics_table]):
                         genattrib_found = True
 
-            # Check whether the generic attribute table is already loaded
-            node_lookup = node_cdb_schema.findGroup("Look-up tables")
+            # Check whether the look-up table for enumerations is already loaded
+            node_lookup = node_cdb_schema.findGroup(c.lookup_tables_group_alias)
             if node_lookup:
                 lu_layers: list = node_lookup.findLayers()
                 for lu_layer in lu_layers:  
@@ -582,18 +770,24 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_cdb = add_group_node_to_ToC(root, db.database_name)
         node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
 
-    # Get the look-up tables if they are not already loaded 
+    # Load the generic attributes table if it is not already loaded 
     if not genattrib_found:
-        node_genatt = add_group_node_to_ToC(node_cdb_schema, c.generics_alias) 
-        add_lookup_tables_to_ToC(dlg)
+        node_genatt = add_group_node_to_ToC(node_cdb_schema, c.detail_views_group_alias) 
+        add_genericattrib_table_to_ToC(dlg)
+        # node_genatt.setExpanded(False) # does not work (bug?)
+        node_genatt.setItemVisibilityCheckedRecursive(False)
+
     else:
         # QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
 
-    # Get the generic attributes table if it is not already loaded 
+    # Load the look-up tables if they are not already loaded 
     if not lookup_found:
-        node_lookup = add_group_node_to_ToC(node_cdb_schema, "Look-up tables") 
-        add_genericattrib_table_to_ToC(dlg)
+        node_lookup = add_group_node_to_ToC(node_cdb_schema, c.lookup_tables_group_alias) 
+        add_lookup_tables_to_ToC(dlg)
+        # node_lookup.setExpanded(False) # does not work (bug?)
+        node_lookup.setItemVisibilityCheckedRecursive(False)
+
     else:
         # QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
         pass
@@ -643,31 +837,367 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         if dlg.CDBSchemaPrivileges == "ro":
             new_layer.setReadOnly()
 
-        # Attach 'attribute form' from QML file.
-        if layer.qml_form:
-            new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
-            # otherwise: categories=QgsMapLayer.AllStyleCategories
+        test_use_ui: bool = True
+        if not test_use_ui:
+        # if not dlg.settings.enable_ui_based_forms:
 
-        # Attach 'symbology' from QML file.
-        if layer.qml_symb:
-            new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+            # Attach 'attribute form' from QML file.
+            if layer.qml_form:
+                new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                # otherwise: categories=QgsMapLayer.AllStyleCategories
 
-        if dlg.cbxEnable3D.isChecked():
-            # Attach '3d symbology' from QML file.
-            if layer.qml_3d:
-                new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+            # Attach 'symbology' from QML file.
+            if layer.qml_symb:
+                new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+            if dlg.cbxEnable3D.isChecked():
+                # Attach '3d symbology' from QML file.
+                if layer.qml_3d:
+                    new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+            else:
+                # Deactivate 3D renderer to avoid crashes and slow downs.
+                new_layer.setRenderer3D(None)
+
+            # Insert the layer to the assigned group
+            node_lod.addLayer(new_layer)
+            QgsProject.instance().addMapLayer(new_layer, False)
+
+            # Setup the relations for this layer to the look-up (enumeration) tables
+            create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+            # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+            if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                # Setup the relations for this layer to the generic attributes table
+                create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+
+        # #############################################################
+
+        else: # EXPERIMENTAL
+
+            if layer.feature_type == "Building":
+
+                if layer.qml_form:
+                    new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+                    layer_configuration = new_layer.editFormConfig()
+                    # print("uiForm path", layer_configuration.uiForm()) # The placeholder one written in the ui-file
+                    layer_configuration.setUiForm(ui=layer.ui_file_with_path)
+                    # print("uiForm path", layer_configuration.uiForm()) # The full path to the one on the local machine
+                    #
+                    # All other changes to the settings?
+                    #
+                    #
+                    # print("layout", layer_configuration.layout())
+                    # layout: 1 = TabLayout
+                    # layout: 2 = UiFileLayout 
+                    #
+                    #
+                    #
+                    #
+                    new_layer.setEditFormConfig(layer_configuration) # Necessary!
+
+                # Attach '2D symbology' from QML file.
+                if layer.qml_symb:
+                    new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+                if dlg.cbxEnable3D.isChecked():
+                    # Attach '3D symbology' from QML file.
+                    if layer.qml_3d:
+                        new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                else:
+                    # Deactivate 3D renderer to avoid crashes and slow downs.
+                    new_layer.setRenderer3D(None)
+
+                # Insert the layer to the assigned group
+                node_lod.addLayer(new_layer)
+                QgsProject.instance().addMapLayer(new_layer, False)
+
+                # Setup the relations for this layer to the look-up (enumeration) tables
+                create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+                # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+                # if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                    # Setup the relations for this layer to the generic attributes table
+                    # create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+
+                # Update the layer_config with the id of the created relations, so that we can populate the child tables.
+
+            else:
+                # Attach 'attribute form' from QML file.
+                if layer.qml_form:
+                    new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+                # Attach 'symbology' from QML file.
+                if layer.qml_symb:
+                    new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+                if dlg.cbxEnable3D.isChecked():
+                    # Attach '3d symbology' from QML file.
+                    if layer.qml_3d:
+                        new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                else:
+                    # Deactivate 3D renderer to avoid crashes and slow downs.
+                    new_layer.setRenderer3D(None)
+
+                # Insert the layer to the assigned group
+                node_lod.addLayer(new_layer)
+                QgsProject.instance().addMapLayer(new_layer, False)
+
+                # Setup the relations for this layer to the look-up (enumeration) tables
+                create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+                # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                    # Setup the relations for this layer to the generic attributes table
+                    create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+
+        ####################################################################
+
+    return True # All went well
+
+
+def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
+    """Function to imports the selected layer(s) in the user's qgis project.
+
+    *   :param layers: A list containing View object that correspond to the server views.
+        :type layers: list(View)
+
+    *   :returns: The import attempt result
+        :rtype: bool
+    """
+    if not layers:
+        # nothing to do
+        return None # Exit
+
+    # Just to shorten the variables names.
+    db = dlg.DB
+    cdb_schema: str = dlg.CDB_SCHEMA
+
+    root = QgsProject.instance().layerTreeRoot()
+    node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
+    node_cdb_schema: QgsLayerTreeGroup = None
+    node_featureType: QgsLayerTreeGroup = None
+    node_feature: QgsLayerTreeGroup = None
+    node_lod: QgsLayerTreeGroup = None
+
+    lookup_found: bool = False
+    detail_views_found: bool = False
+    layer_found: bool = False
+
+    if node_cdb:
+        node_cdb_schema = root.findGroup("@".join([db.username, cdb_schema]))
+        if node_cdb_schema:
+            # Check whether the generic attribute table is already loaded
+            node_dv = node_cdb_schema.findGroup(c.detail_views_group_alias)
+            if node_dv:
+                dv_layers: list = node_dv.findLayers()
+                if len(dv_layers) == 12: ################################ hard-coded, to be changed #####################################################
+                    detail_views_found = True
+
+            # Check whether the look-up table for enumerations is already loaded
+            node_lookup = node_cdb_schema.findGroup(c.lookup_tables_group_alias)
+            if node_lookup:
+                lu_layers: list = node_lookup.findLayers()
+                for lu_layer in lu_layers:  
+                    if lu_layer.name() == "_".join([cdb_schema, c.enumerations_table]):
+                        lookup_found = True
         else:
-            # Deactivate 3D renderer to avoid crashes and slow downs.
-            new_layer.setRenderer3D(None)
+            node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
+    else:
+        node_cdb = add_group_node_to_ToC(root, db.database_name)
+        node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
 
-        # Insert the layer to the assigned group
-        node_lod.addLayer(new_layer)
-        QgsProject.instance().addMapLayer(new_layer, False)
+    # Load the generic attributes table if it is not already loaded 
+    if not detail_views_found:
+        node_dv = add_group_node_to_ToC(node_cdb_schema, c.detail_views_group_alias)
+        add_detail_view_tables_to_ToC(dlg)
+        # node_genatt.setExpanded(False) # does not work (bug?)
+        node_dv.setItemVisibilityCheckedRecursive(False)
 
-        # Setup the relations for this layer to the look-up (enumeration) tables
-        create_layer_relation_to_enumerations(dlg, layer=new_layer)
+    else:
+        # QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        pass
 
-        # Setup the relations for this layer to the generic attributes table
-        create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+    # Load the look-up tables if they are not already loaded 
+    if not lookup_found:
+        node_lookup = add_group_node_to_ToC(node_cdb_schema, c.lookup_tables_group_alias) 
+        add_lookup_tables_to_ToC(dlg)
+        # node_lookup.setExpanded(False) # does not work (bug?)
+        node_lookup.setItemVisibilityCheckedRecursive(False)
+
+    else:
+        # QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        pass
+
+    # Start loading the selected layer(s)
+    layer: CDBLayer
+    for layer in layers:
+        # Check if the layer has already been loaded before
+        layer_found = False
+        node_featureType = node_cdb_schema.findGroup(f"FeatureType: {layer.feature_type}")
+        if node_featureType:
+            node_feature = node_featureType.findGroup(layer.root_class)
+            if node_feature:
+                node_lod = node_feature.findGroup(layer.lod)
+                if node_lod:
+                    existing_layers: list = node_lod.findLayers()
+                    for existing_layer in existing_layers:
+                        if existing_layer.name() == layer.layer_name:
+                            layer_found = True
+
+        if layer_found:
+            QgsMessageLog.logMessage(f"Layer {layer.layer_name} already in Layer Tree: skip reloading", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            continue
+
+        # Build the Table of Contents Tree or Restructure it.
+        node_lod = add_layer_node_to_ToC(dlg, layer)
+
+        new_layer: QgsVectorLayer = create_qgis_vector_layer(dlg, layer_name=layer.layer_name)
+
+        if new_layer or new_layer.isValid(): # Success
+            pass
+        else: # Fail
+            QgsMessageLog.logMessage(
+                message=f"Failed to properly load: {layer.layer_name}",
+                tag=dlg.PLUGIN_NAME,
+                level=Qgis.Critical,
+                notifyUser=True)
+            return False
+
+        # Set the layer as read-only if the current cdb_schema is read only
+        if dlg.CDBSchemaPrivileges == "ro":
+            new_layer.setReadOnly()
+
+        ###########################################################################################
+        # To switch to "normal" (old) forms, simply set the value to FALSE in the dlg.settings.
+        # You can also hard-code it as default in class LoaderDefaultSettings (see other_classes.py)
+        #
+        # This is for allowing the plugin to work "as usual" while we test and implement the ui-based forms
+        # (which takes place in the "else" part of this switch)
+        ###########################################################################################
+        if dlg.settings.enable_ui_based_forms is False:
+
+            # Attach 'attribute form' from QML file.
+            if layer.qml_form:
+                new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+            # Attach 'symbology' from QML file.
+            if layer.qml_symb:
+                new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+            if dlg.cbxEnable3D.isChecked():
+                # Attach '3d symbology' from QML file.
+                if layer.qml_3d:
+                    new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+            else:
+                # Deactivate 3D renderer to avoid crashes and slow downs.
+                new_layer.setRenderer3D(None)
+
+            # Insert the layer to the assigned group
+            node_lod.addLayer(new_layer)
+            QgsProject.instance().addMapLayer(new_layer, False)
+
+            # Setup the relations for this layer to the look-up (enumeration) tables
+            create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+            # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+            if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                # Setup the relations for this layer to the generic attributes table
+                create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+
+        # #############################################################
+        # EXPERIMENTAL, TO TEST THE NEW UI-BASED FORMS
+        #
+        # At the moment, only layers of class "Building" are affected.
+        # All other layers still get the "old" forms.
+        # This will chance once we are done with the test phase.
+        #
+        ###############################################################
+        else: 
+            if layer.curr_class == "Building":
+
+                if layer.qml_form:
+                    new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+                    layer_configuration = new_layer.editFormConfig()
+                    # print("uiForm path", layer_configuration.uiForm()) # The placeholder one written in the ui-file
+                    layer_configuration.setUiForm(ui=layer.ui_file_with_path)
+                    # print("uiForm path", layer_configuration.uiForm()) # The full path to the one on the local machine
+                    #
+                    # All other changes to the settings?
+                    #
+                    # print("layout", layer_configuration.layout())
+                    # layout: 1 = TabLayout
+                    # layout: 2 = UiFileLayout 
+                    #
+                    #
+                    #
+                    #
+                    new_layer.setEditFormConfig(layer_configuration) # Necessary!
+
+                # Attach '2D symbology' from QML file.
+                if layer.qml_symb:
+                    new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+                if dlg.cbxEnable3D.isChecked():
+                    # Attach '3D symbology' from QML file.
+                    if layer.qml_3d:
+                        new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                else:
+                    # Deactivate 3D renderer to avoid crashes and slow downs.
+                    new_layer.setRenderer3D(None)
+
+                # Insert the layer to the assigned group
+                node_lod.addLayer(new_layer)
+                QgsProject.instance().addMapLayer(new_layer, False)
+
+                # Setup the relations for this layer to the look-up (enumeration) tables
+                create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+                # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                    # Setup the relations for this layer to the address table
+                    create_layer_relation_to_address_bdg_table(dlg, layer=new_layer)
+                
+                    # create_layer_relation_to_genericattrib_tables(dlg, layer=new_layer)
+                    pass
+
+                # Update the layer_config with the id of the created relations, so that we can populate the child tables.
+
+            else:
+                # Attach 'attribute form' from QML file.
+                if layer.qml_form:
+                    new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    # otherwise: categories=QgsMapLayer.AllStyleCategories
+
+                # Attach 'symbology' from QML file.
+                if layer.qml_symb:
+                    new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+
+                if dlg.cbxEnable3D.isChecked():
+                    # Attach '3d symbology' from QML file.
+                    if layer.qml_3d:
+                        new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                else:
+                    # Deactivate 3D renderer to avoid crashes and slow downs.
+                    new_layer.setRenderer3D(None)
+
+                # Insert the layer to the assigned group
+                node_lod.addLayer(new_layer)
+                QgsProject.instance().addMapLayer(new_layer, False)
+
+                # Setup the relations for this layer to the look-up (enumeration) tables
+                create_layer_relation_to_enumerations(dlg, layer=new_layer)
+
+                # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
+                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                    # Setup the relations for this layer to the generic attributes table
+                    create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
+
+        ####################################################################
 
     return True # All went well

@@ -130,8 +130,11 @@ class CreateLayersWorker(QObject):
                     funcs_list.append(ft.layers_create_function)
         # print("selected feature types funcs", funcs_list)
 
-        n_iter_steps = len(funcs_list)
+        # 1) Create the layers: len(funcs_list)
+        # 2) Create the detail views: +1
 
+
+        n_iter_steps = len(funcs_list) + 1
         # Set progress bar goal
         dlg.bar.setMaximum(n_iter_steps)
 
@@ -159,12 +162,13 @@ class CreateLayersWorker(QObject):
 
         try:
             # Open new temp session
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Create layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Create layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
                 time_start = time.time()
 
+                # 1) Create the layers 
                 for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
@@ -195,8 +199,37 @@ class CreateLayersWorker(QObject):
                         self.sig_fail.emit()
                         break
 
+                # 2) Create the detail views
+                step += 1 
+                query = pysql.SQL("""
+                            SELECT {_qgis_pkg_schema}.create_detail_view({_usr_name},{_cdb_schema});
+                            """).format(
+                            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                            _usr_name = pysql.Literal(dlg.DB.username),
+                            _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                            )
+
+                # Update progress bar
+                msg = f"Creating detail views"
+                self.sig_progress.emit(step, msg)
+
+                try:
+                    with temp_conn.cursor() as cur:
+                        cur.execute(query)
+                    temp_conn.commit()
+
+                except (Exception, psycopg2.Error) as error:
+                    temp_conn.rollback()
+                    fail_flag = True
+                    gen_f.critical_log(
+                        func=self.create_layers_thread,
+                        location=FILE_LOCATION,
+                        header="Creating detail views",
+                        error=error)
+                    self.sig_fail.emit()
+
             # Measure elapsed time
-            print(f"Create layers process completed in {round((time.time() - time_start), 4)} seconds")
+            print(f"Creation of layers and detail views completed in {round((time.time() - time_start), 4)} seconds")
 
         except (Exception, psycopg2.Error) as error:
             fail_flag = True
@@ -537,19 +570,22 @@ class DropLayersWorker(QObject):
             ft = dlg.FeatureTypesRegistry[feat_type]
             funcs_list.append(ft.layers_drop_function)
 
-        n_iter_steps = len(funcs_list)
+        # 1) Drop layers: len(funcs_list)
+        # 2) Drop detail views: + 1
 
+        n_iter_steps = len(funcs_list) + 1
         # Set progress bar goal
         dlg.bar.setMaximum(n_iter_steps)
 
         try:
             # Open new temp session, reserved for dropping layers.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Drop layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Drop layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
                 time_start = time.time()
 
+                # 1) Drop layers
                 for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
@@ -580,6 +616,35 @@ class DropLayersWorker(QObject):
                             error=error)
                         self.sig_fail.emit()
                         break
+
+                # 2) Drop the detail views
+                query = pysql.SQL("""
+                            SELECT {_qgis_pkg_schema}.drop_detail_view({_usr_schema},{_cdb_schema});
+                            """).format(
+                            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                            _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
+                            _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                            )
+
+                # Update progress bar
+                msg = f"Dropping detail views"
+                step += 1
+                self.sig_progress.emit(step, msg)
+
+                try:
+                    with temp_conn.cursor() as cur:
+                        cur.execute(query)
+                    temp_conn.commit()
+
+                except (Exception, psycopg2.Error) as error:
+                    temp_conn.rollback()
+                    fail_flag = True
+                    gen_f.critical_log(
+                        func=self.drop_layers_thread,
+                        location=FILE_LOCATION,
+                        header="Dropping detail views",
+                        error=error)
+                    self.sig_fail.emit()
 
             # Measure elapsed time
             print(f"Drop layers process completed in {round((time.time() - time_start), 4)} seconds")

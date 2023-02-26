@@ -134,7 +134,7 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
     if cols_list == ["*"]:
         query = pysql.SQL("""
                         SELECT * FROM {_usr_schema}.layer_metadata
-                        WHERE cdb_schema = {_cdb_schema}
+                        WHERE cdb_schema = {_cdb_schema} AND layer_type = 'VectorLayer'
                         ORDER BY feature_type, lod, root_class, layer_name;
                         """).format(
                         _usr_schema = pysql.Identifier(usr_schema),
@@ -143,7 +143,7 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
     else:
         query = pysql.SQL("""
                     SELECT {_cols} FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema}
+                    WHERE cdb_schema = {_cdb_schema} AND layer_type = 'VectorLayer'
                     ORDER BY feature_type, lod, root_class, layer_name;
                     """).format(
                     _cols = pysql.SQL(', ').join(pysql.Identifier(col) for col in cols_list),
@@ -165,6 +165,45 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
             func=fetch_layer_metadata,
             location=FILE_LOCATION,
             header="Retrieving layers metadata",
+            error=error)
+        dlg.conn.rollback()
+
+
+def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str) -> tuple:
+    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
+    By default it retrieves all columns.
+
+    *   :param cols: The columns to retrieve from the table.
+            Note: to fetch multiple columns use: ",".join([col1,col2,col3])
+        :type cols: str
+
+    *   :returns: metadata of the layers combined with a collection of
+        the attributes names
+        :rtype: tuple(attribute_names, metadata)
+    """
+    query = pysql.SQL("""
+                    SELECT * FROM {_usr_schema}.layer_metadata
+                    WHERE cdb_schema = {_cdb_schema} AND layer_type = 'DetailView'
+                    ORDER BY class, layer_name;
+                    """).format(
+                    _usr_schema = pysql.Identifier(usr_schema),
+                    _cdb_schema = pysql.Literal(cdb_schema)
+                    )
+
+    try:
+        with dlg.conn.cursor() as cur:
+            cur.execute(query)
+            metadata = cur.fetchall()
+            # Attribute names
+            colnames = [desc[0] for desc in cur.description]
+        dlg.conn.commit()
+        return colnames, metadata
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_layer_metadata,
+            location=FILE_LOCATION,
+            header="Retrieving detail views metadata",
             error=error)
         dlg.conn.rollback()
 
@@ -353,40 +392,6 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
         dlg.conn.rollback()
 
 
-def fetch_mat_views(dlg: CDB4LoaderDialog) -> dict:
-    """SQL query that retrieves the current cdb_schema's materialised views from pg_matviews
-
-    *   :returns: Materialized view dictionary with view name as keys and populated status as value.
-        :rtype: dict{str,bool}
-    """
-    # Prepare query to get the list of materialized views for the current cdb_schema
-    query = pysql.SQL("""
-        SELECT matViewname, ispopulated 
-        FROM pg_matviews 
-        WHERE schemaname = {_qgis_pkg_schema};
-        """).format(
-        _qgis_pkg_schema = pysql.Literal(dlg.QGIS_PKG_SCHEMA)
-        )
-
-    try:
-        with dlg.conn.cursor() as cur:
-            cur.execute(query)
-            # cur.execute(query=f"""SELECT matViewname, ispopulated FROM pg_matviews WHERE schemaname = '{dlg.QGIS_PKG_SCHEMA}';""")
-            mat_views = cur.fetchall()
-            mat_views, status = list(zip(*mat_views))
-            mat_views = dict(zip(mat_views,status))
-        dlg.conn.commit()
-        return mat_views
-
-    except (Exception, psycopg2.Error) as error:
-        gen_f.critical_log(
-            func=fetch_mat_views,
-            location=FILE_LOCATION,
-            header="Retrieving list of materialized views",
-            error=error)
-        dlg.conn.rollback()
-
-
 def fetch_feature_types_checker(dlg: CDB4LoaderDialog) -> tuple:
     """SQL query that retrieves the available feature types 
 
@@ -435,7 +440,7 @@ def fetch_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> tuple
     query = pysql.SQL("""
         SELECT DISTINCT feature_type 
         FROM {_usr_schema}.layer_metadata
-        WHERE cdb_schema = {_cdb_schema}
+        WHERE cdb_schema = {_cdb_schema} AND feature_type IS NOT NULL
         ORDER BY feature_type ASC;
         """).format(
         _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
@@ -486,7 +491,7 @@ def count_cityobjects_in_cdb_schema(dlg: CDB4LoaderDialog) -> int:
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_unique_feature_types_in_layer_metadata,
+            func=count_cityobjects_in_cdb_schema,
             location=FILE_LOCATION,
             header=f"Retrieving number of cityobjects in cdb_schema {dlg.CDB_SCHEMA}",
             error=error)

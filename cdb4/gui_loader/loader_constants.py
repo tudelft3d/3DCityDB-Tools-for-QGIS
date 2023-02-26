@@ -9,7 +9,7 @@ from ... import cdb_tools_main_constants as main_c
 
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
-QGIS_PKG_MIN_VERSION_MINOR: int = 9
+QGIS_PKG_MIN_VERSION_MINOR: int = 10
 QGIS_PKG_MIN_VERSION_MINOR_REV: int = 0
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
@@ -41,9 +41,12 @@ OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
 OSM_INIT_EXTS = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS = QgsCoordinateReferenceSystem("EPSG:3857")
 
-# 3DCityDB constants
-generics_alias: str     = "Generic Attributes"
+# ToC labels and constancts 
+detail_views_group_alias: str  = "Form detail views"
+lookup_tables_group_alias: str = "Look-up tables"
+
 generics_table: str     = "cityobject_genericattrib"
+
 enumerations_table: str = "v_enumeration_value"
 codelists_table: str    = "v_codelist_value"
 

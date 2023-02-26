@@ -62,6 +62,10 @@ class LoaderDefaultSettings:
         self.enable_3d_renderer_default: bool = False
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
+        self.enable_ui_based_forms: bool = True
+        self.enable_ui_based_forms: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
+
+
     def __str__(self):
         return_str: str = \
             f"simp_geom_enabled (DEFAULT): {self.simp_geom_enabled_default}\n" + \
@@ -115,22 +119,35 @@ class CDBLayer():
         self.qml_symb = qml_symb
         self.qml_3d = qml_3d
 
+        self.n_selected: int = 0
+
+        self.qml_form_with_path: str = None
+        self.qml_symb_with_path: str = None
+        self.qml_3d_with_path: str = None
+
         if qml_form:
             self.qml_form_with_path: str = os.path.join(c.QML_PATH, c.QML_FORM_DIR, qml_form)
-        else:
-            self.qml_form_with_path = None
 
         if qml_symb:
             self.qml_symb_with_path: str = os.path.join(c.QML_PATH, c.QML_SYMB_DIR, qml_symb)
-        else:
-            self.qml_symb_with_path = None
 
         if qml_3d:
             self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
-        else:
-            self.qml_3d_with_path = None
+
+        # #########################################
+        # Initial test to support UI-based forms - Added 25 February 2023 
         
-        self.n_selected: int = 0
+        self.qml_ui_form_with_path: str = None
+        self.ui_file_with_path: str = None
+
+        if qml_form:
+            self.qml_ui_form_with_path: str = os.path.join(c.QML_PATH, "ui_form", qml_form)
+
+        if qml_form:
+            ui_file: str = qml_form.replace(".qml", ".ui")
+            self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
+        #
+        # #########################################
 
 
 class FeatureType():
