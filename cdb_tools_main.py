@@ -256,7 +256,7 @@ class CDBToolsMain:
             add_to_menu = True,
             add_to_toolbar = True) # Default: True
 
-        # Admin Dialog
+        # Admin Dialog - Leave this at the end, so it will be the last icon.
         self.add_action(
             icon_path = admin_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_ADMIN),
@@ -264,13 +264,12 @@ class CDBToolsMain:
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar = True) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_admin(), run_loader(), run_deleter() etc.
         self.first_start_loader = True
         self.first_start_deleter = True
         self.first_start_admin = True
-
 
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI.
