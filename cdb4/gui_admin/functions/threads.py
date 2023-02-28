@@ -821,13 +821,13 @@ class QgisPackageUninstallWorker(QObject):
                         module_drop_func = ft.layers_drop_function
 
                         # Prepare the query for the drop_layer_{*} function
-                        # E.g. qgis_pkg.drop_layers_building(usr_name, cdb_schema)
+                        # E.g. qgis_pkg.drop_layers_building(usr_schema, cdb_schema)
                         query = pysql.SQL("""
-                            SELECT {_qgis_pkg_schema}.{_module_drop_func}({_usr_name},{_cdb_schema});
+                            SELECT {_qgis_pkg_schema}.{_module_drop_func}({_usr_schema},{_cdb_schema});
                             """).format(
                             _qgis_pkg_schema = pysql.Identifier(qgis_pkg_schema),
                             _module_drop_func = pysql.Identifier(module_drop_func),
-                            _usr_name = pysql.Literal(usr_name),
+                            _usr_schema = pysql.Literal(usr_schema),
                             _cdb_schema = pysql.Literal(cdb_schema)
                             )
 
@@ -1130,13 +1130,13 @@ class QgisPackageUninstallWorker(QObject):
                         module_drop_func = ft.layers_drop_function
 
                         # Prepare the query for the drop_layer_{*} function
-                        # E.g. qgis_pkg.drop_layers_building(usr_name, cdb_schema)
+                        # E.g. qgis_pkg.drop_layers_building(usr_schema, cdb_schema)
                         query = pysql.SQL("""
-                            SELECT {_qgis_pkg_schema}.{_module_drop_func}({_usr_name},{_cdb_schema});
+                            SELECT {_qgis_pkg_schema}.{_module_drop_func}({_usr_schema},{_cdb_schema});
                             """).format(
                             _qgis_pkg_schema = pysql.Identifier(qgis_pkg_schema),
                             _module_drop_func = pysql.Identifier(module_drop_func),
-                            _usr_name = pysql.Literal(usr_name),
+                            _usr_schema = pysql.Literal(usr_schema),
                             _cdb_schema = pysql.Literal(cdb_schema)
                             )
 
