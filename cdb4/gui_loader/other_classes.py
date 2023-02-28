@@ -78,8 +78,8 @@ class LoaderDefaultSettings:
 
 
 class CDBLayer():
-    """This class is used to convert each row of the 'layer_metadata' table into object
-    instances. Its purpose is to facilitate access to attributes.
+    """This class is used to convert rows of the 'layer_metadata' table that are "VectorLayers"
+    into objects to be used (for example) in the LayerRegistry
     """
     def __init__(self,
             l_id: int,
@@ -107,8 +107,6 @@ class CDBLayer():
         self.root_class = root_class
         self.curr_class = curr_class
         self.lod = lod
-        self.root_class_name = root_class
-        self.curr_class_name = curr_class
         self.layer_name = layer_name
         self.gv_name = gv_name
         self.av_name = av_name
@@ -148,6 +146,67 @@ class CDBLayer():
             self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
         #
         # #########################################
+
+
+class CDBDetailView():
+    """This class is used to convert rows of the 'layer_metadata' table that are "DetailViews"
+    into objects to be used (for example) in the DetailViewRegistry
+    """
+    def __init__(self,
+            dv_id: int,
+            cdb_schema: str,
+            layer_type: str,
+            feature_type: str,
+            root_class: str,
+            curr_class: str,
+            layer_name: str,
+            creation_date: str,
+            qml_form: str,
+            qml_symb: str,
+            qml_3d: str
+            ):
+
+        self.dv_id = dv_id
+        self.cdb_schema = cdb_schema
+        self.layer_type = layer_type
+        self.feature_type = feature_type
+        self.root_class = root_class
+        self.curr_class = curr_class
+        self.layer_name = layer_name
+        self.creation_date = creation_date
+        self.qml_form = qml_form
+        self.qml_symb = qml_symb
+        self.qml_3d = qml_3d
+
+        self.qml_form_with_path: str = None
+        self.qml_symb_with_path: str = None
+        self.qml_3d_with_path: str = None
+
+        if qml_form:
+            self.qml_form_with_path: str = os.path.join(c.QML_PATH, c.QML_FORM_DIR, qml_form)
+
+        if qml_symb:
+            self.qml_symb_with_path: str = os.path.join(c.QML_PATH, c.QML_SYMB_DIR, qml_symb)
+
+        if qml_3d:
+            self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
+
+        # #########################################
+        # Initial test to support UI-based forms - Added 25 February 2023 
+        
+        self.qml_ui_form_with_path: str = None
+        self.ui_file_with_path: str = None
+
+        if qml_form:
+            self.qml_ui_form_with_path: str = os.path.join(c.QML_PATH, "ui_form", qml_form)
+
+        if qml_form:
+            ui_file: str = qml_form.replace(".qml", ".ui")
+            self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
+        #
+        # #########################################
+
+
 
 
 class FeatureType():

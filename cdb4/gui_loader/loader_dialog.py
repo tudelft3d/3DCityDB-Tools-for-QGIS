@@ -119,6 +119,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # The availability is defined by the existence of at least one Feature of that Feature Type inside the current extents.
         self.FeatureTypesRegistry: dict = {}
 
+        # Variable to store metadata about the DetailViews (i.e. children tables in the forms) 
+        self.DetailViewsRegistry: dict = {}
+
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
 
