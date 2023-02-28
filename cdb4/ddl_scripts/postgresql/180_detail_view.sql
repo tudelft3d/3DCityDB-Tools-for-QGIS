@@ -124,7 +124,7 @@ RAISE NOTICE 'For user "%": creating nested tables in usr_schema "%" for cdb_sch
 
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
--- Create GENERIC ATTRIBUTES VIEWS AND TRIGGERS
+-- Create GENERIC ATTRIBUTES (DETAIL) VIEWS AND TRIGGERS
 ---------------------------------------------------------------
 IF sql_where IS NOT NULL THEN
 	sql_join := concat('
@@ -165,8 +165,8 @@ DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_av_name,' CASCADE;
 CREATE VIEW         ',qi_usr_schema,'.',qi_av_name,' AS
 SELECT
   t.id::bigint,
-  t.parent_genattrib_id,
-  t.root_genattrib_id,
+--  t.parent_genattrib_id,
+--  t.root_genattrib_id,
   t.attrname::varchar,',
 CASE r.data_type
  WHEN 1::integer THEN '
@@ -203,8 +203,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-trig_f_suffix := 'cityobject_genericattrib_x';
---sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(av_name, trig_f_suffix, NULL, usr_schema));
+trig_f_suffix := 'dv_cityobject_genericattrib';
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 --(cdb_schema, layer_type, class, layer_name, av_name, creation_date, qml_form)
 sql_ins := concat(sql_ins,'
@@ -218,7 +218,7 @@ sql_statement := concat(sql_statement, sql_view, sql_trig);
 curr_class := 'ExternalReference';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
--- Create EXTERNAL REFERENCE VIEWS AND TRIGGERS
+-- Create EXTERNAL REFERENCE (DETAIL) VIEWS AND TRIGGERS
 ---------------------------------------------------------------
 IF sql_where IS NOT NULL THEN
 	sql_join := concat('
@@ -273,8 +273,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
 
 -- Add triggers to make view updatable
-trig_f_suffix := 'external_reference_x';
---sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(av_name, trig_f_suffix, NULL, usr_schema));
+trig_f_suffix := 'dv_external_reference';
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 --(cdb_schema, layer_type, class, layer_name, av_name, creation_date, qml_form)
 sql_ins := concat(sql_ins,'
@@ -288,7 +288,7 @@ sql_statement := concat(sql_statement, sql_view, sql_trig);
 curr_class := 'Address';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
--- Create ADDRESS_BDG/BRI(PART) VIEWS AND TRIGGERS
+-- Create ADDRESS_BDG/BRI(PART) (DETAIL) VIEWS AND TRIGGERS
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
@@ -327,7 +327,8 @@ SELECT
   a.city,
   a.state,
   a.country,
-  a2.',r.table_name,'_id AS cityobject_id
+  a2.',r.table_name,'_id AS cityobject_id,
+  a.multi_point AS geom
 FROM 
 	',qi_cdb_schema,'.address AS a
 	INNER JOIN ',qi_cdb_schema,'.address_to_',r.table_name,' AS a2 ON (a2.address_id = a.id)',
@@ -340,7 +341,7 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 
 -- Add triggers to make view updatable
 trig_f_suffix := 'address';
---sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(av_name, trig_f_suffix, NULL, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 --(cdb_schema, layer_type, class, layer_name, av_name, creation_date, qml_form)
 sql_ins := concat(sql_ins,'
@@ -354,7 +355,7 @@ sql_statement := concat(sql_statement, sql_view, sql_trig);
 curr_class := 'Address';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
--- Create ADDRESS_BDG/BRI(PART)_DOOR VIEWS AND TRIGGERS
+-- Create ADDRESS_BDG/BRI(PART)_DOOR (DETAIL) VIEWS AND TRIGGERS
 ---------------------------------------------------------------
 IF sql_where IS NOT NULL THEN
 	sql_join := concat('
@@ -393,7 +394,8 @@ SELECT
   a.city,
   a.state,
   a.country,
-  a2.id AS cityobject_id
+  a2.id AS cityobject_id,
+  a.multi_point AS geom
 FROM 
 	',qi_cdb_schema,'.address AS a
 	INNER JOIN ',qi_cdb_schema,'.',r.table_name,' AS a2 ON (a2.address_id = a.id)',
@@ -406,7 +408,7 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 
 -- Add triggers to make view updatable
 trig_f_suffix := 'address';
---sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(av_name, trig_f_suffix, NULL, usr_schema));
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 --(cdb_schema, layer_type, class, layer_name, av_name, creation_date, qml_form)
 sql_ins := concat(sql_ins,'
