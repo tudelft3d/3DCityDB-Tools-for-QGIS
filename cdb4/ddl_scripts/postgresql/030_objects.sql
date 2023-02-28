@@ -488,9 +488,9 @@ CREATE TYPE         qgis_pkg.obj_cityobject_genericattrib AS (
  parent_genattrib_id    bigint,
  root_genattrib_id      bigint,
  attrname               varchar,
- datatype               bigint,
+ datatype               int,
  strval                 varchar,
- intval                 bigint,
+ intval                 int,
  realval                float8,
  urival                 varchar,
  dateval                timestamptz,
@@ -702,7 +702,7 @@ DROP TYPE IF EXISTS qgis_pkg.obj_relief_component CASCADE;
 CREATE TYPE         qgis_pkg.obj_relief_component AS (
  id             bigint,
  objectclass_id integer,
- lod            numeric,
+ lod            numeric, -- This is numeric as the column in the table is numeric (oddly)
  extent         geometry
 );
 COMMENT ON TYPE qgis_pkg.obj_relief_component IS 'This object (type) corresponds to table RELIEF_COMPONENT';
@@ -714,7 +714,7 @@ DROP TYPE IF EXISTS qgis_pkg.obj_relief_feature CASCADE;
 CREATE TYPE         qgis_pkg.obj_relief_feature AS (
  id  bigint,
  objectclass_id integer,
- lod numeric
+ lod numeric -- This is numeric as the column in the table is numeric (oddly)
 );
 COMMENT ON TYPE qgis_pkg.obj_relief_feature IS 'This object (type) corresponds to table RELIEF_FEATURE';
 
