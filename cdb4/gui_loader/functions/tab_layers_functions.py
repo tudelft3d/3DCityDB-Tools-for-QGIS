@@ -17,7 +17,7 @@ from ..other_classes import CDBLayer
 from .. import loader_constants as c
 from . import sql
 
-def add_layers_to_register(dlg: CDB4LoaderDialog) -> None:
+def add_layers_to_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
     """
     # Clean up the layers in the registry from previous runs
@@ -63,7 +63,7 @@ def fill_feature_type_box(dlg: CDB4LoaderDialog) -> None:
     Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
     """
     # Create 'Feature Type' and 'View' objects
-    add_layers_to_register(dlg)
+    add_layers_to_registry(dlg)
     
     ft: FeatureType
     layer: CDBLayer
@@ -405,6 +405,7 @@ def create_layer_relation_to_address_bdg_table(dlg: CDB4LoaderDialog, layer: Qgs
         
     return None
 
+
 def send_to_ToC_top(group: QgsLayerTreeGroup) -> None: 
     """Function that send the input group to the top of the project's 'Table of Contents' tree.
     #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
@@ -660,14 +661,19 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
 
             uri = QgsDataSourceUri()
             uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
-            uri.setDataSource(aSchema=usr_schema, aTable=detail_view_name, aGeometryColumn=None, aKeyColumn="id")
+
+            if detail_view in ["address_bdg", "address_bri", "address_bdg_door", "address_bri_door"]:
+                uri.setDataSource(aSchema=usr_schema, aTable=detail_view_name, aGeometryColumn="geom", aKeyColumn="id")
+            else:
+                uri.setDataSource(aSchema=usr_schema, aTable=detail_view_name, aGeometryColumn=None, aKeyColumn="id")
+            
             # Create a layer corresponding to the GenericAttributes table
             layer = QgsVectorLayer(path=uri.uri(False), baseName=detail_view_name, providerLib="postgres")
 
             if layer or layer.isValid(): # Success
 
                 # Get the index of the field "cityobject"
-                co_idx: int = layer.fields().indexOf("cityobject_id")
+                # co_idx: int = layer.fields().indexOf("cityobject_id")
                 # print(f"co_id of {detail_view_name} id {co_idx}")
 
                 # Force cityobject_id to Text Edit (relation widget, automatically set by qgis) -- WHY DO WE REALLY NEED THIS?
@@ -866,7 +872,7 @@ def add_selected_layers_to_ToC_orig(dlg: CDB4LoaderDialog, layers: list) -> bool
             create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
             # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-            if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+            if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                 # Setup the relations for this layer to the generic attributes table
                 create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
 
@@ -949,7 +955,7 @@ def add_selected_layers_to_ToC_orig(dlg: CDB4LoaderDialog, layers: list) -> bool
                 create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
                 # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                     # Setup the relations for this layer to the generic attributes table
                     create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
 
@@ -1104,7 +1110,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
             # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-            if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+            if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                 # Setup the relations for this layer to the generic attributes table
                 create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
 
@@ -1159,7 +1165,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
                 create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
                 # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                     # Setup the relations for this layer to the address table
                     create_layer_relation_to_address_bdg_table(dlg, layer=new_layer)
                 
@@ -1194,7 +1200,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
                 create_layer_relation_to_enumerations(dlg, layer=new_layer)
 
                 # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-                if layer.curr_class_name != "Address":  # might change to: not in ["Address", "...", "..."]
+                if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                     # Setup the relations for this layer to the generic attributes table
                     create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
 
