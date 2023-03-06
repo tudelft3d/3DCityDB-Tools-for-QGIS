@@ -297,13 +297,13 @@ def cleanup_cdb_schema(dlg: CDB4DeleterDialog) -> bool:
         return False
 
 
-def fetch_root_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
-    """SQL query that retrieves the number of available root-class features 
+def fetch_top_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
+    """SQL query that retrieves the number of available top-class features 
 
     *   :returns: List of named tuples, each one corresponding to a record.
         :rtype: list of named tuples (RECORD)
     """
-    root_class_features = [] # empty list
+    top_class_features = [] # empty list
 
     query = pysql.SQL("""
         SELECT feature_type, root_class, objectclass_id, n_feature 
@@ -323,18 +323,18 @@ def fetch_root_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: st
         # print ("from the db", res)
 
         if not res:
-            root_class_features = []
+            top_class_features = []
         else: 
-            root_class_features = res
+            top_class_features = res
         
-        return root_class_features 
+        return top_class_features 
 
     except (Exception, psycopg2.Error) as error:
         dlg.conn.rollback()
         gen_f.critical_log(
-            func=fetch_root_class_features_counter,
+            func=fetch_top_class_features_counter,
             location=FILE_LOCATION,
-            header="Retrieving list and quantity of available root-class features in selected area",
+            header="Retrieving list and quantity of available top-class features in selected area",
             error=error)
         
 

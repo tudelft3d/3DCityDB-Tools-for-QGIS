@@ -107,7 +107,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.checks = DeleterDialogChecks()
 
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
-        self.RootClassFeaturesRegistry: dict = {}
+        self.TopClassFeaturesRegistry: dict = {}
         self.FeatureTypesRegistry: dict = {}
 
         # Variable to store the selected crs.
@@ -190,8 +190,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.gbxFeatType.toggled.connect(self.evt_gbxFeatType_toggled)
         self.ckbFeatTypeAll.toggled.connect(self.evt_ckbFeatTypeAll_toggled)
 
-        self.gbxRootClass.toggled.connect(self.evt_gbxRootClass_toggled)
-        self.ckbRootClassAll.toggled.connect(self.evt_ckbRootClassAll_toggled)
+        self.gbxTopClass.toggled.connect(self.evt_gbxTopClass_toggled)
+        self.ckbTopClassAll.toggled.connect(self.evt_ckbTopClassAll_toggled)
 
         self.btnDelSelFeatures.clicked.connect(self.evt_btnDelSelFeatures_clicked)
 
@@ -512,7 +512,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 # We can start:
 
                 # 1) Initialize the registries
-                tc_f.initialise_root_class_features_registry(self)
+                tc_f.initialise_top_class_features_registry(self)
                 tc_f.initialize_feature_types_registry(self)
 
                 # 2) Fill the cdb_schema combobox
@@ -572,7 +572,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # This will eventually fire a evt_qgbxExtents_ext_changed event
 
         tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxRootClass_reset(self)
+        tc_wf.gbxTopClass_reset(self)
 
         return None
 
@@ -583,7 +583,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         status: bool = self.gbxCleanUpSchema.isChecked()
 
         tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxRootClass_reset(self)
+        tc_wf.gbxTopClass_reset(self)
 
         if status: # it is checked to be enabled
             # Enable the button
@@ -641,21 +641,21 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.btnGeoCoder.setDisabled(False)
 
             # tc_wf.workaround_gbxFeatType(self)
-            # tc_wf.workaround_gbxRootClass(self)
+            # tc_wf.workaround_gbxTopClass(self)
 
             if self.gbxFeatSel.isChecked():
                 # Both are unchecked: leave them disabled
-                if not self.gbxFeatType.isChecked() and not self.gbxRootClass.isChecked():
+                if not self.gbxFeatType.isChecked() and not self.gbxTopClass.isChecked():
                     self.gbxFeatType.setDisabled(False)
-                    self.gbxRootClass.setDisabled(False)
+                    self.gbxTopClass.setDisabled(False)
                 # FeatType is checked: leave it enabled, disable the other
-                if self.gbxFeatType.isChecked() and not self.gbxRootClass.isChecked():
+                if self.gbxFeatType.isChecked() and not self.gbxTopClass.isChecked():
                     self.gbxFeatType.setDisabled(False)
-                    self.gbxRootClass.setDisabled(True)
-                # RootClass is checked: leave it enabled, disable the other
-                if not self.gbxFeatType.isChecked() and self.gbxRootClass.isChecked():
+                    self.gbxTopClass.setDisabled(True)
+                # TopClass is checked: leave it enabled, disable the other
+                if not self.gbxFeatType.isChecked() and self.gbxTopClass.isChecked():
                     self.gbxFeatType.setDisabled(True)
-                    self.gbxRootClass.setDisabled(False)
+                    self.gbxTopClass.setDisabled(False)
 
         else: # when unchecked, it disables itself automatically
             # We do not want to completely reset the groupbox (it would delete all, and clean the canvas, too)
@@ -788,15 +788,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.gbxBasemap.setDisabled(False)
 
             tc_wf.workaround_gbxFeatType(self)
-            tc_wf.workaround_gbxRootClass(self)
+            tc_wf.workaround_gbxTopClass(self)
 
             # Set up/update the "Select Features" group box
             tc_f.refresh_registries(self)
 
             # Enable the groupbox FeatType
             self.gbxFeatType.setDisabled(False)
-            # Enable the groupbox RootClass
-            self.gbxRootClass.setDisabled(False)
+            # Enable the groupbox TopClass
+            self.gbxTopClass.setDisabled(False)
 
             # Enable the Delete Selected features button
             self.btnDelSelFeatures.setDisabled(False)
@@ -824,12 +824,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         status: bool = self.gbxFeatType.isChecked()
 
         if status: # it is checked to be enabled
-            # Disable check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(True)
-            # Diable checkable combo box ccbxRootClass
-            self.ccbxRootClass.setDisabled(True)
-            # Disable the gbxRootClass
-            self.gbxRootClass.setDisabled(True)
+            # Disable check box ckbTopClassAll
+            self.ckbTopClassAll.setDisabled(True)
+            # Diable checkable combo box ccbxTopClass
+            self.ccbxTopClass.setDisabled(True)
+            # Disable the gbxTopClass
+            self.gbxTopClass.setDisabled(True)
 
             # Enable combo box cbxFeatType
             self.ccbxFeatType.setDisabled(False)
@@ -848,12 +848,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable combo box cbxFeatType
             self.ccbxFeatType.setDisabled(True)
 
-            # Enable the gbxRootClass
-            self.gbxRootClass.setDisabled(False)
-            # Keep disabled check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(True)
-            # Keep disabled combobox cbxRootClass
-            self.ccbxRootClass.setDisabled(True)
+            # Enable the gbxTopClass
+            self.gbxTopClass.setDisabled(False)
+            # Keep disabled check box ckbTopClassAll
+            self.ckbTopClassAll.setDisabled(True)
+            # Keep disabled combobox cbxTopClass
+            self.ccbxTopClass.setDisabled(True)
 
         return None
 
@@ -881,10 +881,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxRootClass_toggled(self) -> None:
-        """Event that is called when the check box 'Root-Class Feature' is toggled.
+    def evt_gbxTopClass_toggled(self) -> None:
+        """Event that is called when the check box 'Top-class Feature' is toggled.
         """
-        status: bool = self.gbxRootClass.isChecked()
+        status: bool = self.gbxTopClass.isChecked()
 
         if status: # it is checked to be enabled
             # Disable check box ckbFeatTypeAll
@@ -894,22 +894,22 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable the group box gbxFeatType
             self.gbxFeatType.setDisabled(True)
 
-            # Enable check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(False)
-            # Enable combo box ccbxRootClass
-            self.ccbxRootClass.setDisabled(False)
-            # Enable the groupbox gbxRootClass
-            self.gbxRootClass.setDisabled(False)
+            # Enable check box ckbTopClassAll
+            self.ckbTopClassAll.setDisabled(False)
+            # Enable combo box ccbxTopClass
+            self.ccbxTopClass.setDisabled(False)
+            # Enable the groupbox gbxTopClass
+            self.gbxTopClass.setDisabled(False)
 
         else: # when unchecked, it disables itself automatically
             # Disable check box ckbFeatTypeAll
-            self.ckbRootClassAll.setChecked(False)
-            self.ckbRootClassAll.setDisabled(True)
+            self.ckbTopClassAll.setChecked(False)
+            self.ckbTopClassAll.setDisabled(True)
             # Clear the previous selected items
-            for i in range(self.ccbxRootClass.count()):
-                self.ccbxRootClass.setItemCheckState(i, Qt.Unchecked)
+            for i in range(self.ccbxTopClass.count()):
+                self.ccbxTopClass.setItemCheckState(i, Qt.Unchecked)
             # Disable combo box cbxFeatType
-            self.ccbxRootClass.setDisabled(True)
+            self.ccbxTopClass.setDisabled(True)
 
             # Enable the group box gbxFeatType
             self.gbxFeatType.setDisabled(False)
@@ -921,25 +921,25 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_ckbRootClassAll_toggled(self) -> None:
-        """Event that is called when the check box 'Root-Class Feature All' is toggled.
+    def evt_ckbTopClassAll_toggled(self) -> None:
+        """Event that is called when the check box 'Top-class Feature All' is toggled.
         If checked, it will turn all entries to checked.
         If unchecked, it will set all entries to unchecked.
         """
-        status: bool = self.ckbRootClassAll.isChecked()
+        status: bool = self.ckbTopClassAll.isChecked()
 
         if status: # Selected/Checked
             # Select all items in combobox with cdb_schemas, set status to 2 (Checked)
-            for i in range(self.ccbxRootClass.count()):
-                 self.ccbxRootClass.setItemCheckState(i, Qt.Checked)
+            for i in range(self.ccbxTopClass.count()):
+                 self.ccbxTopClass.setItemCheckState(i, Qt.Checked)
             # Disable the drop down menu
-            self.ccbxRootClass.setDisabled(True)
+            self.ccbxTopClass.setDisabled(True)
         else:
             # Unselect all items in combobox with cdb_schemas, set status to 0 (Unchecked)
-            for i in range(self.ccbxRootClass.count()):
-                 self.ccbxRootClass.setItemCheckState(i, Qt.Unchecked)
+            for i in range(self.ccbxTopClass.count()):
+                 self.ccbxTopClass.setItemCheckState(i, Qt.Unchecked)
             # Enable the drop down menu
-            self.ccbxRootClass.setDisabled(False)
+            self.ccbxTopClass.setDisabled(False)
 
         return None
 
@@ -947,13 +947,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnDelSelFeatures_clicked(self) -> None:
         """Event that is called when the 'Delete selected features from schema {sch}' button (btnDelSelFeatures) is pressed.
         """
-        delete_mode: str = None # Eiter "del_FeatureTypes" or "del_RootClassFeatures"
+        delete_mode: str = None # Eiter "del_FeatureTypes" or "del_TopClassFeatures"
 
         # Check that there are indeed some features selected
 
         if all((not self.gbxFeatType.isChecked(),
-                not self.gbxRootClass.isChecked())):
-            msg: str = "You must enable either the 'Feature types' or the 'Root-class features' boxes."
+                not self.gbxTopClass.isChecked())):
+            msg: str = "You must enable either the 'Feature types' or the 'Top-class features' boxes."
             res = QMessageBox.warning(self, "Missing selection", msg)
             return None # Exit
         
@@ -970,18 +970,18 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 delete_mode = "del_FeatureTypes"
                 tc_f.update_feature_type_registry_is_selected(self, sel_feat_types)
 
-        elif self.gbxRootClass.isChecked():
-            # Get the list (tuple) of selected Root-class Features in the current cdb_schema
-            sel_root_class_features: list = gen_f.get_checkedItemsData(self.ccbxRootClass)
-            # print("Selected Root-class features:", sel_root_class_features)
+        elif self.gbxTopClass.isChecked():
+            # Get the list (tuple) of selected Top-class Features in the current cdb_schema
+            sel_top_class_features: list = gen_f.get_checkedItemsData(self.ccbxTopClass)
+            # print("Selected Top-class features:", sel_top_class_features)
 
-            if len(sel_root_class_features) == 0:
-                msg: str = "You must select at least a Root-class feature Type from the combo box."
+            if len(sel_top_class_features) == 0:
+                msg: str = "You must select at least a Top-class feature Type from the combo box."
                 res = QMessageBox.warning(self, "Missing selection", msg)
                 return None # Exit
             else:
-                delete_mode = "del_RootClassFeatures"
-                tc_f.update_root_class_features_is_selected(self, sel_root_class_features)
+                delete_mode = "del_TopClassFeatures"
+                tc_f.update_top_class_features_is_selected(self, sel_top_class_features)
 
         else:
             # This case should not happen.

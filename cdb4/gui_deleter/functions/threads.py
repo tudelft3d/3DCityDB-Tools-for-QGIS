@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-    from ..other_classes import FeatureType, RootClassFeature
+    from ..other_classes import FeatureType, TopClassFeature
 
 import math, time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -89,7 +89,7 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
 
 class CleanUpSchemaWorker(QObject):
     """Class to assign Worker that bulk deletes the selected features 
-    either as groups of FeatureTypes or as Root-class Features from the current database.
+    either as groups of FeatureTypes or as Top-class Features from the current database.
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
@@ -345,7 +345,7 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
 
 class BulkDeleteWorker(QObject):
     """Class to assign Worker that bulk deletes the selected features 
-    either as groups of FeatureTypes or as Root-class Features from the current database.
+    either as groups of FeatureTypes or as Top-class Features from the current database.
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
@@ -397,11 +397,11 @@ class BulkDeleteWorker(QObject):
             ft_rel = dlg.FeatureTypesRegistry['Relief']
             ft_cog = dlg.FeatureTypesRegistry['CityObjectGroup']
 
-            # 2a) Filter the Root-class features based on the selected Featuere Types 
-            sel_rcfs: list = []               # Used for all the root-class features, except the CityObjectGroup
-            sel_rcfs = sorted([rcf for rcf in dlg.RootClassFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
+            # 2a) Filter the Top-class features based on the selected Featuere Types 
+            sel_rcfs: list = []               # Used for all the Top-class features, except the CityObjectGroup
+            sel_rcfs = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
             
-            # 3a) Put the ReliefFeature and the CityObjectGroup root-class features at the end of the list 
+            # 3a) Put the ReliefFeature and the CityObjectGroup Top-class features at the end of the list 
             if (not ft_rel.is_selected) and (not ft_cog.is_selected):
                 pass # Nothing to do
 
@@ -409,41 +409,41 @@ class BulkDeleteWorker(QObject):
                 # a) Remove from the list
                 sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name != "ReliefFeature"], key = lambda x: x.name)
                 # b) add it at the end of the list
-                sel_rcfs.append(dlg.RootClassFeaturesRegistry["ReliefFeature"])
+                sel_rcfs.append(dlg.TopClassFeaturesRegistry["ReliefFeature"])
 
             elif (not ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature at the end of the rcf list
                 # a) Remove from the list
                 sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name != "CityObjectGroup"], key = lambda x: x.name)
                 # b) add it at the end of the list
-                sel_rcfs.append(dlg.RootClassFeaturesRegistry["CityObjectGroup"])
+                sel_rcfs.append(dlg.TopClassFeaturesRegistry["CityObjectGroup"])
 
             elif (ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature and the CityObjectGroup at the end of the rcf list
                 # a) Remove from the list
                 sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name not in ["ReliefFeature", "CityObjectGroup"]], key = lambda x: x.name)
                 # b) add at the end of the list
-                sel_rcfs.append(dlg.RootClassFeaturesRegistry["ReliefFeature"])
-                sel_rcfs.append(dlg.RootClassFeaturesRegistry["CityObjectGroup"])
+                sel_rcfs.append(dlg.TopClassFeaturesRegistry["ReliefFeature"])
+                sel_rcfs.append(dlg.TopClassFeaturesRegistry["CityObjectGroup"])
 
             tot_del_iter: int = 0
 
-            rcf: RootClassFeature
+            rcf: TopClassFeature
             n_iter: int = 0
             for rcf in sel_rcfs:
                 n_iter = math.ceil(rcf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
                 rcf.n_del_iter = n_iter
                 tot_del_iter += n_iter
 
-        elif self.delete_mode == "del_RootClassFeatures":
-            # 1b) Pick only those root-class features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
-            sel_rcfs: list = []               # Used for all the root-class features, except the CityObjectGroup and ReliefFeature
-            sel_rcfs: list = sorted([rcf for rcf in dlg.RootClassFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
+        elif self.delete_mode == "del_TopClassFeatures":
+            # 1b) Pick only those Top-class features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
+            sel_rcfs: list = []               # Used for all the Top-class features, except the CityObjectGroup and ReliefFeature
+            sel_rcfs: list = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
 
-            rcf_rel: RootClassFeature
-            rcf_cog: RootClassFeature
-            rcf_rel = dlg.RootClassFeaturesRegistry['ReliefFeature']
-            rcf_cog = dlg.RootClassFeaturesRegistry['CityObjectGroup']
+            rcf_rel: TopClassFeature
+            rcf_cog: TopClassFeature
+            rcf_rel = dlg.TopClassFeaturesRegistry['ReliefFeature']
+            rcf_cog = dlg.TopClassFeaturesRegistry['CityObjectGroup']
 
             if rcf_rel.is_selected: # for sure it has n_features > 0, bacause it could be selected
                 sel_rcfs.append(rcf_rel)
@@ -451,10 +451,10 @@ class BulkDeleteWorker(QObject):
             if rcf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
                 sel_rcfs.append(rcf_cog)
 
-            # Update the number of delete iterations for each selected Root-class feature
+            # Update the number of delete iterations for each selected Top-class feature
             tot_del_iter: int = 0
 
-            rcf: RootClassFeature = None
+            rcf: TopClassFeature = None
             n_iter: int = 0
             for rcf in sel_rcfs:
                 n_iter = math.ceil(rcf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
@@ -478,7 +478,7 @@ class BulkDeleteWorker(QObject):
                 # Start measuring time
                 time_start = time.time()
 
-                # Start deleting the root-class features that are neither ReliefFeature nor CityObjectGroup
+                # Start deleting the Top-class features that are neither ReliefFeature nor CityObjectGroup
                 for rcf in sel_rcfs:
                     for i in range(rcf.n_del_iter):
 
@@ -518,7 +518,7 @@ class BulkDeleteWorker(QObject):
                             gen_f.critical_log(
                                 func=self.bulk_delete_thread,
                                 location=FILE_LOCATION,
-                                header=f"Deleting objects of root-class '{rcf.name}' in schema {cdb_schema}",
+                                header=f"Deleting objects of top-class '{rcf.name}' in schema {cdb_schema}",
                                 error=error)
                             self.sig_fail.emit()
                             break # Exit from the loop

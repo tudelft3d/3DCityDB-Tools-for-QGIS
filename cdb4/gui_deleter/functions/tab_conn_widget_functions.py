@@ -149,9 +149,9 @@ def gbxFeatSel_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Feature Selection' groupbox (in 'User Connection' tab).
     """
     dlg.gbxFeatType.setChecked(False)
-    dlg.gbxRootClass.setChecked(False)
+    dlg.gbxTopClass.setChecked(False)
     gbxFeatType_reset(dlg)
-    gbxRootClass_reset(dlg)
+    gbxTopClass_reset(dlg)
 
     dlg.gbxFeatSel.setChecked(False)
     dlg.gbxFeatSel.setDisabled(True)
@@ -175,14 +175,14 @@ def gbxFeatType_reset(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def gbxRootClass_reset(dlg: CDB4DeleterDialog) -> None:
-    """Function to reset the 'Root-Class Feature' groupbox (in 'User Connection' tab).
+def gbxTopClass_reset(dlg: CDB4DeleterDialog) -> None:
+    """Function to reset the 'Top-class Feature' groupbox (in 'User Connection' tab).
     """
-    dlg.gbxRootClass.setDisabled(True)
-    dlg.ccbxRootClass.clear() # This clears also the default text
-    dlg.ckbRootClassAll.setChecked(False)
-    dlg.ccbxRootClass.setDefaultText('Select root-class feature(s)')
-    dlg.ccbxRootClass.setDisabled(True)
+    dlg.gbxTopClass.setDisabled(True)
+    dlg.ccbxTopClass.clear() # This clears also the default text
+    dlg.ckbTopClassAll.setChecked(False)
+    dlg.ccbxTopClass.setDefaultText('Select top-class feature(s)')
+    dlg.ccbxTopClass.setDisabled(True)
     
     return None
 
@@ -214,15 +214,15 @@ def workaround_gbxFeatType(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def workaround_gbxRootClass(dlg: CDB4DeleterDialog) -> None:
+def workaround_gbxTopClass(dlg: CDB4DeleterDialog) -> None:
     ##########################################
     # This is to take care of a bizarre behaviour of 
     # the groupbox not keeping the status of the child
     # combobox that gets activated once we add items
     ##########################################
-    dlg.ccbxRootClass.setDisabled(False)
-    dlg.gbxRootClass.setDisabled(False)
-    dlg.ccbxRootClass.setDisabled(True)
-    dlg.gbxRootClass.setDisabled(True)
+    dlg.ccbxTopClass.setDisabled(False)
+    dlg.gbxTopClass.setDisabled(False)
+    dlg.ccbxTopClass.setDisabled(True)
+    dlg.gbxTopClass.setDisabled(True)
 
     return None

@@ -14,7 +14,7 @@ from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 
-from ..other_classes import RootClassFeature, FeatureType
+from ..other_classes import TopClassFeature, FeatureType
 from .. import deleter_constants as c
 from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
@@ -47,30 +47,30 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: tuple = None) -> N
     return None
 
 
-def fill_root_class_features_box(dlg: CDB4DeleterDialog) -> None:
-    """Function that fills the root class features checkable combo box
+def fill_top_class_features_box(dlg: CDB4DeleterDialog) -> None:
+    """Function that fills the top class features checkable combo box
 
     """
     # Clear combo box from previous entries
-    dlg.ccbxRootClass.clear()
-    dlg.ccbxRootClass.setDefaultText('Select root-class feature(s)')
+    dlg.ccbxTopClass.clear()
+    dlg.ccbxTopClass.setDefaultText('Select top-class feature(s)')
 
-    root_class_features: list = [rcf for rcf in dlg.RootClassFeaturesRegistry.values() if rcf.exists]
+    top_class_features: list = [rcf for rcf in dlg.TopClassFeaturesRegistry.values() if rcf.exists]
 
-    if len(root_class_features) == 0: 
-        dlg.ccbxRootClass.setDefaultText('None available')
+    if len(top_class_features) == 0: 
+        dlg.ccbxTopClass.setDefaultText('None available')
         # Disable the combobox
-        dlg.ccbxRootClass.setDisabled(True)
+        dlg.ccbxTopClass.setDisabled(True)
     else:
-        rcf: RootClassFeature
-        for rcf in root_class_features:
+        rcf: TopClassFeature
+        for rcf in top_class_features:
             label = f"{rcf.name} ({rcf.n_features})" 
-            dlg.ccbxRootClass.addItemWithCheckState(
+            dlg.ccbxTopClass.addItemWithCheckState(
                 text=label,
                 state=0,
                 userData=rcf) # this is the value retrieved later
         # Reorder items alphabetically
-        dlg.ccbxRootClass.model().sort(0)
+        dlg.ccbxTopClass.model().sort(0)
     return None
 
 
@@ -100,72 +100,74 @@ def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def initialise_root_class_features_registry(dlg: CDB4DeleterDialog) -> None:
+def initialise_top_class_features_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
     # Clean up from possible previous runs
-    dlg.RootClassFeaturesRegistry: dict = {}
+    dlg.TopClassFeaturesRegistry: dict = {}
     
-    dlg.RootClassFeaturesRegistry = {
-        "Bridge"                   : RootClassFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
-        "Building"                 : RootClassFeature(name="Building"                , objectclass_id = 26, feature_type = "Building"        , del_function= "del_building"),
-        "CityFurniture"            : RootClassFeature(name="CityFurniture"           , objectclass_id = 21, feature_type = "CityFurniture"   , del_function= "del_city_furniture"),
-        "CityObjectGroup"          : RootClassFeature(name="CityObjectGroup"         , objectclass_id = 23, feature_type = "CityObjectGroup" , del_function= "del_cityobjectgroup"),
-        "GenericCityObject"        : RootClassFeature(name="GenericCityObject"       , objectclass_id =  5, feature_type = "Generics"        , del_function= "del_generic_cityobject"),
-        "LandUse"                  : RootClassFeature(name="LandUse"                 , objectclass_id =  4, feature_type = "LandUse"         , del_function= "del_land_use"),
-        "ReliefFeature"            : RootClassFeature(name="ReliefFeature"           , objectclass_id = 14, feature_type = "Relief"          , del_function= "del_relief_feature"),
-        "TINRelief"                : RootClassFeature(name="TINRelief"               , objectclass_id = 16, feature_type = "Relief"          , del_function= "del_tin_relief"),
-        "MassPointRelief"          : RootClassFeature(name="MassPointRelief"         , objectclass_id = 17, feature_type = "Relief"          , del_function= "del_masspoint_relief"),
-        "BreaklineRelief"          : RootClassFeature(name="BreaklineRelief"         , objectclass_id = 18, feature_type = "Relief"          , del_function= "del_relief_component"),
-        "RasterRelief"             : RootClassFeature(name="RasterRelief"            , objectclass_id = 19, feature_type = "Relief"          , del_function= "del_raster_relief"),
-        "TransportationComplex"    : RootClassFeature(name="TransportationComplex"   , objectclass_id = 42, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Track"                    : RootClassFeature(name="Track"                   , objectclass_id = 43, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Railway"                  : RootClassFeature(name="Railway"                 , objectclass_id = 44, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Road"                     : RootClassFeature(name="Road"                    , objectclass_id = 45, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Square"                   : RootClassFeature(name="Square"                  , objectclass_id = 46, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Tunnel"                   : RootClassFeature(name="Tunnel"                  , objectclass_id = 85, feature_type = "Tunnel"          , del_function= "del_tunnel"),
-        "SolitaryVegetationObject" : RootClassFeature(name="SolitaryVegetationObject", objectclass_id =  7, feature_type = "Vegetation"      , del_function= "del_solitary_vegetat_object"),
-        "PlantCover"               : RootClassFeature(name="PlantCover"              , objectclass_id =  8, feature_type = "Vegetation"      , del_function= "del_plant_cover"),
-        "WaterBody"                : RootClassFeature(name="WaterBody"               , objectclass_id =  9, feature_type = "WaterBody"       , del_function= "del_waterbody")
+    dlg.TopClassFeaturesRegistry = {
+        "Bridge"                   : TopClassFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
+        "Building"                 : TopClassFeature(name="Building"                , objectclass_id = 26, feature_type = "Building"        , del_function= "del_building"),
+        "CityFurniture"            : TopClassFeature(name="CityFurniture"           , objectclass_id = 21, feature_type = "CityFurniture"   , del_function= "del_city_furniture"),
+        "CityObjectGroup"          : TopClassFeature(name="CityObjectGroup"         , objectclass_id = 23, feature_type = "CityObjectGroup" , del_function= "del_cityobjectgroup"),
+        "GenericCityObject"        : TopClassFeature(name="GenericCityObject"       , objectclass_id =  5, feature_type = "Generics"        , del_function= "del_generic_cityobject"),
+        "LandUse"                  : TopClassFeature(name="LandUse"                 , objectclass_id =  4, feature_type = "LandUse"         , del_function= "del_land_use"),
+        "ReliefFeature"            : TopClassFeature(name="ReliefFeature"           , objectclass_id = 14, feature_type = "Relief"          , del_function= "del_relief_feature"),
+        "TINRelief"                : TopClassFeature(name="TINRelief"               , objectclass_id = 16, feature_type = "Relief"          , del_function= "del_tin_relief"),
+        "MassPointRelief"          : TopClassFeature(name="MassPointRelief"         , objectclass_id = 17, feature_type = "Relief"          , del_function= "del_masspoint_relief"),
+        "BreaklineRelief"          : TopClassFeature(name="BreaklineRelief"         , objectclass_id = 18, feature_type = "Relief"          , del_function= "del_relief_component"),
+        "RasterRelief"             : TopClassFeature(name="RasterRelief"            , objectclass_id = 19, feature_type = "Relief"          , del_function= "del_raster_relief"),
+        "TransportationComplex"    : TopClassFeature(name="TransportationComplex"   , objectclass_id = 42, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Track"                    : TopClassFeature(name="Track"                   , objectclass_id = 43, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Railway"                  : TopClassFeature(name="Railway"                 , objectclass_id = 44, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Road"                     : TopClassFeature(name="Road"                    , objectclass_id = 45, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Square"                   : TopClassFeature(name="Square"                  , objectclass_id = 46, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Tunnel"                   : TopClassFeature(name="Tunnel"                  , objectclass_id = 85, feature_type = "Tunnel"          , del_function= "del_tunnel"),
+        "SolitaryVegetationObject" : TopClassFeature(name="SolitaryVegetationObject", objectclass_id =  7, feature_type = "Vegetation"      , del_function= "del_solitary_vegetat_object"),
+        "PlantCover"               : TopClassFeature(name="PlantCover"              , objectclass_id =  8, feature_type = "Vegetation"      , del_function= "del_plant_cover"),
+        "WaterBody"                : TopClassFeature(name="WaterBody"               , objectclass_id =  9, feature_type = "WaterBody"       , del_function= "del_waterbody")
         }
 
     return None
 
 
-def update_root_class_features_registry_exists(dlg: CDB4DeleterDialog, root_class_features: list) -> None:
+def update_top_class_features_registry_exists(dlg: CDB4DeleterDialog, top_class_features: list) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
 
-    root_class_features is a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
+    top_class_features is a list of named tuples (feature_type, top_class, objectclass_id, n_feature)
     """
-    # # Get the list (of namedtuples) of available Root Class Features the current cdb_schema
-    # root_class_features: list = sql.fetch_root_class_features_counter(dlg)
+    # # Get the list (of namedtuples) of available Top-class features the current cdb_schema
+    # top_class_features: list = sql.fetch_top_class_features_counter(dlg)
 
-    rcf: RootClassFeature
+    tcf: TopClassFeature
+    top_class_feature: TopClassFeature
     # Reset the status from potential previous checks
-    for rcf in dlg.RootClassFeaturesRegistry.values():
-        rcf.exists = False
-        rcf.n_features = 0 
+    for tcf in dlg.TopClassFeaturesRegistry.values():
+        tcf.exists = False
+        tcf.n_features = 0 
 
     # Set to true only for those Feature Types that exist
-    for root_class_feature in root_class_features:
-        rcf = dlg.RootClassFeaturesRegistry[root_class_feature.root_class]
-        rcf.exists = True
-        rcf.n_features = root_class_feature.n_feature 
+
+    for top_class_feature in top_class_features:
+        tcf = dlg.TopClassFeaturesRegistry[top_class_feature.root_class]
+        tcf.exists = True
+        tcf.n_features = top_class_feature.n_feature 
     return None
 
 
-def update_root_class_features_is_selected(dlg: CDB4DeleterDialog, sel_root_class_features) -> None:
+def update_top_class_features_is_selected(dlg: CDB4DeleterDialog, sel_top_class_features) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    rcf: RootClassFeature
+    rcf: TopClassFeature
     # Reset the status from potential previous checks
-    for rcf in dlg.RootClassFeaturesRegistry.values():
+    for rcf in dlg.TopClassFeaturesRegistry.values():
         rcf.is_selected = False
 
-    if len(sel_root_class_features) != 0:
+    if len(sel_top_class_features) != 0:
         # Set to true only for those Feature Types that are selected
-        for root_class_feature in sel_root_class_features:
-            rcf = dlg.RootClassFeaturesRegistry[root_class_feature.name]
+        for top_class_feature in sel_top_class_features:
+            rcf = dlg.TopClassFeaturesRegistry[top_class_feature.name]
             rcf.is_selected = True
 
     return None
@@ -204,10 +206,10 @@ def update_feature_type_registry_exists(dlg: CDB4DeleterDialog) -> None:
         ft.n_features = 0
 
     rcf_existing = []
-    rcf_existing = [rcf for rcf in dlg.RootClassFeaturesRegistry.values() if rcf.exists is True]
+    rcf_existing = [rcf for rcf in dlg.TopClassFeaturesRegistry.values() if rcf.exists is True]
 
     # Set to true only for those Feature Types that exist and sum the values to get the total
-    rcf: RootClassFeature 
+    rcf: TopClassFeature 
     for rcf in rcf_existing:
         ft = dlg.FeatureTypesRegistry[rcf.feature_type]
         ft.exists = True
@@ -348,11 +350,11 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     """
     # Overview
     # 1) set the bounding box (depending on whether the gbxBasemap is enabled or not)
-    # 2) get the available Root Class Features in the proper bbox from the database
-    # 3) set up/update the Root Feature Class registry
+    # 2) get the available top-class features in the proper bbox from the database
+    # 3) set up/update the top-class features registry
     # 4) set up/update the Feature Type registry
-    # 5) fill the Root Class Feature checkable combobox
-    # 6) fill the Feature type checkable combobox    
+    # 5) fill the top-class features checkable combobox
+    # 6) fill the feature type checkable combobox    
     # 7) Now we are ready for the user to choose and click the delete selected features button.
 
     curr_extents_poly_wkt: str = None
@@ -370,19 +372,19 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
         curr_extents = None
         curr_extents_poly_wkt = None
 
-    # 2) get the available Root Class Features in the proper bbox from the database
+    # 2) get the available top-class features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-    root_class_features = sql.fetch_root_class_features_counter(dlg, curr_extents_poly_wkt)
-    # print('\n\nroot_class_features', root_class_features)
+    top_class_features = sql.fetch_top_class_features_counter(dlg, curr_extents_poly_wkt)
+    # print('\n\ntop_class_features', top_class_features)
 
-    # 3) set up/update the Root Feature Class registry (exits)
-    update_root_class_features_registry_exists(dlg, root_class_features)
+    # 3) set up/update the top-class feature registry (exists)
+    update_top_class_features_registry_exists(dlg, top_class_features)
 
-    # 4) set up/update the Feature Type registry (exits)
+    # 4) set up/update the Feature Type registry (exists)
     update_feature_type_registry_exists(dlg)
 
-    # 5) Fill the Root Class Feature checkable combobox
-    fill_root_class_features_box(dlg)
+    # 5) Fill the top-class checkable combobox
+    fill_top_class_features_box(dlg)
 
     # 6) Fill the Feature type checkable combobox 
     fill_feature_types_box(dlg)
