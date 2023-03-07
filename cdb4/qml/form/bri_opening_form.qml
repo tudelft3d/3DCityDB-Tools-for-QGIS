@@ -173,11 +173,11 @@
         <editor_configuration/>
       </attributeEditorRelation>
     </attributeEditorContainer>
-<!--     <attributeEditorContainer name="Address(es)" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
+    <attributeEditorContainer name="Addresses" visibilityExpression="" columnCount="1" showLabel="1" groupBox="0" visibilityExpressionEnabled="0">
       <attributeEditorRelation name="_xx_addresses_placeholder_id_xx_" nmRelationId="" showLabel="0" label="Generic Attributes" forceSuppressFormPopup="0" relation="_xx_relation_addresses_placeholder_id_xx_" relationWidgetTypeId="">
         <editor_configuration/>
       </attributeEditorRelation>
-    </attributeEditorContainer> -->	
+    </attributeEditorContainer>	
   </attributeEditorForm>
   <editable>
     <field editable="0" name="id"/>
