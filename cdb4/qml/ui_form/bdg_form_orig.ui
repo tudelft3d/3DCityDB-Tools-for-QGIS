@@ -272,7 +272,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_ext_ref_name</string>
+            <string notr="true">id_rel_ext_ref_name</string>
            </property>
           </widget>
          </item>
@@ -289,7 +289,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_ext_ref_uri</string>
+            <string notr="true">id_rel_ext_ref_uri</string>
            </property>
           </widget>
          </item>
@@ -320,7 +320,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_string</string>
+            <string notr="true">id_rel_gen_att_string</string>
            </property>
           </widget>
          </item>
@@ -337,7 +337,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_real</string>
+            <string notr="true">id_rel_gen_att_double</string>
            </property>
           </widget>
          </item>
@@ -354,7 +354,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_integer</string>
+            <string notr="true">id_rel_gen_att_int</string>
            </property>
           </widget>
          </item>
@@ -371,7 +371,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_measure</string>
+            <string notr="true">id_rel_gen_att_measure</string>
            </property>
           </widget>
          </item>
@@ -388,7 +388,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_date</string>
+            <string notr="true">id_rel_gen_att_date</string>
            </property>
           </widget>
          </item>
@@ -405,7 +405,7 @@
             <enum>QgsDualView::AttributeTable</enum>
            </property>
            <property name="qgisRelation" stdset="0">
-            <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_gen_attrib_uri</string>
+            <string notr="true">id_rel_gen_att_uri</string>
            </property>
           </widget>
          </item>
@@ -425,11 +425,8 @@
        <property name="viewMode">
         <enum>QgsDualView::AttributeTable</enum>
        </property>
-       <property name="visibleButtons">
-        <set>QgsRelationEditorWidget::NoButton</set>
-       </property>
        <property name="qgisRelation" stdset="0">
-        <string notr="true">id_re_alderaan_bdg_lod0_dv_alderaan_address_bdg</string>
+        <string notr="true">id_re_xx</string>
        </property>
       </widget>
      </item>
