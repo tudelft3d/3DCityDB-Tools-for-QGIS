@@ -63,7 +63,7 @@ class LoaderDefaultSettings:
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
         self.enable_ui_based_forms: bool = True
-        self.enable_ui_based_forms: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
+        self.enable_ui_based_forms_label: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
 
 
     def __str__(self):
@@ -153,27 +153,30 @@ class CDBDetailView():
     into objects to be used (for example) in the DetailViewRegistry
     """
     def __init__(self,
-            dv_id: int,
+            id: int,
             cdb_schema: str,
             layer_type: str,
-            feature_type: str,
-            root_class: str,
+            # feature_type: str,
+            # root_class: str,
             curr_class: str,
             layer_name: str,
-            creation_date: str,
+            gen_name: str,
+            # creation_date: str,
             qml_form: str,
             qml_symb: str,
             qml_3d: str
             ):
 
-        self.dv_id = dv_id
+        self.id = id
         self.cdb_schema = cdb_schema
-        self.layer_type = layer_type
-        self.feature_type = feature_type
-        self.root_class = root_class
+        self.type = layer_type
+        self.has_geom: bool = False
+        # self.feature_type = feature_type
+        # self.root_class = root_class
         self.curr_class = curr_class
-        self.layer_name = layer_name
-        self.creation_date = creation_date
+        self.name = layer_name
+        self.gen_name = gen_name     # this is the generic name, withour prefixes, cdb_schema, etc.
+        # self.creation_date = creation_date
         self.qml_form = qml_form
         self.qml_symb = qml_symb
         self.qml_3d = qml_3d
@@ -181,6 +184,9 @@ class CDBDetailView():
         self.qml_form_with_path: str = None
         self.qml_symb_with_path: str = None
         self.qml_3d_with_path: str = None
+
+        if self.type == "DetailView":
+            self.has_geom = True
 
         if qml_form:
             self.qml_form_with_path: str = os.path.join(c.QML_PATH, c.QML_FORM_DIR, qml_form)
@@ -205,7 +211,6 @@ class CDBDetailView():
             self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
         #
         # #########################################
-
 
 
 
