@@ -134,7 +134,7 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
     if cols_list == ["*"]:
         query = pysql.SQL("""
                         SELECT * FROM {_usr_schema}.layer_metadata
-                        WHERE cdb_schema = {_cdb_schema} AND layer_type = 'VectorLayer'
+                        WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
                         ORDER BY feature_type, lod, root_class, layer_name;
                         """).format(
                         _usr_schema = pysql.Identifier(usr_schema),
@@ -143,7 +143,7 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
     else:
         query = pysql.SQL("""
                     SELECT {_cols} FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND layer_type = 'VectorLayer'
+                    WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
                     ORDER BY feature_type, lod, root_class, layer_name;
                     """).format(
                     _cols = pysql.SQL(', ').join(pysql.Identifier(col) for col in cols_list),
@@ -169,21 +169,24 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
         dlg.conn.rollback()
 
 
-def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str) -> tuple:
+def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str) -> list:
     """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
     By default it retrieves all columns.
-
+    
+    keys: id, cdb_schema, layer_type, class, layer_name, av_name, qml_form, qml_symb, qml_3d 
+    
     *   :param cols: The columns to retrieve from the table.
             Note: to fetch multiple columns use: ",".join([col1,col2,col3])
         :type cols: str
 
     *   :returns: metadata of the layers combined with a collection of
         the attributes names
-        :rtype: tuple(attribute_names, metadata)
+        :rtype: list(named tuples)
     """
     query = pysql.SQL("""
-                    SELECT * FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND layer_type = 'DetailView'
+                    SELECT id, cdb_schema, layer_type, class AS curr_class, layer_name, av_name AS gen_name, qml_form, qml_symb, qml_3d
+                    FROM {_usr_schema}.layer_metadata
+                    WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
                     ORDER BY class, layer_name;
                     """).format(
                     _usr_schema = pysql.Identifier(usr_schema),
@@ -191,13 +194,11 @@ def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schem
                     )
 
     try:
-        with dlg.conn.cursor() as cur:
+        with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute(query)
-            metadata = cur.fetchall()
-            # Attribute names
-            colnames = [desc[0] for desc in cur.description]
+            res = cur.fetchall()
         dlg.conn.commit()
-        return colnames, metadata
+        return res
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(

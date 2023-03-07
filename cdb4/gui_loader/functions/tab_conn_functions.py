@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from ...shared.functions import general_functions as gen_f
-from ..other_classes import FeatureType
+from ..other_classes import FeatureType, CDBDetailView
 from .. import loader_constants as c
 from . import tab_layers_widget_functions as tl_wf
 from . import sql
@@ -125,6 +125,30 @@ def update_feature_type_registry_is_selected(dlg: CDB4LoaderDialog) -> None:
     return None
 
 
+def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
+    """Function to create the dictionary containing Detail Views metadata.
+    """
+    # This is a list of named tuples, extracted from the db sorting by gen_name
+    detail_views_metadata: list = sql.fetch_detail_view_metadata(dlg, dlg.USR_SCHEMA, dlg.CDB_SCHEMA)
+    # print(detail_views_metadata)
+
+    detail_views_keys = [elem.gen_name for elem in detail_views_metadata]
+    detail_views_keys.sort()
+    # print(detail_views_keys)
+
+    detail_views_values = [CDBDetailView(*elem) for elem in detail_views_metadata]
+    # print(detail_views_values[0].__dict__)
+
+    dlg.DetailViewsRegistry: dict = {}
+    dlg.DetailViewsRegistry = dict(zip(detail_views_keys, detail_views_values))
+    
+    # print('Initializing:\n', dlg.DetailViewsRegistry)
+    # print('Initializing:\n', dlg.DetailViewsRegistry["address_bdg"].__dict__)
+    # print('Initializing:\n', dlg.DetailViewsRegistry["gen_attrib_integer"].__dict__)
+
+    return None
+
+
 def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
     """ Function that takes care of:
         1) checking whether layers were created, i.e. they exist or not
@@ -162,6 +186,7 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.btnDropLayers.setDisabled(True)
     
     else:   # There are already layers from before
+
         # Set the labels in the connection tab: There are layers
         dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.checks.layers_exist = True
@@ -200,6 +225,10 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
 
     # Check that DB is configured correctly. If so, enable all following buttons etc.
     if dlg.checks.are_requirements_fulfilled():
+
+        # Initialize the detail view registry
+        populate_detail_views_registry(dlg)
+
         # We are done here with the 'User Connection' tab, we can now activate the Layer Tab
         # Set up the Layers Tab
         dlg.lblInfoText.setText(dlg.lblInfoText.init_text.format(db=dlg.DB.database_name, usr=dlg.DB.username, sch=dlg.CDB_SCHEMA))
