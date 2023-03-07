@@ -33,7 +33,7 @@ import os
 from collections import namedtuple
 from psycopg2.extensions import connection as pyconn
 
-from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
+from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem, QgsLayerTreeGroup
 from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
@@ -958,6 +958,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         if res == 16384: #YES
             thr.run_refresh_layers_thread(self)
 
+        # tc_f.add_layers_to_detail_views_registry(self)
+
         return None
 
 
@@ -1158,6 +1160,22 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 tag=self.PLUGIN_NAME,
                 level=Qgis.Success,
                 notifyUser=True)
+
+        # To reduce the space "consumed" in the layer tree tab, 
+        # close the detail view group and the look-up tables group
+        # Additionally, unselect them, thus making the spatial dv invisible
+        root = QgsProject.instance().layerTreeRoot()
+        node_cdb_schema: QgsLayerTreeGroup = root.findGroup("@".join([self.DB.username, self.CDB_SCHEMA]))
+        node_dv: QgsLayerTreeGroup = node_cdb_schema.findGroup(c.detail_views_group_alias)
+        node_lookup: QgsLayerTreeGroup = node_cdb_schema.findGroup(c.lookup_tables_group_alias)
+
+        if node_dv.isExpanded():
+            node_dv.setExpanded(False)
+            node_dv.setItemVisibilityCheckedRecursive(False)
+
+        if node_lookup.isExpanded():
+            node_lookup.setExpanded(False)
+            node_lookup.setItemVisibilityCheckedRecursive(False)
 
         return None
 
