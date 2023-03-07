@@ -45,8 +45,9 @@ mview_bbox			geometry
 ) 
 RETURNS text AS $$
 DECLARE
-l_type				CONSTANT varchar := 'DetailView';
 l_prefix			CONSTANT varchar := 'dv';
+l_type				varchar;
+ql_l_type			varchar;
 qgis_user_group_name CONSTANT varchar := (SELECT qgis_pkg.create_qgis_pkg_usrgroup_name());
 usr_schema      	CONSTANT varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
 usr_names_array     CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
@@ -54,7 +55,6 @@ usr_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.usr_schema) FROM qg
 cdb_schemas_array 	CONSTANT varchar[] := (SELECT array_agg(s.cdb_schema) FROM qgis_pkg.list_cdb_schemas() AS s);  
 srid                integer;
 curr_class			varchar;
-ql_l_type varchar := quote_literal(l_type);
 qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
@@ -103,7 +103,7 @@ ql_usr_schema := quote_literal(usr_schema);
 
 -- Prepare fixed part of SQL statements
 sql_ins := concat('
-DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type = ',ql_l_type,';
+DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type IN (''DetailView'', ''DetailViewNoGeom'');
 INSERT INTO ',qi_usr_schema,'.layer_metadata 
 (cdb_schema, layer_type, class, layer_name, av_name, creation_date, qml_form)
 VALUES');
@@ -121,7 +121,8 @@ END IF;
 RAISE NOTICE 'For user "%": creating nested tables in usr_schema "%" for cdb_schema "%"', qi_usr_name, qi_usr_schema, qi_cdb_schema;
 
 
-
+l_type := 'DetailViewNoGeom';
+ql_l_type := quote_literal(l_type);
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 -- Create GENERIC ATTRIBUTES (DETAIL) VIEWS AND TRIGGERS
@@ -148,12 +149,12 @@ LOOP
 
 curr_class := r.class_name;
 
-av_name := concat(l_prefix,'_',qi_cdb_schema,'_gen_attrib_',r.data_type_name);
+av_name := concat('gen_attrib_',r.data_type_name);
+l_name := concat(l_prefix,'_',qi_cdb_schema,'_',av_name);
 qi_av_name := quote_ident(av_name);
 ql_av_name := quote_literal(av_name);
-l_name := av_name;
-qi_l_name := qi_av_name;
-ql_l_name := ql_av_name;
+qi_l_name := quote_ident(l_name);
+ql_l_name := quote_literal(l_name);
 
 qml_form_name := r.qml_form_name;
 
@@ -214,7 +215,8 @@ END LOOP; -- end loop GenericAttributes
 
 sql_statement := concat(sql_statement, sql_view, sql_trig);
 
-
+l_type := 'DetailViewNoGeom';
+ql_l_type := quote_literal(l_type);
 curr_class := 'ExternalReference';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
@@ -232,12 +234,13 @@ FOR r IN
 	) AS t(data_type, data_type_name)
 LOOP
 
-av_name := concat(l_prefix,'_',qi_cdb_schema,'_ext_ref_', r.data_type_name);
+av_name := concat('ext_ref_', r.data_type_name);
+l_name := concat(l_prefix,'_',qi_cdb_schema,'_',av_name);
 qi_av_name := quote_ident(av_name);
 ql_av_name := quote_literal(av_name);
-l_name := av_name;
-qi_l_name := qi_av_name;
-ql_l_name := ql_av_name;
+qi_l_name := quote_ident(l_name);
+ql_l_name := quote_literal(l_name);
+
 qml_form_name := concat('ext_ref_form.qml');
 
 sql_view := concat(sql_view,'
@@ -284,7 +287,8 @@ END LOOP;
 
 sql_statement := concat(sql_statement, sql_view, sql_trig);
 
-
+l_type := 'DetailView';
+ql_l_type := quote_literal(l_type);
 curr_class := 'Address';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
@@ -302,12 +306,13 @@ IF sql_where IS NOT NULL THEN
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = a2.',r.table_name,'_id ',sql_where,')');
 END IF;
 
-av_name := concat(l_prefix,'_',qi_cdb_schema,'_address_',r.class_label);
+av_name := concat('address_',r.class_label);
+l_name := concat(l_prefix,'_',qi_cdb_schema,'_',av_name);
 qi_av_name := quote_ident(av_name);
 ql_av_name := quote_literal(av_name);
-l_name := av_name;
-qi_l_name := qi_av_name;
-ql_l_name := ql_av_name;
+qi_l_name := quote_ident(l_name);
+ql_l_name := quote_literal(l_name);
+
 qml_form_name := concat('address_form.qml');
 
 sql_view := concat(sql_view,'
@@ -351,7 +356,8 @@ END LOOP;
 
 sql_statement := concat(sql_statement, sql_view, sql_trig);
 
-
+l_type := 'DetailView';
+ql_l_type := quote_literal(l_type);
 curr_class := 'Address';
 sql_view := NULL; sql_join := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
@@ -369,12 +375,13 @@ FOR r IN
 	) AS t(class_name, table_name, class_label)
 LOOP
 
-av_name := concat(l_prefix,'_',qi_cdb_schema,'_address_',r.class_label);
+av_name := concat('address_',r.class_label);
+l_name := concat(l_prefix,'_',qi_cdb_schema,'_',av_name);
 qi_av_name := quote_ident(av_name);
 ql_av_name := quote_literal(av_name);
-l_name := av_name;
-qi_l_name := qi_av_name;
-ql_l_name := ql_av_name;
+qi_l_name := quote_ident(l_name);
+ql_l_name := quote_literal(l_name);
+
 qml_form_name := concat('address_form.qml');
 
 sql_view := concat(sql_view,'
