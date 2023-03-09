@@ -160,10 +160,10 @@ qml_form_name := r.qml_form_name;
 
 sql_view := concat(sql_view,'
 -----------------------------------------------------------------
--- VIEW ',upper(qi_usr_schema),'.',upper(qi_av_name),'
+-- VIEW ',upper(qi_usr_schema),'.',upper(qi_l_name),'
 -----------------------------------------------------------------
-DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_av_name,' CASCADE;
-CREATE VIEW         ',qi_usr_schema,'.',qi_av_name,' AS
+DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_l_name,' CASCADE;
+CREATE VIEW         ',qi_usr_schema,'.',qi_l_name,' AS
 SELECT
   t.id::bigint,
 --  t.parent_genattrib_id,
@@ -245,10 +245,10 @@ qml_form_name := concat('ext_ref_form.qml');
 
 sql_view := concat(sql_view,'
 -----------------------------------------------------------------
--- VIEW ',upper(qi_usr_schema),'.',upper(qi_av_name),'
+-- VIEW ',upper(qi_usr_schema),'.',upper(qi_l_name),'
 -----------------------------------------------------------------
-DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_av_name,' CASCADE;
-CREATE VIEW         ',qi_usr_schema,'.',qi_av_name,' AS
+DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_l_name,' CASCADE;
+CREATE VIEW         ',qi_usr_schema,'.',qi_l_name,' AS
 SELECT
   t.id::bigint,
   t.infosys,',
@@ -317,10 +317,10 @@ qml_form_name := concat('address_form.qml');
 
 sql_view := concat(sql_view,'
 -----------------------------------------------------------------
--- VIEW ',upper(qi_usr_schema),'.',upper(qi_av_name),'
+-- VIEW ',upper(qi_usr_schema),'.',upper(qi_l_name),'
 -----------------------------------------------------------------
-DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_av_name,' CASCADE;
-CREATE VIEW         ',qi_usr_schema,'.',qi_av_name,' AS
+DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_l_name,' CASCADE;
+CREATE VIEW         ',qi_usr_schema,'.',qi_l_name,' AS
 SELECT
   a.id::bigint,
   a.gmlid,
@@ -386,10 +386,10 @@ qml_form_name := concat('address_form.qml');
 
 sql_view := concat(sql_view,'
 -----------------------------------------------------------------
--- VIEW ',upper(qi_usr_schema),'.',upper(qi_av_name),'
+-- VIEW ',upper(qi_usr_schema),'.',upper(qi_l_name),'
 -----------------------------------------------------------------
-DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_av_name,' CASCADE;
-CREATE VIEW         ',qi_usr_schema,'.',qi_av_name,' AS
+DROP VIEW IF EXISTS ',qi_usr_schema,'.',qi_l_name,' CASCADE;
+CREATE VIEW         ',qi_usr_schema,'.',qi_l_name,' AS
 SELECT
   a.id::bigint,
   a.gmlid,
