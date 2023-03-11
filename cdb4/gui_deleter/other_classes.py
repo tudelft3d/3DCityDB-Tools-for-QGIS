@@ -1,4 +1,4 @@
-class DeleterDialogChecks:
+class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_3dcitydb_installed: bool = False
@@ -17,7 +17,7 @@ class DeleterDialogChecks:
         return return_str
 
    
-class DeleterDefaultSettings:
+class DefaultSettings:
     """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
     """
     def __init__(self):

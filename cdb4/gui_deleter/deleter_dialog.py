@@ -47,7 +47,7 @@ from .functions import tab_conn_functions as tc_f
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import canvas, sql
 from .functions import threads as thr
-from .other_classes import DeleterDialogChecks, DeleterDefaultSettings
+from .other_classes import DialogChecks, DefaultSettings
 from . import deleter_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -103,8 +103,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         ## From here you can add your variables or constants
         ############################################################
 
-        self.settings = DeleterDefaultSettings()
-        self.checks = DeleterDialogChecks()
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
 
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
         self.TopClassFeaturesRegistry: dict = {}
