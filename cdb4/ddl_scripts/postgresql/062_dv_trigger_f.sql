@@ -168,35 +168,35 @@ obj.attrname               := NEW.attrname;
 CASE data_type
 	WHEN 'string' THEN
 		obj.datatype := 1;
-		obj.strval   := NEW.value;
+		obj.strval   := NEW.value::varchar;
 	WHEN 'integer' THEN
 		obj.datatype := 2;
-		obj.intval   := NEW.value;
+		obj.intval   := NEW.value::integer;
 	WHEN 'real' THEN
 		obj.datatype := 3;
-		obj.realval  := NEW.value;
+		obj.realval  := NEW.value::double PRECISION;
 	WHEN 'uri' THEN
 		obj.datatype := 4;
-		obj.urival   := NEW.value;
+		obj.urival   := NEW.value::varchar;
 	WHEN 'date' THEN
 		obj.datatype := 5;
-		obj.dateval  := NEW.value;
+		obj.dateval  := NEW.value::timestamptz;
 	WHEN 'measure' THEN
 		obj.datatype := 6;
-		obj.realval  := NEW.value;
-		obj.unit     := NEW.uom;
+		obj.realval  := NEW.value::double precision;
+		obj.unit     := NEW.uom::varchar;
 --	WHEN 'set' THEN
 --		obj.datatype := 7;
---		obj.genattribset_codespace := NEW.value;
+--		obj.genattribset_codespace := NEW.value::varchar;
 	WHEN 'blob' THEN
 		obj.datatype := 8;
-		obj.blobval  := NEW.value;
+		obj.blobval  := NEW.value::bytea;
 --	WHEN 'geom' THEN
 --		obj.datatype := 9;
---		obj.geomval  := NEW.value;
+--		obj.geomval  := NEW.value::geometry;
 --	WHEN 'surf_geom' THEN
 --		obj.datatype := 10;
---		obj.surface_geometry_id := NEW.value;
+--		obj.surface_geometry_id := NEW.value::bigint;
 	ELSE
 		RAISE EXCEPTION 'datatype not supported';
 END CASE;
@@ -232,38 +232,38 @@ obj.attrname               := NEW.attrname;
 CASE data_type
 	WHEN 'string' THEN
 		obj.datatype := 1;
-		obj.strval   := NEW.value;
+		obj.strval   := NEW.value::varchar;
 	WHEN 'integer' THEN
 		obj.datatype := 2;
-		obj.intval   := NEW.value;
+		obj.intval   := NEW.value::integer;
 	WHEN 'real' THEN
 		obj.datatype := 3;
-		obj.realval  := NEW.value;
+		obj.realval  := NEW.value::double PRECISION;
 	WHEN 'uri' THEN
 		obj.datatype := 4;
-		obj.urival   := NEW.value;
+		obj.urival   := NEW.value::varchar;
 	WHEN 'date' THEN
 		obj.datatype := 5;
-		obj.dateval  := NEW.value;
+		obj.dateval  := NEW.value::timestamptz;
 	WHEN 'measure' THEN
 		obj.datatype := 6;
-		obj.realval  := NEW.value;
-		obj.unit     := NEW.uom;
+		obj.realval  := NEW.value::double precision;
+		obj.unit     := NEW.uom::varchar;
 --	WHEN 'set' THEN
 --		obj.datatype := 7;
---		obj.genattribset_codespace := NEW.value;
+--		obj.genattribset_codespace := NEW.value::varchar;
 	WHEN 'blob' THEN
 		obj.datatype := 8;
-		obj.blobval  := NEW.value;
+		obj.blobval  := NEW.value::bytea;
 --	WHEN 'geom' THEN
 --		obj.datatype := 9;
---		obj.geomval  := NEW.value;
+--		obj.geomval  := NEW.value::geometry;
 --	WHEN 'surf_geom' THEN
 --		obj.datatype := 10;
---		obj.surface_geometry_id := NEW.value;
+--		obj.surface_geometry_id := NEW.value::bigint;
 	ELSE
 		RAISE EXCEPTION 'datatype not supported';
-END CASE;	
+END CASE;
 obj.cityobject_id := NEW.cityobject_id;
 
 SELECT qgis_pkg.ins_t_cityobject_genericattrib(obj, cdb_schema) INTO inserted_id;
