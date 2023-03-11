@@ -133,11 +133,12 @@ def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
     # print(detail_views_metadata)
 
     detail_views_keys = [elem.gen_name for elem in detail_views_metadata]
+    # Sort by gen_name
     detail_views_keys.sort()
-    # print(detail_views_keys)
 
     detail_views_values = [CDBDetailView(*elem) for elem in detail_views_metadata]
-    # print(detail_views_values[0].__dict__)
+    # Sort by gen_name as well
+    detail_views_values.sort(key=lambda x: x.gen_name)
 
     dlg.DetailViewsRegistry: dict = {}
     dlg.DetailViewsRegistry = dict(zip(detail_views_keys, detail_views_values))
