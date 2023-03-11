@@ -60,8 +60,6 @@ qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
 l_name varchar; ql_l_name varchar; qi_l_name varchar;
 av_name varchar; ql_av_name varchar; qi_av_name varchar;
-
-
 qml_form_name 	varchar := NULL;
 qml_symb_name 	varchar := NULL;
 qml_3d_name 	varchar := NULL;
@@ -135,13 +133,13 @@ END IF;
 FOR r IN 
 	SELECT * FROM (VALUES
 	( 1::integer, 'string'::varchar, 'stringAttribute'::varchar, 'gen_attrib_string_form.qml'::varchar),
-	( 2         , 'integer'        , 'intAttribute'            , 'gen_attrib_string_form.qml' ),
-	( 3         , 'real'           , 'doubleAttribute'         , 'gen_attrib_string_form.qml' ),
+	( 2         , 'integer'        , 'intAttribute'            , 'gen_attrib_int_form.qml' ),
+	( 3         , 'real'           , 'doubleAttribute'         , 'gen_attrib_real_form.qml' ),
 	( 4         , 'uri'            , 'uriAttribute'            , 'gen_attrib_string_form.qml' ),
 	( 5         , 'date'           , 'dateAttribute'           , 'gen_attrib_date_form.qml'   ),
-	( 6         , 'measure'        , 'measureAttribute'        , 'gen_attrib_measure_form.qml'),
+	( 6         , 'measure'        , 'measureAttribute'        , 'gen_attrib_measure_form.qml')
 --	( 7         , 'set'            , 'genericAttributeSet'     , 'gen_attrib_string_form.qml' ),
-	( 8         , 'blob'           , 'blobAttribute'           , 'gen_attrib_blob_form.qml'   )
+--	( 8         , 'blob'           , 'blobAttribute'           , 'gen_attrib_blob_form.qml'   )
 --	( 9         , 'geom'           , 'geomAttribute'           , 'gen_attrib_string_form.qml' ),
 --	(10         , 'surf_geom'      , 'surfGeomAttribute'       , 'gen_attrib_string_form.qml' )
 	) AS t(data_type, data_type_name, class_name, qml_form_name)
@@ -188,7 +186,7 @@ CASE r.data_type
  WHEN 8::integer THEN '
   t.blobval::bytea AS value,'
  WHEN 9::integer THEN '
-  t.geomval AS value,'
+  t.geomval::geometry AS value,'
  WHEN 10::integer THEN '
   t.surface_geometry_id::bigint,'
 END,'
