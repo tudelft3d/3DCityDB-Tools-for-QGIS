@@ -1393,13 +1393,17 @@ l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_lab
 av_name			:= concat('_a_',cdb_schema,'_bdg_opening');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bdg_opening_form.qml';
+
 IF s.class_name = 'BuildingWindow' THEN
+	qml_form_name	:= 'bdg_opening_window_form.qml';
 	qml_symb_name	:= 'poly_azure_symb.qml';
 	qml_3d_name		:= 'poly_azure_3d.qml';
 ELSE
+	qml_form_name	:= 'bdg_opening_door_form.qml';
 	qml_symb_name	:= 'poly_brown_symb.qml';
 	qml_3d_name		:= 'poly_brown_3d.qml';
 END IF;
+
 trig_f_suffix := 'opening';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);

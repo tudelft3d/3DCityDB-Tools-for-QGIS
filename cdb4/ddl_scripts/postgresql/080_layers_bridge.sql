@@ -1619,11 +1619,13 @@ curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
 av_name			:= concat('_a_',cdb_schema,'_bri_opening');
 gv_name			:= concat('_g_',l_name);
-qml_form_name	:= 'bri_opening_form.qml';
+
 IF s.class_name = 'BridgeWindow' THEN
+	qml_form_name	:= 'bri_opening_window_form.qml';
 	qml_symb_name	:= 'poly_azure_symb.qml';
 	qml_3d_name		:= 'poly_azure_3d.qml';
 ELSE
+	qml_form_name	:= 'bri_opening_door_form.qml';
 	qml_symb_name	:= 'poly_brown_symb.qml';
 	qml_3d_name		:= 'poly_brown_3d.qml';
 END IF;
