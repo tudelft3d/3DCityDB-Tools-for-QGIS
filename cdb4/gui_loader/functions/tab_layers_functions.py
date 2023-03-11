@@ -746,7 +746,6 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             node_dv = node_cdb_schema.findGroup(c.detail_views_group_alias)
             if node_dv:
                 dv_layers: list = node_dv.findLayers()
-                print(len(dv_layers))
                 if len(dv_layers) == len(dlg.DetailViewsRegistry):
                     detail_views_found = True
 
@@ -879,7 +878,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         else:
             # print("using new ui-style forms (only for building at the moment)")
 
-            if layer.curr_class == "Building":
+            if layer.curr_class in ["Building", "BuildingPart"]:
 
                 # attach the UI-based form file
                 if layer.qml_form:
