@@ -51,7 +51,7 @@ from .functions import tab_layers_widget_functions as tl_wf
 from .functions import tab_layers_functions as tl_f
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import canvas, sql, threads as thr
-from .other_classes import LoaderDialogChecks, LoaderDefaultSettings
+from .other_classes import DialogChecks, DefaultSettings
 
 from . import loader_constants as c
 
@@ -112,13 +112,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
         self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
 
-        self.settings = LoaderDefaultSettings()
-        self.checks = LoaderDialogChecks()
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
 
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
         # The availability is defined by the existence of at least one Feature of that Feature Type inside the current extents.
         self.FeatureTypesRegistry: dict = {}
-
         # Variable to store metadata about the DetailViews (i.e. children tables in the forms) 
         self.DetailViewsRegistry: dict = {}
 

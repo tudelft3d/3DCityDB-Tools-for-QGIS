@@ -1,7 +1,7 @@
 import os.path
 from . import loader_constants as c
 
-class LoaderDialogChecks:
+class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_postgis_installed: bool = False
@@ -40,7 +40,7 @@ class LoaderDialogChecks:
         return False
 
     
-class LoaderDefaultSettings:
+class DefaultSettings:
     """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
     """
     def __init__(self):
@@ -62,7 +62,7 @@ class LoaderDefaultSettings:
         self.enable_3d_renderer_default: bool = False
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
-        self.enable_ui_based_forms: bool = True
+        self.enable_ui_based_forms: bool = False
         self.enable_ui_based_forms_label: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
 
 
@@ -160,7 +160,7 @@ class CDBDetailView():
             # root_class: str,
             curr_class: str,
             layer_name: str,
-            gen_name: str,
+            gen_name: str,    # currently takes the value of av_name field in table layer attributes
             # creation_date: str,
             qml_form: str,
             qml_symb: str,
@@ -184,6 +184,31 @@ class CDBDetailView():
         self.qml_form_with_path: str = None
         self.qml_symb_with_path: str = None
         self.qml_3d_with_path: str = None
+
+        self.form_tab_name: str = None
+
+        if gen_name == "ext_ref_name":
+            self.form_tab_name = "Ext ref (Name)"
+        elif gen_name == "ext_ref_uri":
+            self.form_tab_name = "Ext ref (Uri)"
+        elif gen_name == "gen_attrib_string":  
+            self.form_tab_name = "Gen Attrib (String)"
+        elif gen_name == "gen_attrib_integer":
+            self.form_tab_name = "Gen Attrib (Integer)"
+        elif gen_name == "gen_attrib_real":
+            self.form_tab_name = "Gen Attrib (Real)"
+        elif gen_name == "gen_attrib_measure":
+            self.form_tab_name = "Gen Attrib (Measure)"
+        elif gen_name == "gen_attrib_date":
+            self.form_tab_name = "Gen Attrib (Date)"
+        elif gen_name == "gen_attrib_uri":
+            self.form_tab_name = "Gen Attrib (Uri)"
+        elif gen_name == "gen_attrib_blob":
+            self.form_tab_name = "Gen Attrib (Blob)"
+        elif gen_name in ["address_bdg", "address_bri", "address_bdg_door", "address_bri_door"]:
+             self.form_tab_name = "Addresses"
+        else:
+            pass
 
         if self.type == "DetailView":
             self.has_geom = True
@@ -211,7 +236,6 @@ class CDBDetailView():
             self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
         #
         # #########################################
-
 
 
 class FeatureType():
