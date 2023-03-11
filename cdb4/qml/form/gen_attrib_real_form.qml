@@ -31,16 +31,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="uom" configurationFlags="None">
-      <editWidget type="TextEdit">
-        <config>
-          <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
     <field name="cityobject_id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
@@ -53,15 +43,13 @@
     <alias name="Database ID" field="id" index="0"/>
     <alias name="Attribute name" field="attrname" index="1"/>
     <alias name="Value" field="value" index="2"/>
-    <alias name="UoM" field="uom" index="3"/>
-    <alias name="Cityobject ID" field="cityobject_id" index="4"/>
+    <alias name="Cityobject ID" field="cityobject_id" index="3"/>
   </aliases>
   <defaults></defaults>
   <constraints>
     <constraint constraints="3" unique_strength="2" exp_strength="0" field="id" notnull_strength="2"/>
     <constraint constraints="1" unique_strength="0" exp_strength="0" field="attrname" notnull_strength="1"/>
     <constraint constraints="5" unique_strength="0" exp_strength="1" field="value" notnull_strength="1"/>
-    <constraint constraints="1" unique_strength="0" exp_strength="0" field="uom" notnull_strength="1"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="Value must be of type real" exp="to_real(&quot;value&quot;) = &quot;value&quot;" field="value"/>
@@ -78,8 +66,7 @@
     <attributeEditorField name="id" showLabel="1" index="0"/>
     <attributeEditorField name="attrname" showLabel="1" index="1"/>
     <attributeEditorField name="value" showLabel="1" index="2"/>
-    <attributeEditorField name="uom" showLabel="1" index="3"/>
-    <attributeEditorField name="cityobject_id" showLabel="1" index="4"/>
+    <attributeEditorField name="cityobject_id" showLabel="1" index="3"/>
   </attributeEditorForm>
   <editable>
     <field name="cityobject_id" editable="0"/>
