@@ -442,6 +442,9 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
         # We're creating relations that may not be valid, so exit.
         return None
 
+    dv: CDBDetailView
+    dv = [v for k,v in dlg.DetailViewsRegistry.items() if k == dv_gen_name][0]
+
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
     db_node = root.findGroup(dlg.DB.database_name)
@@ -450,7 +453,7 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     dv_layers: list = detail_views_node.findLayers()
     # print("dv_layers", dv_layers)
     dv_layer: QgsLayerTreeLayer
-    dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv_gen_name)][0] # it should be only one!
+    dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv.gen_name)][0] # it should be only one!
     # print("dv_layer", dv_layer)
 
     # Create new Relation object
@@ -492,7 +495,7 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
         # print('layer_root_container', layer_root_container)
 
         # Find the element containing the "Generic Attributes" in the form.
-        container_dv = get_attForm_child(container=layer_root_container, child_name="Addresses")
+        container_dv = get_attForm_child(container=layer_root_container, child_name=dv.form_tab_name)
         # Clean the element before inserting the relation
         container_dv.clear()
 
@@ -508,7 +511,7 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     return None
 
 
-def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_dv_ext_ref_old(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function to set up the relations for an input layer (e.g. a view).
     - New relation objects are created that reference the detail views of the address(es) tables.
     - Relations are also set for 'Value Relation' widget.
@@ -586,7 +589,7 @@ def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorL
     return None
 
 
-def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
     """Function to set up the relations for an input layer (e.g. a view).
     - New relation objects are created that reference the detail views of the address(es) tables.
     - Relations are also set for 'Value Relation' widget.
@@ -594,8 +597,7 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
     *   :param layer: vector layer to set up the relationships for.
         :type layer: QgsVectorLayer
     """
-    dv_gen_names: list = [k for k in dlg.DetailViewsRegistry.keys() if k.startswith("gen_attrib_")]
-    # print("dv_gen_names", dv_gen_names)
+    detail_views: list = [v for k,v in dlg.DetailViewsRegistry.items() if k.startswith("ext_ref_")]
 
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
@@ -604,10 +606,18 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
     detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
     dv_layers: list = detail_views_node.findLayers()
 
-    for dv_gen_name in dv_gen_names:
+    # Get the layer configuration
+    layer_configuration = layer.editFormConfig()
+    # print('layer_configuration', layer_configuration)
+    # Get the root container of all objects contained in the form (widgets, etc.)
+    layer_root_container = layer_configuration.invisibleRootContainer()
+    # print('layer_root_container', layer_root_container)
+
+    dv: CDBDetailView
+    for dv in detail_views:
 
         dv_layer: QgsLayerTreeLayer
-        dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv_gen_name)][0] # it should be only one!
+        dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv.gen_name)][0] # it should be only one!
         
         # Create new Relation object
         rel = QgsRelation()
@@ -635,31 +645,103 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
                 level=Qgis.Critical,
                 notifyUser=True)
 
-    # ###############################################
-    # Now start working on the form attached to the layer
-    if dlg.settings.enable_ui_based_forms is False:
+        # Now set up the tab in the qml tab of the attribute form attached to the layer
+        if dlg.settings.enable_ui_based_forms is False:
 
-        # Get the layer configuration
-        layer_configuration = layer.editFormConfig()
-        # print('layer_configuration', layer_configuration)
+            # Find the element containing the "Gen Attrib (XXXX)" tab in the form.
+            container_dv = get_attForm_child(container=layer_root_container, child_name=dv.form_tab_name)
+            # Clean the element before inserting the relation
+            container_dv.clear()
 
-        # Get the root container of all objects contained in the form (widgets, etc.)
-        layer_root_container = layer_configuration.invisibleRootContainer()
-        # print('layer_root_container', layer_root_container)
+            # Create an 'attribute form' relation object from the 'relation' object
+            relation_field = QgsAttributeEditorRelation(relation=rel, parent=container_dv)
+            relation_field.setLabel(c.detail_views_group_alias)
+            relation_field.setShowLabel(False) # No point setting a label then.
+            # Add the relation to the 'Address(es)' container (tab).
+            container_dv.addChildElement(relation_field)
 
-        # Find the element containing the "Generic Attributes" in the form.
-        container_dv = get_attForm_child(container=layer_root_container, child_name="Generic Attributes")
-        # Clean the element before inserting the relation
-        container_dv.clear()
+    layer.setEditFormConfig(layer_configuration)
 
-        # Create an 'attribute form' relation object from the 'relation' object
-        relation_field = QgsAttributeEditorRelation(relation=rel, parent=container_dv)
-        relation_field.setLabel(c.detail_views_group_alias)
-        relation_field.setShowLabel(False) # No point setting a label then.
-        # Add the relation to the 'Address(es)' container (tab).
-        container_dv.addChildElement(relation_field)
+def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+    """Function to set up the relations for an input layer (e.g. a view).
+    - New relation objects are created that reference the detail views of the address(es) tables.
+    - Relations are also set for 'Value Relation' widget.
 
-        layer.setEditFormConfig(layer_configuration)
+    *   :param layer: vector layer to set up the relationships for.
+        :type layer: QgsVectorLayer
+    """
+    detail_views: list = [v for k,v in dlg.DetailViewsRegistry.items() if k.startswith("gen_attrib_")]
+
+    # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
+    root = QgsProject.instance().layerTreeRoot()
+    db_node = root.findGroup(dlg.DB.database_name)
+    schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
+    detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
+    dv_layers: list = detail_views_node.findLayers()
+
+    # Get the layer configuration
+    layer_configuration = layer.editFormConfig()
+    # print('layer_configuration', layer_configuration)
+    # Get the root container of all objects contained in the form (widgets, etc.)
+    layer_root_container = layer_configuration.invisibleRootContainer()
+    # print('layer_root_container', layer_root_container)
+
+    dv: CDBDetailView
+    # print("\n----------Registry")
+    # for k, dv in dlg.DetailViewsRegistry.items():
+    #     print(k, "--", dv.name, dv.curr_class, dv.gen_name, dv.form_tab_name)
+
+    # print("\n----------Selection")
+    # for dv in detail_views:
+    #     print(dv.curr_class, dv.gen_name, dv.form_tab_name)
+
+    for dv in detail_views:
+
+        dv_layer: QgsLayerTreeLayer
+        dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv.gen_name)][0] # it should be only one!
+        
+        # Create new Relation object
+        rel = QgsRelation()
+        rel.setReferencedLayer(id=layer.id())  # i.e. the (QGIS  internal) id of the CityObject layer
+        rel.setReferencingLayer(id=dv_layer.layerId()) # i.e. the (QGIS  internal) id of the Address layer
+        rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
+        rel.setName(name='re_' + layer.name() + "_" + dv_layer.name())
+        rel.setId(id="id_" + rel.name())
+
+        # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
+        if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
+            rel.setStrength(0) # integer, 0 is association, 1 composition
+        else:
+            rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
+            # print(rel_strength)
+            rel.setStrength(rel_strength)
+
+        # print("rel.is_valid", rel.isValid())
+        if rel.isValid(): # Success
+            QgsProject.instance().relationManager().addRelation(rel)
+        else:
+            QgsMessageLog.logMessage(
+                message=f"Invalid relation: {rel.name()}",
+                tag=dlg.PLUGIN_NAME,
+                level=Qgis.Critical,
+                notifyUser=True)
+
+        # Now set up the tab in the qml tab of the attribute form attached to the layer
+        if dlg.settings.enable_ui_based_forms is False:
+
+            # Find the element containing the "Gen Attrib (XXXX)" tab in the form.
+            container_dv = get_attForm_child(container=layer_root_container, child_name=dv.form_tab_name)
+            # Clean the element before inserting the relation
+            container_dv.clear()
+
+            # Create an 'attribute form' relation object from the 'relation' object
+            relation_field = QgsAttributeEditorRelation(relation=rel, parent=container_dv)
+            relation_field.setLabel(c.detail_views_group_alias)
+            relation_field.setShowLabel(False) # No point setting a label then.
+            # Add the relation to the 'Address(es)' container (tab).
+            container_dv.addChildElement(relation_field)
+
+    layer.setEditFormConfig(layer_configuration)
         
     return None
 
@@ -1284,12 +1366,8 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
                     create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bri_door")
         
                 # Now, for all layers that are CityObjects
-
-                # ONLY FOR TESTING, using the gen_attrib_string detail view.
-                create_layer_relation_to_genericattrib_table(dlg, layer=new_layer)
-
-                # create_layer_relation_to_dv_gen_attrib(dlg, layer=new_layer)
-                # create_layer_relation_to_dv_ext_ref(dlg, layer=new_layer)
+                create_layer_relation_to_dv_gen_attrib(dlg, layer=new_layer)
+                create_layer_relation_to_dv_ext_ref(dlg, layer=new_layer)
 
                 # Setup the relations for this layer to the look-up (enumeration) tables
                 create_layer_relation_to_enumerations(dlg, layer=new_layer)
