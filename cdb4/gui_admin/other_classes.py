@@ -1,4 +1,4 @@
-class AdminDialogChecks:
+class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_3dcitydb_installed: bool = False
@@ -7,6 +7,23 @@ class AdminDialogChecks:
         self.is_qgis_pkg_supported: bool = False
         self.is_usr_pkg_installed: bool = False
 
+
+class DefaultSettings:
+    """ Contains all DEFAULT settings of the CDB4-Admin dialog, and their descriptions
+    """
+    def __init__(self):
+        self.enable_ro_user_default: int = False
+        self.enable_ro_user_label: str = "Enables the default 'qgis_user_ro' user upon installation of the QGIS Package"
+
+        self.enable_ro_user_access_default: int = False
+        self.enable_ro_user_access_label: str = "Grants the 'qgis_user_ro' access to all existing citydb schemas upon installation of the QGIS Package"
+
+        self.enable_rw_user_default: int = False
+        self.enable_rw_user_label: str = "Enables the default 'qgis_user_rw' user upon installation of the QGIS Package"
+
+        self.enable_rw_user_access_default: int = False
+        self.enable_rw_user_access_label: str = "Grants the 'qgis_user_rw' access to all existing citydb schemas upon installation of the QGIS Package"
+    
 
 class FeatureType():
     def __init__(self,
@@ -33,22 +50,5 @@ class FeatureType():
 
         return return_str
 
-
-class AdminDefaultSettings:
-    """ Contains all DEFAULT settings of the CDB4-Admin dialog, and their descriptions
-    """
-    def __init__(self):
-        self.enable_ro_user_default: int = False
-        self.enable_ro_user_label: str = "Enables the default 'qgis_user_ro' user upon installation of the QGIS Package"
-
-        self.enable_ro_user_access_default: int = False
-        self.enable_ro_user_access_label: str = "Grants the 'qgis_user_ro' access to all existing citydb schemas upon installation of the QGIS Package"
-
-        self.enable_rw_user_default: int = False
-        self.enable_rw_user_label: str = "Enables the default 'qgis_user_rw' user upon installation of the QGIS Package"
-
-        self.enable_rw_user_access_default: int = False
-        self.enable_rw_user_access_label: str = "Grants the 'qgis_user_rw' access to all existing citydb schemas upon installation of the QGIS Package"
-    
 
     

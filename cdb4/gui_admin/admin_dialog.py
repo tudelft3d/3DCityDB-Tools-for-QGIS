@@ -42,7 +42,7 @@ from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
 from ..shared.functions import sql as sh_sql
 from ..shared.functions import general_functions as gen_f  
-from .other_classes import AdminDefaultSettings, FeatureType, AdminDialogChecks
+from .other_classes import DefaultSettings, FeatureType, DialogChecks
 from .functions import sql
 from .functions import tab_install_widget_functions as ti_wf
 from .functions import tab_settings_widget_functions as ts_wf
@@ -100,8 +100,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
 
         # Initialize classes containing requirements, settings, etc.
-        self.settings = AdminDefaultSettings()
-        self.checks = AdminDialogChecks()
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
 
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
         self.FeatureTypesRegistry: dict = {
