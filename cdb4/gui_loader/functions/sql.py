@@ -187,7 +187,7 @@ def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schem
                     SELECT id, cdb_schema, layer_type, class AS curr_class, layer_name, av_name AS gen_name, qml_form, qml_symb, qml_3d
                     FROM {_usr_schema}.layer_metadata
                     WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
-                    ORDER BY class, layer_name;
+                    ORDER BY av_name;
                     """).format(
                     _usr_schema = pysql.Identifier(usr_schema),
                     _cdb_schema = pysql.Literal(cdb_schema)
