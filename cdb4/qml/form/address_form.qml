@@ -127,31 +127,9 @@
   </aliases>
   <defaults></defaults>
   <constraints>
-    <constraint unique_strength="1" constraints="3" notnull_strength="1" field="id" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="gmlid" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="gmlid_codespace" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="street" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="house_number" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="po_box" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="zip_code" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="city" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="state" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="country" exp_strength="0"/>
-    <constraint unique_strength="0" constraints="0" notnull_strength="0" field="cityobject_id" exp_strength="0"/>
+    <constraint notnull_strength="2" field="id" unique_strength="2" exp_strength="0" constraints="3"/>
   </constraints>
-  <constraintExpressions>
-    <constraint field="id" desc="" exp=""/>
-    <constraint field="gmlid" desc="" exp=""/>
-    <constraint field="gmlid_codespace" desc="" exp=""/>
-    <constraint field="street" desc="" exp=""/>
-    <constraint field="house_number" desc="" exp=""/>
-    <constraint field="po_box" desc="" exp=""/>
-    <constraint field="zip_code" desc="" exp=""/>
-    <constraint field="city" desc="" exp=""/>
-    <constraint field="state" desc="" exp=""/>
-    <constraint field="country" desc="" exp=""/>
-    <constraint field="cityobject_id" desc="" exp=""/>
-  </constraintExpressions>
+  <constraintExpressions></constraintExpressions>
   <expressionfields/>
   <editform tolerant="1"></editform>
   <editforminit/>
