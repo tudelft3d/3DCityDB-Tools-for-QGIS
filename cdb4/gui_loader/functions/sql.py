@@ -260,7 +260,6 @@ def exec_compute_cdb_schema_extents(dlg: CDB4LoaderDialog) -> tuple:
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            #cur.callproc(f"""{dlg.QGIS_PKG_SCHEMA}.compute_cdb_schema_extents""",[dlg.CDB_SCHEMA])
             values = cur.fetchone()
             dlg.conn.commit()
             if values:
@@ -301,7 +300,6 @@ def exec_gview_counter(dlg: CDB4LoaderDialog, layer: CDBLayer) -> int:
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            # cur.callproc(f"""{dlg.QGIS_PKG_SCHEMA}.gview_counter""",[dlg.USR_SCHEMA, dlg.CDB_SCHEMA, layer.gv_name, extents])
             count = cur.fetchone()[0] # Tuple has trailing comma.
         dlg.conn.commit()
 
@@ -377,7 +375,6 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
         with dlg.conn.cursor() as cur:
             cur.execute(query)
             upserted_id = cur.fetchone()[0] # Tuple has trailing comma.
-            # upserted_id = cur.callproc(f"""{dlg.QGIS_PKG_SCHEMA}.upsert_extents""",[usr_schema, cdb_schema, bbox_type, extents_wkt_2d_poly])
         dlg.conn.commit()
         if upserted_id:
             return upserted_id
@@ -497,6 +494,4 @@ def count_cityobjects_in_cdb_schema(dlg: CDB4LoaderDialog) -> int:
             header=f"Retrieving number of cityobjects in cdb_schema {dlg.CDB_SCHEMA}",
             error=error)
         dlg.conn.rollback()
-
-
     
