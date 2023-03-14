@@ -629,6 +629,8 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
     db = dlg.DB
     cdb_schema = dlg.CDB_SCHEMA
     usr_schema = dlg.USR_SCHEMA
+    extents = dlg.QGIS_EXTENTS.asWktPolygon()
+    crs = dlg.CRS
 
     # Add generics tables into their own group in ToC.
     root = QgsProject.instance().layerTreeRoot().findGroup("@".join([db.username, cdb_schema]))
@@ -644,15 +646,20 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
             uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
 
             if dv.has_geom:
-                uri.setDataSource(aSchema=usr_schema, aTable=dv.name, aGeometryColumn="geom", aKeyColumn="id")
+                if dlg.QGIS_EXTENTS == dlg.LAYER_EXTENTS:
+                    # No need to add the spatial filter
+                    uri.setDataSource(aSchema=usr_schema, aTable=dv.name, aGeometryColumn="geom", aKeyColumn="id")
+                else:
+                    uri.setDataSource(aSchema=usr_schema, aTable=dv.name, aGeometryColumn="geom", aSql=f"ST_GeomFromText('{extents}') && geom", aKeyColumn="id")
+                # Create a spatial detail view as QgsVectorLayer
+                dv_layer = QgsVectorLayer(path=uri.uri(False), baseName=dv.name, providerLib="postgres")
+                dv_layer.setCrs(crs)
             else:
                 uri.setDataSource(aSchema=usr_schema, aTable=dv.name, aGeometryColumn=None, aKeyColumn="id")
-            
-            # Create a detail view "layer" corresponding to the detail view
-            dv_layer = QgsVectorLayer(path=uri.uri(False), baseName=dv.name, providerLib="postgres")
+                # Create a non-spatial detail view as QgsVectorLayer (but without geometry)
+                dv_layer = QgsVectorLayer(path=uri.uri(False), baseName=dv.name, providerLib="postgres")
 
             if dv_layer or dv_layer.isValid(): # Success
-
                 # Add the qml-based forms
                 if dv.qml_form:
                     # print(dv.qml_form_with_path)
