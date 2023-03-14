@@ -123,6 +123,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
+        self.CRS_is_geographic: bool = None  # True if we are using lon lat in the database, False if we use projected coordinates
 
         self.CDBSchemaPrivileges: str = None
         self.n_cityobjects: int = 0 # Number of cityobjects in the current cdb_schema
@@ -639,12 +640,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         Reads the new current extents from the map and sets it in the 'Extents'
         (qgbxExtents) widget.
         """
-        # Get canvas's current extent
+        # Get canvas's current extents
         extent: QgsRectangle = self.CANVAS.extent()
 
         # Set the current extent to show in the 'extent' widget.
         self.qgbxExtents.blockSignals(True)
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal blocking signals
+        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
         self.qgbxExtents.blockSignals(False)
         self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
@@ -658,7 +659,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.CURRENT_EXTENTS.isNull() or self.CDB_SCHEMA_EXTENTS.isNull():
             return None
 
-        #Check validity of user extents relative to the City Model's cdb_extents.
+        # Check validity of user extents relative to the City Model's cdb_extents.
         layer_extents_poly = QgsGeometry.fromRect(self.CURRENT_EXTENTS)
         cdb_extents_poly = QgsGeometry.fromRect(self.CDB_SCHEMA_EXTENTS)
 
@@ -717,8 +718,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
             #########################################
             # Only for testing purposes
-            #cdb_extents_new.set(-200, 0, -150, 50, False)
-            #cdb_extents_new = cdb_extents_new.buffered(50.0)
+            # cdb_extents_new.set(-200, 0, -150, 50, False)
+            # cdb_extents_new = cdb_extents_new.buffered(50.0)
             #########################################
 
             if cdb_extents_new == cdb_extents_old:
@@ -745,7 +746,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 # Set up the canvas to the new extents of the cdb_schema.
                 # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
-                canvas.canvas_setup(self=self, canvas=self.CANVAS, extents=cdb_extents_union, crs=self.CRS, clear=False)
+                canvas.canvas_setup(dlg=self, canvas=self.CANVAS, extents=cdb_extents_union, crs=self.CRS, clear=False)
 
                 # Drop the rubber band of the layers extents, it will be redone later.
                 self.RUBBER_LAYERS.reset()
