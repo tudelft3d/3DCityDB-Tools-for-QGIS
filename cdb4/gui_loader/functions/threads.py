@@ -202,11 +202,12 @@ class CreateLayersWorker(QObject):
                 # 2) Create the detail views
                 step += 1 
                 query = pysql.SQL("""
-                            SELECT {_qgis_pkg_schema}.create_detail_view({_usr_name},{_cdb_schema});
+                            SELECT {_qgis_pkg_schema}.create_detail_view({_usr_name},{_cdb_schema},{_bbox});
                             """).format(
                             _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
                             _usr_name = pysql.Literal(dlg.DB.username),
                             _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                            _bbox = pysql.Literal(bbox)
                             )
 
                 # Update progress bar
@@ -268,6 +269,7 @@ def evt_create_layers_success(dlg: CDB4LoaderDialog) -> None:
         evt_create_layers_fail(dlg) 
 
     return None
+
 
 def evt_create_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer creations
@@ -536,6 +538,7 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.start()
 
     return None
+
 
 class DropLayersWorker(QObject):
     """Class to assign Worker that executes the 'layer dropping' SQL functions in the database.
