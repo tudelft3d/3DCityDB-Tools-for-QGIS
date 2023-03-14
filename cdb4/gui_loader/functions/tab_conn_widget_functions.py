@@ -40,7 +40,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
         # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
             # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
-            # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
+            # This function automatically upserts the bbox to the table of the precomputed extents in the usr_schema
             sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
 
     # Check whether the layer extents were already computed and stored in the database before
@@ -68,6 +68,8 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
     # Storethe crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
+    dlg.CRS_is_geographic = dlg.CRS.isGeographic()
+    # print("dlg.CRS_is_geographic", dlg.CRS_is_geographic)
 
     # Draw the cdb extents in the canvas
     # First, create polygon rubber band corresponding to the cdb_schema extents
