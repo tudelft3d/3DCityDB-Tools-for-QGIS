@@ -29,6 +29,7 @@ def tabSettings_reset(dlg: CDB4LoaderDialog) -> None:
 
     return None
 
+
 def gbxGeomSimp_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Geometry simplification' groupbox to the DEFAULT values
     """
@@ -38,6 +39,7 @@ def gbxGeomSimp_reset(dlg: CDB4LoaderDialog) -> None:
 
     return None
 
+
 def gbxLayerOptions_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Layer Options' groupbox to the DEFAULT values
     """
@@ -46,6 +48,7 @@ def gbxLayerOptions_reset(dlg: CDB4LoaderDialog) -> None:
     dlg.cbxForceLayerGen.setChecked(dlg.settings.force_all_layers_creation_default)
 
     return None
+
 
 def gbxMisc_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Miscellaneous option' groupbox to the DEFAULT values
