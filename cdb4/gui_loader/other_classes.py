@@ -84,24 +84,28 @@ class CDBLayer():
     def __init__(self,
             l_id: int,
             cdb_schema: str,
+            ade_prefix: str,
             layer_type: str,
             feature_type: str,
             root_class: str,
             curr_class: str,
             lod: str,
             layer_name: str,
-            av_name: str,
             gv_name: str,
+            av_name: str,
             n_features: int,
             creation_date: str,
             refresh_date: str,
             qml_form: str,
             qml_symb: str,
-            qml_3d: str
+            qml_3d: str,
+            enum_cols: str,
+            codelist_cols: str
             ):
 
         self.l_id = l_id
         self.cdb_schema = cdb_schema
+        self.ade_prefix = ade_prefix
         self.layer_type = layer_type
         self.feature_type = feature_type
         self.root_class = root_class
@@ -116,6 +120,8 @@ class CDBLayer():
         self.qml_form = qml_form
         self.qml_symb = qml_symb
         self.qml_3d = qml_3d
+        self.enum_cols = enum_cols
+        self.codelist_cols = codelist_cols
 
         self.n_selected: int = 0
 
@@ -285,8 +291,4 @@ class FeatureType():
             f"is selected? {self.is_selected}\n" \
             f"layers number: {len(self.layers)}\n"
         return return_str
-
-
-
-
 
