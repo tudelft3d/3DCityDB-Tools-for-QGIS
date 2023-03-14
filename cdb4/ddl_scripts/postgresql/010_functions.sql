@@ -59,8 +59,8 @@
 -- qgis_pkg.has_layers_for_cdb_schema(...)
 -- qgis_pkg.class_name_to_class_id(...)
 -- qgis_pkg.gview_counter(...)
--- qgis_pkg.aview_counter(...)
 -- qgis_pkg.upsert_settings(...)
+-- qgis_pkg.compute_schema_size()
 -- qgis_pkg.st_3darea_poly(...)
 -- qgis_pkg.st_snap_poly_to_grid(...)
 -- qgis_pkg.generate_sql_matview_header(...)
@@ -101,8 +101,8 @@ BEGIN
 major_version  := 0;
 minor_version  := 10;
 minor_revision := 0;
-code_name      := 'April''s fool';
-release_date   := '2023-04-01'::date;
+code_name      := 'International Day of Happiness';
+release_date   := '2023-03-20'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -821,7 +821,7 @@ usr_name	varchar
 RETURNS varchar
 AS $$
 DECLARE
-tb_names_array	varchar[] := ARRAY['codelist', 'codelist_value', 'enumeration', 'enumeration_value', 'extents', 'settings'];
+tb_names_array	varchar[] := ARRAY['codelist', 'codelist_value', 'enumeration', 'enumeration_value', 'enum_lookup_config', 'codelist_lookup_config', 'extents', 'settings'];
 tb_name 	varchar;
 usr_schema	varchar;
 seq_name	varchar;
@@ -834,7 +834,6 @@ END IF;
 usr_schema := qgis_pkg.create_qgis_usr_schema_name(usr_name);
 
 RAISE NOTICE 'Creating usr_schema "%" for user "%"', usr_schema, usr_name;
-
 
 -- Just to clean up from potentially different previous installations.
 IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
@@ -872,6 +871,10 @@ DROP TABLE IF EXISTS %I.enumeration_value CASCADE;
 CREATE TABLE %I.enumeration_value (LIKE qgis_pkg.enumeration_value_template INCLUDING ALL);
 ALTER TABLE %I.enumeration_value OWNER TO %I;
 
+DROP TABLE IF EXISTS %I.enum_lookup_config CASCADE;
+CREATE TABLE %I.enum_lookup_config (LIKE qgis_pkg.enum_lookup_config_template INCLUDING ALL);
+ALTER TABLE %I.enum_lookup_config OWNER TO %I;
+
 DROP TABLE IF EXISTS %I.codelist CASCADE;
 CREATE TABLE %I.codelist (LIKE qgis_pkg.codelist_template INCLUDING ALL);
 ALTER TABLE %I.codelist OWNER TO %I;
@@ -880,10 +883,16 @@ DROP TABLE IF EXISTS %I.codelist_value CASCADE;
 CREATE TABLE %I.codelist_value (LIKE qgis_pkg.codelist_value_template INCLUDING ALL);
 ALTER TABLE %I.codelist_value OWNER TO %I;
 
+DROP TABLE IF EXISTS %I.codelist_lookup_config CASCADE;
+CREATE TABLE %I.codelist_lookup_config (LIKE qgis_pkg.codelist_lookup_config_template INCLUDING ALL);
+ALTER TABLE %I.codelist_lookup_config OWNER TO %I;
+
 DROP TABLE IF EXISTS %I.settings CASCADE;
 CREATE TABLE %I.settings (LIKE qgis_pkg.settings INCLUDING ALL);
 ALTER TABLE %I.settings OWNER TO %I;
 ',
+usr_schema, usr_schema, usr_schema, usr_name,
+usr_schema, usr_schema, usr_schema, usr_name,
 usr_schema, usr_schema, usr_schema, usr_name,
 usr_schema, usr_schema, usr_schema, usr_name,
 usr_schema, usr_schema, usr_schema, usr_name,
@@ -898,10 +907,12 @@ EXECUTE format('
 INSERT INTO %I.extents SELECT * FROM qgis_pkg.extents_template ORDER BY id;
 INSERT INTO %I.enumeration SELECT * FROM qgis_pkg.enumeration_template ORDER BY id;
 INSERT INTO %I.enumeration_value SELECT * FROM qgis_pkg.enumeration_value_template ORDER BY id;
+INSERT INTO %I.enum_lookup_config SELECT * FROM qgis_pkg.enum_lookup_config_template ORDER BY id;
 INSERT INTO %I.codelist SELECT * FROM qgis_pkg.codelist_template ORDER BY id;
 INSERT INTO %I.codelist_value SELECT * FROM qgis_pkg.codelist_value_template ORDER BY id;
+INSERT INTO %I.codelist_lookup_config SELECT * FROM qgis_pkg.codelist_lookup_config_template ORDER BY id;
 ',
-usr_schema, usr_schema, usr_schema, usr_schema, usr_schema
+usr_schema, usr_schema, usr_schema, usr_schema, usr_schema, usr_schema, usr_schema
 );
 
 -- Add foreign keys for enumeration and codelist tables
@@ -1481,7 +1492,7 @@ RETURNS TABLE(
 ) 
 AS $$
 DECLARE
-cdb_envelope geometry(Polygon) := NULL;
+cdb_extents box2d := NULL;
 
 BEGIN
 is_geom_null := NULL;
@@ -1491,17 +1502,23 @@ x_max := NULL;
 y_max := NULL;
 srid := NULL;
 
-EXECUTE format('SELECT ST_Envelope(ST_Collect(co.envelope)) FROM %I.cityobject AS co', cdb_schema) INTO cdb_envelope;
+EXECUTE format('SELECT ST_Extent(envelope) FROM %I.cityobject AS co', cdb_schema) INTO cdb_extents;
 
-IF cdb_envelope IS NULL THEN
+IF cdb_extents IS NULL THEN
 	is_geom_null := TRUE;
 ELSE
 	is_geom_null := FALSE;
-	x_min        :=   floor(ST_Xmin(cdb_envelope))::numeric;
-	x_max        := ceiling(ST_Xmax(cdb_envelope))::numeric;
-	y_min        :=   floor(ST_Ymin(cdb_envelope))::numeric;
-	y_max        := ceiling(ST_Ymax(cdb_envelope))::numeric;
-	srid         := ST_Srid(cdb_envelope)::integer;
+	x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
+	x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
+	y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
+	y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
+
+--	x_min        := round(ST_Xmin(cdb_extents)::numeric,6);
+--	x_max        := round(ST_Xmax(cdb_extents)::numeric,6);
+--	y_min        := round(ST_Ymin(cdb_extents)::numeric,6);
+--	y_max        := round(ST_Ymax(cdb_extents)::numeric,6);
+	-- Get the srid from the cdb_schema
+	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
 END IF;
 
 RETURN NEXT;
@@ -1516,6 +1533,8 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION    qgis_pkg.compute_cdb_schema_extents(varchar) IS 'Computes extents of the selected cdb_schema';
 REVOKE ALL ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar) FROM PUBLIC;
 
+-- Example:
+--SELECT qgis_pkg.compute_cdb_schema_extents('citydb');
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPSERT_EXTENTS
@@ -2112,43 +2131,6 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.gview_counter(varchar, varchar, varchar, var
 
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.AVIEW_COUNTER
-----------------------------------------------------------------
--- Counts records in the selected materialized view with geometries (gview)
--- This function can be run providing only the name of the gview, OR, alternatively, also the extents.
-DROP FUNCTION IF EXISTS    qgis_pkg.aview_counter(varchar, varchar, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.aview_counter(
-usr_schema	varchar,
-cdb_schema	varchar,
-aview_name	varchar 				-- Materialised view name containing geometries (i.e. prefixed with _g_)
-)
-RETURNS integer
-AS $$
-DECLARE
-counter		integer := 0;
-
-BEGIN
-IF EXISTS(SELECT mv.matviewname FROM pg_matviews AS mv WHERE mv.schemaname::varchar = usr_schema AND mv.ispopulated IS TRUE) THEN
-	EXECUTE format('SELECT count(co_id) FROM %I.%I', usr_schema, aview_name) INTO counter;
-ELSE
-	RAISE EXCEPTION 'View "%"."%" does not exist', usr_schema, aview_name;	
-END IF;
-RETURN counter;
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.aview_counter(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE NOTICE 'qgis_pkg.aview_counter(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.aview_counter(varchar, varchar, varchar) IS 'Counts records in the selected materialized view for attributes';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.aview_counter(varchar, varchar, varchar) FROM public;
-
--- Example: 
---SELECT qgis_pkg.gview_counter('qgis_giorgio','citydb2','citydb_bdg_lod0_footprint', NULL);
-
-
-----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPSERT_SETTINGS
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.upsert_settings(varchar, varchar, varchar, integer, varchar, varchar);
@@ -2227,6 +2209,42 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.upsert_settings(varchar, varchar, varchar, integer, varchar, varchar) IS 'Insert/Update the SETTINGS table in the user schema';
 REVOKE ALL ON FUNCTION qgis_pkg.upsert_settings(varchar, varchar, varchar, integer, varchar, varchar) FROM PUBLIC;
 
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.COMPUTE_SCHEMA_DISK_SIZE()
+----------------------------------------------------------------
+-- Computes the size occupied on disk by schemas of the current database
+DROP FUNCTION IF EXISTS    qgis_pkg.compute_schemas_disk_size();
+CREATE OR REPLACE FUNCTION qgis_pkg.compute_schemas_disk_size()
+RETURNS TABLE (
+  sche_name	varchar,
+  size 		varchar
+)
+AS $$
+DECLARE
+
+BEGIN
+
+RETURN QUERY 
+	SELECT 
+		schemaname::varchar as sch_name, 
+		pg_size_pretty(sum(pg_relation_size(quote_ident(schemaname) || '.' || quote_ident(tablename)))::bigint)::varchar as size 
+	FROM pg_tables
+	WHERE schemaname::varchar NOT IN ('pg_catalog', 'information_schema')
+	GROUP BY schemaname
+	ORDER BY schemaname;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'util_pkg.compute_schemas_disk_size(): Error QUERY_CANCELED';
+	WHEN OTHERS THEN
+		RAISE EXCEPTION 'util_pkg.compute_schemas_disk_size(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+COMMENT ON FUNCTION qgis_pkg.compute_schemas_disk_size() IS 'Returns the size occupied on disk by schemas of the current database';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.compute_schemas_disk_size() FROM public;
+
+-- Example:
+-- SELECT * FROM qgis_pkg.compute_schemas_disk_size()
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.ST_3DAREA_POLY

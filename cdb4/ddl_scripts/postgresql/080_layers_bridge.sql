@@ -64,7 +64,7 @@ qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
 l_name varchar; ql_l_name varchar; qi_l_name varchar;
-av_name varchar; ql_av_name varchar; qi_av_name varchar;
+--av_name varchar; ql_av_name varchar; qi_av_name varchar;
 gv_name varchar; qi_gv_name varchar; ql_gv_name varchar;
 qml_form_name 	varchar := NULL;
 qml_symb_name 	varchar := NULL;
@@ -78,6 +78,10 @@ sql_ins			text := NULL;
 sql_trig		text := NULL;
 sql_layer	 	text := NULL;
 sql_statement	text := NULL;
+
+co_enum_cols_array	varchar[][] := ARRAY[['cityobject', 'relative_to_terrain'],['cityobject', 'relative_to_water']];
+codelist_cols_array	varchar[][] = NULL;
+
 sql_co_atts CONSTANT varchar := '
   co.id::bigint,
   co.gmlid,
@@ -131,8 +135,8 @@ ql_usr_schema := quote_literal(usr_schema);
 -- Prepare fixed part of SQL statements
 sql_upd := concat('
 DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type = ',ql_l_type,' AND l.feature_type = ',ql_feature_type,';
-INSERT INTO ',qi_usr_schema,'.layer_metadata
-(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, av_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d)
+INSERT INTO ',qi_usr_schema,'.layer_metadata 
+(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d, enum_cols, codelist_cols)
 VALUES');
 	
 -- Get the srid from the cdb_schema
@@ -142,7 +146,12 @@ EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid
 IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid THEN
 	sql_where := NULL;
 ELSE
-	sql_where := concat('AND ST_MakeEnvelope(', floor(ST_XMin(mview_bbox)),', ', floor(ST_YMin(mview_bbox)),', ', ceil(ST_XMax(mview_bbox)),', ',	ceil(ST_YMax(mview_bbox)),', ',	srid,') && co.envelope');
+	sql_where := concat('AND ST_MakeEnvelope(', 
+		floor(ST_XMin(mview_bbox)),', ', 
+		floor(ST_YMin(mview_bbox)),', ', 
+		ceil(ST_XMax(mview_bbox)),', ',	
+		ceil(ST_YMax(mview_bbox)),', ',	
+		srid,') && co.envelope');
 END IF;
 
 RAISE NOTICE 'For module "%" and user "%": creating layers in usr_schema "%" for cdb_schema "%"', feature_type, qi_usr_name, qi_usr_schema, qi_cdb_schema;
@@ -168,6 +177,9 @@ LOOP
 		('Address'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'Address', NULL)::integer, 'address'::varchar)
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
+codelist_cols_array := NULL;
+
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoDx'::varchar, 'lodx'::varchar)	
@@ -180,7 +192,8 @@ sql_feat_count := concat('
 	FROM 
 		',qi_cdb_schema,'.address AS o
 		INNER JOIN ',qi_cdb_schema,'.address_to_bridge AS o2 ON (o2.address_id = o.id)
-		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.bridge_id AND co.objectclass_id = ',r.class_id,' ',sql_where,');
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.bridge_id AND co.objectclass_id = ',r.class_id,' ',sql_where,')
+	WHERE o.multi_point IS NOT NULL;
 ');
 EXECUTE sql_feat_count INTO num_features;
 
@@ -188,7 +201,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label);
-av_name			:= concat('_a_',l_name);
+--av_name			:= concat('_a_',l_name);
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'address_form.qml';
 qml_symb_name	:= 'point_black_symb.qml';
@@ -197,7 +210,7 @@ qml_3d_name		:= 'point_black_3d.qml';
 trig_f_suffix := 'address';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -220,7 +233,6 @@ ALTER TABLE ',qi_usr_schema,'.',qi_gv_name,' OWNER TO ',qi_usr_name,';
 --DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.layer_name = ',ql_l_name,';
 --REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,';
 ');
-
 
 -------
 --  VIEW (for atts + geom)
@@ -252,14 +264,14 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 		END LOOP; -- address lodx
 	END LOOP; -- address
-
 
 ---------------------------------------------------------------
 -- Create LAYER BRIGE(PART)_LOD1-4 TerrainIntersectionCurve
@@ -272,6 +284,8 @@ END IF;
 		('LoD4'         , 'lod4'         )		
 		) AS t(lodx_name, lodx_label)
 	LOOP
+
+codelist_cols_array := ARRAY[['bridge','class'],['bridge','function'],['bridge','usage']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -288,7 +302,7 @@ RAISE NOTICE 'Found % features for % % (tic)', num_features, r.class_name, t.lod
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_tic');
-av_name			:= concat('_a_',cdb_schema,'_bri');
+--av_name			:= concat('_a_',cdb_schema,'_bri');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := concat(r.class_label,'_form.qml');
 qml_symb_name  := 'line_black_symb.qml';
@@ -296,7 +310,7 @@ qml_3d_name    := 'line_black_3d.qml';
 trig_f_suffix := 'bridge';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -345,13 +359,13 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
 
 	END LOOP; -- END Loop TIC LoD1-4
-
 
 ---------------------------------------------------------------
 -- Create LAYER BRIDGE(PART)_LOD2-4 MultiCurve
@@ -363,6 +377,8 @@ END IF;
 		('LoD4'         , 'lod4'         )		
 		) AS t(lodx_name, lodx_label)
 	LOOP
+
+codelist_cols_array := ARRAY[['bridge','class'],['bridge','function'],['bridge','usage']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -383,7 +399,7 @@ RAISE NOTICE 'Found % features for % % (multi_curve)', num_features, r.class_nam
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_multi_curve');
-av_name			:= concat('_a_',cdb_schema,'_bri');
+--av_name			:= concat('_a_',cdb_schema,'_bri');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := concat(r.class_label,'_form.qml');
 qml_symb_name  := 'line_black_symb.qml';
@@ -391,7 +407,7 @@ qml_3d_name    := 'line_black_3d.qml';
 trig_f_suffix := 'bridge';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -440,7 +456,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -455,7 +472,9 @@ END IF;
 		('LoD1'::varchar, 'lod1'::varchar)		
 		) AS t(lodx_name, lodx_label)
 	LOOP
-	
+
+codelist_cols_array := ARRAY[['bridge','class'],['bridge','function'],['bridge','usage']];
+
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
 SELECT count(o.id) AS n_features
@@ -471,7 +490,7 @@ RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri');
+--av_name			:= concat('_a_',cdb_schema,'_bri');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := concat(r.class_label,'_form.qml');
 qml_symb_name  := 'poly_grey_symb.qml';
@@ -479,7 +498,7 @@ qml_3d_name    := 'poly_grey_3d.qml';
 trig_f_suffix := 'bridge';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -537,7 +556,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 -- Add triggers to make view updatable
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -554,6 +574,8 @@ END IF;
 		('LoD4'			, 'lod4')		
 		) AS t(lodx_name, lodx_label)
 	LOOP
+
+codelist_cols_array := ARRAY[['bridge','class'],['bridge','function'],['bridge','usage']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -582,7 +604,7 @@ RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri');
+--av_name			:= concat('_a_',cdb_schema,'_bri');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := concat(r.class_label,'_form.qml');
 qml_symb_name  := 'poly_grey_symb.qml';
@@ -590,7 +612,7 @@ qml_3d_name    := 'poly_grey_3d.qml';
 trig_f_suffix := 'bridge';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -663,10 +685,12 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
+
 
 ---------------------------------------------------------------
 -- Create LAYER BRIDGE(PART)_LOD2-4_THEMATIC SURFACES
@@ -681,6 +705,8 @@ END IF;
 			('OuterBridgeFloorSurface'	  , qgis_pkg.class_name_to_class_id(cdb_schema, 'OuterBridgeFloorSurface'	, NULL), 'outerfloorsurf')
 			) AS t(class_name, class_id, class_label)
 		LOOP
+
+codelist_cols_array := NULL;
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -698,7 +724,7 @@ RAISE NOTICE 'Found % features for % % %', num_features, r.class_name, t.lodx_na
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_',u.class_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
+--av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'bri_them_surf_form.qml';
 qml_symb_name  := 'poly_grey_semi_transp_symb.qml';
@@ -706,7 +732,7 @@ qml_3d_name    := 'poly_grey_semi_transp_3d.qml';
 trig_f_suffix := 'bridge_thematic_surface';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -748,7 +774,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -764,6 +791,7 @@ END IF;
 		('BridgeInstallation'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BridgeInstallation', NULL)::integer, 'out_inst'::varchar)
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoD2'::varchar, 'lod2'::varchar),
@@ -771,6 +799,8 @@ END IF;
 			('LoD4'			, 'lod4')		
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array := ARRAY[['bridge_installation','class'],['bridge_installation','function'],['bridge_installation','usage']];
 
 sql_feat_count := concat('
 SELECT 
@@ -802,7 +832,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_inst');
+--av_name			:= concat('_a_',cdb_schema,'_bri_inst');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'bri_inst_form.qml';
 qml_symb_name  := 'poly_cyan_symb.qml';
@@ -810,7 +840,7 @@ qml_3d_name    := 'poly_cyan_3d.qml';
 trig_f_suffix := 'bridge_installation';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -915,7 +945,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -934,6 +965,8 @@ END IF;
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
+codelist_cols_array := NULL;
+
 sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
@@ -951,7 +984,7 @@ RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.cla
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
+--av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'bri_inst_them_surf_form.qml';
 qml_symb_name  := 'poly_cyan_semi_transp_symb.qml';
@@ -959,7 +992,7 @@ qml_3d_name    := 'poly_cyan_semi_transp_3d.qml';
 trig_f_suffix  := 'bridge_thematic_surface';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1003,7 +1036,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1033,6 +1067,8 @@ END IF;
 			) AS t(lodx_name, lodx_label)
 		LOOP
 
+codelist_cols_array	:= ARRAY[['bridge_constr_element','class'],['bridge_constr_element','function'],['bridge_constr_element','usage']];
+
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
 SELECT count(o.id) AS n_features
@@ -1049,7 +1085,7 @@ RAISE NOTICE 'Found % features for (%) % % (tic)', num_features, r.class_name, s
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_tic');
-av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
+--av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_constr_elem_form.qml';
 qml_symb_name	:= 'line_black_symb.qml';
@@ -1057,7 +1093,7 @@ qml_3d_name		:= 'line_black_3d.qml';
 trig_f_suffix := 'bridge_constr_element';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1099,7 +1135,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1114,6 +1151,8 @@ END IF;
 			('LoD1'::varchar, 'lod1'::varchar)
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= ARRAY[['bridge_constr_element','class'],['bridge_constr_element','function'],['bridge_constr_element','usage']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -1131,7 +1170,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
+--av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_constr_elem_form.qml';
 qml_symb_name	:= 'poly_grey_symb.qml';
@@ -1139,7 +1178,7 @@ qml_3d_name		:= 'poly_grey_3d.qml';
 trig_f_suffix := 'bridge_constr_element';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1218,7 +1257,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1235,6 +1275,8 @@ END IF;
 			('LoD4'			, 'lod4')		
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= ARRAY[['bridge_constr_element','class'],['bridge_constr_element','function'],['bridge_constr_element','usage']];
 
 sql_feat_count := concat('
 SELECT 
@@ -1266,7 +1308,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
+--av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_constr_elem_form.qml';
 qml_symb_name	:= 'poly_grey_symb.qml';
@@ -1274,7 +1316,7 @@ qml_3d_name		:= 'poly_grey_3d.qml';
 trig_f_suffix := 'bridge_constr_element';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1377,7 +1419,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1396,6 +1439,8 @@ END IF;
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
+codelist_cols_array	:= NULL;
+
 sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
@@ -1413,7 +1458,7 @@ RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.cla
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
+--av_name			:= concat('_a_',cdb_schema,'_bri_constr_elem');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_constr_elem_them_surf_form.qml';
 qml_symb_name	:= 'poly_grey_semi_transp_symb.qml';
@@ -1421,7 +1466,7 @@ qml_3d_name		:= 'poly_grey_semi_transp_3d.qml';
 trig_f_suffix := 'bridge_thematic_surface';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1465,7 +1510,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1484,7 +1530,6 @@ END IF;
 		) AS t(class_name, class_id, class_label)
 	LOOP
 
-
 		IF s.class_name = 'BridgeDoor' THEN
 ---------------------------------------------------------------
 -- Create LAYER BRIDGE(PART)_DOOR_ADDRESS
@@ -1500,13 +1545,16 @@ END IF;
 					) AS t(class_name, class_id, class_label)
 				LOOP
 
+codelist_cols_array	:= NULL;
+
 sql_feat_count := concat('
 	SELECT 
 		count(o.id) AS n_features
 	FROM 
 		',qi_cdb_schema,'.address AS o
 		INNER JOIN ',qi_cdb_schema,'.bridge_opening AS o2 ON (o2.address_id = o.id AND o2.objectclass_id = ',s.class_id,')
-		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.id AND co.objectclass_id = ',s.class_id,' ',sql_where,');
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o2.id AND co.objectclass_id = ',s.class_id,' ',sql_where,')
+	WHERE o.multi_point IS NOT NULL;;
 ');
 EXECUTE sql_feat_count INTO num_features;
 
@@ -1514,7 +1562,7 @@ RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.cla
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',u.class_label);
-av_name			:= concat('_a_',l_name);
+--av_name			:= concat('_a_',l_name);
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'address_form.qml';
 qml_symb_name	:= 'point_black_symb.qml';
@@ -1523,7 +1571,7 @@ qml_3d_name		:= 'point_black_3d.qml';
 trig_f_suffix := 'address';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1546,7 +1594,6 @@ ALTER TABLE ',qi_usr_schema,'.',qi_gv_name,' OWNER TO ',qi_usr_name,';
 --DELETE FROM ',qi_usr_schema,'.layer_metadata AS lm WHERE lm.layer_name = ',ql_l_name,';
 --REFRESH MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,';
 ');
-
 
 -------
 --  VIEW (for atts + geom)
@@ -1580,7 +1627,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1598,6 +1646,8 @@ END IF;
 			('LoD4'			, 'lod4')		
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= NULL;
 
 sql_feat_count := concat('
 	SELECT 
@@ -1617,7 +1667,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_opening');
+--av_name			:= concat('_a_',cdb_schema,'_bri_opening');
 gv_name			:= concat('_g_',l_name);
 
 IF s.class_name = 'BridgeWindow' THEN
@@ -1632,7 +1682,7 @@ END IF;
 trig_f_suffix  := 'bridge_opening';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1718,7 +1768,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1734,11 +1785,14 @@ END IF;
 		('BridgeRoom'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BridgeRoom', NULL)::integer, 'room'::varchar)	
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoD4'::varchar, 'lod4'::varchar)
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= ARRAY[['bridge_room','class'],['bridge_room','function'],['bridge_room','usage']];
 
 sql_feat_count := concat('
 SELECT 
@@ -1756,7 +1810,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_room');
+--av_name			:= concat('_a_',cdb_schema,'_bri_room');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_room_form.qml';
 qml_symb_name	:= 'poly_orange_symb.qml';
@@ -1764,7 +1818,7 @@ qml_3d_name		:= 'poly_orange_3d.qml';
 trig_f_suffix := 'bridge_room';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1830,7 +1884,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1845,6 +1900,8 @@ END IF;
 				('BridgeFloorSurface'				, qgis_pkg.class_name_to_class_id(cdb_schema, 'BridgeFloorSurface', NULL) , 'floorsurf')
 				) AS t(class_name, class_id, class_label)
 			LOOP
+
+codelist_cols_array	:= NULL;
 
 sql_feat_count := concat('
 SELECT
@@ -1863,7 +1920,7 @@ RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.cla
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
+--av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_room_them_surf_form.qml';
 qml_symb_name	:= 'poly_orange_semi_transp_symb.qml';
@@ -1871,7 +1928,7 @@ qml_3d_name		:= 'poly_orange_semi_transp_3d.qml';
 trig_f_suffix := 'bridge_thematic_surface';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -1915,7 +1972,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -1932,11 +1990,14 @@ END IF;
 		('IntBridgeInstallation'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'IntBridgeInstallation', NULL)::integer, 'int_inst'::varchar)
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoD4'::varchar, 'lod4'::varchar)
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= ARRAY[['bridge_installation','class'],['bridge_installation','function'],['bridge_installation','usage']];
 
 sql_feat_count := concat('
 SELECT 
@@ -1968,7 +2029,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_inst');
+--av_name			:= concat('_a_',cdb_schema,'_bri_inst');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_inst_form.qml';
 qml_symb_name	:= 'poly_cyan_symb.qml';
@@ -1976,7 +2037,7 @@ qml_3d_name		:= 'poly_cyan_3d.qml';
 trig_f_suffix := 'bridge_installation';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -2080,7 +2141,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -2102,6 +2164,8 @@ END IF;
 				) AS t(class_name, class_id, class_label)
 			LOOP
 
+codelist_cols_array	:= NULL;
+
 sql_feat_count := concat('
 SELECT 
 	count(o.id) AS n_features
@@ -2119,7 +2183,7 @@ RAISE NOTICE 'Found % features for (%) % % %', num_features, r.class_name, s.cla
 
 curr_class := u.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label,'_',u.class_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
+--av_name			:= concat('_a_',cdb_schema,'_bri_them_surf');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_inst_them_surf_form.qml';
 qml_symb_name	:= 'poly_cyan_semi_transp_symb.qml';
@@ -2127,7 +2191,7 @@ qml_3d_name		:= 'poly_cyan_semi_transp_3d.qml';
 trig_f_suffix := 'bridge_thematic_surface';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -2171,7 +2235,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -2188,11 +2253,14 @@ END IF;
 		('BridgeFurniture'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'BridgeFurniture', NULL)::integer, 'furn'::varchar)	
 		) AS t(class_name, class_id, class_label)
 	LOOP
+
 		FOR t IN 
 			SELECT * FROM (VALUES
 			('LoD4'::varchar, 'lod4'::varchar)
 			) AS t(lodx_name, lodx_label)
 		LOOP
+
+codelist_cols_array	:= ARRAY[['bridge_furniture','class'],['bridge_furniture','function'],['bridge_furniture','usage']];
 
 sql_feat_count := concat('
 SELECT 
@@ -2211,7 +2279,7 @@ RAISE NOTICE 'Found % features for (%) % %', num_features, r.class_name, s.class
 
 curr_class := s.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',s.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_bri_furn');
+--av_name			:= concat('_a_',cdb_schema,'_bri_furn');
 gv_name			:= concat('_g_',l_name);
 qml_form_name	:= 'bri_frn_form.qml';
 qml_symb_name	:= 'poly_violet_symb.qml';
@@ -2219,7 +2287,7 @@ qml_3d_name		:= 'poly_violet_3d.qml';
 trig_f_suffix  := 'bridge_furniture';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -2302,7 +2370,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;

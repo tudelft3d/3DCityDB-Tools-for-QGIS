@@ -89,9 +89,10 @@ cdb_schema varchar
 RETURNS text
 AS $$
 DECLARE
-layer_type   CONSTANT varchar := 'DetailView';
-dv_prefix    CONSTANT varchar := 'dv';
-regexp_string CONSTANT varchar := '^(gen_attrib|ext_ref|address_bri|address_bdg).*';
+layer_type     CONSTANT varchar := 'DetailView';
+layer_type_ng  CONSTANT varchar := 'DetailViewNoGeom';
+dv_prefix      CONSTANT varchar := 'dv';
+regexp_string  CONSTANT varchar := '^(gen_attrib|ext_ref|address_bri|address_bdg).*';
 
 layer_prefix varchar := concat(dv_prefix,'_',cdb_schema,'_');
 layer_prefix_pos CONSTANT integer := length(layer_prefix) + 1;
@@ -128,10 +129,10 @@ END LOOP;
 -- Delete entries from table layer_metadata and reset sequence (if possible)
 IF sql_statement IS NOT NULL THEN
     sql_statement := concat(sql_statement, format('
-DELETE FROM %I.layer_metadata AS l WHERE l.cdb_schema = %L AND l.layer_type = %L;
+DELETE FROM %I.layer_metadata AS l WHERE l.cdb_schema = %L AND l.layer_type IN (%L, %L);
 WITH m AS (SELECT max(id) AS max_id FROM %I.layer_metadata)
 SELECT setval(''%I.layer_metadata_id_seq''::regclass, m.max_id, TRUE) FROM m;',
-    usr_schema, cdb_schema, layer_type,
+    usr_schema, cdb_schema, layer_type, layer_type_ng,
     usr_schema,
     usr_schema));
 
