@@ -172,7 +172,7 @@ class CleanUpSchemaWorker(QObject):
 
                     try:
                         with temp_conn.cursor() as cur:
-                            res = cur.execute(query)
+                            cur.execute(query)
                         temp_conn.commit()   # Actually redundant, it is autocommitted
 
                     except (Exception, psycopg2.Error) as error:
