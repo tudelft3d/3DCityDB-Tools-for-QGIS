@@ -35,7 +35,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     while not cdb_extents_wkt:
 
         # Get the extents stored in server.
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg, ext_type=c.CDB_SCHEMA_EXT_TYPE)
 
         # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
@@ -45,7 +45,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
 
     # Check whether the layer extents were already computed and stored in the database before
     layer_extents_wkt: str = None
-    layer_extents_wkt = sql.fetch_precomputed_extents(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
+    layer_extents_wkt = sql.fetch_precomputed_extents(dlg, ext_type=c.LAYER_EXT_TYPE)
    
     if not layer_extents_wkt:
         layer_extents_wkt = cdb_extents_wkt

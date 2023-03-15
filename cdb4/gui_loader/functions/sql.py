@@ -39,9 +39,8 @@ def exec_list_cdb_schemas_extended(dlg: CDB4LoaderDialog) -> list:
 
         if not res:
             res = []
-            return res
-        else:
-            return res
+
+        return res
     
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
@@ -52,7 +51,7 @@ def exec_list_cdb_schemas_extended(dlg: CDB4LoaderDialog) -> list:
         dlg.conn.rollback()
 
 
-def fetch_precomputed_extents(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str, ext_type: str) -> str:
+def fetch_precomputed_extents(dlg: CDB4LoaderDialog, ext_type: str) -> str:
     """SQL query that reads and retrieves extents stored in {usr_schema}.extents
 
     *   :returns: Extents as WKT or None if the entry is empty.
@@ -63,8 +62,8 @@ def fetch_precomputed_extents(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema
         SELECT ST_AsText(envelope) FROM {_usr_schema}.extents 
         WHERE cdb_schema = {_cdb_schema} AND bbox_type = {_ext_type};
         """).format(
-        _usr_schema = pysql.Identifier(usr_schema),
-        _cdb_schema = pysql.Literal(cdb_schema),
+        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
         _ext_type = pysql.Literal(ext_type)
         )
 
@@ -84,7 +83,7 @@ def fetch_precomputed_extents(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema
         gen_f.critical_log(
             func=fetch_precomputed_extents,
             location=FILE_LOCATION,
-            header=f"Retrieving extents of schema {cdb_schema}",
+            header=f"Retrieving extents of schema {dlg.CDB_SCHEMA}",
             error=error)
         dlg.conn.rollback()
 
@@ -119,7 +118,7 @@ def fetch_cdb_schema_srid(dlg: CDB4LoaderDialog) -> int:
         dlg.conn.rollback()
 
 
-def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str, cols_list: list=["*"]) -> tuple:
+def fetch_layer_metadata(dlg: CDB4LoaderDialog, cols_list: list=["*"]) -> tuple:
     """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
     By default it retrieves all columns.
 
@@ -131,24 +130,26 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
         the attributes names
         :rtype: tuple(attribute_names, metadata)
     """
-    if cols_list == ["*"]:
+    if cols_list == ["*"]:    
         query = pysql.SQL("""
-                        SELECT * FROM {_usr_schema}.layer_metadata
-                        WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
-                        ORDER BY feature_type, lod, root_class, layer_name;
-                        """).format(
-                        _usr_schema = pysql.Identifier(usr_schema),
-                        _cdb_schema = pysql.Literal(cdb_schema)
-                        )
+                    SELECT * FROM {_usr_schema}.layer_metadata
+                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
+                    ORDER BY feature_type, lod, root_class, layer_name;
+                    """).format(
+                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
+                    )
     else:
         query = pysql.SQL("""
                     SELECT {_cols} FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
+                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
                     ORDER BY feature_type, lod, root_class, layer_name;
                     """).format(
                     _cols = pysql.SQL(', ').join(pysql.Identifier(col) for col in cols_list),
-                    _usr_schema = pysql.Identifier(usr_schema),
-                    _cdb_schema = pysql.Literal(cdb_schema)
+                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
                     )
 
     try:
@@ -169,7 +170,7 @@ def fetch_layer_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str
         dlg.conn.rollback()
 
 
-def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schema: str) -> list:
+def fetch_detail_view_metadata(dlg: CDB4LoaderDialog) -> list:
     """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
     By default it retrieves all columns.
     
@@ -186,11 +187,12 @@ def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schem
     query = pysql.SQL("""
                     SELECT id, cdb_schema, layer_type, class AS curr_class, layer_name, av_name AS gen_name, qml_form, qml_symb, qml_3d
                     FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
+                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
                     ORDER BY av_name;
                     """).format(
-                    _usr_schema = pysql.Identifier(usr_schema),
-                    _cdb_schema = pysql.Literal(cdb_schema)
+                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
                     )
 
     try:
@@ -202,7 +204,7 @@ def fetch_detail_view_metadata(dlg: CDB4LoaderDialog, usr_schema: str, cdb_schem
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_layer_metadata,
+            func=fetch_detail_view_metadata,
             location=FILE_LOCATION,
             header="Retrieving detail views metadata",
             error=error)
@@ -393,7 +395,7 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
 def fetch_feature_types_checker(dlg: CDB4LoaderDialog) -> tuple:
     """SQL query that retrieves the available feature types 
 
-    *   :returns: Dictionary with feature type as key and populated status as boolean value.
+    *   :returns: feature types existing in the database
         :rtype: tuple
     """
     if dlg.CDB_SCHEMA_EXTENTS == dlg.LAYER_EXTENTS:
@@ -438,11 +440,12 @@ def fetch_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> tuple
     query = pysql.SQL("""
         SELECT DISTINCT feature_type 
         FROM {_usr_schema}.layer_metadata
-        WHERE cdb_schema = {_cdb_schema} AND feature_type IS NOT NULL
+        WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND feature_type IS NOT NULL
         ORDER BY feature_type ASC;
         """).format(
         _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
         )
 
     try:
@@ -494,4 +497,122 @@ def count_cityobjects_in_cdb_schema(dlg: CDB4LoaderDialog) -> int:
             header=f"Retrieving number of cityobjects in cdb_schema {dlg.CDB_SCHEMA}",
             error=error)
         dlg.conn.rollback()
+
+
+def fetch_enum_lookup_config(dlg: CDB4LoaderDialog) -> list:
+    """SQL query that retrieves the configuration values to set up
+    the look-up tables containing enumerations via combo boxes
+    in the attribute forms
     
+    *   :returns: the contents of table enum_lookup_config
+        :rtype: list of (named) tuples
+    """
+    if not dlg.ADE_PREFIX:
+        query = pysql.SQL("""
+            SELECT * FROM {_usr_schema}.enum_lookup_config
+            WHERE ade_prefix IS NULL
+            ORDER BY id;
+            """).format(
+            _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+            )
+    else: 
+        query = pysql.SQL("""
+            SELECT * FROM {_usr_schema}.enum_lookup_config
+            WHERE ade_prefix IS NULL OR ade_prefix = {_ade_prefix}
+            ORDER BY id;
+            """).format(
+            _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+            _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
+            )
+
+    try:
+        with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        dlg.conn.commit()
+
+        if not res:
+            res = []
+        return res
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_enum_lookup_config,
+            location=FILE_LOCATION,
+            header=f"Retrieving data from table '{dlg.USR_SCHEMA}.enum_lookup_config'",
+            error=error)
+        dlg.conn.rollback()
+
+
+def fetch_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) -> list:
+    """SQL query that retrieves the configuration values to set up
+    the look-up tables containing codelists via combo boxes
+    in the attribute forms
+    
+    *   :returns: the contents of table codelist_lookup_config
+        :rtype: list of (named) tuples
+    """
+    query = pysql.SQL("""
+        SELECT * FROM {_usr_schema}.codelist_lookup_config
+        WHERE name = {_codelist_set_name}
+        ORDER BY id;
+        """).format(
+        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+        _codelist_set_name = pysql.Literal(codelist_set_name)
+        )
+
+    try:
+        with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        dlg.conn.commit()
+
+        if not res:
+            res = []
+     
+        return res
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_codelist_lookup_config,
+            location=FILE_LOCATION,
+            header=f"Retrieving data from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
+            error=error)
+        dlg.conn.rollback()
+
+
+def fetch_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
+    """SQL query that retrieves the codelist set names to fill the codelist selection box 
+    
+    *   :returns: the unique names in table codelist_lookup_config
+        :rtype: list of tuples
+    """
+    query = pysql.SQL("""
+        SELECT DISTINCT name FROM {_usr_schema}.codelist_lookup_config
+        WHERE ade_prefix IS NULL
+        ORDER BY name;
+        """).format(
+        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA)
+        )
+
+    try:
+        # with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+        with dlg.conn.cursor() as cur:
+            cur.execute(query)
+            res = cur.fetchall()
+        dlg.conn.commit()
+
+        codelist_set_names = [elem[0] for elem in res]
+
+        if not codelist_set_names:
+            codelist_set_names = []
+     
+        return codelist_set_names
+
+    except (Exception, psycopg2.Error) as error:
+        gen_f.critical_log(
+            func=fetch_codelist_set_names,
+            location=FILE_LOCATION,
+            header=f"Retrieving codelist set names from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
+            error=error)
+        dlg.conn.rollback()

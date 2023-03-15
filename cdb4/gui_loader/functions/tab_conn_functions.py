@@ -6,13 +6,14 @@ if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from ...shared.functions import general_functions as gen_f
-from ..other_classes import FeatureType, CDBDetailView
+from ..other_classes import FeatureType, CDBDetailView, EnumConfig
 from .. import loader_constants as c
 from . import tab_layers_widget_functions as tl_wf
+from . import tab_settings_widget_functions as ts_wf
 from . import sql
 
 def fill_cdb_schemas_box(dlg: CDB4LoaderDialog, cdb_schemas: tuple = None) -> None:
-    """Function that fills the 'Citydb schema(s)' checkable combo box.
+    """Function that fills the 'Citydb schema(s)' combo box.
     """
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
@@ -129,7 +130,7 @@ def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to create the dictionary containing Detail Views metadata.
     """
     # This is a list of named tuples, extracted from the db sorting by gen_name
-    detail_views_metadata: list = sql.fetch_detail_view_metadata(dlg, dlg.USR_SCHEMA, dlg.CDB_SCHEMA)
+    detail_views_metadata: list = sql.fetch_detail_view_metadata(dlg)
     # print(detail_views_metadata)
 
     detail_views_keys = [elem.gen_name for elem in detail_views_metadata]
@@ -146,6 +147,32 @@ def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
     # print('Initializing:\n', dlg.DetailViewsRegistry)
     # print('Initializing:\n', dlg.DetailViewsRegistry["address_bdg"].__dict__)
     # print('Initializing:\n', dlg.DetailViewsRegistry["gen_attrib_integer"].__dict__)
+
+    return None
+
+
+def populate_enum_config_registry(dlg: CDB4LoaderDialog) -> None:
+    """Function to create the dictionary containing Enumeration Lookup Config metadata.
+    """
+    # This is a list of named tuples, extracted from the db sorting by gen_name
+    config_metadata: list = sql.fetch_enum_lookup_config(dlg)
+    # print(config_metadata)
+
+    config_metadata_keys = [(elem.source_class, elem.source_table, elem.source_column) for elem in config_metadata]
+    # Sort
+    config_metadata_keys.sort(key=lambda x: (x[0], x[1], x[2]), reverse=False)
+    # print(config_metadata_keys)
+
+    config_metadata_values = [EnumConfig(*elem) for elem in config_metadata]
+    # Sort
+    config_metadata_values.sort(key=lambda x: (x.source_class, x.source_table, x.source_column))
+
+    dlg.EnumConfigRegistry: dict = {}
+    dlg.EnumConfigRegistry = dict(zip(config_metadata_keys, config_metadata_values))
+
+    # print('Initializing:\n', dlg.EnumLookupConfigRegistry)
+    # print('Initializing:\n', dlg.EnumLookupConfigRegistry[(None, "CityObject", "relative_to_water")].__dict__)
+    # print('Initializing:\n', dlg.EnumLookupConfig["gen_attrib_integer"].__dict__)
 
     return None
 
@@ -193,7 +220,7 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.checks.layers_exist = True
 
         # Now check whether layers were already refreshed/populated
-        refresh_date = sql.fetch_layer_metadata(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, cols_list=["refresh_date"])
+        refresh_date = sql.fetch_layer_metadata(dlg, cols_list=["refresh_date"])
         # Extract a date.
         date = list(set(refresh_date[1]))[0][0]
 
@@ -229,6 +256,8 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
 
         # Initialize the detail view registry
         populate_detail_views_registry(dlg)
+        # Initialize the enum_lookup_config_registry
+        populate_enum_config_registry(dlg)
 
         # We are done here with the 'User Connection' tab, we can now activate the Layer Tab
         # Set up the Layers Tab
@@ -241,6 +270,13 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.tabLayers.setDisabled(False)
         dlg.btnImport.setDisabled(True)
         # Also enables the settings tab
+        # Fill the combo box with the codelist selection
+        
+        codelist_set_names: list = sql.fetch_codelist_set_names(dlg)
+        # print("Initializing combo box with:", codelist_set_names)
+        if codelist_set_names:
+            ts_wf.fill_codelist_selection_box(dlg, codelist_set_names)
+
         dlg.tabSettings.setDisabled(False)
 
     else:

@@ -292,3 +292,76 @@ class FeatureType():
             f"layers number: {len(self.layers)}\n"
         return return_str
 
+
+class EnumConfig():
+    def __init__(self,
+            id: int,
+            ade_prefix: str,
+            source_class: str,
+            source_table: str,
+            source_column: str,
+            target_table: str,
+            key_column: str,
+            value_column: str,
+            filter_expression: str,
+            num_columns: int,
+            allow_multi: bool,
+            allow_null: bool,
+            order_by_value: bool,
+            use_completer: bool,
+            description: str
+            ):
+
+        self.id = id
+        self.ade_prefix = ade_prefix
+        self.source_class = source_class
+        self.source_table = source_table
+        self.source_column = source_column
+        self.target_table = target_table
+        self.key_column = key_column
+        self.value_column = value_column
+        self.filter_expression = filter_expression
+        self.num_columns = num_columns
+        self.allow_multi = allow_multi
+        self.allow_null = allow_null
+        self.order_by_value = order_by_value
+        self.use_completer = use_completer
+        self.description = description
+
+
+class CodeListConfig():
+    def __init__(self,
+            id: int,
+            name: str,
+            ade_prefix: str,
+            source_class: str,
+            source_table: str,
+            source_column: str,
+            target_table: str,
+            key_column: str,
+            value_column: str,
+            filter_expression: str,
+            num_columns: int,
+            allow_multi: bool,
+            allow_null: bool,
+            order_by_value: bool,
+            use_completer: bool,
+            description: str
+            ):
+
+        self.id = id
+        self.name = name
+        self.ade_prefix = ade_prefix
+        self.source_class = source_class
+        self.source_table = source_table
+        self.source_column = source_column
+        self.target_table = target_table
+        self.key_column = key_column
+        self.value_column = value_column
+        self.filter_expression = filter_expression
+        self.num_columns = num_columns
+        self.allow_multi = allow_multi
+        self.allow_null = allow_null
+        self.order_by_value = order_by_value
+        self.use_completer = use_completer
+        self.description = description

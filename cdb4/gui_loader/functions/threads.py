@@ -382,7 +382,7 @@ class RefreshLayersWorker(QObject):
 
         # Get feature types from layer_metadata table.
         cols_to_fetch: list = ["feature_type","gv_name"]
-        col, feattype_geom_mview = sql.fetch_layer_metadata(dlg=dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, cols_list=cols_to_fetch)
+        col, feattype_geom_mview = sql.fetch_layer_metadata(dlg=dlg, cols_list=cols_to_fetch)
         col = None # Discard byproduct.
 
         # Set progress bar goal

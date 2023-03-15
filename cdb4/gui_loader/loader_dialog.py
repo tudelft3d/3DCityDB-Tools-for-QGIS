@@ -91,6 +91,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.GROUP_NAME: str = None
         # Variable to store the selected cdb_schema name.
         self.CDB_SCHEMA: str = None
+        # Variable to store the ADE prefix of the selected cdb_schema name.
+        self.ADE_PREFIX: str = None
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
 
@@ -115,11 +117,19 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.settings = DefaultSettings()
         self.checks = DialogChecks()
 
+        # Metadata Registries (dictionaries)
+
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
         # The availability is defined by the existence of at least one Feature of that Feature Type inside the current extents.
         self.FeatureTypesRegistry: dict = {}
         # Variable to store metadata about the DetailViews (i.e. children tables in the forms) 
         self.DetailViewsRegistry: dict = {}
+        # Dictionary containing config data to set up enumeration combo boxes in the attribute forms
+        self.EnumConfigRegistry: dict = {}
+        # Dictionary containing config data to set up codelist combo boxes in the attribute forms
+        self.CodeListConfigRegistry: dict = {}
+        # Variable to store the selected CodeListSet
+        self.selectedCodeListSet: str = None
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
@@ -872,7 +882,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtents) is pressed.
         """
         # Get the extents stored in server (already computed at this point).
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg=self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg=self, ext_type=c.CDB_SCHEMA_EXT_TYPE)
 
         # Convert extents format to QgsRectangle object.
         cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
@@ -1040,7 +1050,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the current 'Set to layers extents' pushButton (btnCityExtents) is pressed.
         """
         # Get the layer extents stored in server (already computed at this point).
-        extents_str: str = sql.fetch_precomputed_extents(dlg=self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.LAYER_EXT_TYPE)
+        extents_str: str = sql.fetch_precomputed_extents(dlg=self, ext_type=c.LAYER_EXT_TYPE)
 
         # Convert extents format to QgsRectangle object.
         extents: QgsRectangle = QgsRectangle.fromWkt(extents_str)
@@ -1110,7 +1120,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnImport_clicked(self) -> None:
         """Event that is called when the 'Import Features' pushButton (btnImport) is pressed.
         """
-        # Get the datsa that is checked from 'ccbxLayers'
+        # Get the data that is checked from 'ccbxLayers'
         # Remember widget hold items in the form of (view_name, View_object)
         selected_layers = []
         selected_layers = gen_f.get_checkedItemsData(self.ccbxLayers)
@@ -1133,11 +1143,25 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             else:
                 return None #Import Cancelled
         else:
+
+            # Codelist settings and loading of the configs
+            sel_codelist_set: str = self.cbxCodeListSelection.currentData()
+            if sel_codelist_set == "None":
+                # do nothing
+                pass
+            else:
+                if any([not self.selectedCodeListSet, self.selectedCodeListSet != sel_codelist_set]):
+                    # Set the new value
+                    self.selectedCodeListSet = sel_codelist_set
+                    # print("Working with Codelist set:", self.selectedCodeListSet)
+                    # Initialize the enum_lookup_config_registry
+                    tl_f.populate_codelist_config_registry(self, codelist_set_name=sel_codelist_set)
+
             success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
 
         if not success:
             QgsMessageLog.logMessage(
-                message="Something went wrong while importing the layer(s)!",
+                message="Something went wrong while importing the layer(s)",
                 tag=self.PLUGIN_NAME,
                 level=Qgis.Critical,
                 notifyUser=True)

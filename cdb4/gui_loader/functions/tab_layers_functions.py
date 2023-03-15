@@ -2,10 +2,10 @@
 These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
-    from ..other_classes import FeatureType, CDBDetailView
+    from ..other_classes import FeatureType, CDBDetailView, EnumConfig 
 
 from collections import OrderedDict
 from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup, 
@@ -13,9 +13,43 @@ from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup,
                         QgsAttributeEditorRelation, Qgis, QgsLayerTreeGroup,
                         QgsRelation, QgsAttributeEditorContainer, QgsMapLayer, QgsLayerTreeLayer)
 
-from ..other_classes import CDBLayer
+from ..other_classes import CDBLayer, CodeListConfig
 from .. import loader_constants as c
 from . import sql
+
+def populate_codelist_config_registry(dlg: CDB4LoaderDialog, codelist_set_name: str = None) -> None:
+    """Function to create the dictionary containing Codelist Lookup Config metadata.
+    """
+    ####################################
+    # codelist_set_name = ["CityGML 2.0"]
+    ####################################
+
+    if not codelist_set_name:
+        return None # Exit, nothing to do
+
+    # This is a list of named tuples, extracted from the db sorting by gen_name
+    config_metadata: list = sql.fetch_codelist_lookup_config(dlg, codelist_set_name)
+    if not config_metadata:
+        return None # Exit, nothing to do
+    # print(config_metadata)
+
+    config_metadata_keys = [(elem.source_class, elem.source_table, elem.source_column) for elem in config_metadata]
+    # Sort
+    config_metadata_keys.sort(key=lambda x: (x[0], x[1], x[2]), reverse=False)
+    # print(config_metadata_keys)
+
+    config_metadata_values = [CodeListConfig(*elem) for elem in config_metadata]
+    # Sort
+    config_metadata_values.sort(key=lambda x: (x.source_class, x.source_table, x.source_column))
+
+    dlg.CodeListConfigRegistry: dict = {}
+    dlg.CodeListConfigRegistry = dict(zip(config_metadata_keys, config_metadata_values))
+
+    # print('Initializing:\n', dlg.CodeListConfigRegistry)
+    # print('Initializing:\n', dlg.CodeListConfigRegistry[("Building", "building", "class")].__dict__)
+
+    return None
+
 
 def add_layers_to_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to instantiate python objects from the 'layer_metadata' table in the usr_schema.
@@ -26,14 +60,14 @@ def add_layers_to_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
         feat_type.layers = [] # Empty the list the will contain CDBLayer objects
 
     # Get field names and metadata values from server.
-    col_names, layer_metadata = sql.fetch_layer_metadata(dlg, dlg.USR_SCHEMA, dlg.CDB_SCHEMA)
+    col_names, layer_metadata = sql.fetch_layer_metadata(dlg)
 
     # Format metadata into a list of dictionaries where each element is a layer.
     layer_metadata_dict_items: list = [dict(zip(col_names, values)) for values in layer_metadata]
 
     for layer_metadata_dict_item in layer_metadata_dict_items:
         # keys: id, cdb_schema, layer_type, feature_type, lod, root_class, curr_class, layer_name, 
-        #       av_name, gv_name, n_features, creation_data, refresh_date,
+        #       gv_name, av_name, n_features, creation_data, refresh_date,
         #       qml_form, qml_symb, qml_3d, 
         #       qml_form_with_path, qml_symb_with_path, qml_3d_with_path
         #       n_selected
@@ -526,42 +560,33 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
     return None
 
 
-def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVectorLayer) -> None:
+def qgsEditorWidgetSetup_factory(lu_config: Union[EnumConfig, CodeListConfig], layer_id: str) -> QgsEditorWidgetSetup:
+    """Function to setup the configuration dictionary for the 'ValueRelation' widget.
+
+        *   :returns: The object to set up the widget (ValueRelation)
+        :rtype: QgsEditorWidgetSetup
+    """
+    config = {'AllowMulti': lu_config.allow_multi,
+            'AllowNull': lu_config.allow_null,
+            'FilterExpression': lu_config.filter_expression,
+            'Layer': layer_id,
+            'Key': lu_config.key_column,
+            'Value': lu_config.value_column,
+            'NofColumns': lu_config.num_columns,
+            'OrderByValue': lu_config.order_by_value,
+            'UseCompleter': lu_config.use_completer}
+            
+    return QgsEditorWidgetSetup(type='ValueRelation', config=config)
+
+
+def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVectorLayer, layer_metadata: CDBLayer) -> None:
     """Function that sets up the ValueRelation widget for the look-up tables.
-    # Note: Currently the look-up table names are hardcoded.
 
     *   :param layer: Layer to search for and set up its 'Value Relation' widget according to the look-up tables.
         :type layer: QgsVectorLayer
     """
-
-    def qgsEditorWidgetSetup_factory(
-            allowMulti: bool = False,
-            allowNull: bool = True,
-            filterExpression: str = "",
-            layer_id: str = "",
-            key_column: str = "",
-            value_column: str = "",
-            nOfColumns: int = 1,
-            orderByValue: bool = False,
-            useCompleter: bool = False) -> QgsEditorWidgetSetup:
-        """Function to setup the configuration dictionary for the 'ValueRelation' widget.
-        .. Note:this function could probably be generalized for all available
-        ..      widgets of 'attribute from', but there is not need for this yet.
-
-        *   :returns: The object to set up the widget (ValueRelation)
-            :rtype: QgsEditorWidgetSetup
-        """
-        config = {'AllowMulti': allowMulti,
-                'AllowNull': allowNull,
-                'FilterExpression':filterExpression,
-                'Layer': layer_id,
-                'Key': key_column,
-                'Value': value_column,
-                'NofColumns': nOfColumns,
-                'OrderByValue': orderByValue,
-                'UseCompleter': useCompleter}
-                
-        return QgsEditorWidgetSetup(type='ValueRelation', config=config)
+    if not layer_metadata.enum_cols:
+        return None # Exit, there are no enumerations to link to this layer
 
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
@@ -571,13 +596,61 @@ def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVecto
     enum_layers = enums_node.findLayers()
     enum_layer_id = [i.layerId() for i in enum_layers if c.enumerations_table in i.layerId()][0]
 
+    # Create a dictionary with field names and field index
+    fields_dict = {}
     for field in layer.fields():
         field_name = field.name()
         field_idx = layer.fields().indexOf(field_name)
-        if field_name == 'relative_to_terrain':
-            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(layer_id=enum_layer_id, key_column='value', value_column='description', filterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToTerrainType'"))
-        elif field_name == 'relative_to_water':
-            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(layer_id=enum_layer_id, key_column='value', value_column='description', filterExpression="data_model = 'CityGML 2.0' AND name = 'RelativeToWaterType'"))
+        fields_dict[field_name] = field_idx
+    # print(fields_dict)
+
+    for enum_table, enum_col in layer_metadata.enum_cols:
+        # This sets 'relative_to_terrain' and 'relative_to_water'
+        if enum_table == "cityobject":
+            lu_config: EnumConfig = dlg.EnumConfigRegistry[("CityObject", enum_table, enum_col)]
+            field_idx = fields_dict[enum_col]            
+            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(lu_config, enum_layer_id))
+        else:
+            pass
+
+
+def create_layer_relation_to_codelists(dlg: CDB4LoaderDialog, layer: QgsVectorLayer, layer_metadata: CDBLayer) -> None:
+    """Function that sets up the ValueRelation widget for the look-up tables.
+
+    *   :param layer: Layer to search for and set up its 'Value Relation' widget according to the look-up tables.
+        :type layer: QgsVectorLayer
+    """
+    if not layer_metadata.codelist_cols:
+        return None # Exit, there are no codelists to link to this layer
+
+    # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
+    root = QgsProject.instance().layerTreeRoot()
+    db_node = root.findGroup(dlg.DB.database_name)
+    schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
+    cls_node = schema_node.findGroup(c.lookup_tables_group_alias)
+    cl_layers = cls_node.findLayers()
+    cl_layer_id = [i.layerId() for i in cl_layers if c.codelists_table in i.layerId()][0]
+
+    # Create a dictionary with field names and field index
+    fields_dict = {}
+    for field in layer.fields():
+        field_name = field.name()
+        field_idx = layer.fields().indexOf(field_name)
+        fields_dict[field_name] = field_idx
+    # print(fields_dict)
+
+    for cl_table, cl_col in layer_metadata.codelist_cols:
+        cl_class = layer_metadata.curr_class
+        lu_config: CodeListConfig = dlg.CodeListConfigRegistry.get((cl_class, cl_table, cl_col), None)
+
+        if not lu_config:
+            # print("No codelist found for this key:", (cl_class, cl_table, cl_col))
+            pass
+        else:
+            field_idx = fields_dict[cl_col]            
+            layer.setEditorWidgetSetup(field_idx, qgsEditorWidgetSetup_factory(lu_config, cl_layer_id))
+
+    return None
 
 
 def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
@@ -722,7 +795,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
     """Function to imports the selected layer(s) in the user's qgis project.
 
     *   :param layers: A list containing View object that correspond to the server views.
-        :type layers: list(View)
+        :type layers: list(CDBLayer)
 
     *   :returns: The import attempt result
         :rtype: bool
@@ -871,9 +944,9 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
                 create_layer_relation_to_dv_gen_attrib(dlg, layer=new_layer)
                 create_layer_relation_to_dv_ext_ref(dlg, layer=new_layer)
 
-                # Setup the relations for this layer to the look-up (enumeration) tables
-                create_layer_relation_to_enumerations(dlg, layer=new_layer)
-
+                # Setup the relations for this layer to the look-up tables
+                create_layer_relation_to_enumerations(dlg, layer=new_layer, layer_metadata=layer)
+                create_layer_relation_to_codelists(dlg, layer=new_layer, layer_metadata=layer)
         # #############################################################
         # EXPERIMENTAL, TO TEST THE NEW UI-BASED FORMS
         #
