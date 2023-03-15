@@ -376,6 +376,21 @@
     </attributeEditorContainer> -->
 <!-- just an empty line -->
     <attributeEditorQmlElement name="QmlWidget" showLabel="0"></attributeEditorQmlElement>
+<!-- cfu attributes -->
+    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Class" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="class" showLabel="1" index="14"/>
+      <attributeEditorField name="class_codespace" showLabel="1" index="15"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Function" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="function" showLabel="1" index="16"/>
+      <attributeEditorField name="function_codespace" showLabel="1" index="17"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer visibilityExpression="" groupBox="0" name="Usage" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
+      <attributeEditorField name="usage" showLabel="1" index="18"/>
+      <attributeEditorField name="usage_codespace" showLabel="1" index="19"/>
+    </attributeEditorContainer>
+<!-- just an empty line -->
+    <attributeEditorQmlElement name="QmlWidget" showLabel="0"></attributeEditorQmlElement>
 <!-- other attributes -->
     <attributeEditorContainer visibilityExpression="" groupBox="1" name="Feature-specific attributes" columnCount="2" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField name="year_of_construction" showLabel="1" index="20"/>

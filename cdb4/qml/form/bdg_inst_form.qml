@@ -284,7 +284,6 @@
       </attributeEditorRelation>
     </attributeEditorContainer> -->
 <!-- just an empty line -->
-
     <attributeEditorQmlElement name="QmlWidget" showLabel="0"></attributeEditorQmlElement>
 <!-- cfu attributes -->
     <attributeEditorContainer visibilityExpression="" groupBox="0" name="Class" columnCount="1" showLabel="1" visibilityExpressionEnabled="0">
