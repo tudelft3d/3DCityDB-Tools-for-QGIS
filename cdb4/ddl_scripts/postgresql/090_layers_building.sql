@@ -280,7 +280,7 @@ END IF;
 		) AS t(lodx_name, lodx_label)
 	LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -382,7 +382,7 @@ END IF;
 		) AS t(lodx_name, lodx_label)
 	LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -482,7 +482,7 @@ END IF;
 		) AS t(lodx_name, lodx_label)
 	LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -595,7 +595,7 @@ END IF;
 			) AS t(themsurf_name, themsurf_label)
 		LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -696,7 +696,7 @@ END IF;
 		) AS t(lodx_name, lodx_label)
 	LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
@@ -808,7 +808,7 @@ END IF;
 		) AS t(lodx_name, lodx_label)
 	LOOP
 
-codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage']];
+codelist_cols_array := ARRAY[['building','class'],['building','function'],['building','usage'],['building','roof_type']];
 
 -- First check if there are any features at all in the database schema
 sql_feat_count := concat('
