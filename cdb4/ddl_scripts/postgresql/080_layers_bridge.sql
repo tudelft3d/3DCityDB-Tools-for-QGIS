@@ -43,7 +43,7 @@ cdb_schema 			varchar,
 perform_snapping 	integer,
 digits 				integer,
 area_poly_min 		numeric,
-mview_bbox			geometry,
+mview_bbox			geometry,  -- A rectangular PostGIS polygon with SRID, e.g. ST_GeomFromText('Polygon((.... .....))', srid)
 force_layer_creation boolean
 ) 
 RETURNS text AS $$
@@ -64,7 +64,6 @@ qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
 l_name varchar; ql_l_name varchar; qi_l_name varchar;
---av_name varchar; ql_av_name varchar; qi_av_name varchar;
 gv_name varchar; qi_gv_name varchar; ql_gv_name varchar;
 qml_form_name 	varchar := NULL;
 qml_symb_name 	varchar := NULL;
@@ -146,12 +145,7 @@ EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid
 IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid THEN
 	sql_where := NULL;
 ELSE
-	sql_where := concat('AND ST_MakeEnvelope(', 
-		floor(ST_XMin(mview_bbox)),', ', 
-		floor(ST_YMin(mview_bbox)),', ', 
-		ceil(ST_XMax(mview_bbox)),', ',	
-		ceil(ST_YMax(mview_bbox)),', ',	
-		srid,') && co.envelope');
+	sql_where := concat('AND ST_MakeEnvelope(',ST_XMin(mview_bbox),',',ST_YMin(mview_bbox),',',ST_XMax(mview_bbox),',',ST_YMax(mview_bbox),',',srid,') && co.envelope');
 END IF;
 
 RAISE NOTICE 'For module "%" and user "%": creating layers in usr_schema "%" for cdb_schema "%"', feature_type, qi_usr_name, qi_usr_schema, qi_cdb_schema;

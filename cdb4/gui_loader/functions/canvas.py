@@ -28,22 +28,26 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
     *   :param clear: Clear map registry from old OSM layers.
         :type clear: bool
     """
+    #############################################
+    print("In canvas:",crs.postgisSrid())
+    #############################################
+
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
     if canvas == dlg.CANVAS: # in 'User Connection' tab
         # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtents.
         # In order to avoid firing twice the signar, we temporarily block the first one.
-        dlg.qgbxExtents.blockSignals(True)
-        dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
-        dlg.qgbxExtents.blockSignals(False)
+        # dlg.qgbxExtents.blockSignals(True)
+        # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
+        # dlg.qgbxExtents.blockSignals(False)
         dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     elif canvas == dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsL.
-        dlg.qgbxExtentsL.blockSignals(True)
-        dlg.qgbxExtentsL.setOutputCrs(crs)
-        dlg.qgbxExtentsL.blockSignals(False)
+        # dlg.qgbxExtentsL.blockSignals(True)
+        # dlg.qgbxExtentsL.setOutputCrs(crs)
+        # dlg.qgbxExtentsL.blockSignals(False)
         dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
@@ -96,6 +100,11 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
         (in 'User Connection' tab)
         (in 'Layers' tab)
     """
+    #############################################
+    print("In insert_rubber_band:", extents.asWktPolygon(), crs.postgisSrid())
+    #############################################
+
+
     # Create polygon rubber band corresponding to the extents
     extents_geometry = QgsGeometry.fromRect(extents)
     band.setToGeometry(extents_geometry, crs)

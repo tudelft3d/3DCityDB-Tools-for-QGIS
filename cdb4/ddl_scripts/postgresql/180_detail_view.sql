@@ -41,13 +41,12 @@ DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_detail_view(varchar, varchar, g
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_sql_detail_view(
 usr_name            varchar,
 cdb_schema 			varchar,
-mview_bbox			geometry
+mview_bbox			geometry -- A rectangular PostGIS polygon with SRID, e.g. ST_GeomFromText('Polygon((.... .....))', srid)
 ) 
 RETURNS text AS $$
 DECLARE
 l_prefix			CONSTANT varchar := 'dv';
-l_type				varchar;
-ql_l_type			varchar;
+l_type varchar; ql_l_type varchar;
 qgis_user_group_name CONSTANT varchar := (SELECT qgis_pkg.create_qgis_pkg_usrgroup_name());
 usr_schema      	CONSTANT varchar := (SELECT qgis_pkg.create_qgis_usr_schema_name(usr_name));
 usr_names_array     CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
@@ -113,7 +112,7 @@ EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid
 IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid THEN
 	sql_where := NULL;
 ELSE
-	sql_where := concat('AND ST_MakeEnvelope(', floor(ST_XMin(mview_bbox)),', ', floor(ST_YMin(mview_bbox)),', ', ceil(ST_XMax(mview_bbox)),', ', ceil(ST_YMax(mview_bbox)),', ', srid,') && co.envelope');
+	sql_where := concat('AND ST_MakeEnvelope(',ST_XMin(mview_bbox),',',ST_YMin(mview_bbox),',',ST_XMax(mview_bbox),',',ST_YMax(mview_bbox),',',srid,') && co.envelope');
 END IF;
 
 RAISE NOTICE 'For user "%": creating nested tables in usr_schema "%" for cdb_schema "%"', qi_usr_name, qi_usr_schema, qi_cdb_schema;

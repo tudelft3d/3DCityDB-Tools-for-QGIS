@@ -42,20 +42,21 @@
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_BRIDGE
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_detail_view function and runs the resulting SQL
-DROP FUNCTION IF EXISTS    qgis_pkg.create_detail_view(varchar, varchar, numeric[]) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_detail_view(varchar, varchar, numeric[], boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_detail_view(
 usr_name             varchar,
 cdb_schema           varchar,
-bbox_corners_array   numeric[] DEFAULT NULL
+bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 l_type		  CONSTANT varchar := 'DetailView';
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL; -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_detail_view(
     usr_name             := usr_name,
@@ -74,11 +75,11 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_detail_view(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_detail_view(varchar, varchar, numeric[]) IS 'Create nested tables (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_detail_view(varchar, varchar, numeric[]) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_detail_view(varchar, varchar, numeric[], boolean) IS 'Create nested tables (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_detail_view(varchar, varchar, numeric[], boolean) FROM public;
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_detail_view
+-- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_DETAIL_VIEW
 ----------------------------------------------------------------
 -- Generates SQL to drop layers (e.g. mviews, views and associated triggers) for feature type bridge
 DROP FUNCTION IF EXISTS    qgis_pkg.generate_sql_drop_detail_view(varchar, varchar) CASCADE;

@@ -171,7 +171,7 @@ def is_usr_schema_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4De
         dlg.conn.rollback()
 
 
-def exec_list_cdb_schemas_all(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], only_non_empty: bool = False) -> tuple:
+def exec_list_cdb_schemas(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], only_non_empty: bool = False) -> tuple:
     """SQL function that reads and retrieves all cdb_schemas, even the empty ones,
     and their number of cityobjects
 

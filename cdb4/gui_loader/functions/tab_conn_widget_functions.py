@@ -30,7 +30,23 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
+    ###############
+    if not dlg.CRS:
+        print("In gbxBasemap_setup", dlg.CRS, dlg.CRS_is_geographic)
+    else:
+        print("In gbxBasemap_setup", dlg.CRS.postgisSrid(), dlg.CRS_is_geographic)
+    ###############
+
     cdb_extents_wkt: str = None
+
+    # Get the crs_id stored in the selected {cdb_schema}
+    srid: int = sql.fetch_cdb_schema_srid(dlg)
+    # Format CRS variable as QGIS Epsg code.
+    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
+    # Store the crs into the plugin variable
+    dlg.CRS = QgsCoordinateReferenceSystem(crs)
+    dlg.CRS_is_geographic = dlg.CRS.isGeographic()
+    print("In gbxBasemap_setup: CRS_from database", dlg.CRS.postgisSrid(), dlg.CRS_is_geographic)
 
     while not cdb_extents_wkt:
 
@@ -39,7 +55,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
 
         # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
-            # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
+            # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects).
             # This function automatically upserts the bbox to the table of the precomputed extents in the usr_schema
             sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
 
@@ -61,16 +77,6 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     else:
         dlg.CURRENT_EXTENTS = dlg.LAYER_EXTENTS
 
-    # Get the crs_id stored in the selected {cdb_schema}
-    srid: int = sql.fetch_cdb_schema_srid(dlg)
-
-    # Format CRS variable as QGIS Epsg code.
-    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
-    # Storethe crs into the plugin variable
-    dlg.CRS = QgsCoordinateReferenceSystem(crs)
-    dlg.CRS_is_geographic = dlg.CRS.isGeographic()
-    # print("dlg.CRS_is_geographic", dlg.CRS_is_geographic)
-
     # Draw the cdb extents in the canvas
     # First, create polygon rubber band corresponding to the cdb_schema extents
     canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
@@ -78,7 +84,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     # First, create polygon rubber band corresponding to the cdb_schema extents
     canvas.insert_rubber_band(band=dlg.RUBBER_LAYERS, extents=dlg.LAYER_EXTENTS, crs=dlg.CRS, width=3, color=c.LAYER_EXTENTS_COLOUR)
 
-    # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event (of C or L)
+    # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event
     canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Zoom to the cdb_schema extents
@@ -146,15 +152,20 @@ def gbxBasemap_reset(dlg: CDB4LoaderDialog) -> None:
     dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text)
 
     # Remove extent rubber bands.
-    dlg.RUBBER_CDB_SCHEMA.reset()
-    dlg.RUBBER_LAYERS.reset()
-    dlg.RUBBER_QGIS_L.reset()
+    if dlg.RUBBER_CDB_SCHEMA:
+        dlg.RUBBER_CDB_SCHEMA.reset()
+    if dlg.RUBBER_LAYERS:        
+        dlg.RUBBER_LAYERS.reset()
+    if dlg.RUBBER_QGIS_L:
+        dlg.RUBBER_QGIS_L.reset()
 
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     QgsProject.instance().removeMapLayers(registryLayers)
+
     # Refresh to show to re-render the canvas (as empty).
     dlg.CANVAS.refresh()
+    # dlg.CANVAS.destroy()
 
     return None
 

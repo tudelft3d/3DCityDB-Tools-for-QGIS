@@ -6,6 +6,7 @@ Test whether it makes sense to add an update statement to delete trigger functio
 2023-03-20
 ----------
 Version 0.10
+Improved support for bboxes with geographic coordinates
 Added support for Detail Views
 	- Create Detail Views as updatable views
 	- Add triggers and trigger functions accordingly

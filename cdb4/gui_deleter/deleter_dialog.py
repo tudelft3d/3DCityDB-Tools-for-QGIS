@@ -112,6 +112,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
+        # print("CRS upon start",self.CRS.postgisSrid())
+        self.CRS_is_geographic: bool = None  # True if we are using lon lat in the database, False if we use projected coordinates
+        # print("CRS_is_geographic",self.CRS.isGeographic())
 
         # Variable to store the selected extents.
         self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()

@@ -46,7 +46,7 @@
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_BRIDGE
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type bridge
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_bridge(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -54,15 +54,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_bridge(
     usr_name             := usr_name,
@@ -85,8 +86,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_bridge(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Bridge" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Bridge" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_bridge(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_BRIDGE
@@ -264,7 +265,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_bridge(varchar, varchar) FROM
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_BUILDING
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type building
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_building(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -272,15 +273,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_building(
     usr_name             := usr_name,
@@ -303,8 +305,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_building(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Building" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Building" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_building(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_BUILDING
@@ -482,7 +484,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_building(varchar, varchar) FR
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_CITYFURNITURE
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type cityfurniture
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_cityfurniture(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -490,15 +492,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_cityfurniture(
     usr_name             := usr_name,
@@ -521,8 +524,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_cityfurniture(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "CityFurniture" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "CityFurniture" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_cityfurniture(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_CITYFURNITURE
@@ -700,7 +703,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_cityfurniture(varchar, varcha
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_GENERICS
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type generics
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_generics(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -708,15 +711,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_generics(
     usr_name             := usr_name,
@@ -739,8 +743,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_generics(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Generics" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Generics" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_generics(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_GENERICS
@@ -918,7 +922,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_generics(varchar, varchar) FR
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_LANDUSE
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type landuse
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_landuse(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -926,15 +930,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_landuse(
     usr_name             := usr_name,
@@ -957,8 +962,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_landuse(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "LandUse" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "LandUse" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_landuse(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_LANDUSE
@@ -1136,7 +1141,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_landuse(varchar, varchar) FRO
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_RELIEF
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type relief
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_relief(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -1144,15 +1149,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_relief(
     usr_name             := usr_name,
@@ -1175,8 +1181,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_relief(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Relief" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Relief" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_relief(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_RELIEF
@@ -1354,7 +1360,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_relief(varchar, varchar) FROM
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_TRANSPORTATION
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type transportation
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_transportation(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -1362,15 +1368,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_transportation(
     usr_name             := usr_name,
@@ -1393,8 +1400,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_transportation(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Transportation" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Transportation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_transportation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_TRANSPORTATION
@@ -1572,7 +1579,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_transportation(varchar, varch
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_TUNNEL
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type tunnel
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_tunnel(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -1580,15 +1587,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_tunnel(
     usr_name             := usr_name,
@@ -1611,8 +1619,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_tunnel(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Tunnel" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Tunnel" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_tunnel(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_TUNNEL
@@ -1790,7 +1798,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_tunnel(varchar, varchar) FROM
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_VEGETATION
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type vegetation
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_vegetation(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -1798,15 +1806,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_vegetation(
     usr_name             := usr_name,
@@ -1829,8 +1838,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_vegetation(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "Vegetation" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "Vegetation" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_vegetation(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_VEGETATION
@@ -2008,7 +2017,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.refresh_layers_vegetation(varchar, varchar) 
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS_WATERBODY
 ----------------------------------------------------------------
 -- Calls the corresponding qgis_pkg.generate_sql_layers_* function and creates layers for feature type waterbody
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers_waterbody(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -2016,15 +2025,16 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void AS $$
 DECLARE
 sql_statement text := NULL;
-mview_bbox    geometry(Polygon) := NULL;
+mview_bbox    geometry(Polygon) := NULL;  -- A rectangular PostGIS Polygon with SRID
 
 BEGIN
-mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array);
+mview_bbox := qgis_pkg.generate_mview_bbox_poly(cdb_schema, bbox_corners_array, is_geographic);
 
 sql_statement := qgis_pkg.generate_sql_layers_waterbody(
     usr_name             := usr_name,
@@ -2047,8 +2057,8 @@ EXCEPTION
         RAISE EXCEPTION 'qgis_pkg.create_layers_waterbody(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create "WaterBody" layers (associated to a cdb_schema) in selected usr_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create "WaterBody" layers (associated to a cdb_schema) in selected usr_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers_waterbody(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_SQL_DROP_LAYERS_WATERBODY
@@ -2358,7 +2368,7 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_sql_create_layers(varchar, varchar,
 -- Create FUNCTION QGIS_PKG.CREATE_LAYERS
 ----------------------------------------------------------------
 -- Creates ALL layers (e.g. mviews, views, and associated triggers)
-DROP FUNCTION IF EXISTS    qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.create_layers(
 usr_name             varchar,
 cdb_schema           varchar,
@@ -2366,6 +2376,7 @@ perform_snapping     integer   DEFAULT 0,
 digits               integer   DEFAULT 3,
 area_poly_min        numeric   DEFAULT 0.0001,
 bbox_corners_array   numeric[] DEFAULT NULL,
+is_geographic        boolean   DEFAULT FALSE,
 force_layer_creation boolean   DEFAULT FALSE
 )
 RETURNS void
@@ -2398,8 +2409,8 @@ EXCEPTION
         RAISE NOTICE 'qgis_pkg.create_layers(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean) IS 'Create all layers in selected usr_schema associated to given cdb_schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) IS 'Create all layers in selected usr_schema associated to given cdb_schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_layers(varchar, varchar, integer, integer, numeric, numeric[], boolean, boolean) FROM public;
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REFRESH_LAYERS

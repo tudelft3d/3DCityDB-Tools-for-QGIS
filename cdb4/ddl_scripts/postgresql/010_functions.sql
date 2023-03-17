@@ -722,7 +722,7 @@ BEGIN
 
 RAISE NOTICE 'Adding indices to table cityobject_genericattrib';
 sql_statement := format('
-CREATE INDEX IF NOT EXISTS ga_attrname_inx ON %I.cityobject_genericattrib (attrname);
+--CREATE INDEX IF NOT EXISTS ga_attrname_inx ON %I.cityobject_genericattrib (attrname);
 CREATE INDEX IF NOT EXISTS ga_datatype_inx ON %I.cityobject_genericattrib (datatype);
 ',
 cdb_schema, cdb_schema
@@ -847,10 +847,10 @@ END IF;
 -- This will work till there are not too many layers (over 500).
 -- Otherwise first: delete all layers for all cdb_schemas, THEN drop schema
 EXECUTE format('DROP SCHEMA IF EXISTS %I CASCADE', usr_schema);
--------------------------------
-
+-- Delete the entry from the user_schema table.
 EXECUTE format('DELETE FROM qgis_pkg.usr_schema WHERE usr_schema = %L', usr_schema);
 
+-- Now start with a clean installation.
 EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', usr_schema);
 
 -- Create new schema and tables
@@ -1478,9 +1478,12 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.revoke_qgis_usr_privileges(varchar, varchar[
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.COMPUTE_CDB_SCHEMA_EXTENTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.compute_cdb_schema_extents(varchar);
+DROP FUNCTION IF EXISTS    qgis_pkg.compute_cdb_schema_extents(varchar, boolean);
 CREATE OR REPLACE FUNCTION qgis_pkg.compute_cdb_schema_extents(
-	cdb_schema varchar
+cdb_schema 		varchar,
+is_geographic	boolean DEFAULT FALSE  -- TRUE is EPSG uses long-lat, FALSE if is projected (Default)
+-- TO DO: instead of passing it from the GUI, have the function determine autonomously if it's projected or not.
+-- Requires string pattern with the metadata in the refernce system table in public.
 )
 RETURNS TABLE(
 	is_geom_null boolean,
@@ -1493,8 +1496,13 @@ RETURNS TABLE(
 AS $$
 DECLARE
 cdb_extents box2d := NULL;
+geog_coords_prec integer := 6;
 
 BEGIN
+IF is_geographic IS NULL THEN
+	RAISE EXCEPTION 'Parameter is_geographic is NULL but must be either TRUE or FALSE';
+END IF;
+
 is_geom_null := NULL;
 x_min := NULL;
 y_min := NULL;
@@ -1508,15 +1516,19 @@ IF cdb_extents IS NULL THEN
 	is_geom_null := TRUE;
 ELSE
 	is_geom_null := FALSE;
-	x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
-	x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
-	y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
-	y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
 
---	x_min        := round(ST_Xmin(cdb_extents)::numeric,6);
---	x_max        := round(ST_Xmax(cdb_extents)::numeric,6);
---	y_min        := round(ST_Ymin(cdb_extents)::numeric,6);
---	y_max        := round(ST_Ymax(cdb_extents)::numeric,6);
+	IF is_geographic IS TRUE THEN
+		x_min        := round(ST_Xmin(cdb_extents)::numeric, geog_coords_prec);
+		x_max        := round(ST_Xmax(cdb_extents)::numeric, geog_coords_prec);
+		y_min        := round(ST_Ymin(cdb_extents)::numeric, geog_coords_prec);
+		y_max        := round(ST_Ymax(cdb_extents)::numeric, geog_coords_prec);
+	ELSE
+		x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
+		x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
+		y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
+		y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
+	END IF;
+
 	-- Get the srid from the cdb_schema
 	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
 END IF;
@@ -1530,8 +1542,64 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.compute_cdb_schema_extents(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION    qgis_pkg.compute_cdb_schema_extents(varchar) IS 'Computes extents of the selected cdb_schema';
-REVOKE ALL ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar) FROM PUBLIC;
+COMMENT ON FUNCTION    qgis_pkg.compute_cdb_schema_extents(varchar, boolean) IS 'Computes extents of the selected cdb_schema';
+REVOKE ALL ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar, boolean) FROM PUBLIC;
+
+-- Example:
+-- will default to projected coordinate systems and round to next integer.
+--SELECT qgis_pkg.compute_cdb_schema_extents('citydb');
+
+
+-- DROP FUNCTION IF EXISTS    qgis_pkg.compute_cdb_schema_extents(varchar);
+-- CREATE OR REPLACE FUNCTION qgis_pkg.compute_cdb_schema_extents(
+-- cdb_schema 		varchar
+-- )
+-- RETURNS TABLE(
+-- 	is_geom_null boolean,
+-- 	x_min numeric,
+-- 	y_min numeric,
+-- 	x_max numeric,
+-- 	y_max numeric,
+-- 	srid integer
+-- ) 
+-- AS $$
+-- DECLARE
+-- cdb_extents box2d := NULL;
+
+-- BEGIN
+-- is_geom_null := NULL;
+-- x_min := NULL;
+-- y_min := NULL;
+-- x_max := NULL;
+-- y_max := NULL;
+-- srid := NULL;
+
+-- EXECUTE format('SELECT ST_Extent(envelope) FROM %I.cityobject AS co', cdb_schema) INTO cdb_extents;
+
+-- IF cdb_extents IS NULL THEN
+-- 	is_geom_null := TRUE;
+-- ELSE
+-- 	IF 
+-- 	is_geom_null := FALSE;
+-- 	x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
+-- 	x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
+-- 	y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
+-- 	y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
+-- 	-- Get the srid from the cdb_schema
+-- 	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
+-- END IF;
+
+-- RETURN NEXT;
+
+-- EXCEPTION
+-- 	WHEN QUERY_CANCELED THEN
+-- 		RAISE EXCEPTION 'qgis_pkg.compute_cdb_schema_extents(): Error QUERY_CANCELED';
+--   WHEN OTHERS THEN 
+-- 		RAISE NOTICE 'qgis_pkg.compute_cdb_schema_extents(): %', SQLERRM;
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- COMMENT ON FUNCTION    qgis_pkg.compute_cdb_schema_extents(varchar) IS 'Computes extents of the selected cdb_schema';
+-- REVOKE ALL ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar) FROM PUBLIC;
 
 -- Example:
 --SELECT qgis_pkg.compute_cdb_schema_extents('citydb');
@@ -1539,12 +1607,13 @@ REVOKE ALL ON FUNCTION qgis_pkg.compute_cdb_schema_extents(varchar) FROM PUBLIC;
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.UPSERT_EXTENTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry);
+DROP FUNCTION IF EXISTS    qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry, boolean);
 CREATE OR REPLACE FUNCTION qgis_pkg.upsert_extents(
 	usr_schema varchar,
 	cdb_schema varchar,
 	cdb_bbox_type varchar,
-	cdb_envelope geometry DEFAULT NULL)
+	cdb_envelope geometry DEFAULT NULL,
+	is_geographic boolean DEFAULT FALSE)
 RETURNS integer
 AS $$
 DECLARE
@@ -1560,12 +1629,15 @@ BEGIN
 IF cdb_bbox_type IS NULL OR NOT (cdb_bbox_type = ANY (cdb_bbox_type_array)) THEN
 	RAISE EXCEPTION 'cdb_bbox_type value is invalid. It must be one of (%)', cdb_bbox_type_array;
 END IF;
+IF is_geographic IS NULL THEN
+	RAISE EXCEPTION 'Parameter is_geographic is NULL but must be either TRUE or FALSE';
+END IF;
 
 CASE
 	WHEN cdb_bbox_type = 'db_schema' THEN
 
-		ext_label    := concat(cdb_schema, '-bbox_extents');
-		bbox_obj := (SELECT qgis_pkg.compute_cdb_schema_extents(cdb_schema));
+		ext_label := concat(cdb_schema, '-bbox_extents');
+		bbox_obj  := (SELECT qgis_pkg.compute_cdb_schema_extents(cdb_schema, is_geographic));
 	
 		IF bbox_obj.is_geom_null IS FALSE THEN
 			creation_timestamp := clock_timestamp();
@@ -1621,18 +1693,106 @@ EXCEPTION
 		RAISE NOTICE 'qgis_pkg.upsert_extents(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry) IS 'Insert/Update the EXTENTS table in the user schema';
-REVOKE ALL ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry) FROM PUBLIC;
+COMMENT ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry, boolean) IS 'Insert/Update the EXTENTS table in the user schema';
+REVOKE ALL ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry, boolean) FROM PUBLIC;
+
+
+
+-- DROP FUNCTION IF EXISTS    qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry);
+-- CREATE OR REPLACE FUNCTION qgis_pkg.upsert_extents(
+-- 	usr_schema varchar,
+-- 	cdb_schema varchar,
+-- 	cdb_bbox_type varchar,
+-- 	cdb_envelope geometry DEFAULT NULL)
+-- RETURNS integer
+-- AS $$
+-- DECLARE
+-- 	cdb_bbox_type_array CONSTANT varchar[] := ARRAY['db_schema', 'm_view', 'qgis'];
+-- 	ext_label	varchar;
+-- 	srid integer;
+-- 	creation_timestamp timestamptz(3);
+-- 	upserted_id	integer := NULL;
+-- 	bbox_obj RECORD;
+	
+-- BEGIN
+-- -- Check that the cdb_box_type is a valid value
+-- IF cdb_bbox_type IS NULL OR NOT (cdb_bbox_type = ANY (cdb_bbox_type_array)) THEN
+-- 	RAISE EXCEPTION 'cdb_bbox_type value is invalid. It must be one of (%)', cdb_bbox_type_array;
+-- END IF;
+
+-- CASE
+-- 	WHEN cdb_bbox_type = 'db_schema' THEN
+
+-- 		ext_label    := concat(cdb_schema, '-bbox_extents');
+-- 		bbox_obj := (SELECT qgis_pkg.compute_cdb_schema_extents(cdb_schema));
+	
+-- 		IF bbox_obj.is_geom_null IS FALSE THEN
+-- 			creation_timestamp := clock_timestamp();
+-- 			cdb_envelope := ST_MakeEnvelope(bbox_obj.x_min, bbox_obj.y_min, bbox_obj.x_max, bbox_obj.y_max, bbox_obj.srid);
+-- 		ELSE
+-- 			creation_timestamp := NULL;
+-- 			cdb_envelope := NULL;
+-- 		END IF;
+
+-- 	WHEN cdb_bbox_type IN ('mview', 'qgis') THEN
+
+-- 		IF cdb_bbox_type = 'mview' THEN
+-- 			ext_label := concat(cdb_schema,'-mview_bbox_extents');
+-- 		ELSE
+-- 			ext_label := concat(cdb_schema,'-qgis_bbox_extents');
+-- 		END IF;
+
+-- 		-- Get the srid from the current cdb_schema
+-- 		IF cdb_envelope IS NOT NULL THEN
+-- 			creation_timestamp := clock_timestamp();
+-- 			EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;
+-- 			cdb_envelope := ST_SetSrid(cdb_envelope, srid);
+-- 		ELSE
+-- 			creation_timestamp := NULL;
+-- 			cdb_envelope := NULL;
+-- 		END IF;
+-- 	ELSE
+-- 		-- do nothing
+-- END CASE;
+
+-- EXECUTE format('
+-- 	INSERT INTO %I.extents AS e 
+-- 		(cdb_schema, bbox_type, label, envelope, creation_date)
+-- 	VALUES (%L, %L, %L, %L, %L)
+-- 	ON CONFLICT ON CONSTRAINT extents_cdb_schema_bbox_type_key DO
+-- 		UPDATE SET
+-- 			envelope = %L, label = %L, creation_date = %L
+-- 		WHERE 
+-- 			e.cdb_schema = %L AND e.bbox_type = %L
+-- 	RETURNING id',
+-- 	usr_schema,
+-- 	cdb_schema, cdb_bbox_type, ext_label, cdb_envelope, creation_timestamp,
+-- 	cdb_envelope, ext_label, creation_timestamp,
+-- 	cdb_schema, cdb_bbox_type)
+-- INTO STRICT upserted_id;
+
+-- RETURN upserted_id;
+
+-- EXCEPTION
+-- 	WHEN QUERY_CANCELED THEN
+-- 		RAISE EXCEPTION 'qgis_pkg.upsert_extents(): Error QUERY_CANCELED';
+--   WHEN OTHERS THEN 
+-- 		RAISE NOTICE 'qgis_pkg.upsert_extents(): %', SQLERRM;
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- COMMENT ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry) IS 'Insert/Update the EXTENTS table in the user schema';
+-- REVOKE ALL ON FUNCTION qgis_pkg.upsert_extents(varchar, varchar, varchar, geometry) FROM PUBLIC;
 
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.GENERATE_MVIEW_BBOX_POLY
 ----------------------------------------------------------------
 -- Created a 2D polygon (and adds the SRID) from an array containing the bbox of the extents
-DROP FUNCTION IF EXISTS    qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) CASCADE;
+DROP FUNCTION IF EXISTS    qgis_pkg.generate_mview_bbox_poly(varchar, numeric[], boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.generate_mview_bbox_poly(
 cdb_schema			varchar,
-bbox_corners_array	numeric[]    -- To be passed as 'ARRAY[1.1,2.2,3.3,4.4]' 
+bbox_corners_array	numeric[],             -- To be passed as 'ARRAY[1.1,2.2,3.3,4.4]' 
+is_geographic		boolean DEFAULT FALSE  -- TRUE is EPSG uses long-lat, FALSE if is projected (Default)	
 )
 RETURNS geometry AS $$
 DECLARE
@@ -1641,20 +1801,35 @@ x_min numeric;
 y_min numeric;
 x_max numeric;
 y_max numeric;
-mview_bbox_poly geometry(Polygon);
-
+geog_coords_prec integer := 6;
+mview_bbox_poly geometry(Polygon);  -- A rectangular PostGIS Polygon with SRID
+-- The polygon will have its coordinated approximated to:
+-- floor and ceiling if coordinate system is projected
+-- the 6th decimal position is coordinates are geographic (e.g. x = long, y = lat)
 BEGIN
 
 IF bbox_corners_array IS NULL THEN
 	mview_bbox_poly := NULL;
 ELSIF array_position(bbox_corners_array, NULL) IS NOT NULL THEN
 	RAISE EXCEPTION 'Array with corner coordinates is invalid and contains at least a null value';
+ELSIF is_geographic IS NULL THEN
+	RAISE EXCEPTION 'Parameter is_geographic is NULL but must be either TRUE or FALSE';
 ELSE
+
 	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid_id;
-	x_min :=   floor(bbox_corners_array[1]);
-	y_min :=   floor(bbox_corners_array[2]);
-	x_max := ceiling(bbox_corners_array[3]);
-	y_max := ceiling(bbox_corners_array[4]);
+	
+	IF is_geographic IS TRUE THEN
+		x_min := round(bbox_corners_array[1]::numeric, geog_coords_prec);
+		y_min := round(bbox_corners_array[2]::numeric, geog_coords_prec);
+		x_max := round(bbox_corners_array[3]::numeric, geog_coords_prec);
+		y_max := round(bbox_corners_array[4]::numeric, geog_coords_prec);
+	ELSE
+		x_min :=   floor(bbox_corners_array[1]);
+		y_min :=   floor(bbox_corners_array[2]);
+		x_max := ceiling(bbox_corners_array[3]);
+		y_max := ceiling(bbox_corners_array[4]);
+	END IF;
+
 	mview_bbox_poly := ST_MakeEnvelope(x_min, y_min, x_max, y_max, srid_id);
 END IF;
 
@@ -1667,8 +1842,54 @@ EXCEPTION
 		RAISE EXCEPTION 'qgis_pkg.generate_mview_bbox_poly(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) IS 'Create polygon of mview bbox';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) FROM public;
+COMMENT ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[], boolean) IS 'Create polygon of mview bbox';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[], boolean) FROM public;
+
+-- Example:
+--SELECT qgis_pkg.generate_mview_bbox_poly('citydb', ARRAY[220177, 481471, 220755, 482133], TRUE);
+--SELECT qgis_pkg.generate_mview_bbox_poly('citydb', '{220177, 481471, 220755, 482133}', FALSE);
+
+
+-- DROP FUNCTION IF EXISTS    qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) CASCADE;
+-- CREATE OR REPLACE FUNCTION qgis_pkg.generate_mview_bbox_poly(
+-- cdb_schema			varchar,
+-- bbox_corners_array	numeric[]    -- To be passed as 'ARRAY[1.1,2.2,3.3,4.4]' 
+-- )
+-- RETURNS geometry AS $$
+-- DECLARE
+-- srid_id integer;
+-- x_min numeric;
+-- y_min numeric;
+-- x_max numeric;
+-- y_max numeric;
+-- mview_bbox_poly geometry(Polygon);
+
+-- BEGIN
+
+-- IF bbox_corners_array IS NULL THEN
+-- 	mview_bbox_poly := NULL;
+-- ELSIF array_position(bbox_corners_array, NULL) IS NOT NULL THEN
+-- 	RAISE EXCEPTION 'Array with corner coordinates is invalid and contains at least a null value';
+-- ELSE
+-- 	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid_id;
+-- 	x_min :=   floor(bbox_corners_array[1]);
+-- 	y_min :=   floor(bbox_corners_array[2]);
+-- 	x_max := ceiling(bbox_corners_array[3]);
+-- 	y_max := ceiling(bbox_corners_array[4]);
+-- 	mview_bbox_poly := ST_MakeEnvelope(x_min, y_min, x_max, y_max, srid_id);
+-- END IF;
+
+-- RETURN mview_bbox_poly;
+
+-- EXCEPTION
+-- 	WHEN QUERY_CANCELED THEN
+-- 		RAISE EXCEPTION 'qgis_pkg.generate_mview_bbox_poly(): Error QUERY_CANCELED';
+-- 	WHEN OTHERS THEN
+-- 		RAISE EXCEPTION 'qgis_pkg.generate_mview_bbox_poly(): %', SQLERRM;
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- COMMENT ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) IS 'Create polygon of mview bbox';
+-- REVOKE EXECUTE ON FUNCTION qgis_pkg.generate_mview_bbox_poly(varchar, numeric[]) FROM public;
 
 -- Example:
 --SELECT qgis_pkg.generate_mview_bbox_poly('citydb', ARRAY[220177, 481471, 220755, 482133]);
@@ -2005,9 +2226,7 @@ cdb_schema varchar
 RETURNS boolean
 AS $$
 DECLARE
---dt_prefix         CONSTANT varchar := 'dv';
 where_cdb_name    CONSTANT varchar := concat(cdb_schema,'_%');
---where_cdb_name_dv CONSTANT varchar := concat(dt_prefix,'_',cdb_schema,'_%');
 BEGIN
 
 PERFORM t.table_name
@@ -2016,9 +2235,7 @@ PERFORM t.table_name
     WHERE 
 		quote_ident(t.table_schema) = quote_ident(usr_schema)
 		AND t.table_type = 'VIEW'
-		AND t.table_name::varchar LIKE where_cdb_name
-		--AND t.table_name::varchar NOT LIKE where_cdb_name_dv
-		;
+		AND t.table_name::varchar LIKE where_cdb_name;
 
 RETURN FOUND;
 

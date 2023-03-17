@@ -202,13 +202,14 @@ def exec_upsert_extents(dlg: CDB4DeleterDialog, bbox_type: str, extents_wkt_2d_p
     """
     # Prepare query to upsert the extents of the current cdb_schema
     query = pysql.SQL("""
-        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents});
+        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
         _bbox_type = pysql.Literal(bbox_type),
-        _extents = pysql.Literal(extents_wkt_2d_poly)
+        _extents = pysql.Literal(extents_wkt_2d_poly),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:

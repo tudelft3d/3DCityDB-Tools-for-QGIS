@@ -33,6 +33,16 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     """
     cdb_extents_wkt: str = None
 
+    # Get the crs_id stored in the selected {cdb_schema}
+    srid: int = sql.fetch_cdb_schema_srid(dlg)
+    # Format CRS variable as QGIS Epsg code.
+    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
+    # Storethe crs into the plugin variable
+    dlg.CRS = QgsCoordinateReferenceSystem(crs)
+    # print("CRS from database",dlg.CRS.postgisSrid())
+    dlg.CRS_is_geographic = dlg.CRS.isGeographic()
+    # print("CRS_from database: is_geographic?",dlg.CRS.isGeographic())
+
     while not cdb_extents_wkt:
 
         # Get the extents stored in server.
@@ -56,14 +66,6 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
         dlg.CURRENT_EXTENTS = dlg.CDB_SCHEMA_EXTENTS
     else:
         dlg.CURRENT_EXTENTS = dlg.DELETE_EXTENTS
-
-    # Get the crs_id stored in the selected {cdb_schema}
-    srid: int = sql.fetch_cdb_schema_srid(dlg)
-
-    # Format CRS variable as QGIS EPSG code.
-    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
-    # Store the crs into the plugin variable
-    dlg.CRS = QgsCoordinateReferenceSystem(crs)
 
     # Draw the cdb extents in the canvas
     # First, create polygon rubber band corresponding to the cdb_schema extents

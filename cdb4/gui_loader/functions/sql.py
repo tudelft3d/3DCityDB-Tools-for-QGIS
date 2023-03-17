@@ -57,7 +57,7 @@ def fetch_precomputed_extents(dlg: CDB4LoaderDialog, ext_type: str) -> str:
     *   :returns: Extents as WKT or None if the entry is empty.
         :rtype: str
     """
-    # Get cdb_schema extents from server as WKT.
+    # Get cdb_schema extents from server as WKT rectangular polygon _withouth_ srid.
     query = pysql.SQL("""
         SELECT ST_AsText(envelope) FROM {_usr_schema}.extents 
         WHERE cdb_schema = {_cdb_schema} AND bbox_type = {_ext_type};
@@ -356,7 +356,7 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
     *   :param bbox_type: one of ['db_schema', 'm_view', 'qgis']
         :type bbox_type: str
 
-    *   :param extents_2d_poly: wkt of a polygon, 2D and withouth SRID
+    *   :param extents_2d_poly: wkt of a polygon, 2D and _withouth_ SRID
         :type extents_2d_poly: str
 
     *   :returns: upserted_id
@@ -364,13 +364,14 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
     """
     # Prepare query to upsert the extents of the current cdb_schema
     query = pysql.SQL("""
-        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents});
+        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
         _bbox_type = pysql.Literal(bbox_type),
-        _extents = pysql.Literal(extents_wkt_2d_poly)
+        _extents = pysql.Literal(extents_wkt_2d_poly),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:

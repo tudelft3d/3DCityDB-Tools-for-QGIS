@@ -34,7 +34,7 @@ from collections import namedtuple
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem, QgsLayerTreeGroup
-from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
+from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar 
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
@@ -73,7 +73,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html#widgets-and-dialogs-with-auto-connect
 
         self.setupUi(self)
-
+        self.qmc = cdbMain.iface.mapCanvas()
         ############################################################
         ## "Standard" variables or constants
         ############################################################
@@ -132,14 +132,18 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.selectedCodeListSet: str = None
 
         # Variable to store the selected crs.
-        self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
-        self.CRS_is_geographic: bool = None  # True if we are using lon lat in the database, False if we use projected coordinates
+        self.CRS: QgsCoordinateReferenceSystem = None
+        # self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
+        self.CRS_is_geographic: bool = None
+        # self.CRS_is_geographic: bool = self.CRS.isGeographic()  # True if we are using lon lat in the database, False if we use projected coordinates
 
         self.CDBSchemaPrivileges: str = None
         self.n_cityobjects: int = 0 # Number of cityobjects in the current cdb_schema
 
         # Variable to store the selected extents.
-        self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()
+        self.CURRENT_EXTENTS: QgsRectangle = None
+        # self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()
+        # print(self.CURRENT_EXTENTS)
         # Variable to store the extents of the selected cdb_schema
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         # Variable to store the extents of the Layers
@@ -154,8 +158,10 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        # self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        # self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA: QgsRubberBand = None
+        self.RUBBER_LAYERS: QgsRubberBand = None
 
         # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
         self.CANVAS_L: QgsMapCanvas = QgsMapCanvas()
@@ -184,7 +190,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnLayerExtentsL.init_text = c.btnLayerExtentsL_t
         self.ccbxLayers.init_text = c.ccbxFeatures_t
 
-
         ### SIGNALS (start) ############################
 
         #### 'User Connection' tab
@@ -197,11 +202,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cbxSchema.currentIndexChanged.connect(lambda: self.evt_cbxSchema_changed(cdbMain))
 
         # Basemap (OSM) group box signals
-        # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
+        # Link the additional canvas to the extents qgroupbox and enable "MapCanvasExtent" Button (Byproduct).
         self.qgbxExtents.setMapCanvas(canvas=self.CANVAS, drawOnCanvasOption=False)
         # Draw on Canvas tool is disabled. Check notes in tc_wf.qgbxExtents_setup()
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
-
+        #################################################################
+        # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+        #################################################################
         # 'Extents' groupbox signals
         self.btnRefreshCDBExtents.clicked.connect(self.evt_btnRefreshCDBExtents_clicked)
 
@@ -222,7 +228,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
         self.qgbxExtentsL.setMapCanvas(canvas=self.CANVAS_L, drawOnCanvasOption=False)
         # Draw on Canvas tool is disabled. Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtentsL_setup
-        self.qgbxExtentsL.setOutputCrs(outputCrs=self.CRS)
+        ####################################
+        # self.qgbxExtentsL.setOutputCrs(outputCrs=self.CRS)
 
         # 'Extents' groupbox signals
         self.qgbxExtentsL.extentChanged.connect(self.evt_qgbxExtentsL_ext_changed)
@@ -364,6 +371,28 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         (btnConnectToDb) is pressed. It sets up the GUI after a click signal is emitted.
         """
         msg: str = None
+
+        ###################################################
+        ###################################################
+        # Trying to solve the bug of rubber bands when connecting to different CRSs
+
+        self.CRS = None
+        self.CRS_is_geographic = None
+
+        self.qgbxExtents.setCurrentCrs = self.qgbxExtents.originalCrs()
+        self.qgbxExtents.setOutputCrs = self.qgbxExtents.originalCrs()
+        self.qgbxExtents.setCurrentExtent(currentExtent=self.qgbxExtents.originalExtent(), currentCrs=self.qgbxExtents.originalCrs())
+        self.qgbxExtents.setOutputExtentFromUser(extent=self.qgbxExtents.originalExtent(), crs=self.qgbxExtents.originalCrs())
+
+        # print("AA In evt_canvasC_ext_changed (original):", self.qgbxExtents.originalCrs(), self.qgbxExtents.originalExtent())
+        # print("AA In evt_canvasC_ext_changed (current):", self.qgbxExtents.currentCrs(), self.qgbxExtents.currentExtent())
+        # print("AA In evt_canvasC_ext_changed (output):", self.qgbxExtents.outputCrs(), self.qgbxExtents.outputExtent())
+
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        ###################################################
+        ###################################################
+
 
         # In 'Connection Status' groupbox
         self.gbxConnStatus.setDisabled(False) # Activate the connection status box (red/green checks)
@@ -650,14 +679,36 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         Reads the new current extents from the map and sets it in the 'Extents'
         (qgbxExtents) widget.
         """
-        # Get canvas's current extents
-        extent: QgsRectangle = self.CANVAS.extent()
+        if not self.CRS:
+            print("In evt_canvasC_ext_changed:", self.CRS, self.CRS_is_geographic) 
+            # print("In evt_canvasC_ext_changed (original):", self.qgbxExtents.originalCrs(), self.qgbxExtents.originalExtent())
+            print("In evt_canvasC_ext_changed (current):", self.qgbxExtents.currentCrs(), self.qgbxExtents.currentExtent())
+            print("In evt_canvasC_ext_changed (output):", self.qgbxExtents.outputCrs(), self.qgbxExtents.outputExtent())            
+            # self.CRS: QgsCoordinateReferenceSystem = self.qmc.mapSettings().destinationCrs()
+            # self.CRS_is_geographic: bool = self.CRS.isGeographic()  # True if we are using lon lat in the database, False if we use projected coordinates
+        else:
+            print("In evt_canvasC_ext_changed:", self.CRS.postgisSrid(), self.CRS_is_geographic)
+            # print("In evt_canvasC_ext_changed (original):", self.qgbxExtents.originalCrs(), self.qgbxExtents.originalExtent())
+            print("In evt_canvasC_ext_changed (current):", self.qgbxExtents.currentCrs(), self.qgbxExtents.currentExtent())
+            print("In evt_canvasC_ext_changed (output):", self.qgbxExtents.outputCrs(), self.qgbxExtents.outputExtent())
 
-        # Set the current extent to show in the 'extent' widget.
-        self.qgbxExtents.blockSignals(True)
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
-        self.qgbxExtents.blockSignals(False)
-        self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
+        if not self.CRS:
+            pass
+        else:
+            # Get canvas's current extents
+            new_extent: QgsRectangle = self.CANVAS.extent()
+            old_extent: QgsRectangle = self.qgbxExtents.currentExtent()
+            new_poly = QgsGeometry.fromRect(new_extent)
+            old_poly = QgsGeometry.fromRect(old_extent)
+
+            if new_poly.equals(old_poly):
+                print("same extents, same CRS, do nothing")
+            else:
+                # Set the current extent to show in the 'extent' widget.
+                # self.qgbxExtents.blockSignals(True)
+                # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
+                # self.qgbxExtents.blockSignals(False)
+                self.qgbxExtents.setCurrentExtent(currentExtent=new_extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
 
     def evt_qgbxExtents_ext_changed(self) -> None:
