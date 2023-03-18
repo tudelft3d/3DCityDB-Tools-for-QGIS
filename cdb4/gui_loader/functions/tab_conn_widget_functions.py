@@ -77,15 +77,15 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     else:
         dlg.CURRENT_EXTENTS = dlg.LAYER_EXTENTS
 
-    # Draw the cdb extents in the canvas
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Draw the canvas
+    # First setup and update canvas with the OSM map on cdb_schema extents and crs, (this fires the gbcExtent event)
+    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
+
+    # Second, create polygon rubber band corresponding to the cdb_schema extents
     canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Third, create polygon rubber band corresponding to the layers extents
     canvas.insert_rubber_band(band=dlg.RUBBER_LAYERS, extents=dlg.LAYER_EXTENTS, crs=dlg.CRS, width=3, color=c.LAYER_EXTENTS_COLOUR)
-
-    # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event
-    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Zoom to the cdb_schema extents
     canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
