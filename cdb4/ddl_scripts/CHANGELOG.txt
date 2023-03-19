@@ -13,10 +13,19 @@ Added support for Detail Views
 Extended/restructured table layer_extents
 Added tables for enum and codelist configuration
 Changed layer generation functions to add metadata for enums and codelists
-Added function [qgis_pkg.compute_schemas_disk_size()]
+Added functions
+	- [qgis_pkg.list_ades()]
+	- [qgis_pkg.drop_ga_indices(...)]
+	- [qgis_pkg.compute_schemas_disk_size()]
 Updated functions:
+	- [qgis_pkg.add_ga_indices(...)]
 	- [qgis_pkg.create_qgis_user_schema(...)]
 	- [qgis_pkg.compute_cdb_schema_extents(...)]
+	- [qgis_pkg.root_class_checker(...)]
+	- [qgis_pkg.root_class_counter(...)]
+	- [qgis_pkg.feature_type_checker(...)]
+	- [qgis_pkg.feature_type_counter(...)]
+	- [qgis_pkg.has_layer_support(...)]
 
 2023-02-20
 ----------

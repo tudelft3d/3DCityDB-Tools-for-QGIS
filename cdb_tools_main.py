@@ -271,6 +271,7 @@ class CDBToolsMain:
         self.first_start_deleter = True
         self.first_start_admin = True
 
+
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI.
         """
@@ -399,7 +400,8 @@ class CDBToolsMain:
         if self.first_start_admin:
             self.first_start_admin = False
             # Create the dialog with elements (after translation).
-            self.admin_dlg = CDB4AdminDialog(cdbMain=self)
+            # self.admin_dlg = CDB4AdminDialog(cdbMain=self)
+            self.admin_dlg = CDB4AdminDialog()
 
         # Get existing connections from QGIS profile settings.
         # They are added to the combo box (cbxExistingConn), and 
