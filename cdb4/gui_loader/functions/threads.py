@@ -229,8 +229,8 @@ class CreateLayersWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-            # Measure elapsed time
-            print(f"Creation of layers and detail views completed in {round((time.time() - time_start), 4)} seconds")
+                # Measure elapsed time
+                print(f"Creation of layers and detail views completed in {round((time.time() - time_start), 4)} seconds")
 
         except (Exception, psycopg2.Error) as error:
             fail_flag = True

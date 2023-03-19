@@ -253,10 +253,11 @@ def exec_compute_cdb_schema_extents(dlg: CDB4LoaderDialog) -> tuple:
     """
     # Prepar query to execute server function to compute the schema's extents
     query = pysql.SQL("""
-        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema});
+        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:
@@ -325,13 +326,14 @@ def exec_has_layers_for_cdb_schema(dlg: CDB4LoaderDialog) -> bool:
     *   :returns: status
         :rtype: bool
     """
-    # Prepare query to check if there are already layers for the current cdb_schema
+    # Prepare query to check if there are already layers for the current cdb_schema and ADE (if not null)
     query = pysql.SQL("""
-        SELECT {_qgis_pkg_schema}.has_layers_for_cdb_schema({_usr_schema},{_cdb_schema});
+        SELECT {_qgis_pkg_schema}.has_layers_for_cdb_schema({_usr_schema},{_cdb_schema},{_ade_prefix});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
         )
 
     try:
@@ -394,7 +396,7 @@ def exec_upsert_extents(dlg: CDB4LoaderDialog, bbox_type: str, extents_wkt_2d_po
 
 
 def fetch_feature_types_checker(dlg: CDB4LoaderDialog) -> tuple:
-    """SQL query that retrieves the available feature types 
+    """SQL query that retrieves the available feature types (CityGML modules)
 
     *   :returns: feature types existing in the database
         :rtype: tuple
@@ -407,11 +409,12 @@ def fetch_feature_types_checker(dlg: CDB4LoaderDialog) -> tuple:
 
     query = pysql.SQL("""
         SELECT feature_type 
-        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_extents}) 
+        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents}) 
         WHERE exists_in_db IS TRUE 
         ORDER BY feature_type;
         """).format(
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
         _extents = pysql.Literal(extents)
         )  
 
@@ -510,19 +513,19 @@ def fetch_enum_lookup_config(dlg: CDB4LoaderDialog) -> list:
     """
     if not dlg.ADE_PREFIX:
         query = pysql.SQL("""
-            SELECT * FROM {_usr_schema}.enum_lookup_config
+            SELECT * FROM {_qgis_pkg_schema}.enum_lookup_config
             WHERE ade_prefix IS NULL
             ORDER BY id;
             """).format(
-            _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA)
             )
     else: 
         query = pysql.SQL("""
-            SELECT * FROM {_usr_schema}.enum_lookup_config
+            SELECT * FROM {_qgis_pkg_schema}.enum_lookup_config
             WHERE ade_prefix IS NULL OR ade_prefix = {_ade_prefix}
             ORDER BY id;
             """).format(
-            _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
             _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
             )
 
@@ -540,7 +543,7 @@ def fetch_enum_lookup_config(dlg: CDB4LoaderDialog) -> list:
         gen_f.critical_log(
             func=fetch_enum_lookup_config,
             location=FILE_LOCATION,
-            header=f"Retrieving data from table '{dlg.USR_SCHEMA}.enum_lookup_config'",
+            header=f"Retrieving data from table '{dlg.QGIS_PKG_SCHEMA}.enum_lookup_config'",
             error=error)
         dlg.conn.rollback()
 

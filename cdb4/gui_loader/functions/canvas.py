@@ -28,10 +28,6 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
     *   :param clear: Clear map registry from old OSM layers.
         :type clear: bool
     """
-    #############################################
-    print("In canvas:",crs.postgisSrid())
-    #############################################
-
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
@@ -100,11 +96,6 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
         (in 'User Connection' tab)
         (in 'Layers' tab)
     """
-    #############################################
-    print("In insert_rubber_band:", extents.asWktPolygon(), crs.postgisSrid())
-    #############################################
-
-
     # Create polygon rubber band corresponding to the extents
     extents_geometry = QgsGeometry.fromRect(extents)
     band.setToGeometry(extents_geometry, crs)

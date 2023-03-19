@@ -71,6 +71,8 @@ def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
 def initialize_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
+    dlg.FeatureTypesRegistry: dict = {}
+        
     dlg.FeatureTypesRegistry: dict = {
         "Bridge"          : FeatureType(name="Bridge"         , alias='bridge'         ),
         "Building"        : FeatureType(name="Building"       , alias='building'       ),

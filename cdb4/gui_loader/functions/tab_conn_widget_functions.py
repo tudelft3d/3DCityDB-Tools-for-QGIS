@@ -30,13 +30,6 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
-    ###############
-    if not dlg.CRS:
-        print("In gbxBasemap_setup", dlg.CRS, dlg.CRS_is_geographic)
-    else:
-        print("In gbxBasemap_setup", dlg.CRS.postgisSrid(), dlg.CRS_is_geographic)
-    ###############
-
     cdb_extents_wkt: str = None
 
     # Get the crs_id stored in the selected {cdb_schema}
@@ -46,7 +39,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     # Store the crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
     dlg.CRS_is_geographic = dlg.CRS.isGeographic()
-    print("In gbxBasemap_setup: CRS_from database", dlg.CRS.postgisSrid(), dlg.CRS_is_geographic)
+    # print("In gbxBasemap_setup: CRS_from database", dlg.CRS.postgisSrid(), dlg.CRS_is_geographic)
 
     while not cdb_extents_wkt:
 
@@ -78,7 +71,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
         dlg.CURRENT_EXTENTS = dlg.LAYER_EXTENTS
 
     # Draw the canvas
-    # First setup and update canvas with the OSM map on cdb_schema extents and crs, (this fires the gbcExtent event)
+    # First set up and update canvas with the OSM map on cdb_schema extents and crs (this fires the gbcExtent event)
     canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Second, create polygon rubber band corresponding to the cdb_schema extents
@@ -165,7 +158,6 @@ def gbxBasemap_reset(dlg: CDB4LoaderDialog) -> None:
 
     # Refresh to show to re-render the canvas (as empty).
     dlg.CANVAS.refresh()
-    # dlg.CANVAS.destroy()
 
     return None
 
