@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from ..other_classes import FeatureType
 
 import os
+import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
@@ -88,8 +89,8 @@ def run_install_qgis_pkg_thread(dlg: CDB4AdminDialog, sql_scripts_path: str, qgi
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
-    dlg.worker.sig_success.connect(lambda: ev_qgis_pkg_install_success(dlg, qgis_pkg_schema))
-    dlg.worker.sig_fail.connect(lambda: ev_qgis_pkg_install_fail(dlg, qgis_pkg_schema))
+    dlg.worker.sig_success.connect(lambda: evt_qgis_pkg_install_success(dlg, qgis_pkg_schema))
+    dlg.worker.sig_fail.connect(lambda: evt_qgis_pkg_install_fail(dlg, qgis_pkg_schema))
     #-SIGNALS--(end)---################################################################
 
     # Initiate worker thread
@@ -169,6 +170,9 @@ class QgisPackageInstallWorker(QObject):
             # Open new temp session, reserved for installation.
             temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Installation)"]))
             with temp_conn:
+
+                # Start measuring time
+                time_start = time.time()
 
                 # 1) Install the DDL scripts
                 for script in install_scripts:
@@ -276,6 +280,10 @@ class QgisPackageInstallWorker(QObject):
                             self.sig_fail.emit()
                             break # Exit from the loop
 
+                # Measure elapsed time
+                print(f"Installation of the QGIS Package completed in {round((time.time() - time_start), 4)} seconds")
+
+
         except (Exception, psycopg2.Error) as error:
             temp_conn.rollback()
             fail_flag = True
@@ -297,7 +305,7 @@ class QgisPackageInstallWorker(QObject):
 
 #--EVENTS  (start)  ##############################################################
 
-def ev_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
+def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
     """Event that is called when the thread executing the installation finishes successfully.
 
     Shows success message at dlg.msg_bar: QgsMessageBar
@@ -325,10 +333,10 @@ def ev_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
         ti_wf.setup_post_qgis_pkg_installation(dlg)
 
     else:
-        ev_qgis_pkg_install_fail(dlg, pkg)
+        evt_qgis_pkg_install_fail(dlg, pkg)
 
 
-def ev_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
+def evt_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
     """Event that is called when the thread executing the installation
     emits a fail signal meaning that something went wrong with installation.
 
@@ -973,8 +981,9 @@ class QgisPackageUninstallWorker(QObject):
         # 3) drop feature types (layers)
         # 4) drop the detail views (dv_ views)
         # 5) drop usr_schemas
-        # 6) drop qgis_usr_group_* group 
-        # 7) drop qgis_pkg schema
+        # 6) drop ga_indices
+        # 7) drop qgis_usr_group_* group 
+        # 8) drop qgis_pkg schema
 
         # Get required information
         
@@ -1013,14 +1022,21 @@ class QgisPackageUninstallWorker(QObject):
         usr_schemas = sql.exec_list_usr_schemas(dlg)
         # print("uninstall usr_schemas:", usr_schemas)
 
+        # Get all cdb_schemas
+        cdb_schemas = []
+        cdb_schemas, schema_nums = sh_sql.exec_list_cdb_schemas(dlg=dlg, only_non_empty=False)
+        schema_nums = None
+        # print("Existing cdb_schemas:", cdb_schemas)
+
         # Set progress bar goal:
         # 1) revoke privileges: 1 x len(usr_names) actions
         # 2) reset privileges for superusers: 1 * len(usr_names_su) actions
         # 3) drop feature types (layers): len(drop_tuples)
         # 4) drop detail views : 1 x len(cdb_schemas)
         # 5) drop usr_schemas: 1 x len(usr_schemas)
-        # 6) drop the qgis_pkg_usrgroup_*: + 1
-        # 7) drop 'qgis_pkg': +1
+        # 6) drop ga_indices: 1 x len(cdb_schemas)
+        # 7) drop the qgis_pkg_usrgroup_*: + 1
+        # 8) drop 'qgis_pkg': +1
 
         if not usr_names:
             usr_names_num: int = 0
@@ -1044,7 +1060,13 @@ class QgisPackageUninstallWorker(QObject):
         else:
             usr_schemas_num: int = len(usr_schemas)
 
-        steps_tot = usr_names_num + usr_names_su_num + drop_tuples_num + drop_detail_views_num + usr_schemas_num + 2
+        if not cdb_schemas:
+            cdb_schemas_num: int = 0
+        else:
+            cdb_schemas_num: int = len(cdb_schemas)
+
+
+        steps_tot = usr_names_num + usr_names_su_num + drop_tuples_num + drop_detail_views_num + usr_schemas_num + cdb_schemas_num + 2
         dlg.bar.setMaximum(steps_tot)
 
         curr_step: int = 0
@@ -1053,6 +1075,9 @@ class QgisPackageUninstallWorker(QObject):
             # Open new temp session, reserved for installation.
             temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Uninstallation)"]))
             with temp_conn:
+
+                # Start measuring time
+                time_start = time.time()
 
                 # 1) revoke privileges: for all normal users
                 if usr_names_num == 0:
@@ -1227,7 +1252,40 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
-                # 6) Drop database group
+                # 7) Drop ga_indices
+                if cdb_schemas_num == 0:
+                    pass # nothing to do 
+                else:
+                    for cdb_schema in cdb_schemas:
+
+                        query = pysql.SQL("""
+                            SELECT {_qgis_pkg_schema}.drop_ga_indices({_cdb_schema});
+                            """).format(
+                            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                            _cdb_schema = pysql.Literal(cdb_schema)
+                            )
+
+                        # Update progress bar
+                        msg = f"Dropped ga indices from: {cdb_schema}"
+                        curr_step += 1
+                        self.sig_progress.emit(curr_step, msg)
+
+                        try:
+                            with temp_conn.cursor() as cur:
+                                cur.execute(query)
+                            temp_conn.commit()
+
+                        except (Exception, psycopg2.Error) as error:
+                            temp_conn.rollback()
+                            fail_flag = True
+                            gen_f.critical_log(
+                                func=self.uninstall_thread_qgis_pkg_current,
+                                location=FILE_LOCATION,
+                                header="Dropping ga indices",
+                                error=error)
+                            self.sig_fail.emit()
+
+                # 7) Drop database group
                 if not self.dlg.GROUP_NAME:
                     self.dlg.GROUP_NAME = sql.exec_create_qgis_pkg_usrgroup_name(dlg)
 
@@ -1257,7 +1315,7 @@ class QgisPackageUninstallWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-                # 7) drop qgis_pkg schema
+                # 8) drop qgis_pkg schema
                 query = pysql.SQL("""
                     DROP SCHEMA IF EXISTS {_qgis_pkg_schema} CASCADE;
                     """).format(
@@ -1283,6 +1341,9 @@ class QgisPackageUninstallWorker(QObject):
                         header=f"Dropping QGIS Package schema '{qgis_pkg_schema}'",
                         error=error)
                     self.sig_fail.emit()
+
+                # Measure elapsed time
+                print(f"Uninstallation of the QGIS Package completed in {round((time.time() - time_start), 4)} seconds")
 
         except (Exception, psycopg2.Error) as error:
             temp_conn.rollback()
@@ -1369,6 +1430,226 @@ def evt_qgis_pkg_uninstall_fail(dlg: CDB4AdminDialog) -> None:
             level=Qgis.Critical,
             notifyUser=True)
     
+    return None
+
+#--EVENTS  (end) ################################################################
+
+
+#####################################################################################
+##### GRANT PRIVILEGES ##############################################################
+#####################################################################################
+
+def run_grant_privileges_thread(dlg: CDB4AdminDialog, usr_name: str, priv_type: str, cdb_schemas: list) -> None:
+    """Function that gant privileges to the user(s) in the database
+    by branching a new Worker thread to execute the operation on.
+
+    *   :param path: The relative path to the directory storing the
+            SQL installation scripts (e.g. ./cdb_loader/cdb4/ddl_scripts/postgresql)
+        :type path: str
+    
+    *   :param pkg: The package (schema) name that's installed
+        :type pkg: str
+    """
+
+    # Add a new progress bar to follow the installation procedure.
+    for index in range(dlg.vLayoutTabInstall.count()):
+        widget = dlg.vLayoutTabInstall.itemAt(index).widget()
+        if not widget:
+            continue # Needed to avoid errors with layouts, vertical spacers, etc.
+        # else:
+            # print(widget.objectName())
+        if widget.objectName() == "gbxUserInstCont":
+            # Add a new progress bar to follow the deletion procedure.
+            dlg.create_progress_bar(layout=dlg.vLayoutTabInstall, position=index+1)
+            break
+
+    # Create new thread object.
+    dlg.thread = QThread()
+    # Instantiate worker object for the operation.
+    dlg.worker = GrantPrivilegesWorker(dlg, usr_name, priv_type, cdb_schemas)
+    # Move worker object to be executed on the new thread.
+    dlg.worker.moveToThread(dlg.thread)
+
+    #-SIGNALS--(start)--################################################################
+    # Anti-panic clicking: Disable widgets to avoid queuing signals.
+    # ...
+
+    # Execute worker's 'run' method.
+    dlg.thread.started.connect(dlg.worker.grant_privileges_thread)
+
+    # Capture progress to show in bar.
+    dlg.worker.sig_progress.connect(dlg.evt_update_bar)
+
+    # Get rid of worker and thread objects.
+    dlg.worker.sig_finished.connect(dlg.thread.quit)
+    dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
+    dlg.thread.finished.connect(dlg.thread.deleteLater)
+
+    # Reenable the GUI
+    dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
+
+    # On installation status
+    dlg.worker.sig_success.connect(lambda: evt_grant_privileges_success(dlg, usr_name))
+    dlg.worker.sig_fail.connect(lambda: evt_grant_privileges_fail(dlg))
+    #-SIGNALS--(end)---################################################################
+
+    # Initiate worker thread
+    dlg.thread.start()
+
+
+class GrantPrivilegesWorker(QObject):
+    """Class to assign Worker that executes the 'installation scripts'
+    to install the QGIS Package (qgis_pkg) into the database.
+    """
+    # Create custom signals.
+    sig_finished = pyqtSignal()
+    sig_progress = pyqtSignal(int, str)
+    sig_success = pyqtSignal()
+    sig_fail = pyqtSignal()
+
+    def __init__(self, dlg: CDB4AdminDialog, usr_name: str, priv_type: str, cdb_schemas: list):
+        super().__init__()
+        self.dlg = dlg
+        self.usr_name = usr_name
+        self.priv_type = priv_type
+        self.cdb_schemas = cdb_schemas
+
+    def grant_privileges_thread(self) -> None:
+        """Execution method that installs the qgis_pkg. SQL scripts are run
+        directly using the execution method. No psql app needed.
+        """
+        dlg = self.dlg
+        usr_name = self.usr_name
+        priv_type = self.priv_type
+        cdb_schemas = self.cdb_schemas
+
+        print(usr_name)
+        print(priv_type)
+        print(cdb_schemas)
+
+        # Flag to help us break from a failing installation.
+        fail_flag: bool = False
+
+        # Procedure overview:
+        # Grant privileges: 1 x len(cdb_schemas)
+
+        if not cdb_schemas:
+            num_cdb_schemas = 0
+        else:
+            num_cdb_schemas = len(cdb_schemas)   
+
+        # Set progress bar goal
+        steps_tot = num_cdb_schemas
+        dlg.bar.setMaximum(steps_tot)
+
+        curr_step: int = 0
+
+        try:
+            # Open new temp session, reserved for installation.
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Grant privileges)"]))
+            with temp_conn:
+
+                # Start measuring time
+                time_start = time.time()
+
+                # 1) Run the function
+                for cdb_schema in cdb_schemas:
+
+                    query = pysql.SQL("""
+                        SELECT {_qgis_pkg_schema}.grant_qgis_usr_privileges(usr_name := {_usr_name}, priv_type := {_priv_type}, cdb_schema := {_cdb_schema});
+                        """).format(
+                        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                        _usr_name = pysql.Literal(usr_name),
+                        _priv_type = pysql.Literal(priv_type),
+                        _cdb_schema = pysql.Literal(cdb_schema),
+                        )
+
+                    # Update progress bar
+                    msg = f"Granting '{priv_type}' in cdb_schema: '{cdb_schema}'"
+                    curr_step += 1
+                    self.sig_progress.emit(curr_step, msg)
+
+                    try:
+                        with temp_conn.cursor() as cur:
+                            print(cur.mogrify(query))
+                            cur.execute(query)
+                        temp_conn.commit()
+
+                    except (Exception, psycopg2.Error) as error:
+                        temp_conn.rollback()
+                        fail_flag = True
+                        gen_f.critical_log(
+                            func=self.grant_privileges_thread,
+                            location=FILE_LOCATION,
+                            header="Granting privileges",
+                            error=error)
+                        self.sig_fail.emit()
+                        break # Exit from the loop
+
+                # Measure elapsed time
+                print(f"Granting privileges completed in {round((time.time() - time_start), 4)} seconds")
+
+        except (Exception, psycopg2.Error) as error:
+            temp_conn.rollback()
+            fail_flag = True
+            gen_f.critical_log(
+                func=self.grant_privileges_thread,
+                location=FILE_LOCATION,
+                header=f"Establishing temporary connection",
+                error=error)
+            self.sig_fail.emit()
+
+        # No FAIL = SUCCESS
+        if not fail_flag:
+            self.sig_success.emit()
+
+        self.sig_finished.emit()
+        # Close connection
+        temp_conn.close()
+        return None
+
+#--EVENTS  (start)  ##############################################################
+
+def evt_grant_privileges_success(dlg: CDB4AdminDialog, usr_name: str) -> None:
+    """Event that is called when the thread executing the privileges grant 
+    emits a fail signal meaning that something went wrong.
+    """  
+    msg: str ='All fine granting privileges.'
+
+    # Inform user
+    QgsMessageLog.logMessage(
+            message=msg,
+            tag=dlg.PLUGIN_NAME,
+            level=Qgis.Success,
+            notifyUser=True)
+
+    # Retrieve again the list of cdb_schemas and their privileges status
+    # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
+    cdb_schemas = sql.exec_list_cdb_schemas_extended(dlg, usr_name)
+    print (cdb_schemas)
+    # Fill the combobox of the cdb_schemas in the groupbox
+    ti_wf.fill_cdb_schemas_box(dlg, cdb_schemas)
+
+    return None
+
+
+def evt_grant_privileges_fail(dlg: CDB4AdminDialog) -> None:
+    """Event that is called when the thread executing the privileges grant 
+    emits a fail signal meaning that something went wrong.
+    """ 
+    error: str ='Error granting privileges.'
+
+    # Replace with Failure msg.
+    msg = dlg.msg_bar.createMessage(error)
+    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+
+    # Inform user
+    QgsMessageLog.logMessage(
+            message=error,
+            tag=dlg.PLUGIN_NAME,
+            level=Qgis.Critical,
+            notifyUser=True)
+
     return None
 
 #--EVENTS  (end) ################################################################
@@ -1489,6 +1770,9 @@ class DropUsrSchemaWorker(QObject):
             # Open new temp session, reserved for usr_schema installation.
             temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(User schema Uninstallation)"]))
             with temp_conn:
+
+                # Start measuring time
+                time_start = time.time()
 
                 if is_superuser:
                     # 1b) reset privileges for superuser for all cdb_schemas
@@ -1627,6 +1911,10 @@ class DropUsrSchemaWorker(QObject):
                         header="Dropping user schema '{usr_schema}'",
                         error=error)
                     self.sig_fail.emit()
+
+                # Measure elapsed time
+                print(f"Dropping user schema completed in {round((time.time() - time_start), 4)} seconds")
+
 
         except (Exception, psycopg2.Error) as error:
             temp_conn.rollback()

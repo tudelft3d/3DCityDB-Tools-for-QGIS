@@ -29,8 +29,7 @@ class FeatureType():
     def __init__(self,
                 alias: str,
                 layers_drop_function: str = None,
-                is_ade: bool = False,
-                #n_features: int = 0
+                ade_prefix: str = None
                 ):
         self.alias = alias
 
@@ -39,7 +38,11 @@ class FeatureType():
         else:
             self.layers_drop_function = "_".join(["drop_layers", alias])
 
-        self.is_ade = is_ade
+        self.ade_prefix = ade_prefix
+        if ade_prefix:
+            self.is_ade = True
+        else:
+            self.is_ade = False
         #self.n_features = n_features
     
     def __str__(self):

@@ -425,6 +425,7 @@ def fetch_unique_cdb_schema_feature_types_in_layer_metadata(dlg: CDB4AdminDialog
     query = pysql.SQL("""
         SELECT DISTINCT cdb_schema, feature_type 
         FROM {_usr_schema}.layer_metadata
+        WHERE layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
         ORDER BY cdb_schema, feature_type ASC;
         """).format(
         _usr_schema = pysql.Identifier(usr_schema)
@@ -451,8 +452,8 @@ def fetch_unique_cdb_schema_feature_types_in_layer_metadata(dlg: CDB4AdminDialog
 
 
 def exec_list_feature_types(dlg: CDB4AdminDialog, usr_schema: str = None) -> list:
-    """SQL query that retrieves the available feature types from table
-    qgis_{usr}.layer_metadata in all usr_schemas
+    """SQL query that retrieves ALL available feature types from table qgis_{usr}.layer_metadata
+    in ALL usr_schemas
 
     *   :returns: list of tuples containing the name of the usr_schema, cdb_schema, feature type.
         :rtype: list[tuple]
