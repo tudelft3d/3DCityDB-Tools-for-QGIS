@@ -162,10 +162,11 @@ def exec_compute_cdb_schema_extents(dlg: CDB4DeleterDialog) -> tuple:
     """
     # Prepare query to execute server function to compute the schema's extents
     query = pysql.SQL("""
-        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema});
+        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:
@@ -232,7 +233,7 @@ def exec_upsert_extents(dlg: CDB4DeleterDialog, bbox_type: str, extents_wkt_2d_p
 
 
 def fetch_feature_types_checker(dlg: CDB4DeleterDialog) -> tuple:
-    """SQL query that retrieves the available feature types 
+    """SQL query that retrieves the available feature types (CityGML modules)
 
     *   :returns: Dictionary with feature type as key and populated status as boolean value.
         :rtype: tuple
@@ -245,11 +246,12 @@ def fetch_feature_types_checker(dlg: CDB4DeleterDialog) -> tuple:
 
     query = pysql.SQL("""
         SELECT feature_type 
-        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_extents}) 
+        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents}) 
         WHERE exists_in_db IS TRUE 
         ORDER BY feature_type;
         """).format(
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
         _extents = pysql.Literal(extents)
         )  
 
@@ -308,11 +310,12 @@ def fetch_top_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str
 
     query = pysql.SQL("""
         SELECT feature_type, root_class, objectclass_id, n_feature 
-        FROM qgis_pkg.root_class_counter({_cdb_schema},{_extents}) 
+        FROM qgis_pkg.root_class_counter({_cdb_schema},{_ade_prefix},{_extents}) 
         WHERE n_feature > 0 
         ORDER BY feature_type, root_class;
         """).format(
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
         _extents = pysql.Literal(extents_wkt_2d)
         )  
 

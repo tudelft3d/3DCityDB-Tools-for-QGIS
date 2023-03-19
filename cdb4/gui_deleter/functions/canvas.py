@@ -29,9 +29,9 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
     # OSM id of layer.
     registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
-    dlg.qgbxExtents.blockSignals(True)
-    dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
-    dlg.qgbxExtents.blockSignals(False)
+    # dlg.qgbxExtents.blockSignals(True)
+    # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
+    # dlg.qgbxExtents.blockSignals(False)
     dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     # Set CRS and extents of the canvas

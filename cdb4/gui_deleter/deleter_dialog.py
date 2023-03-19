@@ -87,6 +87,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.GROUP_NAME: str = None
         # Variable to store the selected cdb_schema name.
         self.CDB_SCHEMA: str = None
+        # Variable to store the ADE prefix of the selected cdb_schema name.
+        self.ADE_PREFIX: str = None
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
 
@@ -99,23 +101,23 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar: QProgressBar
         self.thread: QThread
 
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
+
         ############################################################
         ## From here you can add your variables or constants
         ############################################################
 
-        self.settings = DefaultSettings()
-        self.checks = DialogChecks()
-
+        # Metadata Registries (dictionaries)
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
-        self.TopClassFeaturesRegistry: dict = {}
         self.FeatureTypesRegistry: dict = {}
+        self.TopClassFeaturesRegistry: dict = {}
 
         # Variable to store the selected crs.
-        self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
-        # print("CRS upon start",self.CRS.postgisSrid())
-        self.CRS_is_geographic: bool = None  # True if we are using lon lat in the database, False if we use projected coordinates
-        # print("CRS_is_geographic",self.CRS.isGeographic())
-
+        self.CRS: QgsCoordinateReferenceSystem = None
+        # self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
+        self.CRS_is_geographic: bool = None    # Will be True if we are using lon lat in the database, False if we use projected coordinates
+ 
         # Variable to store the selected extents.
         self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()
         # Variable to store the extents of the selected cdb_schema
@@ -128,8 +130,6 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS.enableAntiAliasing(True)
         self.CANVAS.setMinimumWidth(300)
         self.CANVAS.setMaximumHeight(350)
-
-        # print("canvas", self.CANVAS_C.extent)
 
         # Variable to store a rubberband formed by the current extents.
         self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
@@ -176,7 +176,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Draw on Canvas tool is disabled.
         # Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+        #################################################################
+        # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+        #################################################################
         # 'Extents' groupbox signals
         self.qgbxExtents.extentChanged.connect(self.evt_qgbxExtents_ext_changed)
         self.CANVAS.extentsChanged.connect(self.evt_canvasC_ext_changed)
@@ -322,10 +324,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         msg: str = None
 
         # In 'Connection Status' groupbox
-        # Activate the connection status box (red/green checks)
-        self.gbxConnStatus.setDisabled(False)
-        # Activate the close connection button at the bottom 
-        self.btnCloseConn.setDisabled(False) 
+        self.gbxConnStatus.setDisabled(False) # Activate the connection status box (red/green checks)
+        self.btnCloseConn.setDisabled(False) # Activate the close connection button at the bottom
 
         # -------------------------------------------------------------------------------------------
         # Series of tests to be carried out when I connect as user.
@@ -689,14 +689,27 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         Reads the new current extents from the map and sets it in the 'Extents'
         (qgbxExtents) widget.
         """
-        # Get canvas's current extent
-        extent: QgsRectangle = self.CANVAS.extent()
+        if not self.CRS:
+            # do nothing
+            # print('no CRS yet')
+            pass
+        else:
+        # Get canvas's current extents
+            new_extent: QgsRectangle = self.CANVAS.extent()
+            old_extent: QgsRectangle = self.qgbxExtents.currentExtent()
+            new_poly = QgsGeometry.fromRect(new_extent)
+            old_poly = QgsGeometry.fromRect(old_extent)
 
-        # Set the current extent to show in the 'extents' widget.
-        self.qgbxExtents.blockSignals(True)
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal blocking signals
-        self.qgbxExtents.blockSignals(False)
-        self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
+            if new_poly.equals(old_poly):
+                # do nothing
+                # print("same extents, same CRS, do nothing")
+                pass
+            else:
+                # Set the current extent to show in the 'extent' widget.
+                # self.qgbxExtents.blockSignals(True)
+                # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
+                # self.qgbxExtents.blockSignals(False)
+                self.qgbxExtents.setCurrentExtent(currentExtent=new_extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
         return None
 

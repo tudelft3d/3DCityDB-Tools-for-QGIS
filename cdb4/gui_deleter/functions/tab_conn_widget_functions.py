@@ -37,11 +37,9 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     srid: int = sql.fetch_cdb_schema_srid(dlg)
     # Format CRS variable as QGIS Epsg code.
     crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
-    # Storethe crs into the plugin variable
+    # Store the crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
-    # print("CRS from database",dlg.CRS.postgisSrid())
     dlg.CRS_is_geographic = dlg.CRS.isGeographic()
-    # print("CRS_from database: is_geographic?",dlg.CRS.isGeographic())
 
     while not cdb_extents_wkt:
 
@@ -67,15 +65,15 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     else:
         dlg.CURRENT_EXTENTS = dlg.DELETE_EXTENTS
 
-    # Draw the cdb extents in the canvas
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Draw the canvas
+    # First set up and update canvas with the OSM map on cdb_schema extents and crs (this fires the gbcExtent event)
+    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
+
+    # Second, create polygon rubber band corresponding to the cdb_schema extents
     canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Third, create polygon rubber band corresponding to the delete extents
     canvas.insert_rubber_band(band=dlg.RUBBER_DELETE, extents=dlg.DELETE_EXTENTS, crs=dlg.CRS, width=3, color=c.DELETE_EXTENTS_COLOUR)
-
-    # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event
-    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Zoom to the cdb_schema extents (blue box)
     canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
@@ -134,9 +132,11 @@ def gbxBasemap_reset(dlg: CDB4DeleterDialog) -> None:
     dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text)
     dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text)
 
-    # Remove extent rubber bands.
-    dlg.RUBBER_CDB_SCHEMA.reset()
-    dlg.RUBBER_DELETE.reset()
+    # Remove extent rubber bands
+    if dlg.RUBBER_CDB_SCHEMA:
+        dlg.RUBBER_CDB_SCHEMA.reset()
+    if dlg.RUBBER_DELETE:
+        dlg.RUBBER_DELETE.reset()
 
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
