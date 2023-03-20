@@ -20,14 +20,14 @@ In particular, the **Layer Loader** offers following functionalities:
 - Support for other geometry types other than (Multi)Polygons (e.g. multilines for Terrain Intersection Curves)
 - Support for multiple citydb schemas in the same 3D City Database instance
 - Multiple user support, with different privileges (i.e. read-only, read-write)
-- User-friendly form-based editing of feature attributes; changes are stored directly into the database
+- User-friendly form-based editing of feature attributes (including generic attributes, external references, etc.); changes are stored directly into the database
 - Automatically generated, hierarchical layer order in the QGIS Layers Panel
 - Server-side and client-side interactive selection of the Area Of Interest (AOI) extents to load in QGIS, in order to tackle with possibly very large datasets
 - Smart layer management: layers are generated only for existing data, only layers with data within the AOI extents can be selected
 - Support for CityGML enumerations and codelists
 - All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
-Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.7.1.pdf)").
+Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.8.pdf)").
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
@@ -36,7 +36,7 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.22, including the recently released version 3.28. Please note that support and further development will focus only on LTR versions.
+The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.22, including the recently released version 3.28 LTR. Please note that support and further development will focus only on LTR versions.
 
 The server-side part of the plugin requires PostgreSQL version >= 10.
 
@@ -56,7 +56,6 @@ and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft)
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
-- Overall GUI improvements, e.g. with better support for nested tables (External References, Addresses, etc.) and Codelists
 - Support for appearances (at least for X3D Materials, if possible)
 - Support of ADEs (e.g. the Energy ADE, to start with) (Currently being investigated in an on-going [MSc Geomatics thesis at TU Delft](https://3d.bk.tudelft.nl/education/#theses))
 - Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
