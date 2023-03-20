@@ -264,7 +264,7 @@ class CDBToolsMain:
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = True) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
 
         # Will be set False in run_admin(), run_loader(), run_deleter() etc.
         self.first_start_loader = True
