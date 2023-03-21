@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-    from ..other_classes import FeatureType, TopClassFeature
+    from ..other_classes import FeatureType, TopLevelFeature
 
 import math, time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -398,8 +398,8 @@ class BulkDeleteWorker(QObject):
             ft_cog = dlg.FeatureTypesRegistry['CityObjectGroup']
 
             # 2a) Filter the top-level features based on the selected Featuere Types 
-            sel_rcfs: list = []               # Used for all the top-level features, except the CityObjectGroup
-            sel_rcfs = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
+            sel_tlfs: list = []               # Used for all the top-level features, except the CityObjectGroup
+            sel_tlfs = sorted([rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
             
             # 3a) Put the ReliefFeature and the CityObjectGroup top-level features at the end of the list 
             if (not ft_rel.is_selected) and (not ft_cog.is_selected):
@@ -407,58 +407,58 @@ class BulkDeleteWorker(QObject):
 
             elif (ft_rel.is_selected) and (not ft_cog.is_selected):
                 # a) Remove from the list
-                sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name != "ReliefFeature"], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "ReliefFeature"], key = lambda x: x.name)
                 # b) add it at the end of the list
-                sel_rcfs.append(dlg.TopClassFeaturesRegistry["ReliefFeature"])
+                sel_tlfs.append(dlg.TopLevelFeaturesRegistry["ReliefFeature"])
 
             elif (not ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature at the end of the rcf list
                 # a) Remove from the list
-                sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name != "CityObjectGroup"], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "CityObjectGroup"], key = lambda x: x.name)
                 # b) add it at the end of the list
-                sel_rcfs.append(dlg.TopClassFeaturesRegistry["CityObjectGroup"])
+                sel_tlfs.append(dlg.TopLevelFeaturesRegistry["CityObjectGroup"])
 
             elif (ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature and the CityObjectGroup at the end of the rcf list
                 # a) Remove from the list
-                sel_rcfs = sorted([rcf for rcf in sel_rcfs if rcf.name not in ["ReliefFeature", "CityObjectGroup"]], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name not in ["ReliefFeature", "CityObjectGroup"]], key = lambda x: x.name)
                 # b) add at the end of the list
-                sel_rcfs.append(dlg.TopClassFeaturesRegistry["ReliefFeature"])
-                sel_rcfs.append(dlg.TopClassFeaturesRegistry["CityObjectGroup"])
+                sel_tlfs.append(dlg.TopLevelFeaturesRegistry["ReliefFeature"])
+                sel_tlfs.append(dlg.TopLevelFeaturesRegistry["CityObjectGroup"])
 
             tot_del_iter: int = 0
 
-            rcf: TopClassFeature
+            tlf: TopLevelFeature
             n_iter: int = 0
-            for rcf in sel_rcfs:
-                n_iter = math.ceil(rcf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
-                rcf.n_del_iter = n_iter
+            for tlf in sel_tlfs:
+                n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
+                tlf.n_del_iter = n_iter
                 tot_del_iter += n_iter
 
-        elif self.delete_mode == "del_TopClassFeatures":
+        elif self.delete_mode == "del_TopLevelFeatures":
             # 1b) Pick only those top-level features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
-            sel_rcfs: list = []               # Used for all the top-level features, except the CityObjectGroup and ReliefFeature
-            sel_rcfs: list = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
+            sel_tlfs: list = []               # Used for all the top-level features, except the CityObjectGroup and ReliefFeature
+            sel_tlfs: list = sorted([rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
 
-            rcf_rel: TopClassFeature
-            rcf_cog: TopClassFeature
-            rcf_rel = dlg.TopClassFeaturesRegistry['ReliefFeature']
-            rcf_cog = dlg.TopClassFeaturesRegistry['CityObjectGroup']
+            rcf_rel: TopLevelFeature
+            rcf_cog: TopLevelFeature
+            rcf_rel = dlg.TopLevelFeaturesRegistry['ReliefFeature']
+            rcf_cog = dlg.TopLevelFeaturesRegistry['CityObjectGroup']
 
             if rcf_rel.is_selected: # for sure it has n_features > 0, bacause it could be selected
-                sel_rcfs.append(rcf_rel)
+                sel_tlfs.append(rcf_rel)
 
             if rcf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
-                sel_rcfs.append(rcf_cog)
+                sel_tlfs.append(rcf_cog)
 
             # Update the number of delete iterations for each selected top-level feature
             tot_del_iter: int = 0
 
-            rcf: TopClassFeature = None
+            tlf: TopLevelFeature = None
             n_iter: int = 0
-            for rcf in sel_rcfs:
-                n_iter = math.ceil(rcf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
-                rcf.n_del_iter = n_iter
+            for tlf in sel_tlfs:
+                n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
+                tlf.n_del_iter = n_iter
                 tot_del_iter += n_iter
 
         # Set progress bar goal:
@@ -479,8 +479,8 @@ class BulkDeleteWorker(QObject):
                 time_start = time.time()
 
                 # Start deleting the top-level features that are neither ReliefFeature nor CityObjectGroup
-                for rcf in sel_rcfs:
-                    for i in range(rcf.n_del_iter):
+                for tlf in sel_tlfs:
+                    for i in range(tlf.n_del_iter):
 
                         # This query will return only an id of the whole array, if something was deleted.
                         # It will return null if nothing was deleted
@@ -490,7 +490,7 @@ class BulkDeleteWorker(QObject):
                                 FROM (
                                     SELECT co.id FROM {_cdb_schema}.cityobject AS co
                                     WHERE co.objectclass_id = {_objectclass_id} {_sql_where}
-                                    LIMIT {_co_id_array_length}) AS foo
+                                    LIMIT {_co_id_array_length} FOR UPDATE) AS foo
                                 )
                             SELECT {_cdb_schema}.{_del_func}(s.co_id_array) FROM s LIMIT 1;
                         """).format(
@@ -498,18 +498,17 @@ class BulkDeleteWorker(QObject):
                         _objectclass_id = pysql.Placeholder('oc_id'),
                         _sql_where = pysql.SQL(" ".join(["", sql_where])),
                         _co_id_array_length = pysql.Placeholder('co_id_arr_len'),
-                        _del_func = pysql.Identifier(rcf.del_function)
+                        _del_func = pysql.Identifier(tlf.del_function)
                         )
 
                         # Update progress bar
-                        msg = f"Deleting '{rcf.name}' objects"
+                        msg = f"Deleting '{tlf.name}' objects"
                         curr_step += 1
                         self.sig_progress.emit(curr_step, msg)
 
                         try:
                             with temp_conn.cursor() as cur:
-                                # print(cur.mogrify(query, {'oc_id': rcf.objectclass_id, 'co_id_arr_len': co_id_array_length}))
-                                cur.execute(query, {'oc_id': rcf.objectclass_id, 'co_id_arr_len': co_id_array_length})
+                                cur.execute(query, {'oc_id': tlf.objectclass_id, 'co_id_arr_len': co_id_array_length})
                             temp_conn.commit()   # Actually redundant, it is autocommitted
 
                         except (Exception, psycopg2.Error) as error:
@@ -518,7 +517,7 @@ class BulkDeleteWorker(QObject):
                             gen_f.critical_log(
                                 func=self.bulk_delete_thread,
                                 location=FILE_LOCATION,
-                                header=f"Deleting objects of top-level '{rcf.name}' in schema {cdb_schema}",
+                                header=f"Deleting objects of top-level '{tlf.name}' in schema {cdb_schema}",
                                 error=error)
                             self.sig_fail.emit()
                             break # Exit from the loop

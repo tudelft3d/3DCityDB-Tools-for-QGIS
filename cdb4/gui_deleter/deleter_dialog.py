@@ -111,7 +111,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Metadata Registries (dictionaries)
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
         self.FeatureTypesRegistry: dict = {}
-        self.TopClassFeaturesRegistry: dict = {}
+        self.TopLevelFeaturesRegistry: dict = {}
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = None
@@ -1009,7 +1009,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 res = QMessageBox.warning(self, "Missing selection", msg)
                 return None # Exit
             else:
-                delete_mode = "del_TopClassFeatures"
+                delete_mode = "del_TopLevelFeatures"
                 tc_f.update_top_class_features_is_selected(self, sel_top_level_features)
 
         else:

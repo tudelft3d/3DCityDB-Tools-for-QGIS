@@ -14,7 +14,7 @@ from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 
-from ..other_classes import TopClassFeature, FeatureType
+from ..other_classes import TopLevelFeature, FeatureType
 from .. import deleter_constants as c
 from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
@@ -51,20 +51,20 @@ def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
     dlg.ccbxTopLevelClass.clear()
     dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
 
-    top_class_features: list = [rcf for rcf in dlg.TopClassFeaturesRegistry.values() if rcf.exists]
+    top_level_features: list = [rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if rcf.exists]
 
-    if len(top_class_features) == 0: 
+    if len(top_level_features) == 0: 
         dlg.ccbxTopLevelClass.setDefaultText('None available')
         # Disable the combobox
         dlg.ccbxTopLevelClass.setDisabled(True)
     else:
-        rcf: TopClassFeature
-        for rcf in top_class_features:
-            label = f"{rcf.name} ({rcf.n_features})" 
+        tlf: TopLevelFeature
+        for tlf in top_level_features:
+            label = f"{tlf.name} ({tlf.n_features})" 
             dlg.ccbxTopLevelClass.addItemWithCheckState(
                 text=label,
                 state=0,
-                userData=rcf) # this is the value retrieved later
+                userData=tlf) # this is the value retrieved later
         # Reorder items alphabetically
         dlg.ccbxTopLevelClass.model().sort(0)
     return None
@@ -100,35 +100,35 @@ def initialise_top_class_features_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
     # Clean up from possible previous runs
-    dlg.TopClassFeaturesRegistry: dict = {}
+    dlg.TopLevelFeaturesRegistry: dict = {}
     
-    dlg.TopClassFeaturesRegistry = {
-        "Bridge"                   : TopClassFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
-        "Building"                 : TopClassFeature(name="Building"                , objectclass_id = 26, feature_type = "Building"        , del_function= "del_building"),
-        "CityFurniture"            : TopClassFeature(name="CityFurniture"           , objectclass_id = 21, feature_type = "CityFurniture"   , del_function= "del_city_furniture"),
-        "CityObjectGroup"          : TopClassFeature(name="CityObjectGroup"         , objectclass_id = 23, feature_type = "CityObjectGroup" , del_function= "del_cityobjectgroup"),
-        "GenericCityObject"        : TopClassFeature(name="GenericCityObject"       , objectclass_id =  5, feature_type = "Generics"        , del_function= "del_generic_cityobject"),
-        "LandUse"                  : TopClassFeature(name="LandUse"                 , objectclass_id =  4, feature_type = "LandUse"         , del_function= "del_land_use"),
-        "ReliefFeature"            : TopClassFeature(name="ReliefFeature"           , objectclass_id = 14, feature_type = "Relief"          , del_function= "del_relief_feature"),
-        "TINRelief"                : TopClassFeature(name="TINRelief"               , objectclass_id = 16, feature_type = "Relief"          , del_function= "del_tin_relief"),
-        "MassPointRelief"          : TopClassFeature(name="MassPointRelief"         , objectclass_id = 17, feature_type = "Relief"          , del_function= "del_masspoint_relief"),
-        "BreaklineRelief"          : TopClassFeature(name="BreaklineRelief"         , objectclass_id = 18, feature_type = "Relief"          , del_function= "del_relief_component"),
-        "RasterRelief"             : TopClassFeature(name="RasterRelief"            , objectclass_id = 19, feature_type = "Relief"          , del_function= "del_raster_relief"),
-        "TransportationComplex"    : TopClassFeature(name="TransportationComplex"   , objectclass_id = 42, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Track"                    : TopClassFeature(name="Track"                   , objectclass_id = 43, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Railway"                  : TopClassFeature(name="Railway"                 , objectclass_id = 44, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Road"                     : TopClassFeature(name="Road"                    , objectclass_id = 45, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Square"                   : TopClassFeature(name="Square"                  , objectclass_id = 46, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Tunnel"                   : TopClassFeature(name="Tunnel"                  , objectclass_id = 85, feature_type = "Tunnel"          , del_function= "del_tunnel"),
-        "SolitaryVegetationObject" : TopClassFeature(name="SolitaryVegetationObject", objectclass_id =  7, feature_type = "Vegetation"      , del_function= "del_solitary_vegetat_object"),
-        "PlantCover"               : TopClassFeature(name="PlantCover"              , objectclass_id =  8, feature_type = "Vegetation"      , del_function= "del_plant_cover"),
-        "WaterBody"                : TopClassFeature(name="WaterBody"               , objectclass_id =  9, feature_type = "WaterBody"       , del_function= "del_waterbody")
+    dlg.TopLevelFeaturesRegistry = {
+        "Bridge"                   : TopLevelFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
+        "Building"                 : TopLevelFeature(name="Building"                , objectclass_id = 26, feature_type = "Building"        , del_function= "del_building"),
+        "CityFurniture"            : TopLevelFeature(name="CityFurniture"           , objectclass_id = 21, feature_type = "CityFurniture"   , del_function= "del_city_furniture"),
+        "CityObjectGroup"          : TopLevelFeature(name="CityObjectGroup"         , objectclass_id = 23, feature_type = "CityObjectGroup" , del_function= "del_cityobjectgroup"),
+        "GenericCityObject"        : TopLevelFeature(name="GenericCityObject"       , objectclass_id =  5, feature_type = "Generics"        , del_function= "del_generic_cityobject"),
+        "LandUse"                  : TopLevelFeature(name="LandUse"                 , objectclass_id =  4, feature_type = "LandUse"         , del_function= "del_land_use"),
+        "ReliefFeature"            : TopLevelFeature(name="ReliefFeature"           , objectclass_id = 14, feature_type = "Relief"          , del_function= "del_relief_feature"),
+        "TINRelief"                : TopLevelFeature(name="TINRelief"               , objectclass_id = 16, feature_type = "Relief"          , del_function= "del_tin_relief"),
+        "MassPointRelief"          : TopLevelFeature(name="MassPointRelief"         , objectclass_id = 17, feature_type = "Relief"          , del_function= "del_masspoint_relief"),
+        "BreaklineRelief"          : TopLevelFeature(name="BreaklineRelief"         , objectclass_id = 18, feature_type = "Relief"          , del_function= "del_relief_component"),
+        "RasterRelief"             : TopLevelFeature(name="RasterRelief"            , objectclass_id = 19, feature_type = "Relief"          , del_function= "del_raster_relief"),
+        "TransportationComplex"    : TopLevelFeature(name="TransportationComplex"   , objectclass_id = 42, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Track"                    : TopLevelFeature(name="Track"                   , objectclass_id = 43, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Railway"                  : TopLevelFeature(name="Railway"                 , objectclass_id = 44, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Road"                     : TopLevelFeature(name="Road"                    , objectclass_id = 45, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Square"                   : TopLevelFeature(name="Square"                  , objectclass_id = 46, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
+        "Tunnel"                   : TopLevelFeature(name="Tunnel"                  , objectclass_id = 85, feature_type = "Tunnel"          , del_function= "del_tunnel"),
+        "SolitaryVegetationObject" : TopLevelFeature(name="SolitaryVegetationObject", objectclass_id =  7, feature_type = "Vegetation"      , del_function= "del_solitary_vegetat_object"),
+        "PlantCover"               : TopLevelFeature(name="PlantCover"              , objectclass_id =  8, feature_type = "Vegetation"      , del_function= "del_plant_cover"),
+        "WaterBody"                : TopLevelFeature(name="WaterBody"               , objectclass_id =  9, feature_type = "WaterBody"       , del_function= "del_waterbody")
         }
 
     return None
 
 
-def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_class_features: list) -> None:
+def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_level_features: list) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
 
     top_class_features is a list of named tuples (feature_type, top_class, objectclass_id, n_feature)
@@ -136,34 +136,34 @@ def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_class_
     # # Get the list (of namedtuples) of available top-level features the current cdb_schema
     # top_class_features: list = sql.fetch_top_class_features_counter(dlg)
 
-    tcf: TopClassFeature
-    top_class_feature: TopClassFeature
+    tlf: TopLevelFeature
+    top_level_feature: TopLevelFeature
     # Reset the status from potential previous checks
-    for tcf in dlg.TopClassFeaturesRegistry.values():
-        tcf.exists = False
-        tcf.n_features = 0 
+    for tlf in dlg.TopLevelFeaturesRegistry.values():
+        tlf.exists = False
+        tlf.n_features = 0 
 
     # Set to true only for those Feature Types that exist
 
-    for top_class_feature in top_class_features:
-        tcf = dlg.TopClassFeaturesRegistry[top_class_feature.root_class]
-        tcf.exists = True
-        tcf.n_features = top_class_feature.n_feature 
+    for top_level_feature in top_level_features:
+        tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.root_class]
+        tlf.exists = True
+        tlf.n_features = top_level_feature.n_feature 
     return None
 
 
 def update_top_class_features_is_selected(dlg: CDB4DeleterDialog, sel_top_class_features) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    rcf: TopClassFeature
+    rcf: TopLevelFeature
     # Reset the status from potential previous checks
-    for rcf in dlg.TopClassFeaturesRegistry.values():
+    for rcf in dlg.TopLevelFeaturesRegistry.values():
         rcf.is_selected = False
 
     if len(sel_top_class_features) != 0:
         # Set to true only for those Feature Types that are selected
         for top_class_feature in sel_top_class_features:
-            rcf = dlg.TopClassFeaturesRegistry[top_class_feature.name]
+            rcf = dlg.TopLevelFeaturesRegistry[top_class_feature.name]
             rcf.is_selected = True
 
     return None
@@ -201,15 +201,15 @@ def update_feature_type_registry_exists(dlg: CDB4DeleterDialog) -> None:
         ft.exists = False
         ft.n_features = 0
 
-    rcf_existing = []
-    rcf_existing = [rcf for rcf in dlg.TopClassFeaturesRegistry.values() if rcf.exists is True]
+    tlf_existing = []
+    tlf_existing = [rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if rcf.exists is True]
 
     # Set to true only for those Feature Types that exist and sum the values to get the total
-    rcf: TopClassFeature 
-    for rcf in rcf_existing:
-        ft = dlg.FeatureTypesRegistry[rcf.feature_type]
+    tlf: TopLevelFeature 
+    for tlf in tlf_existing:
+        ft = dlg.FeatureTypesRegistry[tlf.feature_type]
         ft.exists = True
-        ft.n_features += rcf.n_features 
+        ft.n_features += tlf.n_features 
 
     return None
 
@@ -310,11 +310,11 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             dlg.DELETE_EXTENTS = temp_cdb_extents_new
             dlg.CURRENT_EXTENTS = temp_cdb_extents_new
 
-            canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
-
             # Set up the canvas to the new extents of the cdb_schema.
             # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
             canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=cdb_extents_new, crs=dlg.CRS, clear=True)
+
+            canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
             return None
 
@@ -336,7 +336,6 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
         # Close the current open connection.
         if dlg.conn is not None:
             dlg.conn.close()
-
 
     return None
 
@@ -370,11 +369,11 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
 
     # 2) get the available top-level features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-    top_class_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
+    top_level_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
     # print('\n\ntop_class_features', top_class_features)
 
     # 3) set up/update the top-level feature registry (exists)
-    update_top_level_features_registry_exists(dlg, top_class_features)
+    update_top_level_features_registry_exists(dlg, top_level_features)
 
     # 4) set up/update the Feature Type registry (exists)
     update_feature_type_registry_exists(dlg)

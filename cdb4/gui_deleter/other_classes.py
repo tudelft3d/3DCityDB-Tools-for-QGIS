@@ -35,7 +35,7 @@ class DefaultSettings:
         return return_str
 
 
-class TopClassFeature():
+class TopLevelFeature():
     def __init__(self,
                 name: str,
                 feature_type: str,
