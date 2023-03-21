@@ -130,16 +130,16 @@ def exec_list_usr_schemas(dlg: CDB4AdminDialog) -> tuple:
         dlg.conn.rollback()
 
 
-def exec_list_cdb_schemas_extended(dlg: CDB4AdminDialog, usr_name: str) -> list:
+def exec_list_cdb_schemas_privs(dlg: CDB4AdminDialog, usr_name: str) -> list:
     """SQL function that retrieves the database cdb_schemas for the current database, 
     included the privileges status for the selected usr_name
 
     *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
          and the user's privileges for each cdb_schema in the current database
-        :rtype: list(tuple(cdb_schema, co_number, priv_type))
+        :rtype: list(tuple(cdb_schema, is_empty, priv_type))
     """
     query = pysql.SQL("""
-        SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+        SELECT cdb_schema, is_empty, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_privs({_usr_name});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_name = pysql.Literal(usr_name)
@@ -161,13 +161,13 @@ def exec_list_cdb_schemas_extended(dlg: CDB4AdminDialog, usr_name: str) -> list:
     
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_list_cdb_schemas_extended,
+            func=exec_list_cdb_schemas_privs,
             location=FILE_LOCATION,
             header="Retrieving list of cdb_schemas with their privileges",
             error=error)
         dlg.conn.rollback()
 
-       
+      
 def exec_list_qgis_pkg_usrgroup_members(dlg: CDB4AdminDialog) -> tuple:
     """SQL function that retrieves the members of the database group "qgis_usrgroup"
 

@@ -1024,8 +1024,8 @@ class QgisPackageUninstallWorker(QObject):
 
         # Get all cdb_schemas
         cdb_schemas = []
-        cdb_schemas, schema_nums = sh_sql.exec_list_cdb_schemas(dlg=dlg, only_non_empty=False)
-        schema_nums = None
+        cdb_schemas, dummy = sh_sql.exec_list_cdb_schemas(dlg=dlg, only_non_empty=False)
+        dummy = None
         # print("Existing cdb_schemas:", cdb_schemas)
 
         # Set progress bar goal:
@@ -1625,10 +1625,10 @@ def evt_grant_privileges_success(dlg: CDB4AdminDialog, usr_name: str) -> None:
 
     # Retrieve again the list of cdb_schemas and their privileges status
     # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-    cdb_schemas = sql.exec_list_cdb_schemas_extended(dlg, usr_name)
-    print (cdb_schemas)
+    cdb_schemas = sql.exec_list_cdb_schemas_privs(dlg, usr_name)
+    # print (cdb_schemas)
     # Fill the combobox of the cdb_schemas in the groupbox
-    ti_wf.fill_cdb_schemas_box(dlg, cdb_schemas)
+    ti_wf.fill_cdb_schemas_privs_box(dlg, cdb_schemas)
 
     return None
 

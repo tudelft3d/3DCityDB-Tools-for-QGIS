@@ -75,7 +75,7 @@ def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: tuple = None) -> None
     return None
 
 
-def fill_cdb_schemas_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: list = None) -> None:
+def fill_cdb_schemas_privs_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: list = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
     """
     # Clean combo box from previous leftovers.

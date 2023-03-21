@@ -647,9 +647,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas = sql.exec_list_cdb_schemas_extended(self, usr_name)
+            cdb_schemas = sql.exec_list_cdb_schemas_privs(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+            ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
         else:
             # Update the label in the connection status box
@@ -741,9 +741,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas  = sql.exec_list_cdb_schemas_extended(self, usr_name)
+            cdb_schemas  = sql.exec_list_cdb_schemas_privs(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+            ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
             # Replace with Success msg.
             msg = self.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA))
@@ -874,9 +874,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Retrieve again the list of cdb_schemas and their privileges status
         # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-        cdb_schemas = sql.exec_list_cdb_schemas_extended(self, sel_usr_name)
+        cdb_schemas = sql.exec_list_cdb_schemas_privs(self, sel_usr_name)
         # Fill the combobox of the cdb_schemas in the groupbox
-        ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+        ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
         # Inform the user
         QMessageBox.information(self, "Setting privileges", msg)
