@@ -126,7 +126,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.selectedCodeListSet: str = None
 
         self.CDBSchemaPrivileges: str = None
-        self.n_cityobjects: int = 0           # Number of cityobjects in the current cdb_schema
+        # self.n_cityobjects: int = 0           # Number of cityobjects in the current cdb_schema
 
         # QGIS current version
         self.QGIS_VERSION_STR: str = Qgis.version() 
@@ -533,17 +533,28 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 5) Are there cdb_schemas I am allowed to connect to? If yes, continue
 
+        cdb_schemas_rw_ro: list = []
+        cdb_schemas: list = [] 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
+        #####################################################################################################
         # Namedtuple with: cdb_schema, co_number, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(self)
+        # cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv_feat_count(self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
         # AND the user has 'rw' privileges.
-        cdb_schemas_rw_ro: list = []
-        cdb_schemas: list = [] 
+        # cdb_schemas_rw_ro = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type in ["ro", "rw"]]
+        # cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw_ro if cdb_schema.co_number != 0]
+        #####################################################################################################
+        # Namedtuple with: cdb_schema, is_empty, priv_type
+        cdb_schemas_extended = sql.exec_list_cdb_schemas_privs(self)
+        # print('cdb_schema_extended', cdb_schemas_extended)
+
+        # Select tuples of cdb_schemas that have number of cityobjects <> 0
+        # AND the user has 'rw' privileges.
         cdb_schemas_rw_ro = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type in ["ro", "rw"]]
-        cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw_ro if cdb_schema.co_number != 0]
+        cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw_ro if not cdb_schema.is_empty]
+        #####################################################################################################
         # print(cdb_schemas_rw_ro)
         # print(cdb_schemas)
 
@@ -564,7 +575,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         else:
             if len(cdb_schemas) == 0:
-                tc_f.fill_cdb_schemas_box(self, None)
+                tc_f.fill_cdb_schemas_box_feat_count(self, None)
                 # Inform the use that all available cdb_schemas are empty.
                 msg = "The available citydb schema(s) is/are all empty.\n\nPlease load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
@@ -579,7 +590,12 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None
 
             else: # Finally, we have all conditions to fill the cdb_schema combobox
+
+                ####################################################################
+                # tc_f.fill_cdb_schemas_box_feat_count(self, cdb_schemas)
+                ####################################################################
                 tc_f.fill_cdb_schemas_box(self, cdb_schemas)
+                ####################################################################
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
                 # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
@@ -613,7 +629,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # print("CDBSchemaPrivileges", self.isReadOnlyCDBSchema)
 
         # Set the current number of cityobjects
-        self.n_cityobjects = sel_cdb_schema.co_number
+        # self.n_cityobjects = sel_cdb_schema.co_number
         # print("n_cityobjects", self.n_cityobjects)
 
         # Reset the Layer and Settings tabs in case they were open/changed from before 
@@ -719,23 +735,23 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         - have changed and the new cdb extents contain the old ones (only update the ribbons)
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
         """
-        # Recount the number of cityobjects
-        new_n_cityobjects = sql.count_cityobjects_in_cdb_schema(self)
+        # # Recount the number of cityobjects
+        # new_n_cityobjects = sql.count_cityobjects_in_cdb_schema(self)
 
-        if self.n_cityobjects != new_n_cityobjects:
-            self.n_cityobjects = new_n_cityobjects
-            # Create a namedtuple to inser in the combobox
-            new_sel_cdb_schema = namedtuple("RECORD", "cdb_schema, co_number, priv_type")
-            new_sel_cdb_schema.cdb_schema = self.CDB_SCHEMA
-            new_sel_cdb_schema.co_number = self.n_cityobjects
-            new_sel_cdb_schema.priv_type = self.CDBSchemaPrivileges
-            # Update the entry in the cdb_schema combobox
-            for i in range(self.cbxSchema.count()):
-                curr_itemdata = self.cbxSchema.itemData(i)
-                if curr_itemdata.cdb_schema == new_sel_cdb_schema.cdb_schema:
-                    label: str = f"{new_sel_cdb_schema.cdb_schema} ({new_sel_cdb_schema.priv_type}): {new_sel_cdb_schema.co_number} CityObjects"
-                    self.cbxSchema.setItemText(i, label)
-                    self.cbxSchema.setItemData(i, new_sel_cdb_schema)
+        # if self.n_cityobjects != new_n_cityobjects:
+        #     self.n_cityobjects = new_n_cityobjects
+        #     # Create a namedtuple to inser in the combobox
+        #     new_sel_cdb_schema = namedtuple("RECORD", "cdb_schema, co_number, priv_type")
+        #     new_sel_cdb_schema.cdb_schema = self.CDB_SCHEMA
+        #     new_sel_cdb_schema.co_number = self.n_cityobjects
+        #     new_sel_cdb_schema.priv_type = self.CDBSchemaPrivileges
+        #     # Update the entry in the cdb_schema combobox
+        #     for i in range(self.cbxSchema.count()):
+        #         curr_itemdata = self.cbxSchema.itemData(i)
+        #         if curr_itemdata.cdb_schema == new_sel_cdb_schema.cdb_schema:
+        #             label: str = f"{new_sel_cdb_schema.cdb_schema} ({new_sel_cdb_schema.priv_type}): {new_sel_cdb_schema.co_number} CityObjects"
+        #             self.cbxSchema.setItemText(i, label)
+        #             self.cbxSchema.setItemData(i, new_sel_cdb_schema)
 
         is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(dlg=self)
         srid = None # Discard unneeded variable.
