@@ -89,7 +89,7 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
 
 class CleanUpSchemaWorker(QObject):
     """Class to assign Worker that bulk deletes the selected features 
-    either as groups of FeatureTypes or as Top-class Features from the current database.
+    either as groups of FeatureTypes or as top-level Features from the current database.
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
@@ -345,7 +345,7 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
 
 class BulkDeleteWorker(QObject):
     """Class to assign Worker that bulk deletes the selected features 
-    either as groups of FeatureTypes or as Top-class Features from the current database.
+    either as groups of FeatureTypes or as top-level Features from the current database.
     """
     # Create custom signals.
     sig_finished = pyqtSignal()
@@ -397,11 +397,11 @@ class BulkDeleteWorker(QObject):
             ft_rel = dlg.FeatureTypesRegistry['Relief']
             ft_cog = dlg.FeatureTypesRegistry['CityObjectGroup']
 
-            # 2a) Filter the Top-class features based on the selected Featuere Types 
-            sel_rcfs: list = []               # Used for all the Top-class features, except the CityObjectGroup
+            # 2a) Filter the top-level features based on the selected Featuere Types 
+            sel_rcfs: list = []               # Used for all the top-level features, except the CityObjectGroup
             sel_rcfs = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
             
-            # 3a) Put the ReliefFeature and the CityObjectGroup Top-class features at the end of the list 
+            # 3a) Put the ReliefFeature and the CityObjectGroup top-level features at the end of the list 
             if (not ft_rel.is_selected) and (not ft_cog.is_selected):
                 pass # Nothing to do
 
@@ -436,8 +436,8 @@ class BulkDeleteWorker(QObject):
                 tot_del_iter += n_iter
 
         elif self.delete_mode == "del_TopClassFeatures":
-            # 1b) Pick only those Top-class features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
-            sel_rcfs: list = []               # Used for all the Top-class features, except the CityObjectGroup and ReliefFeature
+            # 1b) Pick only those top-level features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
+            sel_rcfs: list = []               # Used for all the top-level features, except the CityObjectGroup and ReliefFeature
             sel_rcfs: list = sorted([rcf for rcf in dlg.TopClassFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
 
             rcf_rel: TopClassFeature
@@ -451,7 +451,7 @@ class BulkDeleteWorker(QObject):
             if rcf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
                 sel_rcfs.append(rcf_cog)
 
-            # Update the number of delete iterations for each selected Top-class feature
+            # Update the number of delete iterations for each selected top-level feature
             tot_del_iter: int = 0
 
             rcf: TopClassFeature = None
@@ -478,7 +478,7 @@ class BulkDeleteWorker(QObject):
                 # Start measuring time
                 time_start = time.time()
 
-                # Start deleting the Top-class features that are neither ReliefFeature nor CityObjectGroup
+                # Start deleting the top-level features that are neither ReliefFeature nor CityObjectGroup
                 for rcf in sel_rcfs:
                     for i in range(rcf.n_del_iter):
 
@@ -518,7 +518,7 @@ class BulkDeleteWorker(QObject):
                             gen_f.critical_log(
                                 func=self.bulk_delete_thread,
                                 location=FILE_LOCATION,
-                                header=f"Deleting objects of top-class '{rcf.name}' in schema {cdb_schema}",
+                                header=f"Deleting objects of top-level '{rcf.name}' in schema {cdb_schema}",
                                 error=error)
                             self.sig_fail.emit()
                             break # Exit from the loop

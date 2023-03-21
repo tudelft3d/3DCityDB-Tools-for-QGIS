@@ -106,6 +106,6 @@ class FeatureType():
             f"is_ade? {self.is_ade}\n" + \
             f"is selected? {self.is_selected}\n" + \
             f"features number: {self.n_features}\n" + \
-            f"top-class features number: {len(self.top_class_features)}\n"
+            f"top-level features number: {len(self.top_class_features)}\n"
         return return_str
 

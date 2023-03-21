@@ -15,16 +15,17 @@ from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def exec_list_cdb_schemas_extended(dlg: CDB4DeleterDialog) -> list:
+
+def exec_list_cdb_schemas_with_priv(dlg: CDB4DeleterDialog) -> list:
     """SQL function that retrieves the database cdb_schemas for the current database, 
     included the privileges status for the selected usr_name
 
     *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
          and the user's privileges for each cdb_schema in the current database
-        :rtype: list(tuple(cdb_schema, co_number, priv_type))
+        :rtype: list(tuple(cdb_schema, is_empty, priv_type))
     """
     query = pysql.SQL("""
-        SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+        SELECT cdb_schema, is_empty, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_privs({_usr_name});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_name = pysql.Literal(dlg.DB.username)
@@ -44,7 +45,7 @@ def exec_list_cdb_schemas_extended(dlg: CDB4DeleterDialog) -> list:
     
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_list_cdb_schemas_extended,
+            func=exec_list_cdb_schemas_with_priv,
             location=FILE_LOCATION,
             header="Retrieving list of cdb_schemas with their privileges",
             error=error)
@@ -300,7 +301,7 @@ def cleanup_cdb_schema(dlg: CDB4DeleterDialog) -> bool:
         return False
 
 
-def fetch_top_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
+def fetch_top_level_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
     """SQL query that retrieves the number of available top-class features 
 
     *   :returns: List of named tuples, each one corresponding to a record.
@@ -336,7 +337,7 @@ def fetch_top_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str
     except (Exception, psycopg2.Error) as error:
         dlg.conn.rollback()
         gen_f.critical_log(
-            func=fetch_top_class_features_counter,
+            func=fetch_top_level_features_counter,
             location=FILE_LOCATION,
             header="Retrieving list and quantity of available top-class features in selected area",
             error=error)

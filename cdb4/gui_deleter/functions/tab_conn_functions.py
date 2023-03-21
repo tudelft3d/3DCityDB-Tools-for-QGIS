@@ -25,18 +25,14 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: tuple = None) -> N
     """
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
-    #dlg.cbxSchema.setDefaultText('Select citydb schema')
 
     if not cdb_schemas:
-        # dlg.cbxSchema.setDefaultText('None available')
         # Disable the combobox
         dlg.cbxSchema.setDisabled(True)
         dlg.lblSchema.setDisabled(True)
     else:
         for cdb_schema in cdb_schemas:
-            # label: str = f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type})"
             label: str = f"{cdb_schema.cdb_schema}"
-            # dlg.cbxSchema.addItem(cdb_schema, True)
             dlg.cbxSchema.addItem(label, userData=cdb_schema.cdb_schema)
         if not dlg.cbxSchema.isEnabled():
             # Enable the combobox
@@ -47,30 +43,30 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: tuple = None) -> N
     return None
 
 
-def fill_top_class_features_box(dlg: CDB4DeleterDialog) -> None:
+def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
     """Function that fills the top class features checkable combo box
 
     """
     # Clear combo box from previous entries
-    dlg.ccbxTopClass.clear()
-    dlg.ccbxTopClass.setDefaultText('Select top-class feature(s)')
+    dlg.ccbxTopLevelClass.clear()
+    dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
 
     top_class_features: list = [rcf for rcf in dlg.TopClassFeaturesRegistry.values() if rcf.exists]
 
     if len(top_class_features) == 0: 
-        dlg.ccbxTopClass.setDefaultText('None available')
+        dlg.ccbxTopLevelClass.setDefaultText('None available')
         # Disable the combobox
-        dlg.ccbxTopClass.setDisabled(True)
+        dlg.ccbxTopLevelClass.setDisabled(True)
     else:
         rcf: TopClassFeature
         for rcf in top_class_features:
             label = f"{rcf.name} ({rcf.n_features})" 
-            dlg.ccbxTopClass.addItemWithCheckState(
+            dlg.ccbxTopLevelClass.addItemWithCheckState(
                 text=label,
                 state=0,
                 userData=rcf) # this is the value retrieved later
         # Reorder items alphabetically
-        dlg.ccbxTopClass.model().sort(0)
+        dlg.ccbxTopLevelClass.model().sort(0)
     return None
 
 
@@ -132,12 +128,12 @@ def initialise_top_class_features_registry(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def update_top_class_features_registry_exists(dlg: CDB4DeleterDialog, top_class_features: list) -> None:
+def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_class_features: list) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
 
     top_class_features is a list of named tuples (feature_type, top_class, objectclass_id, n_feature)
     """
-    # # Get the list (of namedtuples) of available Top-class features the current cdb_schema
+    # # Get the list (of namedtuples) of available top-level features the current cdb_schema
     # top_class_features: list = sql.fetch_top_class_features_counter(dlg)
 
     tcf: TopClassFeature
@@ -350,10 +346,10 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     """
     # Overview
     # 1) set the bounding box (depending on whether the gbxBasemap is enabled or not)
-    # 2) get the available top-class features in the proper bbox from the database
-    # 3) set up/update the top-class features registry
+    # 2) get the available top-level features in the proper bbox from the database
+    # 3) set up/update the top-level features registry
     # 4) set up/update the Feature Type registry
-    # 5) fill the top-class features checkable combobox
+    # 5) fill the top-level features checkable combobox
     # 6) fill the feature type checkable combobox    
     # 7) Now we are ready for the user to choose and click the delete selected features button.
 
@@ -372,19 +368,19 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
         curr_extents = None
         curr_extents_poly_wkt = None
 
-    # 2) get the available top-class features in the proper bbox from the database
+    # 2) get the available top-level features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-    top_class_features = sql.fetch_top_class_features_counter(dlg, curr_extents_poly_wkt)
+    top_class_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
     # print('\n\ntop_class_features', top_class_features)
 
-    # 3) set up/update the top-class feature registry (exists)
-    update_top_class_features_registry_exists(dlg, top_class_features)
+    # 3) set up/update the top-level feature registry (exists)
+    update_top_level_features_registry_exists(dlg, top_class_features)
 
     # 4) set up/update the Feature Type registry (exists)
     update_feature_type_registry_exists(dlg)
 
-    # 5) Fill the top-class checkable combobox
-    fill_top_class_features_box(dlg)
+    # 5) Fill the top-level checkable combobox
+    fill_top_level_features_box(dlg)
 
     # 6) Fill the Feature type checkable combobox 
     fill_feature_types_box(dlg)
