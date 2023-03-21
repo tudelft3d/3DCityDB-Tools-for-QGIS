@@ -35,108 +35,108 @@
 
 TRUNCATE TABLE qgis_pkg.codelist_lookup_config_template CASCADE;
 INSERT INTO qgis_pkg.codelist_lookup_config_template
-(name, ade_prefix, source_class, source_table, source_column, target_table, key_column, value_column, allow_multi, num_columns, filter_expression)
+(name, ade_prefix, source_class, source_table, source_column, allow_multi, num_columns, filter_expression)
 VALUES
 ---------------------------
 -- CityGML 2.0 codelists as per specifications
 ---------------------------
 -- Bridge
-('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeClass'''),
-('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
-('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
+('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeClass'''),
+('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
+('CityGML 2.0', NULL, 'Bridge'      , 'bridge', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
 -- BridgePart
-('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeClass'''),
-('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
-('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
+('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeClass'''),
+('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
+('CityGML 2.0', NULL, 'BridgePart'  , 'bridge', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBridgeFunctionUsage'''),
 -- Building
-('CityGML 2.0', NULL, 'Building'    , 'building', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingClass'''),
-('CityGML 2.0', NULL, 'Building'    , 'building', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
-('CityGML 2.0', NULL, 'Building'    , 'building', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
-('CityGML 2.0', NULL, 'Building'    , 'building', 'roof_type' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingRoofType'''),
+('CityGML 2.0', NULL, 'Building'    , 'building', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingClass'''),
+('CityGML 2.0', NULL, 'Building'    , 'building', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
+('CityGML 2.0', NULL, 'Building'    , 'building', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
+('CityGML 2.0', NULL, 'Building'    , 'building', 'roof_type' , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingRoofType'''),
 -- BuildingPart
-('CityGML 2.0', NULL, 'BuildingPart', 'building', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingClass'''),
-('CityGML 2.0', NULL, 'BuildingPart', 'building', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
-('CityGML 2.0', NULL, 'BuildingPart', 'building', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
-('CityGML 2.0', NULL, 'BuildingPart', 'building', 'roof_type' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingRoofType'''),
+('CityGML 2.0', NULL, 'BuildingPart', 'building', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingClass'''),
+('CityGML 2.0', NULL, 'BuildingPart', 'building', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingPart', 'building', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingPart', 'building', 'roof_type' , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractBuildingRoofType'''),
 -- BuildingRoom
-('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''RoomClass'''),
-('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''RoomFunctionUsage'''),
-('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''RoomFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''RoomClass'''),
+('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''RoomFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingRoom', 'room', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''RoomFunctionUsage'''),
 -- BuildingFurniture
-('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureClass'''),
-('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureFunctionUsage'''),
-('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureClass'''),
+('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingFurniture', 'building_furniture', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingFurnitureFunctionUsage'''),
 -- BuildingInstallation (outer)
-('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationClass'''),
-('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationFunctionUsage'''),
-('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationClass'''),
+('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationFunctionUsage'''),
+('CityGML 2.0', NULL, 'BuildingInstallation', 'building_installation', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''BuildingInstallationFunctionUsage'''),
 -- BuildingInstallation (interior)
-('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationClass'''),
-('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationFunctionUsage'''),
-('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationFunctionUsage'''),
+('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationClass'''),
+('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationFunctionUsage'''),
+('CityGML 2.0', NULL, 'IntBuildingInstallation', 'building_installation', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''IntBuildingInstallationFunctionUsage'''),
 -- CityFurniture
-('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureClass'''),
-('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureFunctionUsage'''),
-('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureFunctionUsage'''),
+('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureClass'''),
+('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureFunctionUsage'''),
+('CityGML 2.0', NULL, 'CityFurniture', 'city_furniture', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityFurnitureFunctionUsage'''),
 -- CityObjectGroup
-('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupClass'''),
-('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupFunctionUsage'''),
-('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupFunctionUsage'''),
+('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupClass'''),
+('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupFunctionUsage'''),
+('CityGML 2.0', NULL, 'CityObjectGroup', 'cityobjectgroup', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''CityObjectGroupFunctionUsage'''),
 -- LandUse
-('CityGML 2.0', NULL, 'LandUse', 'land_use', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''LandUseClass'''),
-('CityGML 2.0', NULL, 'LandUse', 'land_use', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''LandUseFunctionUsage'''),
-('CityGML 2.0', NULL, 'LandUse', 'land_use', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''LandUseFunctionUsage'''),
+('CityGML 2.0', NULL, 'LandUse', 'land_use', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''LandUseClass'''),
+('CityGML 2.0', NULL, 'LandUse', 'land_use', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''LandUseFunctionUsage'''),
+('CityGML 2.0', NULL, 'LandUse', 'land_use', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''LandUseFunctionUsage'''),
 -- TransportationComplex
-('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexClass'''),
-('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexFunctionUsage'''),
-('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexFunctionUsage'''),
+('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexClass'''),
+('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexFunctionUsage'''),
+('CityGML 2.0', NULL, 'TransportationComplex', 'transportation_complex', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TransportationComplexFunctionUsage'''),
 -- AuxiliaryTrafficArea
---('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'class'            , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaClass'''),
-('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'function'         , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaFunction'''),
---('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'usage'            , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaFunctionUsage'''),
-('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'surface_material' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaSurfaceMaterial'''),
+--('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'class'            , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaClass'''),
+('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'function'         , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaFunction'''),
+--('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'usage'            , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''AuxiliaryTrafficAreaFunctionUsage'''),
+('CityGML 2.0', NULL, 'AuxiliaryTrafficArea', 'traffic_area', 'surface_material' , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaSurfaceMaterial'''),
 -- TrafficArea
---('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaClass'''),
-('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'function'         , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaFunction'''),
-('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'usage'            , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaUsage'''),
-('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'surface_material' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaSurfaceMaterial'''),
+--('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaClass'''),
+('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'function'         , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaFunction'''),
+('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'usage'            , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaUsage'''),
+('CityGML 2.0', NULL, 'TrafficArea', 'traffic_area', 'surface_material' , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''TrafficAreaSurfaceMaterial'''),
 -- Tunnel
-('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelClass'''),
-('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
-('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
+('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelClass'''),
+('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
+('CityGML 2.0', NULL, 'Tunnel'      , 'tunnel', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
 -- TunnelPart
-('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelClass'''),
-('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
-('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
+('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelClass'''),
+('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
+('CityGML 2.0', NULL, 'TunnelPart'  , 'tunnel','usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''_AbstractTunnelFunctionUsage'''),
 -- PlantCover
-('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
-('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
-('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'PlantCover', 'plant_cover', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''PlantCoverClassFunctionUsage'''),
 -- SolitaryVegetationObject
-('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'class'   , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
-('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'function', 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
-('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'usage'   , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
-('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'species' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectSpecies'''),
+('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'class'   , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'function', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'usage'   , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectClassFunctionUsage'''),
+('CityGML 2.0', NULL, 'SolitaryVegetationObject', 'solitary_vegetat_object', 'species' , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''SolitaryVegetationObjectSpecies'''),
 -- WaterBody
-('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyClass'''),
-('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyFunction'''),
-('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyUsage'''),
+('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'class'     , FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyClass'''),
+('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'function'  , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyFunction'''),
+('CityGML 2.0', NULL, 'WaterBody', 'waterbody', 'usage'     , TRUE , 3, 'data_model = ''CityGML 2.0'' AND name = ''WaterbodyUsage'''),
 -- WaterSurface
-('CityGML 2.0', NULL, 'WaterSurface', 'waterboundary_surface', 'water_level', 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''WaterSurfaceWaterLevel'''),
+('CityGML 2.0', NULL, 'WaterSurface', 'waterboundary_surface', 'water_level', FALSE, 1, 'data_model = ''CityGML 2.0'' AND name = ''WaterSurfaceWaterLevel'''),
 
 ---------------------------
 -- TUD 3DGeoInfo Building
 ---------------------------
 -- Building
-('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''BAG_gebruiksdoel'''),
---('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
---('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
---('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'roof_type' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingRoofType'''),
+('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'class'     , FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''BAG_gebruiksdoel'''),
+--('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'function'  , TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
+--('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'usage'     , TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
+--('TUD-3DGeoinfo', NULL, 'Building'    , 'building', 'roof_type' , FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingRoofType'''),
 -- BuildingPart
-('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'class'     , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''BAG_gebruiksdoel''')
---('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'function'  , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
---('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'usage'     , 'v_codelist', 'value', 'description', TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
---('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'roof_type' , 'v_codelist', 'value', 'description', FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingRoofType'''),
+('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'class'     , FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''BAG_gebruiksdoel''')
+--('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'function'  , TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
+--('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'usage'     , TRUE , 3, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingFunctionUsage'''),
+--('TUD-3DGeoinfo', NULL, 'BuildingPart', 'building', 'roof_type' , FALSE, 1, 'data_model = ''TUD-3DGeoinfo'' AND name = ''_AbstractBuildingRoofType'''),
 
 ----------------------------------------------------------------------------------------------------------------
 
@@ -150,7 +150,7 @@ VALUES
 -- SOURCE_TABLE: The corresponding citydb table which contains the column to be associated to a codelist
 -- SOURCE_COLUMN: The column to be associated to a codelist
 --
--- The following values are needed to set up the "ValueReleatin" widget used in teh QGIS attribute forms.
+-- The following values are needed to set up the "ValueReleation" widget used in the QGIS attribute forms.
 --
 -- TARGET_TABLE: The view containing all codelists values. Fixed value ('v_codelist').
 -- KEY_COLUMN: fixed value ('value'), from view v_codelist

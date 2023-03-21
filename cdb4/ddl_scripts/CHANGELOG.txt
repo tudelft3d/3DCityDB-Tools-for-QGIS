@@ -7,6 +7,7 @@ Test whether it makes sense to add an update statement to delete trigger functio
 ----------
 Version 0.10
 Improved support for bboxes with geographic coordinates
+Improved speed of some functions dealing with bboxes and count()
 Added support for Detail Views
 	- Create Detail Views as updatable views
 	- Add triggers and trigger functions accordingly
@@ -17,7 +18,11 @@ Added functions
 	- [qgis_pkg.list_ades()]
 	- [qgis_pkg.drop_ga_indices(...)]
 	- [qgis_pkg.compute_schemas_disk_size()]
+	- [qgis_pkg.list_cdb_schemas_n_feats()]
+	- [qgis_pkg.list_cdb_schemas_privs_n_feats()]
 Updated functions:
+	- [qgis_pkg.list_cdb_schemas()]
+	- [qgis_pkg.list_cdb_schemas_privs()]
 	- [qgis_pkg.add_ga_indices(...)]
 	- [qgis_pkg.create_qgis_user_schema(...)]
 	- [qgis_pkg.compute_cdb_schema_extents(...)]

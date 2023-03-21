@@ -43,6 +43,9 @@
 -- qgis_pkg.create_default_qgis_pkg_user()
 -- qgis_pkg.create_qgis_usr_schema_name(...)
 -- qgis_pkg.list_cdb_schemas()
+-- qgis_pkg.list_cdb_schemas_n_feats()
+-- qgis_pkg.list_cdb_schemas_privs(...)
+-- qgis_pkg.list_cdb_schemas_privs_n_features(...)
 -- qgis_pkg.list_ades(...)
 -- qgis_pkg.add_ga_indices(...)
 -- qgis_pkg.drop_ga_indices(...)
@@ -507,10 +510,80 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.create_qgis_usr_schema_name(varchar) FROM pu
 -- List all schemas containing citydb tables in the current database and (optionally) picks only the non-empty ones
 DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas(boolean) CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas(
-only_non_empty	boolean DEFAULT FALSE)
+	only_non_empty	boolean DEFAULT FALSE)
 RETURNS TABLE (
-cdb_schema 		varchar,  -- name of the citydb schema
-co_number		bigint    -- number of cityobjects stored in that schema
+	cdb_schema 		varchar,  -- name of the citydb schema
+	is_empty		boolean
+)
+AS $$
+DECLARE
+cdb_name CONSTANT varchar := current_database()::varchar;
+r RECORD;
+
+BEGIN
+
+FOR r IN 
+	SELECT i.schema_name 
+	FROM information_schema.schemata AS i
+	WHERE 
+		i.catalog_name::varchar = cdb_name
+		AND i.schema_name::varchar NOT LIKE 'pg_%'
+		AND i.schema_name::varchar NOT IN ('information_schema', 'public', 'citydb_pkg')
+		AND i.schema_name::varchar NOT LIKE 'qgis_%'
+	ORDER BY i.schema_name ASC
+LOOP
+	IF -- check that it is indeed a citydb schema
+		EXISTS(SELECT version FROM citydb_pkg.citydb_version())
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'cityobject')
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'objectclass')		
+		  AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'surface_geometry')	
+			AND
+		EXISTS(SELECT 1 FROM information_schema.tables AS t WHERE t.table_schema = r.schema_name AND t.table_name = 'appearance')
+	THEN 
+		cdb_schema := r.schema_name::varchar;
+		is_empty := NULL;
+		
+		EXECUTE format('SELECT NOT EXISTS(SELECT 1 FROM %I.cityobject LIMIT 1)',cdb_schema) INTO is_empty;
+
+		IF only_non_empty IS NULL OR only_non_empty IS FALSE THEN
+			RETURN NEXT;
+		ELSE		
+			IF is_empty IS FALSE THEN
+				RETURN NEXT;
+			ELSE
+				-- do not return it, it's empty
+			END IF;
+		END IF;
+	END IF;
+END LOOP;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas(): Error QUERY_CANCELED';
+	WHEN OTHERS THEN 
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
+
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=FALSE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=TRUE) AS a;
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS_N_FEATS
+----------------------------------------------------------------
+-- List all schemas containing citydb tables in the current database and (optionally) picks only the non-empty ones
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_n_feats(boolean) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_n_feats(
+	only_non_empty	boolean DEFAULT FALSE)
+RETURNS TABLE (
+	cdb_schema 		varchar,  -- name of the citydb schema
+	co_number		bigint    -- number of cityobjects stored in that schema
 )
 AS $$
 DECLARE
@@ -542,6 +615,11 @@ LOOP
 	THEN 
 		cdb_schema := r.schema_name::varchar;
 		co_number := NULL;
+
+		-- Counting rows with count(id) is known to be a very slow function in PostgreSQL with large tables
+		-- We will have to rewrite to something faster and rething the approach.
+		-- Actually, we may not need always need a precise number of cityobjects
+		--
 		EXECUTE format('SELECT count(id) FROM %I.cityobject', r.schema_name) INTO co_number;
 
 		IF only_non_empty IS NULL OR only_non_empty IS FALSE THEN
@@ -558,16 +636,140 @@ END LOOP;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_n_feats(): Error QUERY_CANCELED';
 	WHEN OTHERS THEN 
-		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas(): %', SQLERRM;
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_n_feats(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_n_feats(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_n_feats(boolean) FROM public;
 
---SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=FALSE) AS a;
---SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=TRUE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas_n_feats(only_non_empty:=FALSE) AS a;
+--SELECT a.* FROM qgis_pkg.list_cdb_schemas_n_feats(only_non_empty:=TRUE) AS a;
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS_PRIVS
+----------------------------------------------------------------
+-- List all cdb_schemas with privileges information regarding the usr_name
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_privs(varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_privs(
+usr_name	varchar
+)
+RETURNS TABLE (
+cdb_schema 		varchar,	-- name of the citydb schema
+is_empty		boolean,	-- is the schema empty?
+priv_type		varchar		-- type of privileges ('none', 'ro', 'rw')	
+)
+AS $$
+DECLARE
+usr_names_array		CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
+curr_db				CONSTANT varchar := current_database();
+
+BEGIN
+IF (usr_name IS NULL) OR (NOT usr_name = ANY (usr_names_array)) THEN
+	RAISE EXCEPTION 'usr_name is invalid. It must belong to the qgis_pkg_usr_group associated to the current database';
+END IF;
+
+RETURN QUERY
+	SELECT s.cdb_schema:: varchar, s.is_empty, --p.usr_name, --p.priv_array,
+	CASE 
+		WHEN p.priv_array IS NULL THEN 'none'::varchar
+		WHEN 'INSERT' = ANY (p.priv_array) THEN 'rw'::varchar
+		ELSE 'ro'::varchar
+	END AS priv_type
+	FROM qgis_pkg.list_cdb_schemas(only_non_empty := FALSE) AS s
+	LEFT JOIN (
+		SELECT 
+			table_catalog AS curr_db, 
+			table_schema AS cdb_schema, 
+			grantee AS usr_name,
+			-- array_agg(privilege_type) AS priv_array
+			array_agg(privilege_type::varchar) AS priv_array  -- type cast added for compatibility in PostgreSQL 10
+		FROM (
+			SELECT rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
+			FROM information_schema.role_table_grants AS rt
+			WHERE rt.table_name='cityobject' AND quote_ident(rt.table_catalog) = quote_ident(curr_db) AND quote_ident(rt.grantee) = quote_ident(usr_name)
+			ORDER BY rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
+		) AS foo
+		GROUP BY foo.table_catalog, foo.table_schema, foo.grantee
+		) AS p ON (s.cdb_schema = p.cdb_schema)
+	ORDER BY s.cdb_schema, p.usr_name;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_privs(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_privs(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_privs(varchar) IS 'List all cdb_schemas with privileges information regarding the usr_name';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_privs(varchar) FROM public;
+
+-- Example
+-- SELECT * FROM qgis_pkg.list_cdb_schemas_privs('qgis_user_ro');
+
+
+----------------------------------------------------------------
+-- Create FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features
+----------------------------------------------------------------
+-- List all cdb_schemas with privileges information regarding the usr_name
+DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_privs_n_features(varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features(
+usr_name	varchar
+)
+RETURNS TABLE (
+cdb_schema 		varchar,	-- name of the citydb schema
+co_number		bigint,		-- number of cityobjects stored in that schema
+priv_type		varchar		-- type of privileges ('none', 'ro', 'rw')	
+)
+AS $$
+DECLARE
+usr_names_array		CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
+curr_db				CONSTANT varchar := current_database();
+
+BEGIN
+IF (usr_name IS NULL) OR (NOT usr_name = ANY (usr_names_array)) THEN
+	RAISE EXCEPTION 'usr_name is invalid. It must belong to the qgis_pkg_usr_group associated to the current database';
+END IF;
+
+RETURN QUERY
+	SELECT s.cdb_schema:: varchar, s.co_number,--p.usr_name, --p.priv_array,
+	CASE 
+		WHEN p.priv_array IS NULL THEN 'none'::varchar
+		WHEN 'INSERT' = ANY (p.priv_array) THEN 'rw'::varchar
+		ELSE 'ro'::varchar
+	END AS priv_type
+	FROM qgis_pkg.list_cdb_schemas_n_feats(FALSE) AS s
+	LEFT JOIN (
+		SELECT 
+			table_catalog AS curr_db, 
+			table_schema AS cdb_schema, 
+			grantee AS usr_name,
+			-- array_agg(privilege_type) AS priv_array
+			array_agg(privilege_type::varchar) AS priv_array  -- type cast added for compatibility in PostgreSQL 10
+		FROM (
+			SELECT rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
+			FROM information_schema.role_table_grants AS rt
+			WHERE rt.table_name='cityobject' AND quote_ident(rt.table_catalog) = quote_ident(curr_db) AND quote_ident(rt.grantee) = quote_ident(usr_name)
+			ORDER BY rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
+		) AS foo
+		GROUP BY foo.table_catalog, foo.table_schema, foo.grantee
+		) AS p ON (s.cdb_schema = p.cdb_schema)
+	ORDER BY s.cdb_schema, p.usr_name;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_privs_n_features(): Error QUERY_CANCELED';
+  WHEN OTHERS THEN 
+		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_privs_n_features(): %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features(varchar) IS 'List all cdb_schemas with privileges information regarding the usr_name';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features(varchar) FROM public;
+
+-- Example
+-- SELECT * FROM qgis_pkg.list_cdb_schemas_privs_n_features('qgis_user_ro');
 
 
 ----------------------------------------------------------------
@@ -617,68 +819,6 @@ COMMENT ON FUNCTION qgis_pkg.list_ades(varchar) IS 'List all ADEs installed in t
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_ades(varchar) FROM public;
 
 --SELECT a.* FROM qgis_pkg.list_ades('citydb') AS a;
-
-
-----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.LIST_CDB_SCHEMAS_WITH_PRIVILEGES
-----------------------------------------------------------------
--- List all cdb_schemas with privileges information regarding the usr_name
-DROP FUNCTION IF EXISTS    qgis_pkg.list_cdb_schemas_with_privileges(varchar);
-CREATE OR REPLACE FUNCTION qgis_pkg.list_cdb_schemas_with_privileges(
-usr_name	varchar
-)
-RETURNS TABLE (
-cdb_schema 		varchar,	-- name of the citydb schema
-co_number		bigint,		-- number of cityobjects stored in that schema
-priv_type		varchar		-- type of privileges ('none', 'ro', 'rw')	
-)
-AS $$
-DECLARE
-usr_names_array		CONSTANT varchar[] := (SELECT array_agg(s.usr_name) FROM qgis_pkg.list_qgis_pkg_usrgroup_members() AS s);
-curr_db				CONSTANT varchar := current_database();
-
-BEGIN
-IF (usr_name IS NULL) OR (NOT usr_name = ANY (usr_names_array)) THEN
-	RAISE EXCEPTION 'usr_name is invalid. It must belong to the qgis_pkg_usr_group associated to the current database';
-END IF;
-
-RETURN QUERY
-	SELECT s.cdb_schema:: varchar, s.co_number,--p.usr_name, --p.priv_array,
-	CASE 
-		WHEN p.priv_array IS NULL THEN 'none'::varchar
-		WHEN 'INSERT' = ANY (p.priv_array) THEN 'rw'::varchar
-		ELSE 'ro'::varchar
-	END AS priv_type
-	FROM qgis_pkg.list_cdb_schemas(FALSE) AS s
-	LEFT JOIN (
-		SELECT 
-			table_catalog AS curr_db, 
-			table_schema AS cdb_schema, 
-			grantee AS usr_name,
-			-- array_agg(privilege_type) AS priv_array
-			array_agg(privilege_type::varchar) AS priv_array  -- type cast added for compatibility in PostgreSQL 10
-		FROM (
-			SELECT rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
-			FROM information_schema.role_table_grants AS rt
-			WHERE rt.table_name='cityobject' AND quote_ident(rt.table_catalog) = quote_ident(curr_db) AND quote_ident(rt.grantee) = quote_ident(usr_name)
-			ORDER BY rt.table_catalog, rt.table_schema, rt.grantee, rt.privilege_type
-		) AS foo
-		GROUP BY foo.table_catalog, foo.table_schema, foo.grantee
-		) AS p ON (s.cdb_schema = p.cdb_schema)
-	ORDER BY s.cdb_schema, p.usr_name;
-
-EXCEPTION
-	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_with_privileges(): Error QUERY_CANCELED';
-  WHEN OTHERS THEN 
-		RAISE EXCEPTION 'qgis_pkg.list_cdb_schemas_with_privileges(): %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_with_privileges(varchar) IS 'List all cdb_schemas with privileges information regarding the usr_name';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_with_privileges(varchar) FROM public;
-
--- Example
--- SELECT * FROM qgis_pkg.list_cdb_schemas_with_privileges('qgis_user_ro');
 
 
 ----------------------------------------------------------------
@@ -1155,7 +1295,7 @@ ELSE
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.add_user_to_qgis_pkg_usrgroup(varchar) FROM %I;', usr_name);
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.remove_user_from_qgis_pkg_usrgroup(varchar) FROM %I;', usr_name);
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.list_qgis_pkg_non_usrgroup_members() FROM %I;', usr_name);
-	--EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_with_privileges(varchar) FROM %I;', usr_name);
+	--EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_privs(varchar) FROM %I;', usr_name);
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.create_default_qgis_pkg_user(varchar) FROM %I;', usr_name);
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.create_qgis_usr_schema(varchar) FROM %I;', usr_name);
 	EXECUTE format('REVOKE EXECUTE ON FUNCTION qgis_pkg.grant_qgis_usr_privileges(varchar, varchar, varchar) FROM %I;', usr_name);
@@ -2011,7 +2151,7 @@ DECLARE
 BEGIN
 --do not perform any checks, they will be carried out by the invoked function anyway
 RETURN QUERY
-	SELECT t.feature_type AS feature_type, sum(t.n_feature_type)::bigint AS n_feature_type
+	SELECT t.feature_type AS feature_type, sum(t.n_feature)::bigint AS n_feature_type
 	FROM qgis_pkg.root_class_counter(cdb_schema, ade_prefix, extents) AS t 
 	GROUP BY t.feature_type 
 	ORDER BY t.feature_type;
