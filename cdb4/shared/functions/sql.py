@@ -20,7 +20,6 @@ from . import general_functions as gen_f
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 def fetch_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> str:
-# def fetch_3dcitydb_version(dlg: QDialog) -> str:
     """SQL query that reads and retrieves the 3DCityDB version.
 
     *   :returns: 3DCityDB version.
@@ -172,11 +171,11 @@ def is_usr_schema_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4De
 
 
 def exec_list_cdb_schemas(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], only_non_empty: bool = False) -> tuple:
-    """SQL function that reads and retrieves all cdb_schemas, even the empty ones,
-    and their number of cityobjects
+    """SQL function that reads and retrieves all cdb_schemas, optionally even the empty ones,
+    and a boolean boloolean value to see if it's empty or not.
 
     *   :returns: Two tuples
-        :rtype: tuple(str), tuple(int)
+        :rtype: tuple(str), tuple(bool)
     """
     query = pysql.SQL("""
             SELECT * FROM {_qgis_pkg_schema}.list_cdb_schemas({_only_non_empty});
@@ -191,15 +190,15 @@ def exec_list_cdb_schemas(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Dele
             res = cur.fetchall()
         dlg.conn.commit()
         schema_names = tuple(zip(*res))[0] # trailing comma
-        schema_nums = tuple(zip(*res))[1] # trailing comma        
+        schema_is_empty = tuple(zip(*res))[1] # trailing comma        
 
     except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"No citydb schemas could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.Warning)
+        QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.Warning)
         dlg.conn.rollback()
         schema_names = tuple() # create an empty tuple
-        schema_nums = tuple()  # create an empty tuple
+        schema_is_empty = tuple()  # create an empty tuple
 
-    return schema_names, schema_nums
+    return schema_names, schema_is_empty
 
 
 def exec_upsert_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str, settings_list: list) -> int:
