@@ -1,7 +1,36 @@
 2023-xx-xx TO DO
 ----------
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
-Test whether it makes to add an update statement to delete trigger functions to reduce number of features in table layer metadata
+Test whether it makes sense to add an update statement to delete trigger functions to reduce number of features in table layer metadata
+
+2023-03-20
+----------
+Version 0.10
+Improved support for bboxes with geographic coordinates
+Improved speed of some functions dealing with bboxes and count()
+Added support for Detail Views
+	- Create Detail Views as updatable views
+	- Add triggers and trigger functions accordingly
+Extended/restructured table layer_extents
+Added tables for enum and codelist configuration
+Changed layer generation functions to add metadata for enums and codelists
+Added functions
+	- [qgis_pkg.list_ades()]
+	- [qgis_pkg.drop_ga_indices(...)]
+	- [qgis_pkg.compute_schemas_disk_size()]
+	- [qgis_pkg.list_cdb_schemas_n_feats()]
+	- [qgis_pkg.list_cdb_schemas_privs_n_feats()]
+Updated functions:
+	- [qgis_pkg.list_cdb_schemas()]
+	- [qgis_pkg.list_cdb_schemas_privs()]
+	- [qgis_pkg.add_ga_indices(...)]
+	- [qgis_pkg.create_qgis_user_schema(...)]
+	- [qgis_pkg.compute_cdb_schema_extents(...)]
+	- [qgis_pkg.root_class_checker(...)]
+	- [qgis_pkg.root_class_counter(...)]
+	- [qgis_pkg.feature_type_checker(...)]
+	- [qgis_pkg.feature_type_counter(...)]
+	- [qgis_pkg.has_layer_support(...)]
 
 2023-02-20
 ----------

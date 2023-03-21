@@ -34,16 +34,16 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
     if canvas == dlg.CANVAS: # in 'User Connection' tab
         # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtents.
         # In order to avoid firing twice the signar, we temporarily block the first one.
-        dlg.qgbxExtents.blockSignals(True)
-        dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
-        dlg.qgbxExtents.blockSignals(False)
+        # dlg.qgbxExtents.blockSignals(True)
+        # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
+        # dlg.qgbxExtents.blockSignals(False)
         dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     elif canvas == dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsL.
-        dlg.qgbxExtentsL.blockSignals(True)
-        dlg.qgbxExtentsL.setOutputCrs(crs)
-        dlg.qgbxExtentsL.blockSignals(False)
+        # dlg.qgbxExtentsL.blockSignals(True)
+        # dlg.qgbxExtentsL.setOutputCrs(crs)
+        # dlg.qgbxExtentsL.blockSignals(False)
         dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas

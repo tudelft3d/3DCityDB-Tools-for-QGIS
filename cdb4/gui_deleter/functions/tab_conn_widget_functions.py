@@ -33,6 +33,14 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     """
     cdb_extents_wkt: str = None
 
+    # Get the crs_id stored in the selected {cdb_schema}
+    srid: int = sql.fetch_cdb_schema_srid(dlg)
+    # Format CRS variable as QGIS Epsg code.
+    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
+    # Store the crs into the plugin variable
+    dlg.CRS = QgsCoordinateReferenceSystem(crs)
+    dlg.CRS_is_geographic = dlg.CRS.isGeographic()
+
     while not cdb_extents_wkt:
 
         # Get the extents stored in server.
@@ -57,23 +65,15 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     else:
         dlg.CURRENT_EXTENTS = dlg.DELETE_EXTENTS
 
-    # Get the crs_id stored in the selected {cdb_schema}
-    srid: int = sql.fetch_cdb_schema_srid(dlg)
+    # Draw the canvas
+    # First set up and update canvas with the OSM map on cdb_schema extents and crs (this fires the gbcExtent event)
+    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
-    # Format CRS variable as QGIS EPSG code.
-    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
-    # Store the crs into the plugin variable
-    dlg.CRS = QgsCoordinateReferenceSystem(crs)
-
-    # Draw the cdb extents in the canvas
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Second, create polygon rubber band corresponding to the cdb_schema extents
     canvas.insert_rubber_band(band=dlg.RUBBER_CDB_SCHEMA, extents=dlg.CDB_SCHEMA_EXTENTS, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
-    # First, create polygon rubber band corresponding to the cdb_schema extents
+    # Third, create polygon rubber band corresponding to the delete extents
     canvas.insert_rubber_band(band=dlg.RUBBER_DELETE, extents=dlg.DELETE_EXTENTS, crs=dlg.CRS, width=3, color=c.DELETE_EXTENTS_COLOUR)
-
-    # Then update canvas with cdb_schema extents and crs, this fires the gbcExtent event
-    canvas.canvas_setup(dlg=dlg, canvas=dlg.CANVAS, extents=dlg.CURRENT_EXTENTS, crs=dlg.CRS, clear=True)
 
     # Zoom to the cdb_schema extents (blue box)
     canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
@@ -132,9 +132,11 @@ def gbxBasemap_reset(dlg: CDB4DeleterDialog) -> None:
     dlg.btnRefreshCDBExtents.setText(dlg.btnRefreshCDBExtents.init_text)
     dlg.btnCityExtents.setText(dlg.btnCityExtents.init_text)
 
-    # Remove extent rubber bands.
-    dlg.RUBBER_CDB_SCHEMA.reset()
-    dlg.RUBBER_DELETE.reset()
+    # Remove extent rubber bands
+    if dlg.RUBBER_CDB_SCHEMA:
+        dlg.RUBBER_CDB_SCHEMA.reset()
+    if dlg.RUBBER_DELETE:
+        dlg.RUBBER_DELETE.reset()
 
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
@@ -149,9 +151,9 @@ def gbxFeatSel_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Feature Selection' groupbox (in 'User Connection' tab).
     """
     dlg.gbxFeatType.setChecked(False)
-    dlg.gbxRootClass.setChecked(False)
+    dlg.gbxTopLevelClass.setChecked(False)
     gbxFeatType_reset(dlg)
-    gbxRootClass_reset(dlg)
+    gbxTopLevelClass_reset(dlg)
 
     dlg.gbxFeatSel.setChecked(False)
     dlg.gbxFeatSel.setDisabled(True)
@@ -175,14 +177,14 @@ def gbxFeatType_reset(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def gbxRootClass_reset(dlg: CDB4DeleterDialog) -> None:
-    """Function to reset the 'Root-Class Feature' groupbox (in 'User Connection' tab).
+def gbxTopLevelClass_reset(dlg: CDB4DeleterDialog) -> None:
+    """Function to reset the 'top-level Feature' groupbox (in 'User Connection' tab).
     """
-    dlg.gbxRootClass.setDisabled(True)
-    dlg.ccbxRootClass.clear() # This clears also the default text
-    dlg.ckbRootClassAll.setChecked(False)
-    dlg.ccbxRootClass.setDefaultText('Select root-class feature(s)')
-    dlg.ccbxRootClass.setDisabled(True)
+    dlg.gbxTopLevelClass.setDisabled(True)
+    dlg.ccbxTopLevelClass.clear() # This clears also the default text
+    dlg.ckbTopLevelClassAll.setChecked(False)
+    dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
+    dlg.ccbxTopLevelClass.setDisabled(True)
     
     return None
 
@@ -214,15 +216,15 @@ def workaround_gbxFeatType(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def workaround_gbxRootClass(dlg: CDB4DeleterDialog) -> None:
+def workaround_gbxTopLevelClass(dlg: CDB4DeleterDialog) -> None:
     ##########################################
     # This is to take care of a bizarre behaviour of 
     # the groupbox not keeping the status of the child
     # combobox that gets activated once we add items
     ##########################################
-    dlg.ccbxRootClass.setDisabled(False)
-    dlg.gbxRootClass.setDisabled(False)
-    dlg.ccbxRootClass.setDisabled(True)
-    dlg.gbxRootClass.setDisabled(True)
+    dlg.ccbxTopLevelClass.setDisabled(False)
+    dlg.gbxTopLevelClass.setDisabled(False)
+    dlg.ccbxTopLevelClass.setDisabled(True)
+    dlg.gbxTopLevelClass.setDisabled(True)
 
     return None

@@ -64,7 +64,7 @@ qi_cdb_schema varchar; ql_cdb_schema varchar;
 qi_usr_schema varchar; ql_usr_schema varchar;
 qi_usr_name varchar; ql_usr_name varchar;
 l_name varchar; ql_l_name varchar; qi_l_name varchar;
-av_name varchar; ql_av_name varchar; qi_av_name varchar;
+--av_name varchar; ql_av_name varchar; qi_av_name varchar;
 gv_name varchar; qi_gv_name varchar; ql_gv_name varchar;
 qml_form_name 	varchar := NULL;
 qml_symb_name 	varchar := NULL;
@@ -78,6 +78,10 @@ sql_ins			text := NULL;
 sql_trig		text := NULL;
 sql_layer	 	text := NULL;
 sql_statement	text := NULL;
+
+co_enum_cols_array	varchar[][] := ARRAY[['cityobject', 'relative_to_terrain'],['cityobject', 'relative_to_water']];
+codelist_cols_array	varchar[][] := ARRAY[['generic_cityobject','class'],['generic_cityobject','function'],['generic_cityobject','usage']];
+
 sql_co_atts CONSTANT varchar := '
   co.id::bigint,
   co.gmlid,
@@ -129,10 +133,15 @@ qi_usr_schema := quote_ident(usr_schema);
 ql_usr_schema := quote_literal(usr_schema);
 
 -- Prepare fixed part of SQL statements
+--sql_upd := concat('
+--DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type = ',ql_l_type,' AND l.feature_type = ',ql_feature_type,';
+--INSERT INTO ',qi_usr_schema,'.layer_metadata 
+--(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, av_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d)
+--VALUES');
 sql_upd := concat('
 DELETE FROM ',qi_usr_schema,'.layer_metadata AS l WHERE l.cdb_schema = ',ql_cdb_schema,' AND l.layer_type = ',ql_l_type,' AND l.feature_type = ',ql_feature_type,';
 INSERT INTO ',qi_usr_schema,'.layer_metadata 
-(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, av_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d)
+(cdb_schema, layer_type, feature_type, root_class, class, lod, layer_name, gv_name, n_features, creation_date, qml_form, qml_symb, qml_3d, enum_cols, codelist_cols)
 VALUES');
 
 -- Get the srid from the cdb_schema
@@ -142,7 +151,7 @@ EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid
 IF ST_SRID(mview_bbox) IS NULL OR ST_SRID(mview_bbox) <> srid THEN
 	sql_where := NULL;
 ELSE
-	sql_where := concat('AND ST_MakeEnvelope(', floor(ST_XMin(mview_bbox)),', ', floor(ST_YMin(mview_bbox)),', ', ceil(ST_XMax(mview_bbox)),', ',	ceil(ST_YMax(mview_bbox)),', ',	srid,') && co.envelope');
+	sql_where := concat('AND ST_MakeEnvelope(',ST_XMin(mview_bbox),',',ST_YMin(mview_bbox),',',ST_XMax(mview_bbox),',',ST_YMax(mview_bbox),',',srid,') && co.envelope');
 END IF;
 
 RAISE NOTICE 'For module "%" and user "%": creating layers in usr_schema "%" for cdb_schema "%"', feature_type, qi_usr_name, qi_usr_schema, qi_cdb_schema;
@@ -187,7 +196,7 @@ RAISE NOTICE 'Found % features for % % (tic)', num_features, r.class_name, t.lod
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_tic');
-av_name			:= concat('_a_',cdb_schema,'_gen_cityobj');
+--av_name			:= concat('_a_',cdb_schema,'_gen_cityobj');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'gen_form.qml';
 qml_symb_name  := 'line_black_symb.qml';
@@ -195,7 +204,7 @@ qml_3d_name    := 'line_black_3d.qml';
 trig_f_suffix := 'generic_cityobject';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -235,7 +244,7 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;
@@ -281,7 +290,7 @@ RAISE NOTICE 'Found % features for % %', num_features, r.class_name, t.lodx_name
 
 curr_class := r.class_name;
 l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label);
-av_name			:= concat('_a_',cdb_schema,'_gen_cityobj');
+--av_name			:= concat('_a_',cdb_schema,'_gen_cityobj');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'gen_form.qml';
 qml_symb_name  := 'poly_dark_grey_symb.qml';
@@ -289,7 +298,7 @@ qml_3d_name    := 'poly_dark_grey_3d.qml';
 trig_f_suffix := 'generic_cityobject';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
-qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
+--qi_av_name   := quote_ident(av_name); ql_av_name := quote_literal(av_name);
 
 IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
 
@@ -364,7 +373,8 @@ ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
 -- Add entry to update table layer_metadata
 sql_ins := concat(sql_ins,'
-(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_av_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),'),');
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
 ELSE
 sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
 END IF;

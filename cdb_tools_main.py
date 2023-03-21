@@ -256,7 +256,7 @@ class CDBToolsMain:
             add_to_menu = True,
             add_to_toolbar = True) # Default: True
 
-        # Admin Dialog
+        # Admin Dialog - Leave this at the end, so it will be the last icon.
         self.add_action(
             icon_path = admin_icon_path,
             #txt = self.tr(self.PLUGIN_NAME_ADMIN),
@@ -400,7 +400,8 @@ class CDBToolsMain:
         if self.first_start_admin:
             self.first_start_admin = False
             # Create the dialog with elements (after translation).
-            self.admin_dlg = CDB4AdminDialog(cdbMain=self)
+            # self.admin_dlg = CDB4AdminDialog(cdbMain=self)
+            self.admin_dlg = CDB4AdminDialog()
 
         # Get existing connections from QGIS profile settings.
         # They are added to the combo box (cbxExistingConn), and 

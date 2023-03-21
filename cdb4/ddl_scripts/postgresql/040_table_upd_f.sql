@@ -84,11 +84,10 @@ UPDATE %I.address AS t SET
   state           = $1.state,
   country         = $1.country,
   multi_point     = $1.multi_point,
-  xal_source      = $1.xal_source, 
+  xal_source      = $1.xal_source 
 WHERE t.id = $1.id RETURNING id', cdb_schema) INTO updated_id USING obj;
 
 -- Take care of the xal_source??
-
 
 RETURN updated_id;
 EXCEPTION
@@ -521,7 +520,7 @@ cdb_schema varchar
 RETURNS bigint AS $$
 DECLARE
   rel_2_ter_enum varchar[] := ARRAY['entirelyAboveTerrain', 'entirelyBelowTerrain', 'substantiallyAboveAndBelowTerrain', 'substantiallyAboveTerrain','substantiallyBelowTerrain'];
-  rel_2_wat_enum varchar[] := ARRAY['entirelyAboveWaterSurface', 'entirelyBelowWaterSurface', 'substantiallyAboveAndBelowWaterSurface', 'substantiallyAboveWaterSurface', 'substantiallyBelowWaterSurface', 'temporarilyAboveAndBelowWaterSurface']::varchar;
+  rel_2_wat_enum varchar[] := ARRAY['entirelyAboveWaterSurface', 'entirelyBelowWaterSurface', 'substantiallyAboveAndBelowWaterSurface', 'substantiallyAboveWaterSurface', 'substantiallyBelowWaterSurface', 'temporarilyAboveAndBelowWaterSurface'];
   updated_id bigint;
 BEGIN
 -- checks
@@ -573,7 +572,7 @@ cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
-  datatype_enum integer[] := ARRAY[1,2,3,4,5,6,7,8,9,10]::integer;
+  datatype_enum integer[] := ARRAY[1,2,3,4,5,6,7,8,9,10];
   updated_id bigint;
 BEGIN
 -- checks
@@ -863,7 +862,7 @@ cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
-  lod_enum numeric[] := ARRAY[0,1,2,3,4];
+  lod_enum numeric[] := ARRAY[0,1,2,3,4];  -- This is numeric as the column in the table is numeric (oddly)
   updated_id bigint;
 BEGIN
 -- checks
@@ -894,10 +893,10 @@ cdb_schema varchar
 )
 RETURNS bigint AS $$
 DECLARE
-  lod_enum numeric[] := ARRAY[0,1,2,3,4];
+  lod_enum numeric[] := ARRAY[0,1,2,3,4]; -- This is numeric as the column in the table is numeric (oddly)
   updated_id bigint;
 BEGIN
--- enumeration checks
+-- checks
 IF (obj.lod IS NULL) OR NOT(obj.lod = ANY(lod_enum)) THEN
   RAISE EXCEPTION 'Lod value % must be in interval [0..4]', obj.lod;
 END IF;

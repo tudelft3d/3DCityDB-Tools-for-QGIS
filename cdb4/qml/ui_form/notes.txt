@@ -1,0 +1,12 @@
+Notes:
+
+For date and time fields, we have to use the QgsDateTime widget instead of the Qt native one, as it supports Null values, too.
+
+In the UI Designer, you cannot name a object "class", it will be names class_2. But it can be renamed "class" manually in the XML file. (Why?)
+
+It is to investigate further how how function/usage arrays (that become list in the drag-&-drop form) can be mapped to checkable comboboxes in the UI file.
+Is it possible at all?
+Which workaround is viable as solution?
+https://gis.stackexchange.com/questions/354462/display-a-list-field-in-a-custom-form-with-qgis-and-qt-designer
+Natively, the "LIST" field proposed by QGIS causes a crash when loading a UI file.
+Which object is best suitable for a UI file?

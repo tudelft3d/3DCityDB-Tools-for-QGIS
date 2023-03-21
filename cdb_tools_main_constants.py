@@ -9,8 +9,8 @@ import os.path
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
-PLUGIN_VERSION_MINOR: int = 7
-PLUGIN_VERSION_REV:   int = 1
+PLUGIN_VERSION_MINOR: int = 8
+PLUGIN_VERSION_REV:   int = 0
 
 # Paths
 PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]

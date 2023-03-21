@@ -1,4 +1,4 @@
-class DeleterDialogChecks:
+class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_3dcitydb_installed: bool = False
@@ -17,7 +17,7 @@ class DeleterDialogChecks:
         return return_str
 
    
-class DeleterDefaultSettings:
+class DefaultSettings:
     """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
     """
     def __init__(self):
@@ -35,7 +35,7 @@ class DeleterDefaultSettings:
         return return_str
 
 
-class RootClassFeature():
+class TopLevelFeature():
     def __init__(self,
                 name: str,
                 feature_type: str,
@@ -80,7 +80,7 @@ class FeatureType():
                 is_ade: bool = False,
                 is_selected: bool = False,
                 n_features: int = 0,
-                root_class_features: list = []
+                top_class_features: list = []
                 ):
         
         self.name = name 
@@ -95,7 +95,7 @@ class FeatureType():
         self.is_ade = is_ade
         self.is_selected = is_selected
         self.n_features = n_features
-        self.root_class_features = root_class_features # Will contain the RootClassFeatures objects to be deleted
+        self.top_class_features = top_class_features # Will contain the TopClassFeatures objects to be deleted
     
     def __str__(self):
         return_str: str = \
@@ -106,6 +106,6 @@ class FeatureType():
             f"is_ade? {self.is_ade}\n" + \
             f"is selected? {self.is_selected}\n" + \
             f"features number: {self.n_features}\n" + \
-            f"root-class features number: {len(self.root_class_features)}\n"
+            f"top-level features number: {len(self.top_class_features)}\n"
         return return_str
 

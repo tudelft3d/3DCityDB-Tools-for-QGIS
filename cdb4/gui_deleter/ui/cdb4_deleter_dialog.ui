@@ -614,7 +614,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="1" column="1">
-           <widget class="QGroupBox" name="gbxRootClass">
+           <widget class="QGroupBox" name="gbxTopLevelClass">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -631,7 +631,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Root-class features</string>
+             <string>Top-level features</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -657,7 +657,7 @@
               </spacer>
              </item>
              <item row="3" column="1">
-              <widget class="QgsCheckableComboBox" name="ccbxRootClass">
+              <widget class="QgsCheckableComboBox" name="ccbxTopLevelClass">
                <property name="enabled">
                 <bool>false</bool>
                </property>
@@ -671,18 +671,18 @@
                 <bool>true</bool>
                </property>
                <property name="currentText">
-                <string>Select root-class feature(s)</string>
+                <string>Select top-level feature(s)</string>
                </property>
                <property name="maxVisibleItems">
                 <number>99</number>
                </property>
                <property name="defaultText">
-                <string>Select root-class feature(s)</string>
+                <string>Select top-level feature(s)</string>
                </property>
               </widget>
              </item>
              <item row="3" column="3" alignment="Qt::AlignRight|Qt::AlignVCenter">
-              <widget class="QCheckBox" name="ckbRootClassAll">
+              <widget class="QCheckBox" name="ckbTopLevelClassAll">
                <property name="minimumSize">
                 <size>
                  <width>30</width>

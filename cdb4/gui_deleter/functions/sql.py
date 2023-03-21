@@ -15,16 +15,17 @@ from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def exec_list_cdb_schemas_extended(dlg: CDB4DeleterDialog) -> list:
+
+def exec_list_cdb_schemas_with_priv(dlg: CDB4DeleterDialog) -> list:
     """SQL function that retrieves the database cdb_schemas for the current database, 
     included the privileges status for the selected usr_name
 
     *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
          and the user's privileges for each cdb_schema in the current database
-        :rtype: list(tuple(cdb_schema, co_number, priv_type))
+        :rtype: list(tuple(cdb_schema, is_empty, priv_type))
     """
     query = pysql.SQL("""
-        SELECT cdb_schema, co_number, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_with_privileges({_usr_name});
+        SELECT cdb_schema, is_empty, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_privs({_usr_name});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_name = pysql.Literal(dlg.DB.username)
@@ -44,7 +45,7 @@ def exec_list_cdb_schemas_extended(dlg: CDB4DeleterDialog) -> list:
     
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_list_cdb_schemas_extended,
+            func=exec_list_cdb_schemas_with_priv,
             location=FILE_LOCATION,
             header="Retrieving list of cdb_schemas with their privileges",
             error=error)
@@ -162,10 +163,11 @@ def exec_compute_cdb_schema_extents(dlg: CDB4DeleterDialog) -> tuple:
     """
     # Prepare query to execute server function to compute the schema's extents
     query = pysql.SQL("""
-        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema});
+        SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
+        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:
@@ -202,13 +204,14 @@ def exec_upsert_extents(dlg: CDB4DeleterDialog, bbox_type: str, extents_wkt_2d_p
     """
     # Prepare query to upsert the extents of the current cdb_schema
     query = pysql.SQL("""
-        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents});
+        SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents},{_is_geographic});
         """).format(
         _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
         _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
         _bbox_type = pysql.Literal(bbox_type),
-        _extents = pysql.Literal(extents_wkt_2d_poly)
+        _extents = pysql.Literal(extents_wkt_2d_poly),
+        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
         )
 
     try:
@@ -231,7 +234,7 @@ def exec_upsert_extents(dlg: CDB4DeleterDialog, bbox_type: str, extents_wkt_2d_p
 
 
 def fetch_feature_types_checker(dlg: CDB4DeleterDialog) -> tuple:
-    """SQL query that retrieves the available feature types 
+    """SQL query that retrieves the available feature types (CityGML modules)
 
     *   :returns: Dictionary with feature type as key and populated status as boolean value.
         :rtype: tuple
@@ -244,11 +247,12 @@ def fetch_feature_types_checker(dlg: CDB4DeleterDialog) -> tuple:
 
     query = pysql.SQL("""
         SELECT feature_type 
-        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_extents}) 
+        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents}) 
         WHERE exists_in_db IS TRUE 
         ORDER BY feature_type;
         """).format(
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
         _extents = pysql.Literal(extents)
         )  
 
@@ -297,21 +301,22 @@ def cleanup_cdb_schema(dlg: CDB4DeleterDialog) -> bool:
         return False
 
 
-def fetch_root_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
-    """SQL query that retrieves the number of available root-class features 
+def fetch_top_level_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: str) -> list:
+    """SQL query that retrieves the number of available top-class features 
 
     *   :returns: List of named tuples, each one corresponding to a record.
         :rtype: list of named tuples (RECORD)
     """
-    root_class_features = [] # empty list
+    top_class_features = [] # empty list
 
     query = pysql.SQL("""
         SELECT feature_type, root_class, objectclass_id, n_feature 
-        FROM qgis_pkg.root_class_counter({_cdb_schema},{_extents}) 
+        FROM qgis_pkg.root_class_counter({_cdb_schema},{_ade_prefix},{_extents}) 
         WHERE n_feature > 0 
         ORDER BY feature_type, root_class;
         """).format(
         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
         _extents = pysql.Literal(extents_wkt_2d)
         )  
 
@@ -323,18 +328,18 @@ def fetch_root_class_features_counter(dlg: CDB4DeleterDialog, extents_wkt_2d: st
         # print ("from the db", res)
 
         if not res:
-            root_class_features = []
+            top_class_features = []
         else: 
-            root_class_features = res
+            top_class_features = res
         
-        return root_class_features 
+        return top_class_features 
 
     except (Exception, psycopg2.Error) as error:
         dlg.conn.rollback()
         gen_f.critical_log(
-            func=fetch_root_class_features_counter,
+            func=fetch_top_level_features_counter,
             location=FILE_LOCATION,
-            header="Retrieving list and quantity of available root-class features in selected area",
+            header="Retrieving list and quantity of available top-class features in selected area",
             error=error)
         
 

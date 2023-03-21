@@ -25,7 +25,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-     from ...cdb_tools_main import CDBToolsMain
      from ..gui_db_connector.other_classes import Connection
 
 import os
@@ -42,8 +41,9 @@ from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
 from ..shared.functions import sql as sh_sql
 from ..shared.functions import general_functions as gen_f  
-from .other_classes import AdminDefaultSettings, FeatureType, AdminDialogChecks
+from .other_classes import DefaultSettings, DialogChecks
 from .functions import sql
+from .functions import tab_install_functions as ti_f
 from .functions import tab_install_widget_functions as ti_wf
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import threads as thr
@@ -56,7 +56,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
     """Administrator Dialog class of the plugin. The GUI is imported from an external .ui xml
     """
 
-    def __init__(self, cdbMain: CDBToolsMain, parent=None):
+    def __init__(self, parent=None):
         """Constructor."""
         super(CDB4AdminDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -82,9 +82,11 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
         # Variable to store the selected cdb_schema name.
-        self.CDB_SCHEMA: str = None
+        # self.CDB_SCHEMA: str = None
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
+        # Variable to store the existing ADEs in the database.
+        self.ADEs: list = []
 
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
@@ -95,31 +97,19 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar: QProgressBar
         self.thread: QThread
 
+        # Initialize classes containing requirements, settings, etc.
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
+
         ############################################################
         ## From here you can add your variables or constants
         ############################################################
 
-        # Initialize classes containing requirements, settings, etc.
-        self.settings = AdminDefaultSettings()
-        self.checks = AdminDialogChecks()
-
-        # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
-        self.FeatureTypesRegistry: dict = {
-            "Bridge"        : FeatureType(alias='bridge'        ),
-            "Building"      : FeatureType(alias='building'      ),
-            "CityFurniture" : FeatureType(alias='cityfurniture' ),
-            "Generics"      : FeatureType(alias='generics'      ),
-            "LandUse"       : FeatureType(alias='landuse'       ),
-            "Relief"        : FeatureType(alias='relief'        ),
-            "Transportation": FeatureType(alias='transportation'),
-            "Tunnel"        : FeatureType(alias='tunnel'        ),
-            "Vegetation"    : FeatureType(alias='vegetation'    ),
-            "WaterBody"     : FeatureType(alias='waterbody'     )
-            }
+        # Registry to store the existing feature types
+        self.FeatureTypesRegistry: dict = {}
 
         # Initialize label values. This is used in order to revert to the original state 
         # in reset operations when original text has already changed.
-
         # Connection button labels
         self.btnConnectToDb.init_text = c.btnConnectToDbC_t
         
@@ -203,7 +193,6 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_update_bar(self, step: int, text: str) -> None:
-    # def evt_update_bar(self, dlg_progress_bar: QProgressBar, step: int, text: str) -> None:
         """Function to setup the progress bar upon update. Important: Progress Bar needs to be already created
         in cdbMain.admin_gui.msg_bar: QgsMessageBar and cdbMain.admin_gui.bar: QProgressBar.
         This event is not linked to any widet_setup function as it isn't responsible for changes in different 
@@ -516,6 +505,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Enable the close connection button
                 self.btnCloseConn.setDisabled(False)
 
+                # Initialize the FeatureTypeRegistry
+                ti_f.initialize_feature_type_registry(self)
+
                 # Get and assign the variable with the group name
                 # group name (qgis_pkg_usrgroup_*) assigned to self.GROUP_NAME
                 sql.exec_create_qgis_pkg_usrgroup_name(self)
@@ -655,9 +647,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas = sql.exec_list_cdb_schemas_extended(self, usr_name)
+            cdb_schemas = sql.exec_list_cdb_schemas_privs(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+            ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
         else:
             # Update the label in the connection status box
@@ -749,9 +741,9 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-            cdb_schemas  = sql.exec_list_cdb_schemas_extended(self, usr_name)
+            cdb_schemas  = sql.exec_list_cdb_schemas_privs(self, usr_name)
             # Fill the combobox of the cdb_schemas in the groupbox
-            ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+            ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
             # Replace with Success msg.
             msg = self.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA))
@@ -836,13 +828,14 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Store all available cdb_schemas, regardless of the selection
         # At least the default citydb should exist.
         all_cdb_schemas: list = []
+        sel_cdb_schemas: list = []
+
         for i in range(0, self.ccbSelCDBSch.count()):
             all_cdb_schemas.append(self.ccbSelCDBSch.itemData(i))
         # print("all_cdb_schemas:", all_cdb_schemas)
 
         if self.ckbSelAllCDBSch.isChecked():
-            sel_cdb_schemas = None # For the SQL functions, this is like ALL
-
+            sel_cdb_schemas = None
         else:
             # Get the selected cdb_schemas
             sel_cdb_schemas: list = gen_f.get_checkedItemsData(self.ccbSelCDBSch)
@@ -878,11 +871,12 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             else: 
                 msg = f"For user '{sel_usr_name}', read & write privileges granted to citydb schemas: {sel_cdb_schemas}"  
 
+
         # Retrieve again the list of cdb_schemas and their privileges status
         # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
-        cdb_schemas = sql.exec_list_cdb_schemas_extended(self, sel_usr_name)
+        cdb_schemas = sql.exec_list_cdb_schemas_privs(self, sel_usr_name)
         # Fill the combobox of the cdb_schemas in the groupbox
-        ti_wf.fill_cdb_schemas_box(self, cdb_schemas)
+        ti_wf.fill_cdb_schemas_privs_box(self, cdb_schemas)
 
         # Inform the user
         QMessageBox.information(self, "Setting privileges", msg)

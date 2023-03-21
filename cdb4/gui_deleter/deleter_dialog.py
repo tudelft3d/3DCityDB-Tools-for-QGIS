@@ -47,7 +47,7 @@ from .functions import tab_conn_functions as tc_f
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import canvas, sql
 from .functions import threads as thr
-from .other_classes import DeleterDialogChecks, DeleterDefaultSettings
+from .other_classes import DialogChecks, DefaultSettings
 from . import deleter_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -87,6 +87,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.GROUP_NAME: str = None
         # Variable to store the selected cdb_schema name.
         self.CDB_SCHEMA: str = None
+        # Variable to store the ADE prefix of the selected cdb_schema name.
+        self.ADE_PREFIX: str = None
         # Variable to store the selected usr_schema name.
         self.USR_SCHEMA: str = None
 
@@ -99,20 +101,23 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar: QProgressBar
         self.thread: QThread
 
+        self.settings = DefaultSettings()
+        self.checks = DialogChecks()
+
         ############################################################
         ## From here you can add your variables or constants
         ############################################################
 
-        self.settings = DeleterDefaultSettings()
-        self.checks = DeleterDialogChecks()
-
+        # Metadata Registries (dictionaries)
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
-        self.RootClassFeaturesRegistry: dict = {}
         self.FeatureTypesRegistry: dict = {}
+        self.TopLevelFeaturesRegistry: dict = {}
 
         # Variable to store the selected crs.
-        self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
-
+        self.CRS: QgsCoordinateReferenceSystem = None
+        # self.CRS: QgsCoordinateReferenceSystem = cdbMain.iface.mapCanvas().mapSettings().destinationCrs()
+        self.CRS_is_geographic: bool = None    # Will be True if we are using lon lat in the database, False if we use projected coordinates
+ 
         # Variable to store the selected extents.
         self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()
         # Variable to store the extents of the selected cdb_schema
@@ -125,8 +130,6 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS.enableAntiAliasing(True)
         self.CANVAS.setMinimumWidth(300)
         self.CANVAS.setMaximumHeight(350)
-
-        # print("canvas", self.CANVAS_C.extent)
 
         # Variable to store a rubberband formed by the current extents.
         self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
@@ -173,7 +176,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Draw on Canvas tool is disabled.
         # Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtents_setup
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+        #################################################################
+        # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
+        #################################################################
         # 'Extents' groupbox signals
         self.qgbxExtents.extentChanged.connect(self.evt_qgbxExtents_ext_changed)
         self.CANVAS.extentsChanged.connect(self.evt_canvasC_ext_changed)
@@ -190,8 +195,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.gbxFeatType.toggled.connect(self.evt_gbxFeatType_toggled)
         self.ckbFeatTypeAll.toggled.connect(self.evt_ckbFeatTypeAll_toggled)
 
-        self.gbxRootClass.toggled.connect(self.evt_gbxRootClass_toggled)
-        self.ckbRootClassAll.toggled.connect(self.evt_ckbRootClassAll_toggled)
+        self.gbxTopLevelClass.toggled.connect(self.evt_gbxTopLevelClass_toggled)
+        self.ckbTopLevelClassAll.toggled.connect(self.evt_ckbTopLevelClassAll_toggled)
 
         self.btnDelSelFeatures.clicked.connect(self.evt_btnDelSelFeatures_clicked)
 
@@ -319,10 +324,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         msg: str = None
 
         # In 'Connection Status' groupbox
-        # Activate the connection status box (red/green checks)
-        self.gbxConnStatus.setDisabled(False)
-        # Activate the close connection button at the bottom 
-        self.btnCloseConn.setDisabled(False) 
+        self.gbxConnStatus.setDisabled(False) # Activate the connection status box (red/green checks)
+        self.btnCloseConn.setDisabled(False) # Activate the close connection button at the bottom
 
         # -------------------------------------------------------------------------------------------
         # Series of tests to be carried out when I connect as user.
@@ -471,17 +474,30 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 5) Are there cdb_schemas I am allowed to connect to? If yes, continue
         # 6) Can I connect with RW privileges to at least one non-empty cdb_schema? If yes, continue
 
+        cdb_schemas_rw: list = []
+        cdb_schemas: list = [] 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
+        #####################################################################################################
         # Namedtuple with: cdb_schema, co_number, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_extended(self)
+        # cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv_feat_count(self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
         # AND the user has 'rw' privileges.
-        cdb_schemas_rw: list = []
-        cdb_schemas: list = [] 
+        # cdb_schemas_rw = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type == 'rw']
+        # cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if cdb_schema.co_number != 0]
+        #####################################################################################################
+        # Namedtuple with: cdb_schema, is_empty, priv_type
+        cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv(self)
+        # print('cdb_schema_extended', cdb_schemas_extended)
+
+        # Select tuples of cdb_schemas that have number of cityobjects <> 0
+        # AND the user has 'rw' privileges.
         cdb_schemas_rw = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type == 'rw']
-        cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if cdb_schema.co_number != 0]
+        cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if not cdb_schema.is_empty]
+        #####################################################################################################
+        # print(cdb_schemas_rw)
+        # print(cdb_schemas)
 
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
@@ -512,7 +528,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 # We can start:
 
                 # 1) Initialize the registries
-                tc_f.initialise_root_class_features_registry(self)
+                tc_f.initialise_top_class_features_registry(self)
                 tc_f.initialize_feature_types_registry(self)
 
                 # 2) Fill the cdb_schema combobox
@@ -572,7 +588,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # This will eventually fire a evt_qgbxExtents_ext_changed event
 
         tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxRootClass_reset(self)
+        tc_wf.gbxTopLevelClass_reset(self)
 
         return None
 
@@ -583,7 +599,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         status: bool = self.gbxCleanUpSchema.isChecked()
 
         tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxRootClass_reset(self)
+        tc_wf.gbxTopLevelClass_reset(self)
 
         if status: # it is checked to be enabled
             # Enable the button
@@ -641,21 +657,21 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.btnGeoCoder.setDisabled(False)
 
             # tc_wf.workaround_gbxFeatType(self)
-            # tc_wf.workaround_gbxRootClass(self)
+            # tc_wf.workaround_gbxTopLevelClass(self)
 
             if self.gbxFeatSel.isChecked():
                 # Both are unchecked: leave them disabled
-                if not self.gbxFeatType.isChecked() and not self.gbxRootClass.isChecked():
+                if not self.gbxFeatType.isChecked() and not self.gbxTopLevelClass.isChecked():
                     self.gbxFeatType.setDisabled(False)
-                    self.gbxRootClass.setDisabled(False)
+                    self.gbxTopLevelClass.setDisabled(False)
                 # FeatType is checked: leave it enabled, disable the other
-                if self.gbxFeatType.isChecked() and not self.gbxRootClass.isChecked():
+                if self.gbxFeatType.isChecked() and not self.gbxTopLevelClass.isChecked():
                     self.gbxFeatType.setDisabled(False)
-                    self.gbxRootClass.setDisabled(True)
-                # RootClass is checked: leave it enabled, disable the other
-                if not self.gbxFeatType.isChecked() and self.gbxRootClass.isChecked():
+                    self.gbxTopLevelClass.setDisabled(True)
+                # TopClass is checked: leave it enabled, disable the other
+                if not self.gbxFeatType.isChecked() and self.gbxTopLevelClass.isChecked():
                     self.gbxFeatType.setDisabled(True)
-                    self.gbxRootClass.setDisabled(False)
+                    self.gbxTopLevelClass.setDisabled(False)
 
         else: # when unchecked, it disables itself automatically
             # We do not want to completely reset the groupbox (it would delete all, and clean the canvas, too)
@@ -686,14 +702,27 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         Reads the new current extents from the map and sets it in the 'Extents'
         (qgbxExtents) widget.
         """
-        # Get canvas's current extent
-        extent: QgsRectangle = self.CANVAS.extent()
+        if not self.CRS:
+            # do nothing
+            # print('no CRS yet')
+            pass
+        else:
+        # Get canvas's current extents
+            new_extent: QgsRectangle = self.CANVAS.extent()
+            old_extent: QgsRectangle = self.qgbxExtents.currentExtent()
+            new_poly = QgsGeometry.fromRect(new_extent)
+            old_poly = QgsGeometry.fromRect(old_extent)
 
-        # Set the current extent to show in the 'extents' widget.
-        self.qgbxExtents.blockSignals(True)
-        self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal blocking signals
-        self.qgbxExtents.blockSignals(False)
-        self.qgbxExtents.setCurrentExtent(currentExtent=extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
+            if new_poly.equals(old_poly):
+                # do nothing
+                # print("same extents, same CRS, do nothing")
+                pass
+            else:
+                # Set the current extent to show in the 'extent' widget.
+                # self.qgbxExtents.blockSignals(True)
+                # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
+                # self.qgbxExtents.blockSignals(False)
+                self.qgbxExtents.setCurrentExtent(currentExtent=new_extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
         return None
 
@@ -788,15 +817,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.gbxBasemap.setDisabled(False)
 
             tc_wf.workaround_gbxFeatType(self)
-            tc_wf.workaround_gbxRootClass(self)
+            tc_wf.workaround_gbxTopLevelClass(self)
 
             # Set up/update the "Select Features" group box
             tc_f.refresh_registries(self)
 
             # Enable the groupbox FeatType
             self.gbxFeatType.setDisabled(False)
-            # Enable the groupbox RootClass
-            self.gbxRootClass.setDisabled(False)
+            # Enable the groupbox TopClass
+            self.gbxTopLevelClass.setDisabled(False)
 
             # Enable the Delete Selected features button
             self.btnDelSelFeatures.setDisabled(False)
@@ -824,12 +853,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         status: bool = self.gbxFeatType.isChecked()
 
         if status: # it is checked to be enabled
-            # Disable check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(True)
-            # Diable checkable combo box ccbxRootClass
-            self.ccbxRootClass.setDisabled(True)
-            # Disable the gbxRootClass
-            self.gbxRootClass.setDisabled(True)
+            # Disable check box ckbTopLevelClassAll
+            self.ckbTopLevelClassAll.setDisabled(True)
+            # Diable checkable combo box ccbxTopLevelClass
+            self.ccbxTopLevelClass.setDisabled(True)
+            # Disable the gbxTopLevelClass
+            self.gbxTopLevelClass.setDisabled(True)
 
             # Enable combo box cbxFeatType
             self.ccbxFeatType.setDisabled(False)
@@ -848,12 +877,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable combo box cbxFeatType
             self.ccbxFeatType.setDisabled(True)
 
-            # Enable the gbxRootClass
-            self.gbxRootClass.setDisabled(False)
-            # Keep disabled check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(True)
-            # Keep disabled combobox cbxRootClass
-            self.ccbxRootClass.setDisabled(True)
+            # Enable the gbxTopLevelClass
+            self.gbxTopLevelClass.setDisabled(False)
+            # Keep disabled check box ckbTopLevelClassAll
+            self.ckbTopLevelClassAll.setDisabled(True)
+            # Keep disabled combobox cbxTopClass
+            self.ccbxTopLevelClass.setDisabled(True)
 
         return None
 
@@ -881,10 +910,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_gbxRootClass_toggled(self) -> None:
-        """Event that is called when the check box 'Root-Class Feature' is toggled.
+    def evt_gbxTopLevelClass_toggled(self) -> None:
+        """Event that is called when the check box 'Top-level Feature' is toggled.
         """
-        status: bool = self.gbxRootClass.isChecked()
+        status: bool = self.gbxTopLevelClass.isChecked()
 
         if status: # it is checked to be enabled
             # Disable check box ckbFeatTypeAll
@@ -894,22 +923,22 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Disable the group box gbxFeatType
             self.gbxFeatType.setDisabled(True)
 
-            # Enable check box ckbRootClassAll
-            self.ckbRootClassAll.setDisabled(False)
-            # Enable combo box ccbxRootClass
-            self.ccbxRootClass.setDisabled(False)
-            # Enable the groupbox gbxRootClass
-            self.gbxRootClass.setDisabled(False)
+            # Enable check box ckbTopLevelClassAll
+            self.ckbTopLevelClassAll.setDisabled(False)
+            # Enable combo box ccbxTopLevelClass
+            self.ccbxTopLevelClass.setDisabled(False)
+            # Enable the groupbox gbxTopLevelClass
+            self.gbxTopLevelClass.setDisabled(False)
 
         else: # when unchecked, it disables itself automatically
             # Disable check box ckbFeatTypeAll
-            self.ckbRootClassAll.setChecked(False)
-            self.ckbRootClassAll.setDisabled(True)
+            self.ckbTopLevelClassAll.setChecked(False)
+            self.ckbTopLevelClassAll.setDisabled(True)
             # Clear the previous selected items
-            for i in range(self.ccbxRootClass.count()):
-                self.ccbxRootClass.setItemCheckState(i, Qt.Unchecked)
+            for i in range(self.ccbxTopLevelClass.count()):
+                self.ccbxTopLevelClass.setItemCheckState(i, Qt.Unchecked)
             # Disable combo box cbxFeatType
-            self.ccbxRootClass.setDisabled(True)
+            self.ccbxTopLevelClass.setDisabled(True)
 
             # Enable the group box gbxFeatType
             self.gbxFeatType.setDisabled(False)
@@ -921,25 +950,25 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_ckbRootClassAll_toggled(self) -> None:
-        """Event that is called when the check box 'Root-Class Feature All' is toggled.
+    def evt_ckbTopLevelClassAll_toggled(self) -> None:
+        """Event that is called when the check box 'Top-level Feature All' is toggled.
         If checked, it will turn all entries to checked.
         If unchecked, it will set all entries to unchecked.
         """
-        status: bool = self.ckbRootClassAll.isChecked()
+        status: bool = self.ckbTopLevelClassAll.isChecked()
 
         if status: # Selected/Checked
             # Select all items in combobox with cdb_schemas, set status to 2 (Checked)
-            for i in range(self.ccbxRootClass.count()):
-                 self.ccbxRootClass.setItemCheckState(i, Qt.Checked)
+            for i in range(self.ccbxTopLevelClass.count()):
+                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.Checked)
             # Disable the drop down menu
-            self.ccbxRootClass.setDisabled(True)
+            self.ccbxTopLevelClass.setDisabled(True)
         else:
             # Unselect all items in combobox with cdb_schemas, set status to 0 (Unchecked)
-            for i in range(self.ccbxRootClass.count()):
-                 self.ccbxRootClass.setItemCheckState(i, Qt.Unchecked)
+            for i in range(self.ccbxTopLevelClass.count()):
+                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.Unchecked)
             # Enable the drop down menu
-            self.ccbxRootClass.setDisabled(False)
+            self.ccbxTopLevelClass.setDisabled(False)
 
         return None
 
@@ -947,13 +976,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnDelSelFeatures_clicked(self) -> None:
         """Event that is called when the 'Delete selected features from schema {sch}' button (btnDelSelFeatures) is pressed.
         """
-        delete_mode: str = None # Eiter "del_FeatureTypes" or "del_RootClassFeatures"
+        delete_mode: str = None # Eiter "del_FeatureTypes" or "del_TopClassFeatures"
 
         # Check that there are indeed some features selected
 
         if all((not self.gbxFeatType.isChecked(),
-                not self.gbxRootClass.isChecked())):
-            msg: str = "You must enable either the 'Feature types' or the 'Root-class features' boxes."
+                not self.gbxTopLevelClass.isChecked())):
+            msg: str = "You must enable either the 'Feature types' or the 'Top-level features' boxes."
             res = QMessageBox.warning(self, "Missing selection", msg)
             return None # Exit
         
@@ -970,18 +999,18 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 delete_mode = "del_FeatureTypes"
                 tc_f.update_feature_type_registry_is_selected(self, sel_feat_types)
 
-        elif self.gbxRootClass.isChecked():
-            # Get the list (tuple) of selected Root-class Features in the current cdb_schema
-            sel_root_class_features: list = gen_f.get_checkedItemsData(self.ccbxRootClass)
-            # print("Selected Root-class features:", sel_root_class_features)
+        elif self.gbxTopLevelClass.isChecked():
+            # Get the list (tuple) of selected Top-level Features in the current cdb_schema
+            sel_top_level_features: list = gen_f.get_checkedItemsData(self.ccbxTopLevelClass)
+            # print("Selected Top-level features:", sel_top_class_features)
 
-            if len(sel_root_class_features) == 0:
-                msg: str = "You must select at least a Root-class feature Type from the combo box."
+            if len(sel_top_level_features) == 0:
+                msg: str = "You must select at least a Top-level feature Type from the combo box."
                 res = QMessageBox.warning(self, "Missing selection", msg)
                 return None # Exit
             else:
-                delete_mode = "del_RootClassFeatures"
-                tc_f.update_root_class_features_is_selected(self, sel_root_class_features)
+                delete_mode = "del_TopLevelFeatures"
+                tc_f.update_top_class_features_is_selected(self, sel_top_level_features)
 
         else:
             # This case should not happen.

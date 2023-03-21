@@ -1,7 +1,7 @@
 import os.path
 from . import loader_constants as c
 
-class LoaderDialogChecks:
+class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_postgis_installed: bool = False
@@ -40,7 +40,7 @@ class LoaderDialogChecks:
         return False
 
     
-class LoaderDefaultSettings:
+class DefaultSettings:
     """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
     """
     def __init__(self):
@@ -62,6 +62,10 @@ class LoaderDefaultSettings:
         self.enable_3d_renderer_default: bool = False
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
+        self.enable_ui_based_forms: bool = False
+        self.enable_ui_based_forms_label: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
+
+
     def __str__(self):
         return_str: str = \
             f"simp_geom_enabled (DEFAULT): {self.simp_geom_enabled_default}\n" + \
@@ -74,37 +78,39 @@ class LoaderDefaultSettings:
 
 
 class CDBLayer():
-    """This class is used to convert each row of the 'layer_metadata' table into object
-    instances. Its purpose is to facilitate access to attributes.
+    """This class is used to convert rows of the 'layer_metadata' table that are "VectorLayers"
+    into objects to be used (for example) in the LayerRegistry
     """
     def __init__(self,
             l_id: int,
             cdb_schema: str,
+            ade_prefix: str,
             layer_type: str,
             feature_type: str,
             root_class: str,
             curr_class: str,
             lod: str,
             layer_name: str,
-            av_name: str,
             gv_name: str,
+            av_name: str,
             n_features: int,
             creation_date: str,
             refresh_date: str,
             qml_form: str,
             qml_symb: str,
-            qml_3d: str
+            qml_3d: str,
+            enum_cols: str,
+            codelist_cols: str
             ):
 
         self.l_id = l_id
         self.cdb_schema = cdb_schema
+        self.ade_prefix = ade_prefix
         self.layer_type = layer_type
         self.feature_type = feature_type
         self.root_class = root_class
         self.curr_class = curr_class
         self.lod = lod
-        self.root_class_name = root_class
-        self.curr_class_name = curr_class
         self.layer_name = layer_name
         self.gv_name = gv_name
         self.av_name = av_name
@@ -114,23 +120,128 @@ class CDBLayer():
         self.qml_form = qml_form
         self.qml_symb = qml_symb
         self.qml_3d = qml_3d
+        self.enum_cols = enum_cols
+        self.codelist_cols = codelist_cols
+
+        self.n_selected: int = 0
+
+        self.qml_form_with_path: str = None
+        self.qml_symb_with_path: str = None
+        self.qml_3d_with_path: str = None
 
         if qml_form:
             self.qml_form_with_path: str = os.path.join(c.QML_PATH, c.QML_FORM_DIR, qml_form)
-        else:
-            self.qml_form_with_path = None
 
         if qml_symb:
             self.qml_symb_with_path: str = os.path.join(c.QML_PATH, c.QML_SYMB_DIR, qml_symb)
-        else:
-            self.qml_symb_with_path = None
 
         if qml_3d:
             self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
-        else:
-            self.qml_3d_with_path = None
+
+        # #########################################
+        # Initial test to support UI-based forms - Added 25 February 2023 
         
-        self.n_selected: int = 0
+        self.qml_ui_form_with_path: str = None
+        self.ui_file_with_path: str = None
+
+        if qml_form:
+            self.qml_ui_form_with_path: str = os.path.join(c.QML_PATH, "ui_form", qml_form)
+
+        if qml_form:
+            ui_file: str = qml_form.replace(".qml", ".ui")
+            self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
+        #
+        # #########################################
+
+
+class CDBDetailView():
+    """This class is used to convert rows of the 'layer_metadata' table that are "DetailViews"
+    into objects to be used (for example) in the DetailViewRegistry
+    """
+    def __init__(self,
+            id: int,
+            cdb_schema: str,
+            layer_type: str,
+            # feature_type: str,
+            # root_class: str,
+            curr_class: str,
+            layer_name: str,
+            gen_name: str,    # currently takes the value of av_name field in table layer attributes
+            # creation_date: str,
+            qml_form: str,
+            qml_symb: str,
+            qml_3d: str
+            ):
+
+        self.id = id
+        self.cdb_schema = cdb_schema
+        self.type = layer_type
+        self.has_geom: bool = False
+        # self.feature_type = feature_type
+        # self.root_class = root_class
+        self.curr_class = curr_class
+        self.name = layer_name
+        self.gen_name = gen_name     # this is the generic name, withour prefixes, cdb_schema, etc.
+        # self.creation_date = creation_date
+        self.qml_form = qml_form
+        self.qml_symb = qml_symb
+        self.qml_3d = qml_3d
+
+        self.qml_form_with_path: str = None
+        self.qml_symb_with_path: str = None
+        self.qml_3d_with_path: str = None
+
+        self.form_tab_name: str = None
+
+        if gen_name == "ext_ref_name":
+            self.form_tab_name = "Ext ref (Name)"
+        elif gen_name == "ext_ref_uri":
+            self.form_tab_name = "Ext ref (Uri)"
+        elif gen_name == "gen_attrib_string":  
+            self.form_tab_name = "Gen Attrib (String)"
+        elif gen_name == "gen_attrib_integer":
+            self.form_tab_name = "Gen Attrib (Integer)"
+        elif gen_name == "gen_attrib_real":
+            self.form_tab_name = "Gen Attrib (Real)"
+        elif gen_name == "gen_attrib_measure":
+            self.form_tab_name = "Gen Attrib (Measure)"
+        elif gen_name == "gen_attrib_date":
+            self.form_tab_name = "Gen Attrib (Date)"
+        elif gen_name == "gen_attrib_uri":
+            self.form_tab_name = "Gen Attrib (Uri)"
+        elif gen_name == "gen_attrib_blob":
+            self.form_tab_name = "Gen Attrib (Blob)"
+        elif gen_name in ["address_bdg", "address_bri", "address_bdg_door", "address_bri_door"]:
+             self.form_tab_name = "Addresses"
+        else:
+            pass
+
+        if self.type == "DetailView":
+            self.has_geom = True
+
+        if qml_form:
+            self.qml_form_with_path: str = os.path.join(c.QML_PATH, c.QML_FORM_DIR, qml_form)
+
+        if qml_symb:
+            self.qml_symb_with_path: str = os.path.join(c.QML_PATH, c.QML_SYMB_DIR, qml_symb)
+
+        if qml_3d:
+            self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
+
+        # #########################################
+        # Initial test to support UI-based forms - Added 25 February 2023 
+        
+        self.qml_ui_form_with_path: str = None
+        self.ui_file_with_path: str = None
+
+        if qml_form:
+            self.qml_ui_form_with_path: str = os.path.join(c.QML_PATH, "ui_form", qml_form)
+
+        if qml_form:
+            ui_file: str = qml_form.replace(".qml", ".ui")
+            self.ui_file_with_path: str = os.path.join(c.QML_PATH, "ui_form", ui_file)
+        #
+        # #########################################
 
 
 class FeatureType():
@@ -182,6 +293,75 @@ class FeatureType():
         return return_str
 
 
+class EnumConfig():
+    def __init__(self,
+            id: int,
+            ade_prefix: str,
+            source_class: str,
+            source_table: str,
+            source_column: str,
+            target_table: str,
+            key_column: str,
+            value_column: str,
+            filter_expression: str,
+            num_columns: int,
+            allow_multi: bool,
+            allow_null: bool,
+            order_by_value: bool,
+            use_completer: bool,
+            description: str
+            ):
+
+        self.id = id
+        self.ade_prefix = ade_prefix
+        self.source_class = source_class
+        self.source_table = source_table
+        self.source_column = source_column
+        self.target_table = target_table
+        self.key_column = key_column
+        self.value_column = value_column
+        self.filter_expression = filter_expression
+        self.num_columns = num_columns
+        self.allow_multi = allow_multi
+        self.allow_null = allow_null
+        self.order_by_value = order_by_value
+        self.use_completer = use_completer
+        self.description = description
 
 
+class CodeListConfig():
+    def __init__(self,
+            id: int,
+            name: str,
+            ade_prefix: str,
+            source_class: str,
+            source_table: str,
+            source_column: str,
+            target_table: str,
+            key_column: str,
+            value_column: str,
+            filter_expression: str,
+            num_columns: int,
+            allow_multi: bool,
+            allow_null: bool,
+            order_by_value: bool,
+            use_completer: bool,
+            description: str
+            ):
 
+        self.id = id
+        self.name = name
+        self.ade_prefix = ade_prefix
+        self.source_class = source_class
+        self.source_table = source_table
+        self.source_column = source_column
+        self.target_table = target_table
+        self.key_column = key_column
+        self.value_column = value_column
+        self.filter_expression = filter_expression
+        self.num_columns = num_columns
+        self.allow_multi = allow_multi
+        self.allow_null = allow_null
+        self.order_by_value = order_by_value
+        self.use_completer = use_completer
+        self.description = description

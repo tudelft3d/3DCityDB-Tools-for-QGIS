@@ -15,6 +15,32 @@ from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
+
+def fill_codelist_selection_box(dlg: CDB4LoaderDialog, codelist_set_names: list = None) -> None:
+    """Function that fills the 'Select CodeLists group' combo box.
+    """
+    # Clean combo box from previous leftovers.
+    dlg.cbxCodeListSelection.clear()
+
+    if not codelist_set_names:
+        # Disable the combobox
+        dlg.cbxCodeListSelection.setDisabled(True)
+        dlg.cbxCodeListSelection.setDisabled(True)
+    else:
+        label: str = f"None"
+        dlg.cbxCodeListSelection.addItem(label, userData=label)
+        for codelist_set_name in codelist_set_names:
+            label: str = f"{codelist_set_name}"
+            dlg.cbxCodeListSelection.addItem(label, userData=label)
+        if not dlg.cbxCodeListSelection.isEnabled():
+            # Enable the combobox
+            dlg.cbxCodeListSelection.setDisabled(False)
+            dlg.lblCodeListSelection.setDisabled(False)
+   
+    # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
+    return None
+
+
 ####################################################
 ## Reset widget functions for 'Settings' tab
 ####################################################
@@ -25,9 +51,11 @@ def tabSettings_reset(dlg: CDB4LoaderDialog) -> None:
     dlg.tabSettings.setDisabled(True)
     gbxGeomSimp_reset(dlg)
     gbxLayerOptions_reset(dlg)
+    gbxCodeListSelection_reset(dlg)
     gbxMisc_reset(dlg)
 
     return None
+
 
 def gbxGeomSimp_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Geometry simplification' groupbox to the DEFAULT values
@@ -38,6 +66,7 @@ def gbxGeomSimp_reset(dlg: CDB4LoaderDialog) -> None:
 
     return None
 
+
 def gbxLayerOptions_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Layer Options' groupbox to the DEFAULT values
     """
@@ -46,6 +75,15 @@ def gbxLayerOptions_reset(dlg: CDB4LoaderDialog) -> None:
     dlg.cbxForceLayerGen.setChecked(dlg.settings.force_all_layers_creation_default)
 
     return None
+
+
+def gbxCodeListSelection_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Miscellaneous option' groupbox to the DEFAULT values
+    """
+    dlg.cbxCodeListSelection.clear()
+
+    return None
+
 
 def gbxMisc_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Miscellaneous option' groupbox to the DEFAULT values
