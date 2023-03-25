@@ -1434,7 +1434,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 		-- Grant usage to citydb_pkg
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
 		-- No tables in schema citydb_pkg (also also no sequences)
-		--EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 
 		-- Recursively iterate for each cdb_schema in database
@@ -1548,7 +1548,8 @@ ELSE -- any other non super-user
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA public TO %I;', sql_priv_type, usr_name);
 
 	ELSIF cdb_schema = ANY(cdb_schemas_array) THEN
-			-- Grant access to the citydb_pkg schema
+
+		-- Grant access to the citydb_pkg schema
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
 
 		-- Grant privileges only for the selected cdb_schema.
@@ -1566,7 +1567,7 @@ ELSE -- any other non super-user
 		-- We need access to schema citydb_pkg, that has been granted before the loop
 		-- The index is created only the very first time, then it won't be created again,
 		-- no matter if another uses it granted privileges.
-		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', sch_name);
+		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', cdb_schema);
 		-- No tables in citydb_pkg
 		--EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
