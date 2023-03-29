@@ -165,9 +165,9 @@ ade_prefix 			varchar DEFAULT NULL,
 source_class 		varchar,
 source_table        varchar,
 source_column 		varchar,
-target_table 		varchar, -- 
-key_column 			varchar NOT NULL,
-value_column 		varchar NOT NULL,
+target_table 		varchar NOT NULL DEFAULT 'v_codelist', 
+key_column			varchar NOT NULL DEFAULT 'value',
+value_column		varchar NOT NULL DEFAULT 'description',
 filter_expression 	varchar,
 num_columns 		integer DEFAULT 1,
 allow_multi 		boolean DEFAULT FALSE,
@@ -184,15 +184,15 @@ CREATE INDEX enluc_source_class_idx ON qgis_pkg.enum_lookup_config (source_class
 
 --TRUNCATE TABLE qgis_pkg.enum_lookup_config RESTART IDENTITY CASCADE;
 INSERT INTO qgis_pkg.enum_lookup_config
-(ade_prefix, source_class, source_table, source_column, target_table, key_column, value_column, filter_expression)
+(ade_prefix, source_class, source_table, source_column, filter_expression)
 VALUES
-(NULL, 'CityObject', 'cityobject', 'relative_to_terrain', 'v_enumeration', 'value', 'description', 'data_model = ''CityGML 2.0'' AND name = ''RelativeToTerrainType'''),
-(NULL, 'CityObject', 'cityobject', 'relative_to_water'  , 'v_enumeration', 'value', 'description', 'data_model = ''CityGML 2.0'' AND name = ''RelativeToWaterType''');
+(NULL, 'CityObject', 'cityobject', 'relative_to_terrain', 'data_model = ''CityGML 2.0'' AND name = ''RelativeToTerrainType'''),
+(NULL, 'CityObject', 'cityobject', 'relative_to_water'  , 'data_model = ''CityGML 2.0'' AND name = ''RelativeToWaterType''');
 
 ----------------------------------------------------------------------------------------------------------------
 -- Additional entries must be added in this order:
 --
---(ade_prefix, source_class, source_table, source_column, target_table, key_column, value_column, filter_expression)
+--(ade_prefix, source_class, source_table, source_column, filter_expression)
 --
 -- And stand for:
 -- ADE_PREFIX: If an enumeration is contained in an ADE, then this field contains the ade_prefix associated in the citydb to this ADE.
@@ -201,10 +201,6 @@ VALUES
 -- SOURCE_COLUMN: The column to be associated to a codelist
 --
 -- The following values are needed to set up the "ValueReleatin" widget used in teh QGIS attribute forms.
---
--- TARGET_TABLE: The view containing all codelists values. Fixed value ('v_codelist').
--- KEY_COLUMN: fixed value ('value'), from view v_codelist
--- VALUE_COLUMN: fixed value ('description'), from view v_codelist
 -- FILTER_EXPRESSION: Expression to filter the values of the desired codelist. Basically, it refers to two columns of view v_codelist.
 ----------------------------------------------------------------------------------------------------------------
 
@@ -222,7 +218,7 @@ source_class 		varchar NOT NULL, -- Building, etc...
 source_table        varchar NOT NULL,
 source_column 		varchar NOT NULL,
 target_table 		varchar NOT NULL DEFAULT 'v_codelist', 
-key_column          varchar NOT NULL DEFAULT 'value',
+key_column			varchar NOT NULL DEFAULT 'value',
 value_column		varchar NOT NULL DEFAULT 'description',
 filter_expression	varchar NOT NULL,
 num_columns 		integer NOT NULL DEFAULT 1,     -- number of columns entries are distributed in the form

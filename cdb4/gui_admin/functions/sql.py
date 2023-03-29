@@ -339,7 +339,7 @@ def exec_revoke_qgis_usr_privileges(dlg: CDB4AdminDialog, usr_name: str, cdb_sch
         else:
             msg: str = f"Revoking privileges of cdb_schema {cdb_schemas} from user {usr_name}"
         gen_f.critical_log(
-            func=exec_grant_qgis_usr_privileges,
+            func=exec_revoke_qgis_usr_privileges,
             location=FILE_LOCATION,
             header=msg,
             error=error)

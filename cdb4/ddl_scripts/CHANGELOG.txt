@@ -3,6 +3,12 @@
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 Test whether it makes sense to add an update statement to delete trigger functions to reduce number of features in table layer metadata
 
+2023-03-29
+----------
+Version 0.10.1
+Fixed bug in function [qgis_pkg.grant_qgis_usr_privileges(...)]
+Slightly reworked table qgis_pkg.enum_lookup_config
+
 2023-03-20
 ----------
 Version 0.10

@@ -393,7 +393,6 @@ class CDBToolsMain:
         -   Executes the dialog
         """
         from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog # Admin dialog
-        from .cdb4.gui_admin.functions import tab_install_widget_functions as admin_ti_wf
         from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
