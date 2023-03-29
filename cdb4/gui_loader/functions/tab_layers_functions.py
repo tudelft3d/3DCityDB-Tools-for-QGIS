@@ -746,6 +746,10 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
                 # print(f"co_id of {detail_view_name} id {co_idx}")
                 dv_layer.setEditorWidgetSetup(index=co_idx, setup=QgsEditorWidgetSetup('TextEdit',{}))
 
+                # Set the layer as read-only if the current cdb_schema is read only
+                if dlg.CDBSchemaPrivileges == "ro":
+                    dv_layer.setReadOnly()
+
                 # Add to layer tree node
                 detail_view_node.addLayer(dv_layer)
                 QgsProject.instance().addMapLayer(dv_layer, False)
