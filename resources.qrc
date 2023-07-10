@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/plugins/citydb_loader" >
+        <file>icons/plugin_icon.png</file>
+        <file>icons/qgis_icon.png</file>
+        <file>icons/postgres_elephant.svg</file>
+        <file>icons/settings_icon.svg</file>
+        <file>icons/info_icon.svg</file>
+        <file>icons/warning_icon.svg</file>
+        <file>icons/critical_warning_icon.svg</file>
+        <file>icons/failure_icon.svg</file>
+        <file>icons/install_icon.svg</file>
+        <file>icons/refresh_icon.svg</file>
+        <file>icons/success_icon.svg</file>
+        <file>icons/uninstall_icon.svg</file>
+        <file>icons/settings_info.svg</file>
+        <file>icons/loading.gif</file>
+        <file>icons/superuser.svg</file>
+        <file>icons/user.svg</file>
+        <file>icons/layers.svg</file>
+    </qresource>
+</RCC>
