@@ -38,7 +38,7 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 The plugin has been developed using [**QGIS**](https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR** and **3.28 LTR**. Please note that support and further development will focus only on LTR versions.
 
-The server-side part of the plugin requires PostgreSQL version >= 10.
+The server-side part of the plugin requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
 Otherwise, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily recommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
 
