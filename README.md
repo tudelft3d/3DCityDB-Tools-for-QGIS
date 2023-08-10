@@ -9,10 +9,10 @@ The plugin allows to connect to local or remote instances of the free and open-s
 As semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases, the main idea behind the development of this plugin is to facilitate access and use of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the international standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL/Spatial-RDBMSs in general.
 The plugin consists of a server-side part (written in PL/pgSQL) and a client-side part (written in Python). 
 
-The client-side part offers at the moment three GUI-based tools:
+The client-side part offers, at the moment, three GUI-based tools:
 - The **Layer Loader**, to load and interact with data in the 3D City Database directly from QGIS
 - The **Bulk Deleter**, to delete features from the database, either at all at once, or by means of spatial and feature-related filters.
-- The **QGIS Package Administration**, to install the server-side part of the plugin, as well as to set up database user access and user privileges.
+- The **QGIS Package Administrator**, to install the server-side part of the plugin, as well as to set up database user access and user privileges.
 
 In particular, the **Layer Loader** offers following functionalities:
 - All CityGML modules are supported (Building, Bridge, Tunnel, Vegetation, Terrain, etc.)
@@ -27,7 +27,7 @@ In particular, the **Layer Loader** offers following functionalities:
 - Support for CityGML enumerations and codelists
 - All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
-Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.8.2.pdf)").
+Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.8.3.pdf)").
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
@@ -36,11 +36,17 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.22, including the recently released version 3.28 LTR. Please note that support and further development will focus only on LTR versions.
+The plugin has been developed using [**QGIS**](https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR** and **3.28 LTR**. Please note that support and further development will focus only on LTR versions.
 
-The server-side part of the plugin requires PostgreSQL version >= 10.
+The server-side part of the plugin requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
 Otherwise, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily recommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
+
+# Installation
+
+The easiest way to install the plug-in is via the [QGIS Plugins repository](https://plugins.qgis.org/plugins/citydb-tools/), or directly from QGIS. Just look for the 3DCityDB-Tools plug-in!
+
+Alternatively, you can download the plug-in zip file from here and install it manually. Please refer to the installation steps explained in the documentation, which also contains details on how to set up the server-side part of the plug-in.
 
 # Developers
 
@@ -49,15 +55,15 @@ The plugin is currently developed by:
 - [Konstantinos Pantelios](mailto:konstantinospantelios@yahoo.com)
 
 with contributions by:
-- [Tendai Mbwanda](tendai.mbwanda@student.tudelft.nl)
+- [Tendai Mbwanda](mailto:tmbwanda52@gmail.com)
 
-and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
+and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Support of ADEs (e.g. the Energy ADE, to start with) (Currently being investigated in an on-going [MSc Geomatics thesis at TU Delft](https://3d.bk.tudelft.nl/education/#theses))
+- Support for ADEs (Preliminary work on the Energy ADE has been already carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577))
 - Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
 - ...the sky is the limit...
 

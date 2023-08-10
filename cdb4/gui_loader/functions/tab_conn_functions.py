@@ -298,10 +298,21 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         # Also enables the settings tab
         # Fill the combo box with the codelist selection
         
-        codelist_set_names: list = sql.fetch_codelist_set_names(dlg)
+        CityGML_codelist_set_names: list = sql.fetch_CityGML_codelist_set_names(dlg)
         # print("Initializing combo box with:", codelist_set_names)
-        if codelist_set_names:
-            ts_wf.fill_codelist_selection_box(dlg, codelist_set_names)
+        if CityGML_codelist_set_names:
+            tl_wf.fill_CityGML_codelist_selection_box(dlg, CityGML_codelist_set_names)
+
+        # TO DO
+        #
+        # Add similar step to retrieve ADE codelist set
+        #
+        # if dlg.ADE_PREFIX:
+        #     ADE_codelist_set_names: list = sql.fetch_ADE_codelist_set_names(dlg)
+        #     # print("Initializing combo box with:", codelist_set_names)
+        #     if ADE_codelist_set_names:
+        #         tl_wf.fill_ADE_codelist_selection_box(dlg, ADE_codelist_set_names)            
+        #
 
         dlg.tabSettings.setDisabled(False)
 

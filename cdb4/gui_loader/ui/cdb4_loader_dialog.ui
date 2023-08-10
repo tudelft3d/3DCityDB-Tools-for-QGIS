@@ -13,7 +13,7 @@
     <x>0</x>
     <y>0</y>
     <width>705</width>
-    <height>853</height>
+    <height>848</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1145,10 +1145,16 @@ Current citydb schema: '{sch}'</string>
           </property>
           <item>
            <widget class="QGraphicsView" name="gvCanvasL">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>350</height>
+              <height>200</height>
              </size>
             </property>
             <property name="toolTip">
@@ -1232,22 +1238,90 @@ Current citydb schema: '{sch}'</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
+         </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Layers will be shown only for available data within the &lt;span style=&quot; font-weight:600; color:#00aa00;&quot;&gt;green box&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Layer selection</string>
          </property>
-         <layout class="QFormLayout" name="fLayoutLayerSelection">
-          <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
            <widget class="QLabel" name="lblFeatureType">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>110</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="text">
              <string>Feature type:</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="0" column="2">
+           <widget class="QLabel" name="lblLod">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>110</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Level of Detail:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QComboBox" name="cbxLod">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only &lt;span style=&quot; font-weight:600;&quot;&gt;LoDs&lt;/span&gt; for data available within the &lt;span style=&quot; font-weight:600; color:#00aa00;&quot;&gt;green box&lt;/span&gt; are shown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
            <widget class="QComboBox" name="cbxFeatureType">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only CityGML&lt;span style=&quot; font-weight:600;&quot;&gt; Feature types&lt;/span&gt; for data available within the &lt;span style=&quot; font-weight:600; color:#00aa00;&quot;&gt;green box&lt;/span&gt; are shown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -1256,17 +1330,53 @@ Current citydb schema: '{sch}'</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="lblLod">
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbxCodeLists">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Codelists selection</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblCodeListSelCityGML">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>110</width>
+              <height>23</height>
+             </size>
+            </property>
             <property name="text">
-             <string>Level of Detail:</string>
+             <string>CityGML attributes:</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QComboBox" name="cbxLod">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only &lt;span style=&quot; font-weight:600;&quot;&gt;LoDs&lt;/span&gt; for data available within the &lt;span style=&quot; font-weight:600; color:#00aa00;&quot;&gt;green box&lt;/span&gt; are shown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="cbxCodeListSelCityGML">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -1284,20 +1394,57 @@ Current citydb schema: '{sch}'</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>450</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="toolTip">
           <string/>
          </property>
          <property name="title">
           <string>Available layers</string>
          </property>
-         <layout class="QVBoxLayout" name="vLayoutAvailableL">
-          <item>
-           <widget class="QgsCheckableComboBox" name="ccbxLayers">
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="2">
+           <widget class="QPushButton" name="btnImport">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+             <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>175</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Selected layers will be added to the Layer Tree in QGIS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Import selected layers</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QgsCheckableComboBox" name="ccbxLayers">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>400</width>
+              <height>23</height>
+             </size>
             </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only&lt;span style=&quot; font-weight:600;&quot;&gt; layers&lt;/span&gt; for available data within the &lt;span style=&quot; font-weight:600; color:#00aa00;&quot;&gt;green box&lt;/span&gt; are shown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -1316,24 +1463,21 @@ Current citydb schema: '{sch}'</string>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="btnImport">
-            <property name="enabled">
-             <bool>false</bool>
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+            <property name="sizeType">
+             <enum>QSizePolicy::Minimum</enum>
             </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Selected layers will be added to the Layer Tree in QGIS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
-            <property name="text">
-             <string>Import selected layers</string>
-            </property>
-           </widget>
+           </spacer>
           </item>
          </layout>
         </widget>
@@ -1584,53 +1728,6 @@ Current citydb schema: '{sch}'</string>
             </property>
             <property name="text">
              <string>Force generation of all layers (also empty ones)</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="gbxCodeLists">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>55</height>
-          </size>
-         </property>
-         <property name="title">
-          <string>Codelist selection</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QLabel" name="lblCodeListSelection">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Set of codelists to be linked to the attribute forms:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="cbxCodeListSelection">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="frame">
-             <bool>true</bool>
             </property>
            </widget>
           </item>

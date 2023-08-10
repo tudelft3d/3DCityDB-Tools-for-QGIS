@@ -585,7 +585,7 @@ def fetch_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) 
         dlg.conn.rollback()
 
 
-def fetch_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
+def fetch_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
     """SQL query that retrieves the codelist set names to fill the codelist selection box 
     
     *   :returns: the unique names in table codelist_lookup_config
@@ -615,8 +615,45 @@ def fetch_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_codelist_set_names,
+            func=fetch_CityGML_codelist_set_names,
             location=FILE_LOCATION,
-            header=f"Retrieving codelist set names from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
+            header=f"Retrieving CityGML codelist set from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
             error=error)
         dlg.conn.rollback()
+
+# def fetch_ADE_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
+#     """SQL query that retrieves the codelist set names to fill the codelist selection box 
+    
+#     *   :returns: the unique names in table codelist_lookup_config
+#         :rtype: list of tuples
+#     """
+#     query = pysql.SQL("""
+#         SELECT DISTINCT name FROM {_usr_schema}.codelist_lookup_config
+#         WHERE ade_prefix = {_ade_prefix}
+#         ORDER BY name;
+#         """).format(
+#         _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
+#         _ade_prefix = pysql.Identifier(dlg.ADE_PREFIX)
+#         )
+
+#     try:
+#         # with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+#         with dlg.conn.cursor() as cur:
+#             cur.execute(query)
+#             res = cur.fetchall()
+#         dlg.conn.commit()
+
+#         codelist_set_names = [elem[0] for elem in res]
+
+#         if not codelist_set_names:
+#             codelist_set_names = []
+     
+#         return codelist_set_names
+
+#     except (Exception, psycopg2.Error) as error:
+#         gen_f.critical_log(
+#             func=fetch_ADE_codelist_set_names,
+#             location=FILE_LOCATION,
+#             header=f"Retrieving ADE codelist set from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
+#             error=error)
+#         dlg.conn.rollback()
