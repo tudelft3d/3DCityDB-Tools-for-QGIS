@@ -27,7 +27,7 @@ In particular, the **Layer Loader** offers following functionalities:
 - Support for CityGML enumerations and codelists
 - All layer geometries are 3D: they can be visualised both in 2D and in 3D (Please be aware that 3D visualisation in QGIS 3D map is still a bit unstable...).
 
-Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.8.2.pdf)").
+Further details, and a user guide, can be found in the \user_guide subfolder of the plugin installation directory (see file "[3DCityDB-Tools_UserGuide.pdf](user_guide/3DCityDB-Tools_UserGuide_0.8.3.pdf)").
 
 Some datasets for testing purposes are available, too, and are contained in the \test_datasets subfolder.
 
@@ -51,13 +51,13 @@ The plugin is currently developed by:
 with contributions by:
 - [Tendai Mbwanda](tendai.mbwanda@student.tudelft.nl)
 
-and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
+and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Support of ADEs (e.g. the Energy ADE, to start with) (Currently being investigated in an on-going [MSc Geomatics thesis at TU Delft](https://3d.bk.tudelft.nl/education/#theses))
+- Support of ADEs (e.g. the Energy ADE, to start with) (Preliminary work  carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577))
 - Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
 - ...the sky is the limit...
 
