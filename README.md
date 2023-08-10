@@ -55,7 +55,7 @@ The plugin is currently developed by:
 - [Konstantinos Pantelios](mailto:konstantinospantelios@yahoo.com)
 
 with contributions by:
-- [Tendai Mbwanda](tendai.mbwanda@student.tudelft.nl)
+- [Tendai Mbwanda](mailto:tmbwanda52@gmail.com)
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
