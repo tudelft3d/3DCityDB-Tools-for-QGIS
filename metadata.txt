@@ -43,7 +43,7 @@ changelog= 0.8.3 Minor changes to the Layer Loader dialog GUI
  0.1 First internal release
 
 # Tags are comma separated with spaces allowed
-tags=PostgreSQL, 3DCityDB, CityGML
+tags=PostgreSQL, PostGIS, 3DCityDB, CityGML, CityJSON
 
 homepage=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
