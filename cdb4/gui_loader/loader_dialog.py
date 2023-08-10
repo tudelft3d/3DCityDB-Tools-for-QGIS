@@ -123,7 +123,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Dictionary containing config data to set up codelist combo boxes in the attribute forms
         self.CodeListConfigRegistry: dict = {}
         # Variable to store the selected CodeListSet
-        self.selectedCodeListSet: str = None
+        self.selectedCityGMLCodeListSet: str = None
 
         self.CDBSchemaPrivileges: str = None
         # self.n_cityobjects: int = 0           # Number of cityobjects in the current cdb_schema
@@ -1180,23 +1180,29 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             if res == 16384: # YES, proceed with importing layers
                 success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
-                return None #Import Cancelled
+                return None # Import Cancelled
         else:
 
             # Codelist settings and loading of the configs
-            sel_codelist_set: str = self.cbxCodeListSelection.currentData()
-            if sel_codelist_set == "None":
+            sel_CityGML_codelist_set: str = self.cbxCodeListSelCityGML.currentData()
+            if sel_CityGML_codelist_set == "None":
                 # do nothing
                 pass
             else:
-                if any([not self.selectedCodeListSet, self.selectedCodeListSet != sel_codelist_set]):
+                if any([not self.selectedCityGMLCodeListSet, self.selectedCityGMLCodeListSet != sel_CityGML_codelist_set]):
                     # Set the new value
-                    self.selectedCodeListSet = sel_codelist_set
+                    self.selectedCityGMLCodeListSet = sel_CityGML_codelist_set
                     # print("Working with Codelist set:", self.selectedCodeListSet)
                     # Initialize the enum_lookup_config_registry
-                    tl_f.populate_codelist_config_registry(self, codelist_set_name=sel_codelist_set)
+                    tl_f.populate_codelist_config_registry(self, codelist_set_name=sel_CityGML_codelist_set)
 
             success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
+
+            # TO DO
+            # 
+            # Add similar process for selected ADE codelist set
+            # 
+            # 
 
         if not success:
             QgsMessageLog.logMessage(

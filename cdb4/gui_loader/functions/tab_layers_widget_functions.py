@@ -21,6 +21,55 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 ## Setup widget functions for 'Layer' tab
 ####################################################
 
+def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_set_names: list = None) -> None:
+    """Function that fills the 'Select CodeLists group' combo box.
+    """
+    # Clean combo box from previous leftovers.
+    dlg.cbxCodeListSelCityGML.clear()
+
+    if not CityGML_codelist_set_names:
+        # Disable the combobox
+        dlg.cbxCodeListSelCityGML.setDisabled(True)
+        dlg.cbxCodeListSelCityGML.setDisabled(True)
+    else:
+        label: str = f"None"
+        dlg.cbxCodeListSelCityGML.addItem(label, userData=label)
+        for codelist_set_name in CityGML_codelist_set_names:
+            label: str = f"{codelist_set_name}"
+            dlg.cbxCodeListSelCityGML.addItem(label, userData=label)
+        if not dlg.cbxCodeListSelCityGML.isEnabled():
+            # Enable the combobox
+            dlg.cbxCodeListSelCityGML.setDisabled(False)
+            dlg.lblCodeListSelCityGML.setDisabled(False)
+   
+    # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
+    return None
+
+# def fill_ADE_codelist_selection_box(dlg: CDB4LoaderDialog, ADE_codelist_set_names: list = None) -> None:
+#     """Function that fills the 'Select CodeLists group' combo box.
+#     """
+#     # Clean combo box from previous leftovers.
+#     dlg.cbxCodeListSelADE.clear()
+
+#     if not ADE_codelist_set_names:
+#         # Disable the combobox
+#         dlg.cbxCodeListSelADE.setDisabled(True)
+#         dlg.cbxCodeListSelADE.setDisabled(True)
+#     else:
+#         label: str = f"None"
+#         dlg.cbxCodeListSelADE.addItem(label, userData=label)
+#         for codelist_set_name in ADE_codelist_set_names:
+#             label: str = f"{codelist_set_name}"
+#             dlg.cbxCodeListSelADE.addItem(label, userData=label)
+#         if not dlg.cbxCodeListSelADE.isEnabled():
+#             # Enable the combobox
+#             dlg.cbxCodeListSelADE.setDisabled(False)
+#             dlg.lblCodeListSelADE.setDisabled(False)
+   
+    # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
+    return None
+
+
 # In 'Basemap (OMS)' groupBox.
 def gbxBasemapL_setup(dlg: CDB4LoaderDialog) ->  None:
     """Function to setup the 'Basemap' groupbox. It uses an additional canvas instance to store an OSM map
@@ -59,6 +108,7 @@ def tabLayers_reset(dlg: CDB4LoaderDialog) -> None:
     lblInfoText_reset(dlg)
     gbxBasemapL_reset(dlg)
     gbxLayerSelection_reset(dlg)
+    gbxCodeListSelection_reset(dlg)
     gbxAvailableL_reset(dlg)
 
     return None
@@ -93,6 +143,14 @@ def gbxLayerSelection_reset(dlg: CDB4LoaderDialog) -> None:
     dlg.cbxLod.clear()
 
     return None
+
+def gbxCodeListSelection_reset(dlg: CDB4LoaderDialog) -> None:
+    """Function to reset the 'Miscellaneous option' groupbox to the DEFAULT values
+    """
+    dlg.cbxCodeListSelCityGML.clear()
+    # dlg.cbxCodeListSelADE.clear()
+    return None
+
 
 
 def gbxAvailableL_reset(dlg: CDB4LoaderDialog) -> None:
