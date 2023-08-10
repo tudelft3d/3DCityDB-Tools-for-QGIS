@@ -9,10 +9,10 @@ The plugin allows to connect to local or remote instances of the free and open-s
 As semantic 3D city models tend to be huge datasets and are generally best managed in spatial databases, the main idea behind the development of this plugin is to facilitate access and use of [CityGML](https://en.wikipedia.org/wiki/CityGML)/[CityJSON](https://www.cityjson.org/) data for those practitioners that lack a deep knowledge of the international standard [OCG CityGML data model](https://www.ogc.org/standards/citygml), and/or have limited experience with SQL/Spatial-RDBMSs in general.
 The plugin consists of a server-side part (written in PL/pgSQL) and a client-side part (written in Python). 
 
-The client-side part offers at the moment three GUI-based tools:
+The client-side part offers, at the moment, three GUI-based tools:
 - The **Layer Loader**, to load and interact with data in the 3D City Database directly from QGIS
 - The **Bulk Deleter**, to delete features from the database, either at all at once, or by means of spatial and feature-related filters.
-- The **QGIS Package Administration**, to install the server-side part of the plugin, as well as to set up database user access and user privileges.
+- The **QGIS Package Administrator**, to install the server-side part of the plugin, as well as to set up database user access and user privileges.
 
 In particular, the **Layer Loader** offers following functionalities:
 - All CityGML modules are supported (Building, Bridge, Tunnel, Vegetation, Terrain, etc.)
@@ -36,11 +36,17 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plugin has been developed using [QGIS](https://www.qgis.org/nl/site/forusers/download.html) 3.22 LTR and works best with it. Our tests so far show that it works with any QGIS version >= 3.22, including the recently released version 3.28 LTR. Please note that support and further development will focus only on LTR versions.
+The plugin has been developed using **[QGIS]**(https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR** and **3.28 LTR**. Please note that support and further development will focus only on LTR versions.
 
 The server-side part of the plugin requires PostgreSQL version >= 10.
 
 Otherwise, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily recommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
+
+# Installation
+
+The easiest way to install the plug-in is via the [QGIS Plugins repository](https://plugins.qgis.org/plugins/citydb-tools/), or directly from QGIS. Just look for the 3DCityDB-Tools plug-in!
+
+Alternatively, you can download the plug-in zip file from here and install it manually. Please refer to the installation steps explained in the documentation, which also contains details on how to set up the server-side part of the plug-in.
 
 # Developers
 
