@@ -298,20 +298,18 @@ class CDBToolsMain:
             # Create the dialog with elements (after translation).
             self.loader_dlg = CDB4LoaderDialog(cdbMain=self)
 
-            dlg = self.loader_dlg
-
             # Replace empty graphics view widget with Map canvas.
-            dlg.gLayoutBasemap.replaceWidget(dlg.gvCanvas, dlg.CANVAS)
-            dlg.vLayoutBasemapL.replaceWidget(dlg.gvCanvasL, dlg.CANVAS_L)
+            self.loader_dlg .gLayoutBasemap.replaceWidget(self.loader_dlg .gvCanvas, self.loader_dlg .CANVAS)
+            self.loader_dlg .vLayoutBasemapL.replaceWidget(self.loader_dlg .gvCanvasL, self.loader_dlg .CANVAS_L)
 
             # Remove empty graphics View widget from dialog.
-            dlg.gvCanvas.setParent(None)
-            dlg.gvCanvasL.setParent(None)
+            self.loader_dlg .gvCanvas.setParent(None)
+            self.loader_dlg .gvCanvasL.setParent(None)
 
             # Get existing connections from QGIS profile settings.
             # They are added to the combo box (cbxExistingConn), and 
             # an event is fired (dlg.evt_cbxExistingConn_changed())
-            conn_f.get_qgis_postgres_conn_list(dlg)
+        conn_f.get_qgis_postgres_conn_list(self.loader_dlg)
 
         self.DialogRegistry.update({self.loader_dlg.DIALOG_VAR_NAME: self.loader_dlg})
 
@@ -351,18 +349,16 @@ class CDBToolsMain:
             # Create the dialog with elements (after translation).
             self.deleter_dlg = CDB4DeleterDialog(cdbMain=self)
 
-            dlg = self.deleter_dlg
-
             # Replace empty graphics view widget with Map canvas.
-            dlg.gLayoutBasemap.replaceWidget(dlg.gvCanvas, dlg.CANVAS)
+            self.deleter_dlg.gLayoutBasemap.replaceWidget(self.deleter_dlg.gvCanvas, self.deleter_dlg.CANVAS)
 
             # Remove empty graphics View widget from dialog.
-            dlg.gvCanvas.setParent(None)
+            self.deleter_dlg.gvCanvas.setParent(None)
 
             # Get existing connections from QGIS profile settings.
             # They are added to the combo box (cbxExistingConn), and 
             # an event is fired (dlg.evt_cbxExistingConn_changed())
-            conn_f.get_qgis_postgres_conn_list(dlg) # Stored in self.conn
+        conn_f.get_qgis_postgres_conn_list(self.deleter_dlg) # Stored in self.conn
 
         self.DialogRegistry.update({self.deleter_dlg.DIALOG_VAR_NAME: self.deleter_dlg})
 
