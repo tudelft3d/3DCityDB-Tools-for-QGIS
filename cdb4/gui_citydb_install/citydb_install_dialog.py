@@ -94,7 +94,7 @@ class CityDBInstallDialog(QtWidgets.QDialog, FORM_CLASS):
             inst.setup_connection_file_win(db=self.currentConnection, psql_path=psql_path)
 
             # Change current working directory for the scipt chain to work
-            os.chdir(CITYDB_DIR_Shell_SCRIPTS_UNIX) 
+            os.chdir(CITYDB_DIR_Shell_SCRIPTS_WIN) 
 
             # Command to execute CREATE_DB.bat in a new command prompt window
             command = f'start cmd /k "{CITYDB_Shell_SCRIPTS_DB_WIN}"'
