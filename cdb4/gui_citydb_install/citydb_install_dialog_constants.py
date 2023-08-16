@@ -33,7 +33,7 @@ set CITYDB={db}
 set PGUSER={user}
 ::-----------------------------------------------------------------------------
 """
-PSQL_PROBABLE_PATH_WIN = "e.g. C:\Program Files\PostgreSQL\14\bin\psql.exe"
+PSQL_PROBABLE_PATH_WIN = "e.g. C:\Program Files\PostgreSQL\\14\\bin\psql.exe"
 
 # UNIX
 CITYDB_DIR_Shell_SCRIPTS_UNIX = p.join(CITYDB_DIR,"postgresql","ShellScripts","Unix")
