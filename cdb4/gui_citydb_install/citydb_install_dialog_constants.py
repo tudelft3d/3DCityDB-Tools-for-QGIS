@@ -33,7 +33,7 @@ set CITYDB={db}
 set PGUSER={user}
 ::-----------------------------------------------------------------------------
 """
-
+PSQL_PROBABLE_PATH_WIN = "e.g. C:\Program Files\PostgreSQL\14\bin\psql.exe"
 
 # UNIX
 CITYDB_DIR_Shell_SCRIPTS_UNIX = p.join(CITYDB_DIR,"postgresql","ShellScripts","Unix")
@@ -43,6 +43,8 @@ CITYDB_Shell_SCRIPTS_DB_UNIX = p.join(CITYDB_DIR,"postgresql","ShellScripts","Un
 # ...
 # ...
 # NOTE: We can add all of the scripts
+
+PSQL_PROBABLE_PATH_UNIX = "e.g. /usr/bin/psql"
 
 CITYDB_CONN_MOCK_UNIX = """
 #!/bin/bash
