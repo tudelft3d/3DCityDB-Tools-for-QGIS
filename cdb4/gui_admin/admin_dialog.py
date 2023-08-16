@@ -49,6 +49,8 @@ from .functions import tab_settings_widget_functions as ts_wf
 from .functions import threads as thr
 from . import admin_constants as c
 
+from ..gui_citydb_install.citydb_install_dialog import CityDBInstallDialog
+
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_admin_dialog.ui"))
 
@@ -126,6 +128,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         self.cbxExistingConn.currentIndexChanged.connect(self.evt_cbxExistingConn_changed)
         self.btnNewConn.clicked.connect(self.evt_btnNewConn_clicked)
         self.btnConnectToDb.clicked.connect(self.evt_btnConnectToDb_clicked)
+
+        self.btnCityDBInstall.clicked.connect(self.evt_btnCityDBInstall_clicked)
 
         # 'Main Installation' group box signals
         self.btnMainInst.clicked.connect(self.evt_btnMainInst_clicked)
@@ -269,6 +273,18 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             # dlgConnector.close()
 
         # Re-set the input blockage
+        self.setWindowModality(Qt.ApplicationModal)
+
+
+    def evt_btnCityDBInstall_clicked(self) -> None:
+        # Bypass the input blockade for the connector dialogue.
+        self.setWindowModality(Qt.WindowModal)
+
+        dlgInstallation = CityDBInstallDialog(self.DB)
+        dlgInstallation.setWindowModality(Qt.ApplicationModal)
+        dlgInstallation.show()
+        dlgInstallation.exec_()
+
         self.setWindowModality(Qt.ApplicationModal)
 
 

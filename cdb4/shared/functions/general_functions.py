@@ -76,3 +76,13 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
         tag=main_c.PLUGIN_NAME_LABEL,
         level=Qgis.Critical,
         notifyUser=True)
+
+def on_windows() -> bool: 
+    """Function that checks if the programm is run on Windows OS"""
+
+    return os.name == "nt"
+
+def on_unix() -> bool:
+    """Function that checks if the programm is run on UNIX"""
+
+    return os.name == "posix"
