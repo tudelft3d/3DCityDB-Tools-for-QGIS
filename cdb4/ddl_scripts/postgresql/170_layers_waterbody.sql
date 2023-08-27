@@ -180,7 +180,7 @@ sql_feat_count := concat('
 	SELECT count(o.id) AS n_features
 	FROM 
 		',qi_cdb_schema,'.waterbody AS o
-		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND co.objectclass_id = ',r.class_id,' ',sql_where,')
 	WHERE
 		o.',t.lodx_label,'_multi_curve IS NOT NULL;
 ');
@@ -208,8 +208,8 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		o.id::bigint AS co_id,
 		o.',t.lodx_label,'_multi_curve::geometry(MultiLineStringZ, ',srid,') AS geom
 	FROM
-		',qi_cdb_schema,'.building AS o
-		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')	
+		',qi_cdb_schema,'.waterbody AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND co.objectclass_id = ',r.class_id,' ',sql_where,')	
 	WHERE
 		o.',t.lodx_label,'_multi_curve IS NOT NULL
 WITH NO DATA;
@@ -223,7 +223,7 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, 
 SELECT',
 sql_co_atts,
 sql_cfu_atts,'
-  g.geom::geometry(MultiPolygonZ,',srid,')
+  g.geom::geometry(MultiLineStringZ,',srid,')
 FROM
 	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
@@ -619,8 +619,8 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, 
 SELECT',sql_co_atts,
 CASE 
 	WHEN u.class_name = 'WaterSurface' THEN '
-	  water_level,
-	  water_level_codespace,'
+  o.water_level,
+  o.water_level_codespace,'
 	ELSE 
 		NULL
 END,'
