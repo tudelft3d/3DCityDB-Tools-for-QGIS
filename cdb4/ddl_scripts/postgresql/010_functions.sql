@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 1;
-code_name      := 'International Day of Happiness';
-release_date   := '2023-03-29'::date;
+minor_revision := 2;
+code_name      := 'Nero and Poppaea';
+release_date   := '2023-08-28'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
