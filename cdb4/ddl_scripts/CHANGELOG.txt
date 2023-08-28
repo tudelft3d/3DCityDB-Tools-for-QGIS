@@ -6,8 +6,12 @@ Test whether it makes sense to add an update statement to delete trigger functio
 2023-08-28
 ----------
 Version 0.10.2
-Added support for MultiCurve LoD0-1 in WaterBody module
-Corrected minor bugs in Transportation and Vegetation module
+Some code restructuring
+Waterdoby module:
+	- Added support for MultiCurve LoD0-1 layers
+	- Added codelist values
+Fixed minor bugs in Vegetation and Transportation modules
+Fixed a bug in function [qgis_pkg.list_feature_types(...)]
 
 2023-03-29
 ----------
