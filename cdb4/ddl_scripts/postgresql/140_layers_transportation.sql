@@ -158,11 +158,12 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('TransportationComplex'::varchar,	42::integer, 	'trn_complex'::varchar),
-	('Track',							43,				'trn_track'),
-	('Railway',							44,				'trn_railway'),
-	('Road',							45,				'trn_road'),
-	('Square',							46,				'trn_square')	
+	('TransportationComplex'::varchar,	qgis_pkg.class_name_to_class_id(cdb_schema, 'AuxiliaryTrafficArea', NULL)::integer,	'trn_complex'::varchar),
+	('Track',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Track', NULL)						,	'trn_track'),
+	('Railway',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Railway', NULL)					,	'trn_railway'),
+	('Road',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Road', NULL)						,	'trn_road'),
+	('Square',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Square', NULL)						,	'trn_square')	
+
 	) AS t(class_name, class_id, class_label)
 LOOP
 
@@ -373,8 +374,8 @@ codelist_cols_array := ARRAY[['traffic_area','class'],['traffic_area','function'
 
 		FOR u IN 
 			SELECT * FROM (VALUES
-			('TrafficArea'::varchar,	47::integer, 	'traffic_area'::varchar),
-			('AuxiliaryTrafficArea',	48,				'traffic_area_aux')
+			('TrafficArea'::varchar,	qgis_pkg.class_name_to_class_id(cdb_schema, 'TrafficArea', NULL)::integer, 	'traffic_area'::varchar),
+			('AuxiliaryTrafficArea',	qgis_pkg.class_name_to_class_id(cdb_schema, 'AuxiliaryTrafficArea', NULL),	'traffic_area_aux')
 			) AS t(class_name, class_id, class_label)
 		LOOP
 
@@ -397,8 +398,8 @@ l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_',u.class_lab
 --av_name			:= concat('_a_',cdb_schema,'_trn_traffic_area');
 gv_name			:= concat('_g_',l_name);
 qml_form_name  := 'trn_traffic_area_form.qml';
-qml_symb_name  := 'poly_dark_grey_semi_trasnp_symb.qml';
-qml_3d_name    := 'poly_dark_grey_semi_trasnp_3d.qml';
+qml_symb_name  := 'poly_dark_grey_semi_transp_symb.qml';
+qml_3d_name    := 'poly_dark_grey_semi_transp_3d.qml';
 trig_f_suffix := 'traffic_area';
 qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
 qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);

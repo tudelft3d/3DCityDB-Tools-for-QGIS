@@ -299,16 +299,16 @@ class CDBToolsMain:
             self.loader_dlg = CDB4LoaderDialog(cdbMain=self)
 
             # Replace empty graphics view widget with Map canvas.
-            self.loader_dlg .gLayoutBasemap.replaceWidget(self.loader_dlg .gvCanvas, self.loader_dlg .CANVAS)
-            self.loader_dlg .vLayoutBasemapL.replaceWidget(self.loader_dlg .gvCanvasL, self.loader_dlg .CANVAS_L)
+            self.loader_dlg.gLayoutBasemap.replaceWidget(self.loader_dlg.gvCanvas, self.loader_dlg.CANVAS)
+            self.loader_dlg.vLayoutBasemapL.replaceWidget(self.loader_dlg.gvCanvasL, self.loader_dlg.CANVAS_L)
 
             # Remove empty graphics View widget from dialog.
-            self.loader_dlg .gvCanvas.setParent(None)
-            self.loader_dlg .gvCanvasL.setParent(None)
+            self.loader_dlg.gvCanvas.setParent(None)
+            self.loader_dlg.gvCanvasL.setParent(None)
 
-            # Get existing connections from QGIS profile settings.
-            # They are added to the combo box (cbxExistingConn), and 
-            # an event is fired (dlg.evt_cbxExistingConn_changed())
+        # Get existing connections from QGIS profile settings.
+        # They are added to the combo box (cbxExistingConn), and 
+        # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.loader_dlg)
 
         self.DialogRegistry.update({self.loader_dlg.DIALOG_VAR_NAME: self.loader_dlg})
@@ -355,9 +355,9 @@ class CDBToolsMain:
             # Remove empty graphics View widget from dialog.
             self.deleter_dlg.gvCanvas.setParent(None)
 
-            # Get existing connections from QGIS profile settings.
-            # They are added to the combo box (cbxExistingConn), and 
-            # an event is fired (dlg.evt_cbxExistingConn_changed())
+        # Get existing connections from QGIS profile settings.
+        # They are added to the combo box (cbxExistingConn), and 
+        # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.deleter_dlg) # Stored in self.conn
 
         self.DialogRegistry.update({self.deleter_dlg.DIALOG_VAR_NAME: self.deleter_dlg})

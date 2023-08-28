@@ -155,13 +155,98 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 
 root_class := 'WaterBody';
 ---------------------------------------------------------------
--- Create LAYER WATERBODY_LOD0
+-- Create LAYER WATERBODY
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
 	('WaterBody'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'WaterBody', NULL)::integer, 'waterbody'::varchar)	
 	) AS t(class_name, class_id, class_label)
 LOOP
+
+---------------------------------------------------------------
+-- Create LAYER WATERBODY_LOD0-1 MultiCurve
+---------------------------------------------------------------
+	FOR t IN 
+		SELECT * FROM (VALUES
+		('LoD0'::varchar, 'lod0'::varchar),
+		('LoD1'         , 'lod1'         )
+		) AS t(lodx_name, lodx_label)
+	LOOP
+
+codelist_cols_array := ARRAY[['waterbody','class'],['waterbody','function'],['waterbody','usage']];
+
+-- First check if there are any features at all in the database schema
+sql_feat_count := concat('
+	SELECT count(o.id) AS n_features
+	FROM 
+		',qi_cdb_schema,'.waterbody AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND co.objectclass_id = ',r.class_id,' ',sql_where,')
+	WHERE
+		o.',t.lodx_label,'_multi_curve IS NOT NULL;
+');
+EXECUTE sql_feat_count INTO num_features;
+
+RAISE NOTICE 'Found % features for % % (multi_curve)', num_features, r.class_name, t.lodx_name;
+
+curr_class := r.class_name;
+l_name			:= concat(cdb_schema,'_',r.class_label,'_',t.lodx_label,'_multi_curve');
+gv_name			:= concat('_g_',l_name);
+qml_form_name  := 'wtr_body_form.qml';
+qml_symb_name  := 'line_blue_symb.qml';
+qml_3d_name    := 'line_blue_3d.qml';
+trig_f_suffix := 'waterbody';
+qi_l_name  := quote_ident(l_name); ql_l_name := quote_literal(l_name);
+qi_gv_name  := quote_ident(gv_name); ql_gv_name := quote_literal(gv_name);
+
+IF (num_features > 0) OR (force_layer_creation IS TRUE) THEN
+
+--------------------
+-- MATERIALIZED VIEW (for geom)
+--------------------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schema,qi_gv_name),'
+	SELECT
+		o.id::bigint AS co_id,
+		o.',t.lodx_label,'_multi_curve::geometry(MultiLineStringZ, ',srid,') AS geom
+	FROM
+		',qi_cdb_schema,'.waterbody AS o
+		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id AND co.objectclass_id = ',r.class_id,' ',sql_where,')	
+	WHERE
+		o.',t.lodx_label,'_multi_curve IS NOT NULL
+WITH NO DATA;
+COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
+
+-------
+--  VIEW (for atts + geom)
+-------
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, qi_l_name),'
+SELECT',
+sql_co_atts,
+sql_cfu_atts,'
+  g.geom::geometry(MultiLineStringZ,',srid,')
+FROM
+	',qi_usr_schema,'.',qi_gv_name,' AS g 
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+  	INNER JOIN ',qi_cdb_schema,'.waterbody AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
+COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
+ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
+');
+
+-- Add triggers to make view updatable
+sql_trig := concat(sql_trig,qgis_pkg.generate_sql_triggers(usr_schema, l_name, trig_f_suffix));
+-- Add entry to update table layer_metadata
+sql_ins := concat(sql_ins,'
+(',ql_cdb_schema,',',ql_l_type,',',ql_feature_type,',',quote_literal(root_class),',',quote_literal(curr_class),',',quote_literal(t.lodx_label),',',ql_l_name,',',ql_gv_name,',',num_features,',clock_timestamp(),',quote_literal(qml_form_name),',',quote_literal(qml_symb_name),',',quote_literal(qml_3d_name),',',quote_nullable(co_enum_cols_array),',',quote_nullable(codelist_cols_array),'),');
+
+ELSE
+sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_else(qi_usr_schema, ql_cdb_schema, ql_l_type, ql_l_name, qi_gv_name));
+END IF;
+
+	END LOOP; -- Waterbody MultiCurve LoD0-1
+
+---------------------------------------------------------------
+-- Create LAYER WATERBODY_LOD0
+---------------------------------------------------------------
 	FOR t IN 
 		SELECT * FROM (VALUES
 		('LoD0'::varchar, 'lod0'::varchar)
@@ -224,7 +309,7 @@ sql_cfu_atts,'
 FROM
 	',qi_usr_schema,'.',qi_gv_name,' AS g 
 	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
-  	INNER JOIN ',qi_cdb_schema,'.transportation_complex AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
+  	INNER JOIN ',qi_cdb_schema,'.waterbody AS o ON (o.id = co.id AND o.objectclass_id = ',r.class_id,');
 COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
 ALTER TABLE ',qi_usr_schema,'.',qi_l_name,' OWNER TO ',qi_usr_name,';
 ');
@@ -534,8 +619,8 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_view_header(qi_usr_schema, 
 SELECT',sql_co_atts,
 CASE 
 	WHEN u.class_name = 'WaterSurface' THEN '
-	  water_level,
-	  water_level_codespace,'
+  o.water_level,
+  o.water_level_codespace,'
 	ELSE 
 		NULL
 END,'

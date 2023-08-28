@@ -319,8 +319,19 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
 
         # Show database name
         dlg.lblConnToDb_out.setText(c.success_html.format(text=dlg.DB.database_name))
+
+        # Get the version of the newly installed QGIS Package
+        qgis_pkg_curr_version: tuple = sh_sql.exec_qgis_pkg_version(dlg)
+        # Named tuple: full_version, major_version, minor_version, minor_revision, code_name, release_date
+        # print("Installed QGIS Package version: ", qgis_pkg_curr_version)
+
+        qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version         # e.g. 0.9.1
+        #qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version.major_version   # e.g. 0
+        #qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version.minor_version   # e.g. 9
+        #qgis_pkg_curr_version_minor_rev: int = qgis_pkg_curr_version.minor_revision  # e.g. 1
+
         # Update the label regarding the QGIS Package Installation
-        dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + c.QGIS_PKG_MIN_VERSION_TXT + ")").format(pkg=dlg.QGIS_PKG_SCHEMA))
+        dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + qgis_pkg_curr_version_txt + ")").format(pkg=dlg.QGIS_PKG_SCHEMA))
 
         # Inform user
         QgsMessageLog.logMessage(
@@ -438,6 +449,7 @@ class QgisPackageUninstallWorker(QObject):
 
         # Named tuple: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
         qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(self.dlg)
+        # print(f"Uninstalling QGIS Package version: {qgis_pkg_curr_version}")
 
         # print(qgis_pkg_curr_version)
         qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version.major_version   # e.g. 0
@@ -986,10 +998,7 @@ class QgisPackageUninstallWorker(QObject):
         # 8) drop qgis_pkg schema
 
         # Get required information
-        
-        # usr_names = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
-        # print("uninstall usr_names:", usr_names)
-
+       
         curr_usr = dlg.DB.username # this is a superuser, as he has succesfully logged in and is using the GUI.
 
         # Get users that are members of the group

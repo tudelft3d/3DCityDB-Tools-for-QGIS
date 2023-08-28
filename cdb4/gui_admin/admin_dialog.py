@@ -287,7 +287,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Series of tests to be carried out when I connect as admin.
         #
         # 1) Can I connect to the database?
-        #        if yes: Is the PostgreSQL version >= 10? 
+        #        if yes: Is the PostgreSQL version >= the minimum required one (e.g. 10)? 
         #           If yes, continue
         #           if no, exit
         #        If yes: is the user a superuser?
@@ -475,8 +475,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
            
             # Get the current qgis_pkg version and check that it is compatible.
             qgis_pkg_curr_version: tuple = sh_sql.exec_qgis_pkg_version(self)
-
             # Named tuple: full_version, major_version, minor_version, minor_revision, code_name, release_date
+            # print(f"Loaded QGIS Package version: {qgis_pkg_curr_version.version}")
 
             qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version         # e.g. 0.9.1
             qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version.major_version   # e.g. 0

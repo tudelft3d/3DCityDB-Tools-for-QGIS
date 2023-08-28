@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 1;
-code_name      := 'International Day of Happiness';
-release_date   := '2023-03-29'::date;
+minor_revision := 2;
+code_name      := 'Nero and Poppaea';
+release_date   := '2023-08-28'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -1434,7 +1434,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 		-- Grant usage to citydb_pkg
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
 		-- No tables in schema citydb_pkg (also also no sequences)
-		--EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
+		-- EXECUTE format('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
 
 		-- Recursively iterate for each cdb_schema in database
@@ -1548,7 +1548,8 @@ ELSE -- any other non super-user
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA public TO %I;', sql_priv_type, usr_name);
 
 	ELSIF cdb_schema = ANY(cdb_schemas_array) THEN
-			-- Grant access to the citydb_pkg schema
+
+		-- Grant access to the citydb_pkg schema
 		EXECUTE format('GRANT USAGE ON SCHEMA citydb_pkg TO %I;', usr_name);
 
 		-- Grant privileges only for the selected cdb_schema.
@@ -1566,7 +1567,7 @@ ELSE -- any other non super-user
 		-- We need access to schema citydb_pkg, that has been granted before the loop
 		-- The index is created only the very first time, then it won't be created again,
 		-- no matter if another uses it granted privileges.
-		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', sch_name);
+		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', cdb_schema);
 		-- No tables in citydb_pkg
 		--EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA citydb_pkg TO %I;', sql_priv_type, usr_name);
 
@@ -2065,17 +2066,23 @@ ELSE
 	usr_schemas := ARRAY[usr_schema];
 END IF;
 
-FOREACH s IN ARRAY usr_schemas LOOP
-	--RAISE NOTICE 'Searching for Feature Types in %.layer_metadata', s;
-	query_sql := format('SELECT DISTINCT %L::varchar AS usr_schema, cdb_schema, feature_type 
-						FROM %I.layer_metadata
-						WHERE 
-							layer_type IN (''VectorLayer'', ''VectorLayerNoGeom'')
-							AND feature_type IS NOT NULL
-						ORDER BY cdb_schema, feature_type ASC;', s, s);
-	--RAISE NOTICE 'SQL: %', query_sql;
-	RETURN QUERY EXECUTE query_sql;
-END LOOP;
+--RAISE NOTICE 'usr_schemas: %', usr_schemas;
+
+IF usr_schemas IS NOT NULL THEN
+	FOREACH s IN ARRAY usr_schemas LOOP
+		--RAISE NOTICE 'Searching for Feature Types in %.layer_metadata', s;
+		query_sql := format('SELECT DISTINCT %L::varchar AS usr_schema, cdb_schema, feature_type 
+							FROM %I.layer_metadata
+							WHERE 
+								layer_type IN (''VectorLayer'', ''VectorLayerNoGeom'')
+								AND feature_type IS NOT NULL
+							ORDER BY cdb_schema, feature_type ASC;', s, s);
+		-- RAISE NOTICE 'SQL: %', query_sql;
+		IF query_sql IS NOT NULL THEN
+			RETURN QUERY EXECUTE query_sql;
+		END IF;
+	END LOOP;
+END IF;
 
 RETURN;
 
