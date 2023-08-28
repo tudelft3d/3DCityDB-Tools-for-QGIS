@@ -29,7 +29,7 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.8.4 Minor bugs in the QGIS Package resolved
+changelog= 0.8.4 Fixed minor bugs in the QGIS Package
  0.8.3 Minor changes to the Layer Loader dialog GUI
  0.8.2 Minor changes to comply with QGIS Plugin repository
  0.8.1 Detail View are set to ro/rw depending on user privileges
@@ -66,4 +66,3 @@ deprecated=False
 
 # If the plugin can run on QGIS Server.
 server=False
-
