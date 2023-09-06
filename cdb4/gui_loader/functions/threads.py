@@ -157,6 +157,7 @@ class CreateLayersWorker(QObject):
             dlg.qspbDecimalPrec.value(),
             dlg.qspbMinArea.value(),
             bbox,
+            dlg.CRS_is_geographic,           # True or False
             dlg.cbxForceLayerGen.isChecked() # True or False
             ]
 
