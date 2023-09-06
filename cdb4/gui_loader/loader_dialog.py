@@ -199,9 +199,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Link the additional canvas to the extents qgroupbox and enable "MapCanvasExtent" Button (Byproduct).
         self.qgbxExtents.setMapCanvas(canvas=self.CANVAS, drawOnCanvasOption=False)
         # Draw on Canvas tool is disabled. Check notes in tc_wf.qgbxExtents_setup()
-        #################################################################
-        # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS)
-        #################################################################
         # 'Extents' groupbox signals
         self.btnRefreshCDBExtents.clicked.connect(self.evt_btnRefreshCDBExtents_clicked)
 
@@ -222,9 +219,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Link the addition canvas to the extents qgroupbox and enable "MapCanvasExtent" options (Byproduct).
         self.qgbxExtentsL.setMapCanvas(canvas=self.CANVAS_L, drawOnCanvasOption=False)
         # Draw on Canvas tool is disabled. Check Note on main>widget_setup>ws_layers_tab.py>qgbxExtentsL_setup
-        #################################################################
-        # self.qgbxExtentsL.setOutputCrs(outputCrs=self.CRS)
-        #################################################################
 
         # 'Extents' groupbox signals
         self.qgbxExtentsL.extentChanged.connect(self.evt_qgbxExtentsL_ext_changed)
@@ -339,7 +333,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.lblConnectToDB.setDisabled(False)   # Activate the label
 
         # Close the current open connection.
-        if self.conn is not None:
+        #if self.conn is not None:
+        if self.conn:
             self.conn.close()
 
 
@@ -351,7 +346,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
-        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. 2, the window is modal to the application and blocks input to all windows.
+        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. 2, the window is modal to the application and blocks input to all other windows.
         dlgConnector.show()
         dlgConnector.exec_()
 
@@ -366,12 +361,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         (btnConnectToDb) is pressed. It sets up the GUI after a click signal is emitted.
         """
         msg: str = None
-
-        # In 'Connection Status' groupbox
-        # Activate the connection status box (red/green checks)
-        self.gbxConnStatus.setDisabled(False)
-        # Activate the close connection button at the bottom 
-        self.btnCloseConn.setDisabled(False) 
 
         # In 'Connection Status' groupbox
         self.gbxConnStatus.setDisabled(False) # Activate the connection status box (red/green checks)
@@ -399,7 +388,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
 
-            if self.DB.pg_server_version is not None:
+            if self.DB.pg_server_version:
                 # Show server version
                 self.lblPostInst_out.setText(c.success_html.format(text=self.DB.pg_server_version))
                 self.checks.is_postgis_installed = True
@@ -423,7 +412,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
@@ -452,7 +441,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
@@ -495,7 +484,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
@@ -526,7 +515,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
@@ -536,25 +525,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         cdb_schemas_rw_ro: list = []
         cdb_schemas: list = [] 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
-        #####################################################################################################
-        # Namedtuple with: cdb_schema, co_number, priv_type
-        # cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv_feat_count(self)
-        # print('cdb_schema_extended', cdb_schemas_extended)
-
-        # Select tuples of cdb_schemas that have number of cityobjects <> 0
-        # AND the user has 'rw' privileges.
-        # cdb_schemas_rw_ro = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type in ["ro", "rw"]]
-        # cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw_ro if cdb_schema.co_number != 0]
-        #####################################################################################################
         # Namedtuple with: cdb_schema, is_empty, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_privs(self)
+        cdb_schemas_all = sql.exec_list_cdb_schemas_privs(self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
         # AND the user has 'rw' privileges.
-        cdb_schemas_rw_ro = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type in ["ro", "rw"]]
+        cdb_schemas_rw_ro = [cdb_schema for cdb_schema in cdb_schemas_all if cdb_schema.priv_type in ["ro", "rw"]]
         cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw_ro if not cdb_schema.is_empty]
-        #####################################################################################################
         # print(cdb_schemas_rw_ro)
         # print(cdb_schemas)
 
@@ -568,7 +546,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the current open connection.
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
@@ -584,18 +562,13 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 ts_wf.tabSettings_reset(self)
                 tc_wf.tabConnection_reset(self)
                 # Close the current open connection.
-                if self.conn is not None:
+                if self.conn:
                     self.conn.close()
 
                 return None
 
             else: # Finally, we have all conditions to fill the cdb_schema combobox
-
-                ####################################################################
-                # tc_f.fill_cdb_schemas_box_feat_count(self, cdb_schemas)
-                ####################################################################
                 tc_f.fill_cdb_schemas_box(self, cdb_schemas)
-                ####################################################################
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
                 # So if you're following the code line by line, go to citydb_loader.py>evt_cbxSchema_changed or at 'cbxSchema_setup' function below
 
@@ -610,17 +583,18 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         
         # By now, the schema variable must have beeen assigned.
+        # Simple redundant check just to be sure...
         if not self.cbxSchema.currentData():
             return None
 
-        # Namedtuple with: cdb_schema, co_number, priv_type
+        # Named tuple with: cdb_schema, co_number, priv_type
         sel_cdb_schema: tuple = self.cbxSchema.currentData()
 
         # Set the current schema variable
         self.CDB_SCHEMA: str = sel_cdb_schema.cdb_schema
 
-        is_connection_unique: bool
-        is_connection_unique = conn_f.check_connection_uniqueness(dlg=self, cdbMain=cdbMain)
+        # Check that we are not accessing the same cdb_schema from other GUI dialogs of the plugin
+        is_connection_unique: bool = conn_f.check_connection_uniqueness(dlg=self, cdbMain=cdbMain)
         if not is_connection_unique:
             return None # Stop and do not proceed
 
@@ -628,13 +602,11 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CDBSchemaPrivileges = sel_cdb_schema.priv_type
         # print("CDBSchemaPrivileges", self.isReadOnlyCDBSchema)
 
-        # Set the current number of cityobjects
-        # self.n_cityobjects = sel_cdb_schema.co_number
-        # print("n_cityobjects", self.n_cityobjects)
-
         # Reset the Layer and Settings tabs in case they were open/changed from before 
         tl_wf.tabLayers_reset(self) # Reset the Layers tab
         ts_wf.tabSettings_reset(self) # Reset the Settings tab to the Default settings
+
+        self.tabSettings.setDisabled(False) # Reactivate the tab Settings
 
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         self.LAYER_EXTENTS = QgsRectangle()
@@ -647,7 +619,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.lblLayerExist_out.clear()
         self.lblLayerRefr_out.clear()
 
-        # Enable schema comboBox
+        # Enable cdb_schema comboBox
         self.cbxSchema.setDisabled(False)
         self.lblSchema.setDisabled(False)
 
@@ -655,13 +627,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnRefreshCDBExtents.setText(self.btnRefreshCDBExtents.init_text.format(sch=self.CDB_SCHEMA))
         self.btnCityExtents.setText(self.btnCityExtents.init_text.format(sch=self.CDB_SCHEMA))
 
+        # Update labels with on the layer Create/Refresh/(Drop) buttons with the selected cdb_schema
         self.btnCreateLayers.setText(self.btnCreateLayers.init_text.format(sch=self.CDB_SCHEMA))
         self.btnRefreshLayers.setText(self.btnRefreshLayers.init_text.format(sch=self.CDB_SCHEMA))
         # self.btnDropLayers.setText(self.btnDropLayers.init_text.format(sch=self.CDB_SCHEMA))
 
         # Setup the 'Basemap (OSM)' groupbox.
         tc_wf.gbxBasemap_setup(self)
-        # This fires an update of the medatada library
+        # This fires an update of the medadata library
 
         # Check whether layers exist, have been refreshed, and set up the GUI elements accordinly
         tc_f.check_layers_status(self)
@@ -686,14 +659,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             old_poly = QgsGeometry.fromRect(old_extent)
 
             if new_poly.equals(old_poly):
-                # do nothing
                 # print("same extents, same CRS, do nothing")
                 pass
             else:
-                # Set the current extent to show in the 'extent' widget.
-                # self.qgbxExtents.blockSignals(True)
-                # self.qgbxExtents.setOutputCrs(outputCrs=self.CRS) # Signal emitted for qgbxExtents. Avoid double signal by blocking signals
-                # self.qgbxExtents.blockSignals(False)
                 self.qgbxExtents.setCurrentExtent(currentExtent=new_extent, currentCrs=self.CRS) # Signal emitted for qgbxExtents
 
 
@@ -735,23 +703,6 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         - have changed and the new cdb extents contain the old ones (only update the ribbons)
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
         """
-        # # Recount the number of cityobjects
-        # new_n_cityobjects = sql.count_cityobjects_in_cdb_schema(self)
-
-        # if self.n_cityobjects != new_n_cityobjects:
-        #     self.n_cityobjects = new_n_cityobjects
-        #     # Create a namedtuple to inser in the combobox
-        #     new_sel_cdb_schema = namedtuple("RECORD", "cdb_schema, co_number, priv_type")
-        #     new_sel_cdb_schema.cdb_schema = self.CDB_SCHEMA
-        #     new_sel_cdb_schema.co_number = self.n_cityobjects
-        #     new_sel_cdb_schema.priv_type = self.CDBSchemaPrivileges
-        #     # Update the entry in the cdb_schema combobox
-        #     for i in range(self.cbxSchema.count()):
-        #         curr_itemdata = self.cbxSchema.itemData(i)
-        #         if curr_itemdata.cdb_schema == new_sel_cdb_schema.cdb_schema:
-        #             label: str = f"{new_sel_cdb_schema.cdb_schema} ({new_sel_cdb_schema.priv_type}): {new_sel_cdb_schema.co_number} CityObjects"
-        #             self.cbxSchema.setItemText(i, label)
-        #             self.cbxSchema.setItemData(i, new_sel_cdb_schema)
 
         is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(dlg=self)
         srid = None # Discard unneeded variable.
@@ -915,7 +866,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             tc_wf.tabConnection_reset(self)
 
             # Close the connection
-            if self.conn is not None:
+            if self.conn:
                 self.conn.close()
 
             return None # Exit
