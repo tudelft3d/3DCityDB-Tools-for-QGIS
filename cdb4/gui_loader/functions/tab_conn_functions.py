@@ -295,9 +295,8 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.btnLayerExtentsL.setDisabled(False)
         dlg.tabLayers.setDisabled(False)
         dlg.btnImport.setDisabled(True)
-        # Also enables the settings tab
+
         # Fill the combo box with the codelist selection
-        
         CityGML_codelist_set_names: list = sql.fetch_CityGML_codelist_set_names(dlg)
         # print("Initializing combo box with:", codelist_set_names)
         if CityGML_codelist_set_names:
@@ -312,9 +311,6 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         #     # print("Initializing combo box with:", codelist_set_names)
         #     if ADE_codelist_set_names:
         #         tl_wf.fill_ADE_codelist_selection_box(dlg, ADE_codelist_set_names)            
-        #
-
-        dlg.tabSettings.setDisabled(False)
 
     else:
         tl_wf.tabLayers_reset(dlg) # it disables itself, too

@@ -1455,7 +1455,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 			-- We need access to schema citydb_pkg, that has been granted before the loop
 			-- The index is created only the very first time, then it won't be created again,
 			-- no matter if another uses it granted privileges.
-			EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', sch_name);
+			EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', cdb_schema);
 
 		END LOOP;
 

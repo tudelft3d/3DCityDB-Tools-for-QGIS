@@ -114,6 +114,7 @@ def open_connection(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDia
     else:
         return False
 
+
 def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog], cdbMain: CDBToolsMain) -> bool:
     """
     """
