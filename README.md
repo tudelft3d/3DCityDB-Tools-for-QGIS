@@ -61,27 +61,20 @@ and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft)
 
 # Publications
 
-More details can be found here:
+If you use the plug-in (or part of its code) in scientific works, please consider citing us:
 
-```
-Agugiaro, G., Pantelios, K., León-Sánchez, C., Yao, Z., Nagel, C., 2023,
-Introducing the 3DCityDB-Tools plug-in for QGIS.
-Recent Advances in 3D Geoinformation Science - Proceedings of the 18th 3D GeoInfo Conference, Springer
+- Agugiaro, G., Pantelios, K., León-Sánchez, C., Yao, Z., Nagel, C., 2023,\
+**Introducing the 3DCityDB-Tools plug-in for QGIS**.\
+Recent Advances in 3D Geoinformation Science - Proceedings of the 18th 3D GeoInfo Conference, Springer\
 (available from December 2023)
-```
 
-```
-T. Mbwanda, 2023,
-Further Development of a QGIS plugin for the CityGML 3D City Database.
-[MSc thesis](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
-```
+- Mbwanda, T., 2023,\
+**Further Development of a QGIS plugin for the CityGML 3D City Database**.\
+[Link](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577) to MSc thesis
 
-```
-K. Pantelios, 2022,
-Development of a QGIS plugin for the CityGML 3D City Database.
-[MSc thesis](https://repository.tudelft.nl/islandora/object/uuid%3Afb532bef-81b9-482b-921a-e7ce907cb544)
-```
-
+- Pantelios, K., 2022,\
+**Development of a QGIS plugin for the CityGML 3D City Database**.\
+[Link](https://repository.tudelft.nl/islandora/object/uuid%3Afb532bef-81b9-482b-921a-e7ce907cb544) to MSc thesis
 
 # Future
 
