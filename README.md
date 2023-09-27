@@ -59,14 +59,38 @@ with contributions by:
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (VirtualCitySystems GmbH).
 
+# Publications
+
+More details can be found here:
+
+```
+Agugiaro, G., Pantelios, K., León-Sánchez, C., Yao, Z., Nagel, C., 2023,
+Introducing the 3DCityDB-Tools plug-in for QGIS.
+Recent Advances in 3D Geoinformation Science - Proceedings of the 18th 3D GeoInfo Conference, Springer
+(available from December 2023)
+```
+
+```
+T. Mbwanda, 2023,
+Further Development of a QGIS plugin for the CityGML 3D City Database.
+[MSc thesis](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
+```
+
+```
+K. Pantelios, 2022,
+Development of a QGIS plugin for the CityGML 3D City Database.
+[MSc thesis](https://repository.tudelft.nl/islandora/object/uuid%3Afb532bef-81b9-482b-921a-e7ce907cb544)
+```
+
+
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Support for ADEs (Preliminary work on the Energy ADE has been already carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/islandora/object/uuid%3A6786ac5c-b61d-4e17-8501-e3cf2c7a9577))
+- Support for ADEs
 - Testing and initial support for the 3DCityDB v. 5.0 (and therefore CityGML 3.0)
 - ...the sky is the limit...
 
 # Disclaimer
 
-This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by Konstantinos Pantelios. If you would like to read more about his work, it is available [here](http://resolver.tudelft.nl/uuid:fb532bef-81b9-482b-921a-e7ce907cb544). The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
+This work started as a [TU Delft](www.tudelft.nl) MSc Thesis in [Geomatics](https://www.tudelft.nl/en/education/programmes/masters/geomatics/msc-geomatics) by K. Pantelios. The [3D Geoinformation group](https://3d.bk.tudelft.nl/) at TU Delft has created this fork of the initial GitHub repository to continue development in the future. You are kindly invited to submit issues (and ideas, and suggestions!) to THIS repository.
