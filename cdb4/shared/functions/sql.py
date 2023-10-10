@@ -1,5 +1,4 @@
 """This module contains functions that relate to the server side operations.
-
 These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """

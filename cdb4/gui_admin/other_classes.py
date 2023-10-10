@@ -1,4 +1,6 @@
 class DialogChecks:
+    """ Contains results of the connection checks
+    """
     def __init__(self):
         self.is_conn_successful: bool = False
         self.is_3dcitydb_installed: bool = False
@@ -9,7 +11,7 @@ class DialogChecks:
 
 
 class DefaultSettings:
-    """ Contains all DEFAULT settings of the CDB4-Admin dialog, and their descriptions
+    """ Contains all DEFAULT settings of the CDBAdminDialog, and their descriptions
     """
     def __init__(self):
         self.enable_ro_user_default: int = False
