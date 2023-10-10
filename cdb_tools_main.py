@@ -259,15 +259,15 @@ class CDBToolsMain:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
         # Multiple QMenu objects accumulate if we do not remove them
-        qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in ["3DCityDB Tools"]]
+        qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in [main_c.PLUGIN_NAME_LABEL]]
         # print([i.title() for i in qmenu_list])
         if qmenu_list:
-            for i in qmenu_list:
-                #print(i.title(), i.menuAction())
-                a = i.menuAction()
-                i.removeAction(a)
-                a.deleteLater() # Will be deleted as soon as we exit the function
-                i.deleteLater() # Will be deleted as soon as we exit the function
+            for item in qmenu_list:
+                # print(i.title(), i.menuAction())
+                m_action = item.menuAction()
+                item.removeAction(m_action)
+                m_action.deleteLater()
+                item.deleteLater()
 
         # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
         # admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
