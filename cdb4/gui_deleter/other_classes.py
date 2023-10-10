@@ -18,7 +18,7 @@ class DialogChecks:
 
    
 class DefaultSettings:
-    """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
+    """ Contains all DEFAULT settings of the CDBDeleterDialog, and their explanation.
     """
     def __init__(self):
 
