@@ -1,12 +1,5 @@
-# from __future__ import annotations
-# from typing import TYPE_CHECKING, Union
-# if TYPE_CHECKING:
-#     from ....cdb_tools_main import CDBToolsMain
-#     from ...gui_admin.admin_dialog import CDB4AdminDialog
-#     from ...gui_loader.loader_dialog import CDB4LoaderDialog
-#     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-#     from ...gui_db_connector.other_classes import Connection
-
+"""This module contains general commodity functions
+"""
 import os.path
 from typing import Callable
 
