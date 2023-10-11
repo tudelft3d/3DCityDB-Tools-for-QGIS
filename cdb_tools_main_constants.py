@@ -22,9 +22,8 @@ PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
 # print("PLUGIN_ROOT_PATH", PLUGIN_ROOT_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins
 PLUGIN_ROOT_DIR: str  = os.path.split(os.path.dirname(__file__))[1]
 # print("PLUGIN_ROOT_DIR", PLUGIN_ROOT_DIR) # e.g. citydb-tools 
-
 URL_GITHUB_PLUGIN: str   = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS"
-FILE_PDF_USER_GUIDE: str = "3DCityDB-Tools_UserGuide.pdf"
+
 
 # Database schemas where QGIS Package is installed etc.
 QGIS_PKG_SCHEMA: str = "qgis_pkg"
