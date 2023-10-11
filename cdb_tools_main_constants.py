@@ -16,13 +16,15 @@ PLUGIN_VERSION_MINOR: int = 8
 PLUGIN_VERSION_REV:   int = 6
 
 # Paths
-PLUGIN_PATH: str      = os.path.normpath(os.path.dirname(__file__))
-# print("PLUGIN_PATH", PLUGIN_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins\citydb-tools  
+PLUGIN_ABS_PATH: str      = os.path.normpath(os.path.dirname(__file__))
+# print("PLUGIN_ABS_PATH", PLUGIN_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins\citydb-tools  
 PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
 # print("PLUGIN_ROOT_PATH", PLUGIN_ROOT_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins
 PLUGIN_ROOT_DIR: str  = os.path.split(os.path.dirname(__file__))[1]
 # print("PLUGIN_ROOT_DIR", PLUGIN_ROOT_DIR) # e.g. citydb-tools 
-URL_PDF_USER_GUIDE: str       = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS/blob/master/user_guide/3DCityDB-Tools_UserGuide.pdf"
+
+URL_GITHUB_PLUGIN: str   = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS"
+FILE_PDF_USER_GUIDE: str = "3DCityDB-Tools_UserGuide.pdf"
 
 # Database schemas where QGIS Package is installed etc.
 QGIS_PKG_SCHEMA: str = "qgis_pkg"
@@ -37,7 +39,7 @@ PLUGIN_NAME_LABEL: str      = "3DCityDB Tools"
 DLG_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
 DLG_NAME_LOADER_LABEL: str  = "Layer Loader"
 DLG_NAME_DELETER_LABEL: str = "Bulk Deleter"
-DLG_NAME_USRGUIDE_LABEL: str= "User guide (PDF on GitHub)"
+DLG_NAME_USRGUIDE_LABEL: str= "User guide (PDF)"
 DLG_NAME_ABOUT_LABEL: str   = "About"
 
 # Dialog variable names
