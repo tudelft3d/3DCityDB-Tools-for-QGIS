@@ -21,25 +21,24 @@ h4 {
 	margin-right: 0px;
 	padding: 0px;
 }
-ul.l1 {
+p {
 	font-size: 12px;
 	font-style: normal;
-	-qt-list-indent: 0;
 	margin-top: 0px;
 	margin-bottom: 0px;
-	margin-left: 10px;
+	margin-left: 0px;
 	margin-right: 0px;
-	padding: 0px;	
+	padding: 0px;
+}
+ul.l1 {
+	-qt-list-indent: 0;
+	margin-top: 0px;
+	margin-left: 10px;
 }
 ul.l2 {
-	font-size: 12px;
-	font-style: normal;
 	-qt-list-indent: 0;
 	margin-top: 0px;
-	margin-bottom: 0px;
 	margin-left: 15px;
-	margin-right: 0px;
-	padding: 0px;	
 }
 	</style>	
 </header>
@@ -47,9 +46,10 @@ ul.l2 {
 
 <!-- 
 <div id="0.x.x">
-<h2>Version 0.x.x</h2>
-<b>Notes</b>
-<b>Main changes</b>
+<h3>Version 0.x.x</h3>
+<h4>Notes</h4>
+<h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li></li>
   <li>
@@ -61,22 +61,26 @@ ul.l2 {
   <li></li>
   <li></li>
 </ul>
+</p>
 <div>
 -->
 
 <div id="0.8.6">
 <h3>Version 0.8.6 (2023-10-22)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Added plug-in About dialog (NEW)</li>
   <li>Added shortcut to open Installation and User manual (as PDF)</li>
   <li>Added check if QGIS version is supported (LTR) upon first run of a dialog</li>
 </ul>
+</p>
 <div>
 
 <div id="0.8.5">
 <h3>Version 0.8.5 (2023-09-06)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Layer Loader
     <ul class="l2">
@@ -86,13 +90,14 @@ ul.l2 {
   </li>
   <li>Minor bug fixes and code clean-up</li>
 </ul>
+</p>
 <div>
 
 <div id="0.8.4">
 <h3>Version 0.8.4 (2023-08-28)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
-  <li>Minor bug fixes</li>
   <li>Layer Loader
     <ul class="l2">
       <li>Corrected new connections not being updated in Layer Loader dialog</li>
@@ -116,16 +121,21 @@ ul.l2 {
       <li>QGIS Package: Corrected/enhanced examples with functions to set user's privileges</li>
     </ul>
   </li>
+  <li>Minor bug fixes</li>
 </ul>
+</p>
 <div>
 
 <div id="0.8.3">
 <h3>Version 0.8.3 (2023-08-11)</h3>
 <h4>Notes</h4>
+<p>
 <ul class="l1">
   <li>The plug-in status is not "experimental" anymore: now it can be installed by anybody from within QGIS</li>
 </ul>
+</p>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Minor edits to the Layer Loader dialog GUI
     <ul class="l2">
@@ -142,20 +152,25 @@ ul.l2 {
       <li>QGIS Package: Added SQL examples to upsert the user defined bounding box extents</li>
     </ul>
   </li>
+  <li>Some code refactoring</li>
 </ul>
+</p>
 <div>
 
 <div id="0.8.2">
 <h3>Version 0.8.2 (2023-06-05)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Minor internal changes to comply with the QGIS Plugin online repository</li>
 </ul>
+</p>
 <div>
 
 <div id="0.8.1">
 <h3>Version 0.8.1 (2023-03-29)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Layer Loader: Detail View layers are now ro rw depending on user privileges</li>
   <li>QGIS Package: New version 0.10.1</li>
@@ -166,6 +181,7 @@ ul.l2 {
 <div id="0.8.0">
 <h3>Version 0.8.0 (2023-03-21)</h3>
 <h4>Client side: Layer Loader</h4>
+<p>
 <ul class="l1">
   <li>Added support for Address features as layers</li>
   <li>Added support for LoD independent layers (i.e., "LoDx")</li>
@@ -180,20 +196,26 @@ ul.l2 {
   <li>Added support for CodeLists selection via GUI</li>
   <li>Improved support of datasets with geographic coordinates (bbox)</li>
 </ul>
+</p>
 
 <h4>Client side: Bulk Deleter</h4>
+<p>
 <ul class="l1">
   <li>Improved support of datasets with geographic coordinates (bbox)</li>
   <li>Renamed root-class to top-level features</li>
 </ul>
+</p>
 
 <h4>Client side: QGIS Package Administration</h4>
+<p>
 <ul class="l1">
   <li>Renamed root-class to top-level features</li>
   <li>Minor bug fixes and code clean-up</li>
 </ul>
+</p>
 
 <h4>Server side: QGIS Package</h4>
+<p>
 <ul class="l1">
   <li>New version 0.10</li>
   <li>Renamed root-class to top-level features</li>
@@ -205,11 +227,13 @@ ul.l2 {
   <li>Improved speed to compute the bbox and list cdb_schemas</li>
   <li>Minor bug fixes and code clean-up</li>
 </ul>
+</p>
 <div>
 
 <div id="0.7.1">
 <h3>Version 0.7.1 (2023-02-20)</h3>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Code restructuring to allow for better modularization of current (and future) modules</li>
   <li>Allow for concurrent dialogs, but added logic to:
@@ -221,16 +245,20 @@ ul.l2 {
   <li>QGIS Package: new version 0.9.1</li>
   <li>Fixed: When cleaning up the database, sequences are now correctly restarted</li>
 </ul>
+</p>
 <div>
 
 <div id="0.7.0">
 <h3>Version 0.7.0 (2023-02-13)</h3>
 <h4>Notes</h4>
+<p>
 <ul class="l1">
   <li>The 3DCityDB Loader is growing and gets therefore a new name: "3DCityDB Tools"!</li>
 </ul>
+</p>
 
 <h4>Client side: Layer Loader</h4>
+<p>
 <ul class="l1">
   <li>Connection tab:
     <ul class="l2">
@@ -246,8 +274,10 @@ ul.l2 {
   <li>Rewritten all SQL queries to follow psycopg2 syntax</li>
   <li>Major code refactoring and clean-up</li>
 </ul>
+</p>
 
 <h4>Client side: Bulk Deleter (NEW)</h4>
+<p>
 <ul class="l1">
   <li>A user with rw privileges can delete features selecting them:
     <ul class="l2">
@@ -258,8 +288,10 @@ ul.l2 {
   <li>A user with rw privileges can delete ALL DATA from the selected citydb schema (i.e., truncate all tables)</li>
   <li>Geocoding function (based on Nominatim API)</li>
 </ul>
+</p>
 
 <h4>Client side: QGIS Package Administration</h4>
+<p>
 <ul class="l1">
   <li>QGIS Package Installation tab: Major rework, added user management</li>
   <li>Installation settings tab (NEW)</li>
@@ -269,8 +301,10 @@ ul.l2 {
   <li>Rewritten all SQL queries to follow psycopg2 syntax</li>
   <li>Minor code refactoring and clean-up</li>
 </ul>
+</p>
 
 <h4>Server side: QGIS Package</h4>
+<p>
 <ul class="l1">
   <li>New version 0.9.0</li>
   <li>Each 3DCityDB instance gets not its own database group</li>
@@ -283,12 +317,14 @@ ul.l2 {
   </li>
   <li>Minor bug fixes and code clean-up</li>
 </ul>
+</p>
 <div>
 
 <div id="0.6.0">
 <h3>Version 0.6.0 (2022-11-24)</h3>
 
 <h4>Client side: Layer Loader</h4>
+<p>
 <ul class="l1">
   <li>Added support for QGIS v. 3.28 LTR</li>
   <li>Reworked the series of checks carried out upon connection:
@@ -317,8 +353,10 @@ ul.l2 {
   </li>
   <li>Further major code refactoring and clean-up</li>
 </ul>
+</p>
 
 <h4>Client side: QGIS Package Administration</h4>
+<p>
 <ul class="l1">
   <li>Reworked the series of checks carried out upon connection
     <ul class="l2">
@@ -334,8 +372,10 @@ ul.l2 {
   </li>
   <li>Minor code refactoring and clean-up</li>
 </ul>
+</p>
 
 <h4>Server side: QGIS Package</h4>
+<p>
 <ul class="l1">
   <li>New version 0.8.0</li>
   <li>Fixed bug in delete trigger functions to extract the name of the cdb_schema</li>
@@ -349,21 +389,34 @@ ul.l2 {
   </li>
   <li>Minor bug fixes and code clean-up</li>
 </ul>
+</p>
 <div>
 
 <div id="0.5.0">
 <h3>Version 0.5.0 (2022-09-02)</h3>
 <h4>Notes</h4>
+<p>
 <ul class="l1">
-  <li>First public release of the 3DCityDB Loader plugin for QGIS</li>
+  <li>First public release of the 3DCityDB Loader plug-in for QGIS</li>
 </ul>
+</p>
 <h4>Main changes</h4>
+<p>
 <ul class="l1">
   <li>Switched to TUD GitHub repository</li>
-  <li>User guide documentation updated and extended with FME examples</li>
-  <li>Minor bug fixes</li>
+  <li>Added user guide</li>
   <li>Major code refactoring and clean-up</li>
 </ul>
+</p>
+
+<div id="0.4.0">
+<h3>Version 0.4.0 (2022-06-29)</h3>
+<h4>Notes</h4>
+<p>
+<ul class="l1">
+  <li>Konstantinos' MSc thesis code release</li>
+</ul>
+</p>
 
 </body>
 </html>
