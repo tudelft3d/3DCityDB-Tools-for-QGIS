@@ -5,7 +5,8 @@ from .. import cdb_tools_main_constants as main_c
 
 FILE_PATH: str = os.path.normpath(os.path.dirname(__file__))
 
-URL_PDF_3DCITYDB_INSTALL: str = os.path.join(main_c.PLUGIN_PATH, "user_guide", "3DCityDB_Suite_QuickInstall.pdf")
+URL_PDF_3DCITYDB_INSTALL: str = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS/blob/master/user_guide/3DCityDB_Suite_QuickInstall.pdf"
+#URL_PDF_3DCITYDB_INSTALL: str = os.path.join(main_c.PLUGIN_PATH, "user_guide", "3DCityDB_Suite_QuickInstall.pdf")
 
 HTML_ABOUT: str      = "about.html"
 HTML_DEVELOPERS: str = "developers.html"

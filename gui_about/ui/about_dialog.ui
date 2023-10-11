@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>670</width>
-    <height>505</height>
+    <height>550</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>670</width>
-    <height>505</height>
+    <height>550</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>670</width>
-    <height>505</height>
+    <height>550</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -37,7 +37,7 @@
      <x>0</x>
      <y>110</y>
      <width>121</width>
-     <height>401</height>
+     <height>441</height>
     </rect>
    </property>
    <property name="font">
@@ -157,7 +157,7 @@
      <x>120</x>
      <y>100</y>
      <width>551</width>
-     <height>371</height>
+     <height>421</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -176,7 +176,7 @@
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>321</height>
+       <height>371</height>
       </rect>
      </property>
      <property name="markdown">
@@ -190,7 +190,7 @@
      <property name="geometry">
       <rect>
        <x>320</x>
-       <y>340</y>
+       <y>390</y>
        <width>181</width>
        <height>23</height>
       </rect>
@@ -215,7 +215,7 @@
      <property name="geometry">
       <rect>
        <x>40</x>
-       <y>340</y>
+       <y>390</y>
        <width>191</width>
        <height>23</height>
       </rect>
@@ -233,7 +233,7 @@
       </size>
      </property>
      <property name="text">
-      <string>Open the GitHub repository</string>
+      <string>Open GitHub repository</string>
      </property>
     </widget>
    </widget>
@@ -244,7 +244,7 @@
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>351</height>
+       <height>401</height>
       </rect>
      </property>
     </widget>
@@ -256,7 +256,7 @@
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>351</height>
+       <height>401</height>
       </rect>
      </property>
     </widget>
@@ -268,7 +268,7 @@
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>351</height>
+       <height>401</height>
       </rect>
      </property>
      <property name="openExternalLinks">
@@ -286,7 +286,7 @@
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>351</height>
+       <height>401</height>
       </rect>
      </property>
      <property name="toolTipDuration">
@@ -345,7 +345,7 @@ p, li { white-space: pre-wrap; }
        <x>10</x>
        <y>10</y>
        <width>531</width>
-       <height>321</height>
+       <height>371</height>
       </rect>
      </property>
      <property name="documentTitle">
@@ -375,14 +375,14 @@ p, li { white-space: pre-wrap; }
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>340</y>
-       <width>170</width>
+       <y>390</y>
+       <width>165</width>
        <height>23</height>
       </rect>
      </property>
      <property name="minimumSize">
       <size>
-       <width>170</width>
+       <width>165</width>
        <height>23</height>
       </size>
      </property>
@@ -393,15 +393,15 @@ p, li { white-space: pre-wrap; }
       </size>
      </property>
      <property name="text">
-      <string>Download 3DCityDB Suite</string>
+      <string>Download 3DCityDB</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btn3DCityDBManual">
      <property name="geometry">
       <rect>
-       <x>370</x>
-       <y>340</y>
-       <width>170</width>
+       <x>375</x>
+       <y>390</y>
+       <width>165</width>
        <height>23</height>
       </rect>
      </property>
@@ -413,7 +413,7 @@ p, li { white-space: pre-wrap; }
      </property>
      <property name="minimumSize">
       <size>
-       <width>170</width>
+       <width>165</width>
        <height>23</height>
       </size>
      </property>
@@ -424,15 +424,15 @@ p, li { white-space: pre-wrap; }
       </size>
      </property>
      <property name="text">
-      <string>3DCityDB user manual</string>
+      <string>3DCityDB manual</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btn3DCityDBInstall">
      <property name="geometry">
       <rect>
-       <x>190</x>
-       <y>340</y>
-       <width>170</width>
+       <x>192</x>
+       <y>390</y>
+       <width>165</width>
        <height>23</height>
       </rect>
      </property>
@@ -444,7 +444,7 @@ p, li { white-space: pre-wrap; }
      </property>
      <property name="minimumSize">
       <size>
-       <width>170</width>
+       <width>165</width>
        <height>23</height>
       </size>
      </property>
@@ -455,7 +455,7 @@ p, li { white-space: pre-wrap; }
       </size>
      </property>
      <property name="text">
-      <string>3DCityDB quick install guide</string>
+      <string>3DCityDB install guide</string>
      </property>
     </widget>
    </widget>
@@ -463,9 +463,9 @@ p, li { white-space: pre-wrap; }
   <widget class="QPushButton" name="btnClose">
    <property name="geometry">
     <rect>
-     <x>585</x>
-     <y>474</y>
-     <width>75</width>
+     <x>569</x>
+     <y>520</y>
+     <width>91</width>
      <height>23</height>
     </rect>
    </property>
