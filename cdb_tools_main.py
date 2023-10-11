@@ -202,16 +202,12 @@ class CDBToolsMain:
         """
         # Create icon from referenced path in resources file.
         icon = QIcon(icon_path)
-
         # Create action object
         action = QAction(icon=icon, text=txt, parent=parent)
-
         # Signal to run plugin when clicked (execute main method: run())
         action.triggered.connect(callback)
-
         # Set the name of the action
         action.setObjectName(txt)
-
         # Set the action as enabled (not greyed out)
         action.setEnabled(enabled_flag)
 
@@ -224,7 +220,6 @@ class CDBToolsMain:
         # Adds plugin to "Database" toolbar.
         if add_to_toolbar:
             self.iface.addDatabaseToolBarIcon(qAction=action)
-
         # Adds plugin to "Database" menu.
         if add_to_menu:
             # In order to add the plugin into the database menu we follow the 'hacky' approach below to bypass possibly a bug:
@@ -258,16 +253,34 @@ class CDBToolsMain:
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
-        # Multiple QMenu objects accumulate if we do not remove them
-        qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in [main_c.PLUGIN_NAME_LABEL]]
-        # print([i.title() for i in qmenu_list])
-        if qmenu_list:
-            for item in qmenu_list:
-                # print(i.title(), i.menuAction())
-                m_action = item.menuAction()
-                item.removeAction(m_action)
-                m_action.deleteLater()
-                item.deleteLater()
+        # ########## TO BE UNCOMMENTED IF/WHEN WE WILL ADD SUBMENUS
+        # plugin_sub_menu_names: list = ["Submenu Name 1"] # to be substituted at a later time with a constant
+        # # Multiple QMenu objects accumulate if we do not remove them
+        # qmenu_list = []
+        # qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in plugin_sub_menu_names]
+        # if qmenu_list:
+        #     print("Deleting submenus:")            
+        #     # print([i.title() for i in qmenu_list])
+        #     # print([i for i in qmenu_list])
+        #     for item in qmenu_list:
+        #         m_action = item.menuAction()
+        #         item.removeAction(m_action)
+        #         m_action.deleteLater()
+        #         item.deleteLater()
+
+        # Multiple QMenu objects may accumulate if we do not remove them
+        # qmenu_list = []
+        # qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() == main_c.PLUGIN_NAME_LABEL]
+        # if qmenu_list:
+        #     print("Menus:")  
+        #     print([i for i in qmenu_list])
+            # print([i.title() for i in qmenu_list])
+            # for item in qmenu_list:
+            #     m_action = item.menuAction()
+            #     item.removeAction(m_action)
+            #     m_action.deleteLater()
+            #     item.deleteLater()
+            #     pass
 
         # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
         # admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
@@ -300,7 +313,6 @@ class CDBToolsMain:
         # Admin Dialog
         self.add_action(
             icon_path = admin_icon_path,
-            #txt = self.tr(self.PLUGIN_NAME_ADMIN),
             txt = main_c.DLG_NAME_ADMIN_LABEL,
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
@@ -330,9 +342,42 @@ class CDBToolsMain:
             callback = self.run_about,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = False) # Default: False
+            add_to_toolbar = True) # Default: False
+
+        #####################################################################
+        #####################################################################
+
+        # qmenu_list = []
+        # qmenu_list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in [main_c.PLUGIN_NAME_LABEL]]
+        # # print("Picking menus")
+        # # print([i for i in qmenu_list])
+        # # print("Picked menu")
+        # plugin_menu = qmenu_list[0]        
+        # # print(plugin_menu)
+        
+        # ############### Create submenu root entry
+        # plugin_sub_menu_name = plugin_sub_menu_names[0]
+        # plugin_sub_menu = plugin_menu.addMenu(plugin_sub_menu_name)
+        # plugin_sub_menu.setIcon(QIcon(loader_icon_path))
+
+        # ############### Add submenu container entry
+        # action_name = "Do something!"
+        # ac1 = plugin_sub_menu.addAction(action_name) # Its parent is the plugin_sub_menu
+        # ac1.setIcon(QIcon(loader_icon_path))
+        # ac1.triggered.connect(self.run_test_action)
+        # ac1.setEnabled(True)
+        # self.actions.append(ac1)
+
+        ################ Add submenu entry 1
+        # action_name = "Do something else!"
+        # ac1 = plugin_sub_menu.addAction(action_name) # Its parent is the plugin_sub_menu
+        # ac1.setIcon(QIcon(loader_icon_path))
+        # ac1.triggered.connect(self.run_test_action2)
+        # ac1.setEnabled(True)
+        # self.actions.append(ac1)
 
         # Print list of actions, the "empty" ones are the separators
+        # print("-- Actions")
         # print([i.text() for i in self.actions])
 
 
@@ -342,6 +387,17 @@ class CDBToolsMain:
         for action in self.actions:
             self.iface.removeDatabaseToolBarIcon(qAction=action)
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
+        return None
+
+
+    # def run_test_action(self) -> None:
+    #     print("This is a simple test")
+    #     return None
+
+
+    # def run_test_action2(self) -> None:
+    #     print("This is another simple test")
+    #     return None
 
 
     def run_loader(self) -> None:
