@@ -78,11 +78,9 @@ class CDBToolsMain:
         # An empty string is returned if the value cannot be determined.
         self.PLATFORM_SYSTEM: str = platform.system()
         # print("Plaform system is:", self.PLATFORM_SYSTEM)
-        # Returns a namedtuple() containing six attributes: system, node, release, version, machine, and processor.
-        # self.PLATFORM_MACHINE_UNAME: tuple = platform.uname() 
-        # print("Plaform UNAME is:", self.PLATFORM_MACHINE_UNAME)
 
         # initialize plugin full path (including plugin directory).
+        self.URL_GITHUB_PLUGIN: str = main_c.URL_GITHUB_PLUGIN
         self.PLUGIN_ABS_PATH: str = main_c.PLUGIN_ABS_PATH
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
@@ -110,7 +108,7 @@ class CDBToolsMain:
         self.first_check_QGIS_supported: bool = True        
 
         # Welcome message upon (re)loading
-        msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plugin running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>.<br>-----------------------------<br>"
+        msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=False)
 
         # Variable to store the loader dialog of the plugin.
@@ -341,7 +339,7 @@ class CDBToolsMain:
         self.add_action(
             icon_path = usrguide_icon_path,
             txt = main_c.DLG_NAME_USRGUIDE_LABEL,
-            callback = self.run_usrguide,
+            callback = self.run_usr_guide,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
             add_to_toolbar = False) # Default: False
@@ -602,7 +600,7 @@ class CDBToolsMain:
         return None
     
 
-    def run_usrguide(self) -> None:
+    def run_usr_guide(self) -> None:
         """ Opens the default web browser with the PDF file containing the installation and user guide.
         
         Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
@@ -610,15 +608,15 @@ class CDBToolsMain:
 
         NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
         """
-        #url: str = None
-        #self.PLATFORM_SYSTEM = "Darwin"
-        #self.PLUGIN_VERSION_TXT = "0.8.5"
+        file_name: str = "3DCityDB-Tools_UserGuide.pdf"
 
         if self.PLATFORM_SYSTEM == "Windows":
-            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", main_c.FILE_PDF_USER_GUIDE)
+            # This will open a PDF viewer instead of the browser, if available
+            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", file_name)
         else:
-            url = os.path.join(main_c.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", main_c.FILE_PDF_USER_GUIDE)
-        print(url)
+            # For OS other than windows, stay safe and simply point to the PDF on GitHub
+            url = os.path.join(main_c.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", file_name)
+        # print(url)
         
         webbrowser.open_new_tab(url)
 
@@ -638,7 +636,7 @@ class CDBToolsMain:
         if self.first_start_about:
             self.first_start_about = False
             # Create the dialog with elements (after translation).
-            self.about_dlg = CDBAboutDialog()
+            self.about_dlg = CDBAboutDialog(cdbMain=self)
 
         # Set the window modality.
         #self.about_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
