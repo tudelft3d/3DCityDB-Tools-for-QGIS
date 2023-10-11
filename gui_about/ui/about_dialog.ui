@@ -81,12 +81,6 @@
     <property name="text">
      <string>About the plug-in</string>
     </property>
-    <property name="font">
-     <font>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
     <property name="flags">
      <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
     </property>
@@ -94,15 +88,6 @@
    <item>
     <property name="text">
      <string>Developers</string>
-    </property>
-    <property name="foreground">
-     <brush brushstyle="NoBrush">
-      <color alpha="255">
-       <red>0</red>
-       <green>0</green>
-       <blue>0</blue>
-      </color>
-     </brush>
     </property>
     <property name="flags">
      <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
@@ -112,15 +97,24 @@
     <property name="text">
      <string>Changelog</string>
     </property>
+    <property name="flags">
+     <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
+    </property>
    </item>
    <item>
     <property name="text">
      <string>References</string>
     </property>
+    <property name="flags">
+     <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
+    </property>
    </item>
    <item>
     <property name="text">
      <string>License</string>
+    </property>
+    <property name="flags">
+     <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
     </property>
    </item>
    <item>
@@ -136,11 +130,6 @@
     <property name="whatsThis">
      <string notr="true"/>
     </property>
-    <property name="font">
-     <font>
-      <kerning>false</kerning>
-     </font>
-    </property>
     <property name="flags">
      <set>NoItemFlags</set>
     </property>
@@ -148,6 +137,9 @@
    <item>
     <property name="text">
      <string>Get the 3DCityDB!</string>
+    </property>
+    <property name="flags">
+     <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsEnabled</set>
     </property>
    </item>
   </widget>
@@ -620,6 +612,21 @@ p, li { white-space: pre-wrap; }
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>listMenu</tabstop>
+  <tabstop>txtAbout</tabstop>
+  <tabstop>btnOpenGitHub</tabstop>
+  <tabstop>btnIssueBug</tabstop>
+  <tabstop>txtDevelopers</tabstop>
+  <tabstop>txtChangelog</tabstop>
+  <tabstop>txtReferences</tabstop>
+  <tabstop>txtLicense</tabstop>
+  <tabstop>txt3DCityDB</tabstop>
+  <tabstop>btn3DCityDBInstall</tabstop>
+  <tabstop>btn3DCityDBManual</tabstop>
+  <tabstop>btn3DCityDBDownload</tabstop>
+  <tabstop>btnClose</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

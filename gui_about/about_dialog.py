@@ -29,6 +29,9 @@
  ***************************************************************************/
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..cdb_tools_main import CDBToolsMain
 
 import os
 import webbrowser
@@ -47,7 +50,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     """About Dialog class of the plugin. The GUI is imported from an external .ui xml
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, cdbMain: CDBToolsMain, parent=None):
         """Constructor"""
         super(CDBAboutDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -58,6 +61,11 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
         ## Variables and/or constants
         ############################################################
+        #self.cdbMain = cdbMain
+        self.PLUGIN_ABS_PATH: str = cdbMain.PLUGIN_ABS_PATH
+        self.PLATFORM_SYSTEM: str = cdbMain.PLATFORM_SYSTEM
+        self.PLUGIN_VERSION_TXT: str = cdbMain.PLUGIN_VERSION_TXT
+        self.URL_GITHUB_PLUGIN: str = cdbMain.URL_GITHUB_PLUGIN
 
         ############################################################
         ## Dialog initialization
@@ -65,27 +73,27 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         url: QUrl = QUrl()
 
         url.setUrl(c.HTML_ABOUT)
-        self.txtAbout.setSearchPaths([c.PATH_HTML])
+        self.txtAbout.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txtAbout.doSetSource(url, QTextDocument.HtmlResource)
 
         url.setUrl(c.HTML_DEVELOPERS)
-        self.txtDevelopers.setSearchPaths([c.PATH_HTML])
+        self.txtDevelopers.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txtDevelopers.doSetSource(url, QTextDocument.HtmlResource)
 
         url.setUrl(c.HTML_CHANGELOG)
-        self.txtChangelog.setSearchPaths([c.PATH_HTML])
+        self.txtChangelog.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txtChangelog.doSetSource(url, QTextDocument.HtmlResource)
 
         url.setUrl(c.HTML_REFERENCES)
-        self.txtReferences.setSearchPaths([c.PATH_HTML])
+        self.txtReferences.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txtReferences.doSetSource(url, QTextDocument.HtmlResource)
 
         url.setUrl(c.HTML_LICENSE)
-        self.txtLicense.setSearchPaths([c.PATH_HTML])
+        self.txtLicense.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txtLicense.doSetSource(url, QTextDocument.HtmlResource)
 
         url.setUrl(c.HTML_3DCITYDB)
-        self.txt3DCityDB.setSearchPaths([c.PATH_HTML])
+        self.txt3DCityDB.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txt3DCityDB.doSetSource(url, QTextDocument.HtmlResource)
 
         #- SIGNALS  (start)  ################################################################
@@ -119,14 +127,15 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnOpenGitHub_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
-        webbrowser.open_new_tab(c.URL_GITHUB_PLUGIN)
+        webbrowser.open_new_tab(self.URL_GITHUB_PLUGIN)
         return None
 
 
     def evt_btnIssueBug_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
-        webbrowser.open_new_tab(c.URL_GITHUB_PLUGIN_ISSUES)
+        url: str = os.path.join(self.URL_GITHUB_PLUGIN, "issues")
+        webbrowser.open_new_tab(url)
         return None
 
 
@@ -138,9 +147,24 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_btn3DCityDBInstall_clicked(self) -> None:
-        """Event that is called when the Button 'btn3DCityDBManual' is pressed.
+        """ Event that is called when the Button 'btn3DCityDBManual' is pressed.
+        Opens the default web browser with the PDF file containing the installation and user guide.
+        Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
+        available from pyQGIS
+
+        NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
         """
-        webbrowser.open_new_tab(c.URL_PDF_3DCITYDB_INSTALL)
+        file_name: str = "3DCityDB_Suite_QuickInstall.pdf"
+        
+        if self.PLATFORM_SYSTEM == "Windows":
+            # This will open a PDF viewer instead of the browser, if available
+            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", file_name)
+        else:
+            # For OS other than windows, stay safe and simply point to the PDF on GitHub
+            url = os.path.join(self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", file_name)
+        # print(url)
+        
+        webbrowser.open_new_tab(url)
         return None
 
 
@@ -152,8 +176,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
 
     def evt_btnClose_clicked(self) -> None:
-        """Event that is called when the 'Close' pushButton
-        (btnClose) is pressed.
+        """Event that is called when the 'Close' pushButton (btnClose) is pressed.
         """
         self.close()
         return None
