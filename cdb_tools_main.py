@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 import os.path
 import typing
 import webbrowser
+import platform
 
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
@@ -71,8 +72,18 @@ class CDBToolsMain:
         # Initialize Qt resources from file resources.py.
         qInitResources()
 
+        # Determine the platform we are running on
+
+        # Get the system/OS name, such as 'Linux', 'Darwin', 'Java', 'Windows'.
+        # An empty string is returned if the value cannot be determined.
+        self.PLATFORM_SYSTEM: str = platform.system()
+        # print("Plaform system is:", self.PLATFORM_SYSTEM)
+        # Returns a namedtuple() containing six attributes: system, node, release, version, machine, and processor.
+        # self.PLATFORM_MACHINE_UNAME: tuple = platform.uname() 
+        # print("Plaform UNAME is:", self.PLATFORM_MACHINE_UNAME)
+
         # initialize plugin full path (including plugin directory).
-        self.PLUGIN_ABS_PATH: str = main_c.PLUGIN_PATH
+        self.PLUGIN_ABS_PATH: str = main_c.PLUGIN_ABS_PATH
         self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
 
         self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
@@ -342,7 +353,7 @@ class CDBToolsMain:
             callback = self.run_about,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = True) # Default: False
+            add_to_toolbar = False) # Default: False
 
         #####################################################################
         #####################################################################
@@ -599,8 +610,17 @@ class CDBToolsMain:
 
         NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
         """
-        print(main_c.URL_PDF_USER_GUIDE)
-        webbrowser.open_new_tab(main_c.URL_PDF_USER_GUIDE)
+        #url: str = None
+        #self.PLATFORM_SYSTEM = "Darwin"
+        #self.PLUGIN_VERSION_TXT = "0.8.5"
+
+        if self.PLATFORM_SYSTEM == "Windows":
+            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", main_c.FILE_PDF_USER_GUIDE)
+        else:
+            url = os.path.join(main_c.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", main_c.FILE_PDF_USER_GUIDE)
+        print(url)
+        
+        webbrowser.open_new_tab(url)
 
         return None
 
