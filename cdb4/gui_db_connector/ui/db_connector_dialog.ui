@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="gbxConnDet">
        <property name="title">
-        <string>Connection credentials</string>
+        <string>Connection parameters</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -139,7 +139,7 @@
         <item>
          <widget class="QCheckBox" name="checkBox">
           <property name="text">
-           <string>Save credentials</string>
+           <string>Save connection parameters</string>
           </property>
          </widget>
         </item>
