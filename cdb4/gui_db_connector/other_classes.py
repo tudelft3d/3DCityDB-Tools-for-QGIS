@@ -7,7 +7,8 @@ class Connection:
         self.host: str = None
         self.port: int = None
         self.username: str = None
-        self.password = '*****'
+        self.password: str = None
+        # self.password:str = "*****"
         self.store_creds: bool = False
         self.is_active: bool = None
         self.pg_server_version: str = None # PostgreSQL server version
@@ -20,7 +21,7 @@ class Connection:
         if self.password is None:
             pw = 'None'
         else:
-            pw = '*****'
+            pw = '********'
         return_str: str = \
             f"connection name: {self.connection_name}\n" + \
             f"host: {self.host}\n" + \

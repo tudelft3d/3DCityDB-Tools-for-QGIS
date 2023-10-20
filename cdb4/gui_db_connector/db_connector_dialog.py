@@ -108,13 +108,17 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         NewConnParams.port = self.ledPort.text()
         NewConnParams.database_name = self.ledDb.text()
         NewConnParams.username = self.ledUserName.text()
-        NewConnParams.password = self.qledPassw.text()
+        if self.qledPassw.text() == "":
+            NewConnParams.password = None
+        else:
+            NewConnParams.password = self.qledPassw.text()
+
         if self.checkBox.isChecked():
             NewConnParams.store_creds = True
         
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
-                not NewConnParams.username, not NewConnParams.password)):
+                not NewConnParams.username)):
             self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
             return None
         else:
@@ -149,13 +153,17 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         NewConnParams.port = self.ledPort.text()
         NewConnParams.database_name = self.ledDb.text()
         NewConnParams.username = self.ledUserName.text()
-        NewConnParams.password = self.qledPassw.text()
+        if self.qledPassw.text() == "":
+            NewConnParams.password = None
+        else:
+            NewConnParams.password = self.qledPassw.text()
+
         if self.checkBox.isChecked():
             NewConnParams.store_creds = True
-        
+
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
-                not NewConnParams.username, not NewConnParams.password)):
+                not NewConnParams.username)):
             self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
             return None
         else:
