@@ -1454,8 +1454,8 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 			-- And finally add an index on column datatype of table cityobject_genericattrib.
 			-- We need access to schema citydb_pkg, that has been granted before the loop
 			-- The index is created only the very first time, then it won't be created again,
-			-- no matter if another uses it granted privileges.
-			EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', cdb_schema);
+			-- no matter if another user is granted privileges.
+			EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', sch_name);
 
 		END LOOP;
 
@@ -2448,7 +2448,7 @@ IF ade_prefix IS NULL THEN
 	EXECUTE format('SELECT o.id FROM %I.objectclass AS o WHERE o.classname=%L AND ade_id IS NULL', cdb_schema, class_name) INTO class_id;
 ELSE
 	-- we are looking for an ADE objectclass
-	EXECUTE format('SELECT o.id FROM %I.objectclass AS o WHERE o.classname=%L AND ade_id=%L', cdb_schema, ade_id) INTO class_id;
+	EXECUTE format('SELECT o.id FROM %I.objectclass AS o WHERE o.classname=%L AND ade_id=%L', cdb_schema, class_name, ade_id) INTO class_id;
 END IF;
 
 IF class_id IS NULL THEN
