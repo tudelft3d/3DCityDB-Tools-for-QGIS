@@ -1446,10 +1446,10 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 			IF priv_type = 'rw' THEN
 				-- Added to ensure that also a rw user can clean up schema (via qgis_pkg.cleanup_schema(...))
 				EXECUTE format('GRANT TRUNCATE ON ALL TABLES IN SCHEMA %I TO %I', sch_name, usr_name);
-				RAISE NOTICE 'Granted TRUNCATE privileges to user "%" for tables in schema "%"', usr_name, sch_name; 
+				RAISE NOTICE 'Granted TRUNCATE privileges to user "%" for tables in cdb_schema "%"', usr_name, sch_name; 
 			END IF;
 
-			RAISE NOTICE 'Granted "%" privileges to user "%" for schema "%"', priv_type, usr_name, sch_name; 		
+			RAISE NOTICE 'Granted "%" privileges to user "%" for cdb_schema "%"', priv_type, usr_name, sch_name; 		
 
 			-- And finally add an index on column datatype of table cityobject_genericattrib.
 			-- We need access to schema citydb_pkg, that has been granted before the loop
@@ -1464,6 +1464,8 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 		-- Grant usage to public
 		EXECUTE format('GRANT USAGE ON SCHEMA public TO %I;', usr_name);
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA public TO %I;', sql_priv_type, usr_name);
+		
+		RAISE NOTICE 'Granted "%" privileges to user "%" for cdb_schema "%" in database "%"', priv_type, usr_name, sch_name, cdb_name; 
 
 
 	ELSIF cdb_schema = ANY(cdb_schemas_array) THEN 
@@ -1487,7 +1489,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 		-- We need access to schema citydb_pkg, that has been granted before the loop
 		-- The index is created only the very first time, then it won't be created again,
 		-- no matter if another uses it granted privileges.
-		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', sch_name);
+		EXECUTE format('SELECT qgis_pkg.add_ga_indices(%L);', cdb_schema);
 
 		-- Access/usage to qgis_pkg was granted at the moment of installing the usr_schema
 		
@@ -1495,7 +1497,7 @@ IF (usr_name = 'postgres') OR (qgis_pkg.is_superuser(usr_name) IS TRUE) THEN
 		EXECUTE format('GRANT USAGE ON SCHEMA public TO %I;', usr_name);
 		EXECUTE format('GRANT %s ON ALL TABLES IN SCHEMA public TO %I;', sql_priv_type, usr_name);
 
-		RAISE NOTICE 'Granted "%" privileges to user "%" for schema "%" in database "%"', priv_type, usr_name, cdb_schema, cdb_name; 
+		RAISE NOTICE 'Granted "%" privileges to user "%" for cdb_schema "%" in database "%"', priv_type, usr_name, cdb_schema, cdb_name; 
 
 	END IF;
 
