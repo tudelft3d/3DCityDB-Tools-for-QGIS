@@ -639,11 +639,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
         msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == 16384: #YES
+            if res == QMessageBox.Yes: #16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == 16384: #YES               
+                if res == QMessageBox.Yes: #16384: #YES       
                     thr.run_cleanup_schema_thread(self)
         return None
 
@@ -1029,11 +1029,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY want to proceed?"
         msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == 16384: #YES
+            if res == QMessageBox.Yes: #16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == 16384: #YES               
+                if res == QMessageBox.Yes: #16384: #YES            
                     # This thread will also take care of checking what happens after deletion,
                     # e.g. in case that the database is completely emptied.
                     # The user will be eventually informed
