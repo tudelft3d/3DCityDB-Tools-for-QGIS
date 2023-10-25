@@ -8,7 +8,6 @@ class Connection:
         self.port: int = None
         self.username: str = None
         self.password: str = None
-        # self.password:str = "*****"
         self.store_creds: bool = False
         self.is_active: bool = None
         self.pg_server_version: str = None # PostgreSQL server version
