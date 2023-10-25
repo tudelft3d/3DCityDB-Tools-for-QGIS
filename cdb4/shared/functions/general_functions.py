@@ -2,6 +2,7 @@
 """
 import os.path
 from typing import Callable
+import webbrowser
 
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsMessageLog, Qgis
@@ -20,7 +21,6 @@ def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
 
     checked_items = []
     for idx in range(ccbx.count()):
-        
         if ccbx.itemCheckState(idx) == Qt.Checked:
             checked_items.append(ccbx.itemData(idx))
     return checked_items
@@ -69,3 +69,15 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
         tag=main_c.PLUGIN_NAME_LABEL,
         level=Qgis.Critical,
         notifyUser=True)
+
+    
+def open_url(url) -> None:
+    """ Opens the default web browser.
+    Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
+    available from pyQGIS
+
+    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
+    """
+    webbrowser.open_new_tab(url)
+
+    return None
