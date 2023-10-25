@@ -966,7 +966,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.\nDo you want to proceed?")
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             thr.run_refresh_layers_thread(self)
 
         return None
@@ -1135,7 +1135,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Warn user when too many features are to be imported.
         if counter > self.settings.max_features_to_import_default:
             res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
-            if res == 16384: # YES, proceed with importing layers
+            if res == QMessageBox.Yes: #16384: #YES, proceed with importing layers
                 success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
                 return None # Import Cancelled
