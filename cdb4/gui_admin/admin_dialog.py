@@ -561,7 +561,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             thr.run_install_qgis_pkg_thread(self, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=self.QGIS_PKG_SCHEMA)
 
         return None
@@ -572,7 +572,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'! Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             thr.run_uninstall_qgis_pkg_thread(self)
 
         return None
@@ -721,7 +721,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             sql.exec_create_qgis_usr_schema(self)
         if not res: # Query was canceled by user, or error occurred.
             return None
@@ -794,7 +794,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             # Run scripts
             thr.run_drop_usr_schema_thread(self)
         else: # Query was cancelled by user, or error occurred.
