@@ -8,7 +8,8 @@ import os.path
 # Qt.ApplicationModal	2	The window is modal to the application and blocks input to all windows.
 
 # Supported QGIS minor versions, i.e. version 3.xx
-QGIS_LTR : list = [22, 28]
+#QGIS_LTR: tuple = (22,) # With one-item tuples, do not forget to add a column after it!! :-)
+QGIS_LTR: tuple = (22, 28, 34)
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
@@ -35,9 +36,9 @@ CDB4_PLUGIN_DIR: str = "cdb4"
 
 # Plugin and dialog labels
 PLUGIN_NAME_LABEL: str      = "3DCityDB Tools"
-DLG_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
 DLG_NAME_LOADER_LABEL: str  = "Layer Loader"
 DLG_NAME_DELETER_LABEL: str = "Bulk Deleter"
+DLG_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
 DLG_NAME_USRGUIDE_LABEL: str= "User guide (PDF)"
 DLG_NAME_ABOUT_LABEL: str   = "About"
 
