@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 2;
-code_name      := 'Nero and Poppaea';
-release_date   := '2023-08-28'::date;
+minor_revision := 3;
+code_name      := 'Revenge of the pumpkin';
+release_date   := '2023-10-31'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
