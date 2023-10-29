@@ -52,6 +52,7 @@ from qgis.gui import QgisInterface
 
 from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
+from .shared.functions import shared_functions as sh_f
 
 class CDBToolsMain:
     """QGIS Plugin Implementation. Main class.
@@ -78,6 +79,12 @@ class CDBToolsMain:
         # An empty string is returned if the value cannot be determined.
         self.PLATFORM_SYSTEM: str = platform.system()
         # print("Plaform system is:", self.PLATFORM_SYSTEM)
+
+        ######################################################
+        # Only for testing purposes
+        # self.PLATFORM_SYSTEM: str = "Linux"
+        # print("Plaform system is:", self.PLATFORM_SYSTEM)
+        ######################################################
 
         # initialize plugin full path (including plugin directory).
         self.URL_GITHUB_PLUGIN: str = main_c.URL_GITHUB_PLUGIN
@@ -109,27 +116,35 @@ class CDBToolsMain:
 
         # Welcome message upon (re)loading
         msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=False)
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
         # Variable to store the loader dialog of the plugin.
         self.loader_dlg: CDB4LoaderDialog = None
         # Check if plugin was started the first time in current QGIS session.
         self.first_start_loader: bool = True
+        self.MENU_LABEL_LOADER: str = main_c.MENU_LABEL_LOADER
+        self.DLG_NAME_LOADER: str = main_c.DLG_NAME_LOADER
 
         # Variable to store the deleter dialog of the plugin.
         self.deleter_dlg: CDB4DeleterDialog = None
         # Check if plugin was started the first time in current QGIS session.
         self.first_start_deleter: bool = True
+        self.MENU_LABEL_DELETER: str = main_c.MENU_LABEL_DELETER
+        self.DLG_NAME_DELETER: str = main_c.DLG_NAME_DELETER
 
         # Variable to store the admin dialog of the plugin.
         self.admin_dlg: CDB4AdminDialog = None
         # Check if plugin was started the first time in current QGIS session.
         self.first_start_admin: bool = True
+        self.MENU_LABEL_ADMIN: str = main_c.MENU_LABEL_ADMIN
+        self.DLG_NAME_ADMIN: str = main_c.DLG_NAME_ADMIN
 
         # Variable to store the about dialog of the plugin.
         self.about_dlg: CDBAboutDialog = None
         # Check if plugin was started the first time in current QGIS session.
         self.first_start_about: bool = True
+        self.MENU_LABEL_ABOUT: str = main_c.MENU_LABEL_ABOUT
+        self.DLG_NAME_ABOUT: str = main_c.DLG_NAME_ABOUT
 
         self.DialogRegistry: dict = {}
 
@@ -293,17 +308,17 @@ class CDBToolsMain:
 
         # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
         # admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
-        loader_icon_path  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "loader_icon.png")
-        deleter_icon_path = os.path.join(self.PLUGIN_ABS_PATH, "icons", "deleter_icon.png")
-        admin_icon_path   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "admin_icon.png")
-        usrguide_icon_path= os.path.join(self.PLUGIN_ABS_PATH, "icons", "help_icon.png")
-        about_icon_path   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "info_icon.png")
+        icon_path_loader  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "loader_icon.png")
+        icon_path_deleter = os.path.join(self.PLUGIN_ABS_PATH, "icons", "deleter_icon.png")
+        icon_path_admin   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "admin_icon.png")
+        icon_path_usrguide= os.path.join(self.PLUGIN_ABS_PATH, "icons", "help_icon.png")
+        icon_path_about   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "info_icon.png")
 
         # Loader Dialog
         self.add_action(
-            icon_path = loader_icon_path,
+            icon_path = icon_path_loader,
             #txt = self.tr(self.PLUGIN_NAME_LOADER),
-            txt = main_c.DLG_NAME_LOADER_LABEL,
+            txt = self.MENU_LABEL_LOADER,
             callback = self.run_loader,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -311,9 +326,9 @@ class CDBToolsMain:
 
         # Deleter Dialog
         self.add_action(
-            icon_path = deleter_icon_path,
+            icon_path = icon_path_deleter,
             #txt = self.tr(self.PLUGIN_NAME_DELETER),
-            txt = main_c.DLG_NAME_DELETER_LABEL,
+            txt = main_c.MENU_LABEL_DELETER,
             callback = self.run_deleter,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -321,8 +336,8 @@ class CDBToolsMain:
 
         # Admin Dialog
         self.add_action(
-            icon_path = admin_icon_path,
-            txt = main_c.DLG_NAME_ADMIN_LABEL,
+            icon_path = icon_path_admin,
+            txt = self.MENU_LABEL_ADMIN,
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -337,8 +352,8 @@ class CDBToolsMain:
 
         # User guide link
         self.add_action(
-            icon_path = usrguide_icon_path,
-            txt = main_c.DLG_NAME_USRGUIDE_LABEL,
+            icon_path = icon_path_usrguide,
+            txt = main_c.MENU_LABEL_USRGUIDE,
             callback = self.run_usr_guide,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -346,8 +361,8 @@ class CDBToolsMain:
 
         # About Dialog - Leave this at the end, so it will be the last icon.
         self.add_action(
-            icon_path = about_icon_path,
-            txt = main_c.DLG_NAME_ABOUT_LABEL,
+            icon_path = icon_path_about,
+            txt = self.MENU_LABEL_ABOUT,
             callback = self.run_about,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
@@ -445,7 +460,7 @@ class CDBToolsMain:
         # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.loader_dlg)
 
-        self.DialogRegistry.update({self.loader_dlg.DIALOG_VAR_NAME: self.loader_dlg})
+        self.DialogRegistry.update({self.DLG_NAME_LOADER: self.loader_dlg})
 
         self.check_concurrent_connections(self.loader_dlg)
 
@@ -499,7 +514,7 @@ class CDBToolsMain:
         # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.deleter_dlg) # Stored in self.conn
 
-        self.DialogRegistry.update({self.deleter_dlg.DIALOG_VAR_NAME: self.deleter_dlg})
+        self.DialogRegistry.update({self.DLG_NAME_DELETER: self.deleter_dlg})
 
         self.check_concurrent_connections(self.deleter_dlg)
 
@@ -539,14 +554,14 @@ class CDBToolsMain:
         if self.first_start_admin:
             self.first_start_admin = False
             # Create the dialog with elements (after translation).
-            self.admin_dlg = CDB4AdminDialog()
+            self.admin_dlg = CDB4AdminDialog(cdbMain=self)
 
         # Get existing connections from QGIS profile settings.
         # They are added to the combo box (cbxExistingConn), and 
         # an event is fired (dlg.evt_cbxExistingConn_changed())
         conn_f.get_qgis_postgres_conn_list(self.admin_dlg) # Stored in self.conn
 
-        self.DialogRegistry.update({self.admin_dlg.DIALOG_VAR_NAME: self.admin_dlg})
+        self.DialogRegistry.update({self.DLG_NAME_ADMIN: self.admin_dlg})
 
         if len(self.DialogRegistry) > 1:
             close_dlg: bool = False
@@ -556,7 +571,7 @@ class CDBToolsMain:
 
             # Check whether there are open dialogs and open connections
             for key, dlg in self.DialogRegistry.items():
-                if key != self.admin_dlg.DIALOG_VAR_NAME:
+                if key != self.DLG_NAME_ADMIN:
                     if dlg.isVisible():
                         close_dlg = True
                     if dlg.conn:
@@ -565,12 +580,12 @@ class CDBToolsMain:
 
             # If so, inform the user and then close them.
             if close_dlg or close_conn:
-                msg: str = f"In order to launch the '{self.admin_dlg.DIALOG_NAME}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs. If you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
+                msg: str = f"In order to launch the '{self.MENU_LABEL_ADMIN}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs. If you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(self.admin_dlg, "Concurrent dialogs", msg)
                 if res == QMessageBox.Yes: #16384: #YES
 
                     for key, dlg in self.DialogRegistry.items():
-                        if key != self.admin_dlg.DIALOG_VAR_NAME:
+                        if key != self.DLG_NAME_ADMIN:
                             if dlg:
                                 if dlg.conn:
                                     if dlg.conn.closed == 0:
@@ -601,24 +616,20 @@ class CDBToolsMain:
     
 
     def run_usr_guide(self) -> None:
-        """ Opens the default web browser with the PDF file containing the installation and user guide.
-        
-        Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
-        available from pyQGIS
-
-        NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
+        """ Opens the PDF containing the User Guide of the plugin
+        For Windows OS: Opens the default web browser with the PDF file containing the installation and user guide.
+        Otherwise: Opens the url to the PDF in GitHub.
         """
         file_name: str = "3DCityDB-Tools_UserGuide.pdf"
 
         if self.PLATFORM_SYSTEM == "Windows":
             # This will open a PDF viewer instead of the browser, if available
-            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", file_name)
+            pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", file_name)
+            sh_f.open_local_PDF(pdf_path)
         else:
             # For OS other than windows, stay safe and simply point to the PDF on GitHub
-            url = os.path.join(main_c.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", file_name)
-        # print(url)
-        
-        webbrowser.open_new_tab(url)
+            url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", file_name])
+            sh_f.open_online_url(url)
 
         return None
 
@@ -662,7 +673,7 @@ class CDBToolsMain:
         if len(self.DialogRegistry) > 1:
             close_admin_dlg: bool = False
             close_admin_conn: bool = False
-            if main_c.DLG_VAR_NAME_ADMIN in self.DialogRegistry:
+            if main_c.DLG_NAME_ADMIN in self.DialogRegistry:
                 if self.admin_dlg.isVisible():
                     close_admin_dlg = True
                 if self.admin_dlg.conn:
@@ -670,7 +681,7 @@ class CDBToolsMain:
                         close_admin_conn = True
 
             if close_admin_dlg:
-                msg: str = f"In order to launch the '{dlg.DIALOG_NAME}', you must first close the '{self.admin_dlg.DIALOG_NAME}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
+                msg: str = f"In order to launch the '{dlg.DLG_NAME_LABEL}', you must first close the '{self.admin_dlg.DLG_NAME_LABEL}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(dlg, "Concurrent dialogs", msg)
                 if res == QMessageBox.Yes: #16384: #YES
                     if close_admin_conn:
