@@ -34,16 +34,16 @@ CDB4_PLUGIN_DIR: str = "cdb4"
 # Root folder for cdb5
 # CDB4_PLUGIN_DIR: str = "cdb5"
 
-# Plugin and dialog labels
-PLUGIN_NAME_LABEL: str      = "3DCityDB Tools"
-DLG_NAME_LOADER_LABEL: str  = "Layer Loader"
-DLG_NAME_DELETER_LABEL: str = "Bulk Deleter"
-DLG_NAME_ADMIN_LABEL: str   = "QGIS Package Administrator"
-DLG_NAME_USRGUIDE_LABEL: str= "User guide (PDF)"
-DLG_NAME_ABOUT_LABEL: str   = "About"
+# Plugin and menu labels
+PLUGIN_NAME_LABEL: str  = "3DCityDB Tools"
+MENU_LABEL_LOADER: str  = "Layer Loader"
+MENU_LABEL_DELETER: str = "Bulk Deleter"
+MENU_LABEL_ADMIN: str   = "QGIS Package Administrator"
+MENU_LABEL_USRGUIDE: str= "User guide (PDF)"
+MENU_LABEL_ABOUT: str   = "About"
 
-# Dialog variable names
-DLG_VAR_NAME_ADMIN: str   = "admin_dlg"
-DLG_VAR_NAME_LOADER: str  = "loader_dlg"
-DLG_VAR_NAME_DELETER: str = "deleter_dlg"
-DLG_VAR_NAME_ABOUT: str   = "about_dlg"
+# Dialog names
+DLG_NAME_ADMIN: str   = "admin_dlg"
+DLG_NAME_LOADER: str  = "loader_dlg"
+DLG_NAME_DELETER: str = "deleter_dlg"
+DLG_NAME_ABOUT: str   = "about_dlg"
