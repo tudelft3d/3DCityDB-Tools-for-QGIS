@@ -168,7 +168,7 @@ class QgisPackageInstallWorker(QObject):
 
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Installation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Installation)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -315,7 +315,7 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
     if sh_sql.is_qgis_pkg_installed(dlg):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=pkg))
-        dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+        dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
 
         # Show database name
         dlg.lblConnToDb_out.setText(c.success_html.format(text=dlg.DB.database_name))
@@ -337,7 +337,7 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
         QgsMessageLog.logMessage(
                 message=c.INST_SUCC_MSG.format(pkg=pkg),
                 tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
         # Finish (re)setting up the GUI
@@ -361,14 +361,14 @@ def evt_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
     """
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(c.INST_FAIL_MSG.format(pkg=pkg))
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
     # Inform user
     dlg.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=pkg)))
     QgsMessageLog.logMessage(
             message=c.INST_FAIL_MSG.format(pkg=pkg),
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
 
     # Drop corrupted installation.
@@ -533,7 +533,7 @@ class QgisPackageUninstallWorker(QObject):
         curr_step: int = 0
 
         try:
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
                 # 1) revoke privileges: for all users
@@ -762,7 +762,7 @@ class QgisPackageUninstallWorker(QObject):
 
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
                 # 1) revoke privileges: for all normal users
@@ -1082,7 +1082,7 @@ class QgisPackageUninstallWorker(QObject):
 
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -1398,14 +1398,14 @@ def evt_qgis_pkg_uninstall_success(dlg: CDB4AdminDialog) -> None:
         # QGIS Package was successfully removed
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=qgis_pkg_schema))
-        dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+        dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
 
         # Inform user
         dlg.lblMainInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=qgis_pkg_schema)))
         QgsMessageLog.logMessage(
                 message=c.UNINST_SUCC_MSG.format(pkg=qgis_pkg_schema),
                 tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
         # Clear the label in the connection status groupbox
@@ -1429,14 +1429,14 @@ def evt_qgis_pkg_uninstall_fail(dlg: CDB4AdminDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
     # Inform user
     dlg.lblMainInst_out.setText(error)
     QgsMessageLog.logMessage(
             message=error,
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
     
     return None
@@ -1557,7 +1557,7 @@ class DropUsrSchemaWorker(QObject):
 
         try:
             # Open new temp session, reserved for usr_schema installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(User schema Uninstallation)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(User schema Uninstallation)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -1739,14 +1739,14 @@ def evt_usr_schema_drop_success(dlg: CDB4AdminDialog) -> None:
     if not sh_sql.is_usr_schema_installed(dlg):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=usr_schema))
-        dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+        dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
 
         # Inform user
         dlg.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=usr_schema)))
         QgsMessageLog.logMessage(
                 message=c.UNINST_SUCC_MSG.format(pkg=usr_schema),
                 tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
         # Enable the remove from group button
@@ -1775,14 +1775,14 @@ def evt_usr_schema_drop_fail(dlg: CDB4AdminDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
     # Inform user
     dlg.lblUserInst_out.setText(error)
     QgsMessageLog.logMessage(
             message=error,
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
 
     # Disable the remove from group button
