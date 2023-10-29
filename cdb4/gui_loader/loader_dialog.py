@@ -48,7 +48,6 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -85,14 +84,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ## "Standard" variables or constants
         ############################################################
 
-        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
         # Variable to store the qgis_pkg
-        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
+        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
 
         # Variable to store the label of this dialog
-        self.DIALOG_NAME: str = main_c.DLG_NAME_LOADER_LABEL
+        self.DLG_NAME_LABEL: str = cdbMain.MENU_LABEL_LOADER
         # Variable to store the variable name (in cdbMain) of this dialog
-        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_LOADER
+        self.DLG_NAME: str = cdbMain.DLG_NAME_LOADER
 
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
@@ -286,7 +285,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
-        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+        self.msg_bar.pushWidget(self.bar, Qgis.MessageLevel.Info)
 
 
     def evt_update_bar(self, step: int, text: str) -> None:
@@ -729,7 +728,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if cdb_extents_new == cdb_extents_old:
                 # Do nothing, the extents have not changed. No need to do anything
-                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
                 return None
             else: # The extents have changed. Show them on the map as dashed line
 
@@ -855,7 +854,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             # Inform the user
             msg: str = f"The '{self.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu until you upload new data again."
             QMessageBox.information(self, "Extents changed!", msg)
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
             # Reset to null the cdb_extents in the extents table in PostgreSQL
             sql.exec_upsert_extents(dlg=self, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
@@ -1166,7 +1165,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage(
                 message="Something went wrong while importing the layer(s)",
                 tag=self.PLUGIN_NAME,
-                level=Qgis.Critical,
+                level=Qgis.MessageLevel.Critical,
                 notifyUser=True)
             return None
 
@@ -1185,7 +1184,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         QgsMessageLog.logMessage(
                 message="Layer(s) successfully imported",
                 tag=self.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
         # To reduce the space "consumed" in the layer tree tab, 
@@ -1270,7 +1269,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             return None # Exit
 
         settings_list = [
@@ -1283,17 +1282,17 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DIALOG_NAME, settings_list)
+        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL, settings_list)
 
         if not res:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be saved!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been saved!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 
@@ -1301,13 +1300,13 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnLoadSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
-        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DIALOG_NAME)
+        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL)
         # print(settings_list)
 
         if not settings_list:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be loaded!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit without updating the settings
 
         s: dict
@@ -1329,8 +1328,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 pass
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been loaded!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 
