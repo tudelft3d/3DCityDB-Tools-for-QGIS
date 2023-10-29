@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
 from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
-from qgis.PyQt.QtCore import Qt
+# from qgis.PyQt.QtCore import Qt
 
 from ...shared.functions import general_functions as gen_f
 from .. import deleter_constants as c
