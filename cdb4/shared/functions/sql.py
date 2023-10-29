@@ -192,7 +192,7 @@ def exec_list_cdb_schemas(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Dele
         schema_is_empty = tuple(zip(*res))[1] # trailing comma        
 
     except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.Warning)
+        QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
         dlg.conn.rollback()
         schema_names = tuple() # create an empty tuple
         schema_is_empty = tuple()  # create an empty tuple
@@ -252,7 +252,7 @@ def exec_upsert_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Delet
             return last_upserted_id
 
     except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"Could not upsert values to table {usr_schema}.settings.", main_c.PLUGIN_NAME_LABEL, level=Qgis.Warning)
+        QgsMessageLog.logMessage(f"Could not upsert values to table {usr_schema}.settings.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
         dlg.conn.rollback()
 
 
@@ -310,7 +310,7 @@ def exec_read_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Deleter
         return settings_list
 
     except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"Could not retrieve values from table {usr_schema}.settings.", main_c.PLUGIN_NAME_LABEL, level=Qgis.Warning)
+        QgsMessageLog.logMessage(f"Could not retrieve values from table {usr_schema}.settings.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
         dlg.conn.rollback()
 
     return None
