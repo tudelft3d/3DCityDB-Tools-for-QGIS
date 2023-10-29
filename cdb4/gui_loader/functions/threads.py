@@ -163,7 +163,7 @@ class CreateLayersWorker(QObject):
 
         try:
             # Open new temp session
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Create layers and detail views)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Create layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -282,14 +282,14 @@ def evt_create_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA))
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
     # Inform user
     dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
     QgsMessageLog.logMessage(
             message=c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
     
     return None
@@ -391,7 +391,7 @@ class RefreshLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for mat refresh.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Refresh layers)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Refresh layers)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -583,7 +583,7 @@ class DropLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for dropping layers.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Drop layers and detail views)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Drop layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -686,7 +686,7 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
 
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA))
-        dlg.msg_bar.pushWidget(msg, Qgis.Success, 5)
+        dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
 
         # Inform user that now there aren't any layers in its schema
         dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
@@ -694,7 +694,7 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
         QgsMessageLog.logMessage(
                 message=c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA),
                 tag=dlg.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
     else:
@@ -713,14 +713,14 @@ def evt_drop_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA))
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 5)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
     # Inform user that the layers are now corrupted.
     dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA)))
     QgsMessageLog.logMessage(
             message=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
 
     return None
