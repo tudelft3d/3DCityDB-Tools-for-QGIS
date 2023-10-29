@@ -2,9 +2,9 @@
 """
 import os.path
 from typing import Callable
-import webbrowser
 
 from qgis.PyQt.QtCore import Qt
+
 from qgis.core import QgsMessageLog, Qgis
 from qgis.gui import QgsCheckableComboBox
 
@@ -67,17 +67,6 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
     QgsMessageLog.logMessage(
         message=header + str(error),
         tag=main_c.PLUGIN_NAME_LABEL,
-        level=Qgis.Critical,
+        level=Qgis.MessageLevel.Critical,
         notifyUser=True)
 
-    
-def open_url(url) -> None:
-    """ Opens the default web browser.
-    Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
-    available from pyQGIS
-
-    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
-    """
-    webbrowser.open_new_tab(url)
-
-    return None
