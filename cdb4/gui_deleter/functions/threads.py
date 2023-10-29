@@ -151,7 +151,7 @@ class CleanUpSchemaWorker(QObject):
         
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Clean up schema (TRUNCATE)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Clean up schema (TRUNCATE)"]))
             with temp_conn:
                 # Start measuring time
                 time_start = time.time()                
@@ -255,13 +255,13 @@ def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.TRUNC_SUCC_MSG.format(sch=cdb_schema))
-    dlg.msg_bar.pushWidget(msg, Qgis.Success, 4)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 4)
 
     # Inform user
     QgsMessageLog.logMessage(
             message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Success,
+            level=Qgis.MessageLevel.Success,
             notifyUser=True)
 
     tc_f.refresh_extents(dlg)
@@ -280,13 +280,13 @@ def evt_clean_up_schema_fail(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 4)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 4)
     
     # Inform user
     QgsMessageLog.logMessage(
             message=error,
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
     
     return None
@@ -472,7 +472,7 @@ class BulkDeleteWorker(QObject):
 
         # Open new temp session, reserved for installation.
         try:
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DIALOG_NAME, "(Bulk Deleter)"]))
+            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Bulk Deleter)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -587,13 +587,13 @@ def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema))
-    dlg.msg_bar.pushWidget(msg, Qgis.Success, 4)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 4)
 
     # Inform user
     QgsMessageLog.logMessage(
             message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Success,
+            level=Qgis.MessageLevel.Success,
             notifyUser=True)
 
     tc_f.refresh_extents(dlg)
@@ -612,13 +612,13 @@ def evt_buld_delete_fail(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.Critical, 4)
+    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 4)
 
     # Inform user
     QgsMessageLog.logMessage(
             message=error,
             tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
+            level=Qgis.MessageLevel.Critical,
             notifyUser=True)
     
     return None
