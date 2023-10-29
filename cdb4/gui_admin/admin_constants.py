@@ -6,7 +6,8 @@ from ... import cdb_tools_main_constants as main_c
 PG_MIN_VERSION: int = 10
 
 # 3D City Database minimum version
-CDB_MIN_VERSION: int = 4
+CDB_MIN_VERSION_MAJOR: int = 4
+CDB_MIN_VERSION_MINOR: int = 0 # Currently not used
 
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
