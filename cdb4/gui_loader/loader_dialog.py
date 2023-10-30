@@ -439,7 +439,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.NO_DB_ACCESS_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"You are not allowed to connect to this database.\n\nPlease contact your database administrator."
+            msg = f"You are not allowed to connect to this database.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "Unable to connect to database", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -482,7 +482,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\n\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br><br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -513,7 +513,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblUserInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{self.DB.username}")))
             self.checks.is_usr_pkg_installed = False
 
-            msg = f"The required user schema 'qgis_{self.DB.username}' is missing.\n\nPlease contact your database administrator to install it."
+            msg = f"The required user schema 'qgis_{self.DB.username}' is missing.<br><br>Please contact your database administrator to install it."
             QMessageBox.warning(self, "User schema not found", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -544,7 +544,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw_ro) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.\n\nPlease contact your database administrator."
+            msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -561,7 +561,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             if len(cdb_schemas) == 0:
                 tc_f.fill_cdb_schemas_box_feat_count(self, None)
                 # Inform the use that all available cdb_schemas are empty.
-                msg = "The available citydb schema(s) is/are all empty.\n\nPlease load data into the database first."
+                msg = "The available citydb schema(s) is/are all empty.<br><br>Please load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
                 tl_wf.tabLayers_reset(self)
@@ -842,7 +842,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(self)
                     if has_layers_in_current_schema:
-                        msg: str = f"To align with the next extents of '{self.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).\n\nYou may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
+                        msg: str = f"To align with the next extents of '{self.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).<br><br>You may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
                         QMessageBox.warning(self, "Extents changed!", msg)
 
                         thr.run_drop_layers_thread(self) # this eventually checks the layer status
@@ -964,7 +964,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnRefreshLayers_clicked(self) -> None:
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
-        res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.\nDo you want to proceed?")
+        res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.<br>Do you want to proceed?")
         if res == QMessageBox.Yes: #16384: #YES
             thr.run_refresh_layers_thread(self)
 
@@ -1133,7 +1133,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Warn user when too many features are to be imported.
         if counter > self.settings.max_features_to_import_default:
-            res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
+            res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br>Do you want to continue anyway?")
             if res == QMessageBox.Yes: #16384: #YES, proceed with importing layers
                 success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
