@@ -395,7 +395,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.\n\nEither way, please contact your database administrator."
+            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.<br><br>Either way, please contact your database administrator."
             QMessageBox.warning(self, "Unavailable QGIS Package", msg)
 
             ts_wf.tabSettings_reset(self)
@@ -438,7 +438,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             ts_wf.tabSettings_reset(self)
@@ -508,7 +508,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.\nPlease contact your database administrator."
+            msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
             return None # Exit
         else:
@@ -633,9 +633,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnCleanUpSchema_clicked(self) -> None:
         """Event that is called when the 'Truncate tables' button (btnCleanUpSchema) is pressed.
         """
-        msg1: str = f"All tables in citydb schema {self.CDB_SCHEMA} will be truncated and all data will be deleted.\n\nDo you really want to proceed?"
-        msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"All tables in citydb schema {self.CDB_SCHEMA} will be truncated and all data will be deleted.<br><br>Do you really want to proceed?"
+        msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.<br><br>Do you REALLY want to proceed?"
+        msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
         if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
@@ -1023,9 +1023,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # This case should not happen.
             return None # Exit
 
-        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you really want to proceed?"
-        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you really want to proceed?"
+        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY want to proceed?"
+        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
         if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
