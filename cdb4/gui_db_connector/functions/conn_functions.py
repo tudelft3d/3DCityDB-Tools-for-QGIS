@@ -121,10 +121,10 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
     is_unique: bool = True
     curr_DB: Connection = dlg.DB
     curr_CDB_SCHEMA: str = dlg.CDB_SCHEMA
-    curr_DIALOG_NAME: str = dlg.DIALOG_VAR_NAME
+    curr_DIALOG_NAME: str = dlg.DLG_NAME
     no_admin_dlgs: list = []
 
-    no_admin_dlgs = [dlg for k,dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_VAR_NAME_ADMIN, curr_DIALOG_NAME]]
+    no_admin_dlgs = [dlg for k,dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_NAME_ADMIN, curr_DIALOG_NAME]]
 
     # Conditions: 
     # 1) Connection exists, is open
@@ -158,7 +158,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
         # Create message box
         msgBox = QMessageBox()
         msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setText(f"You are currently already connected to schema '{dlg.CDB_SCHEMA}' in the '{dlg.DIALOG_NAME}' GUI.\n\nYou can either:\n- Proceed (i.e. automatically close the other connection), or\n- Wait (i.e. manually close the other connection)")
+        msgBox.setText(f"You are already connected to schema '{dlg.CDB_SCHEMA}' in the '{dlg.DLG_NAME_LABEL}' GUI.<br><br>You can either:<br>- Proceed (i.e. automatically close the other connection), or<br>- Wait (i.e. manually close the other connection)")
         msgBox.setWindowTitle("Concurrent connection")
         msgBox.addButton(btnWait, QMessageBox.RejectRole)
         msgBox.addButton(btnProceed, QMessageBox.ActionRole)

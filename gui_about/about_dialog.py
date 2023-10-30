@@ -33,14 +33,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..cdb_tools_main import CDBToolsMain
 
-import os
-import webbrowser
+import os.path
 
 from qgis.PyQt import uic, QtWidgets
-#from qgis.PyQt.QtWidgets import QTableWidgetItem, QAction, QWidget, QMessageBox, QListWidget, QListWidgetItem
-from qgis.PyQt.QtCore import QUrl
+from qgis.PyQt.QtCore import QUrl 
 from qgis.PyQt.QtGui import QTextDocument
 
+from ..shared.functions import shared_functions as sh_f 
 from . import about_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -62,10 +61,17 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         ## Variables and/or constants
         ############################################################
         #self.cdbMain = cdbMain
-        self.PLUGIN_ABS_PATH: str = cdbMain.PLUGIN_ABS_PATH
-        self.PLATFORM_SYSTEM: str = cdbMain.PLATFORM_SYSTEM
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
+
+        # Variable to store the name of this dialog (same as the label in the menu)
+        # self.DLG_NAME_LABEL: str = cdbMain.MENU_LABEL_ABOUT
+        # Variable to store the name of this dialog
+        # self.DLG_NAME: str = cdbMain.DLG_NAME_ABOUT
+
+        self.PLUGIN_ABS_PATH:    str = cdbMain.PLUGIN_ABS_PATH
+        self.PLATFORM_SYSTEM:    str = cdbMain.PLATFORM_SYSTEM
         self.PLUGIN_VERSION_TXT: str = cdbMain.PLUGIN_VERSION_TXT
-        self.URL_GITHUB_PLUGIN: str = cdbMain.URL_GITHUB_PLUGIN
+        self.URL_GITHUB_PLUGIN:  str = cdbMain.URL_GITHUB_PLUGIN
 
         ############################################################
         ## Dialog initialization
@@ -106,11 +112,15 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.btn3DCityDBDownload.clicked.connect(self.evt_btn3DCityDBDownload_clicked)
         self.btn3DCityDBInstall.clicked.connect(self.evt_btn3DCityDBInstall_clicked)
-        self.btn3DCityDBManual.clicked.connect(self.evt_btn3DCityDBManual_clicked)
+        self.btn3DCityDBManual.clicked.connect(self.evt_btnOnline3DCityDBManual_clicked)
 
         self.btnClose.clicked.connect(self.evt_btnClose_clicked)
 
         #-SIGNALS  (end)  ################################################################
+
+    # "NORMAL" FUNCTIONS (begin)  #####################################################################
+
+    # "NORMAL" FUNCTIONS (end)  #####################################################################
 
     # EVENT FUNCTIONS (begin)  #####################################################################
 
@@ -127,51 +137,52 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnOpenGitHub_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
-        webbrowser.open_new_tab(self.URL_GITHUB_PLUGIN)
+        url: str = self.URL_GITHUB_PLUGIN
+        sh_f.open_online_url(url)
         return None
 
 
     def evt_btnIssueBug_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
-        url: str = os.path.join(self.URL_GITHUB_PLUGIN, "issues")
-        webbrowser.open_new_tab(url)
+        url: str = "/".join([self.URL_GITHUB_PLUGIN, "issues"])
+        sh_f.open_online_url(url)
         return None
 
 
     def evt_btn3DCityDBDownload_clicked(self) -> None:
         """Event that is called when the Button 'btn3DCityDBDownload' is pressed.
         """
-        webbrowser.open_new_tab(c.URL_GITHUB_3DCITYDB)
+        url: str = c.URL_GITHUB_3DCITYDB
+        sh_f.open_online_url(url)
         return None
 
 
     def evt_btn3DCityDBInstall_clicked(self) -> None:
         """ Event that is called when the Button 'btn3DCityDBManual' is pressed.
-        Opens the default web browser with the PDF file containing the installation and user guide.
-        Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
-        available from pyQGIS
-
-        NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using 3.9 at the moment...)
+        For Windows OS: Opens the default web browser with the PDF file containing the installation and user guide.
+        Otherwise: Opens the url to the PDF in GitHub.
         """
         file_name: str = "3DCityDB_Suite_QuickInstall.pdf"
         
         if self.PLATFORM_SYSTEM == "Windows":
-            # This will open a PDF viewer instead of the browser, if available
-            url = "file:///" + os.path.join(self.PLUGIN_ABS_PATH, "user_guide", file_name)
+            # This will open a PDF viewer instead of the browser
+            pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", "3dcitydb_install", file_name)
+            sh_f.open_local_PDF(pdf_path)
         else:
             # For OS other than windows, stay safe and simply point to the PDF on GitHub
-            url = os.path.join(self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "user_guide", file_name)
-        # print(url)
-        
-        webbrowser.open_new_tab(url)
+            url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install", file_name])
+            sh_f.open_online_url(url)
+
         return None
 
 
-    def evt_btn3DCityDBManual_clicked(self) -> None:
+    def evt_btnOnline3DCityDBManual_clicked(self) -> None:
         """Event that is called when the Button 'btn3DCityDBManual' is pressed.
         """
-        webbrowser.open_new_tab(c.URL_GITHUB_3DCITYDB_MANUAL)
+        url: str = c.URL_GITHUB_3DCITYDB_MANUAL
+        sh_f.open_online_url(url)
+    
         return None
 
 

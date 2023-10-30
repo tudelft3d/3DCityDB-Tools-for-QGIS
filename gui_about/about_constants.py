@@ -14,4 +14,4 @@ HTML_SEARCH_PATH: str = os.path.join(FILE_PATH, "html")
 
 # URLs 3DCityDB database
 URL_GITHUB_3DCITYDB: str        = "https://github.com/3dcitydb/3dcitydb-suite/releases"
-URL_GITHUB_3DCITYDB_MANUAL: str = "https://3dcitydb-docs.readthedocs.io/en/latest/"
+URL_GITHUB_3DCITYDB_MANUAL: str = "https://3dcitydb-docs.readthedocs.io/en/latest"

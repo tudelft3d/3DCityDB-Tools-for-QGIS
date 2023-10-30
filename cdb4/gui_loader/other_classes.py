@@ -13,13 +13,13 @@ class DialogChecks:
 
     def __str__(self):
         return_str: str = \
-            f"Is the connection to the database established? {self.is_conn_successful}\n" + \
-            f"Is PostGIS installed? {self.is_postgis_installed}\n" + \
-            f"Is the 3DCityDB installed? {self.is_3dcitydb_installed}\n" + \
-            f"Is the QGIS Package installed? {self.is_qgis_pkg_installed}\n" + \
-            f"Is the user schema installed? {self.is_usr_pkg_installed}\n" + \
-            f"Have layers been created? {self.layers_exist}\n" + \
-            f"Have layers been refreshed? {self.layers_refreshed}\n"
+            f"Is the connection to the database established? {self.is_conn_successful}<br>" + \
+            f"Is PostGIS installed? {self.is_postgis_installed}<br>" + \
+            f"Is the 3DCityDB installed? {self.is_3dcitydb_installed}<br>" + \
+            f"Is the QGIS Package installed? {self.is_qgis_pkg_installed}<br>" + \
+            f"Is the user schema installed? {self.is_usr_pkg_installed}<br>" + \
+            f"Have layers been created? {self.layers_exist}<br>" + \
+            f"Have layers been refreshed? {self.layers_refreshed}<br>"
         return return_str
 
 
@@ -68,12 +68,12 @@ class DefaultSettings:
 
     def __str__(self):
         return_str: str = \
-            f"simp_geom_enabled (DEFAULT): {self.simp_geom_enabled_default}\n" + \
-            f"simp_geom_dec_prec (DEFAULT): {self.simp_geom_dec_prec_default}\n" + \
-            f"simp_geom_min_area (DEFAULT): {self.simp_geom_min_area_default}\n" + \
-            f"max_features_to_import (DEFAULT): {self.max_features_to_import_default}\n" + \
-            f"force_all_layers_creation (DEFAULT): {self.force_all_layers_creation_default}\n" + \
-            f"enable_3d_renderer (DEFAULT): {self.enable_3d_renderer_default}\n"
+            f"simp_geom_enabled (DEFAULT): {self.simp_geom_enabled_default}<br>" + \
+            f"simp_geom_dec_prec (DEFAULT): {self.simp_geom_dec_prec_default}<br>" + \
+            f"simp_geom_min_area (DEFAULT): {self.simp_geom_min_area_default}<br>" + \
+            f"max_features_to_import (DEFAULT): {self.max_features_to_import_default}<br>" + \
+            f"force_all_layers_creation (DEFAULT): {self.force_all_layers_creation_default}<br>" + \
+            f"enable_3d_renderer (DEFAULT): {self.enable_3d_renderer_default}<br>"
         return return_str
 
 
@@ -282,14 +282,14 @@ class FeatureType():
     
     def __str__(self):
         return_str: str = \
-            f"alias: {self.alias}\n" + \
-            f"layers_create_function: {self.layers_create_function}\n" + \
-            f"layers_refresh_function: {self.layers_refresh_function}\n" + \
-            f"layers_drop_function: {self.layers_drop_function}\n" + \
-            f"exists? {self.exists}\n" + \
-            f"is_ade? {self.is_ade}\n" + \
-            f"is selected? {self.is_selected}\n" \
-            f"layers number: {len(self.layers)}\n"
+            f"alias: {self.alias}<br>" + \
+            f"layers_create_function: {self.layers_create_function}<br>" + \
+            f"layers_refresh_function: {self.layers_refresh_function}<br>" + \
+            f"layers_drop_function: {self.layers_drop_function}<br>" + \
+            f"exists? {self.exists}<br>" + \
+            f"is_ade? {self.is_ade}<br>" + \
+            f"is selected? {self.is_selected}<br>" \
+            f"layers number: {len(self.layers)}<br>"
         return return_str
 
 

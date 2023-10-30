@@ -260,7 +260,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
             canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
 
-            QgsMessageLog.logMessage(f"Extents of '{dlg.CDB_SCHEMA}' are unchanged.", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(f"Extents of '{dlg.CDB_SCHEMA}' are unchanged.", dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
             # 2) Update the registries
             refresh_registries(dlg)
@@ -322,7 +322,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
         # Inform the user
         msg: str = f"Citydb schema '{dlg.CDB_SCHEMA}' is now empty and will disappear from the drop down menu till new data are loaded."
         QMessageBox.information(dlg, "All features deleted", msg)
-        QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         # Reset to null the cdb_extents in the extents table in PostgreSQL
         sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
@@ -370,7 +370,7 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     # 2) get the available top-level features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
     top_level_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
-    # print('\n\ntop_class_features', top_class_features)
+    # print('<br><br>top_class_features', top_class_features)
 
     # 3) set up/update the top-level feature registry (exists)
     update_top_level_features_registry_exists(dlg, top_level_features)
@@ -385,7 +385,7 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     fill_feature_types_box(dlg)
 
     # msg: str = f"Registries of '{dlg.CDB_SCHEMA}' updated."
-    # QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+    # QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
     # print(msg)
 
     # Now the user is ready to select from the combo boxes and finally delete.

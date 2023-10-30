@@ -119,7 +119,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
-            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
+            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
             return None
         else:
             temp_conn: pyconn = None
@@ -127,7 +127,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 temp_conn = create_db_connection(NewConnParams) # attempt to open connection and keep it open
                 # If successful, close it, otherwise an Exception will be raised.
                 temp_conn.close() # close connection after the test.
-                self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.Success, duration=3)
+                self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
 
             except (Exception, psycopg2.Error) as error:
                 gen_f.critical_log(
@@ -135,7 +135,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                     location=FILE_LOCATION,
                     header="Attempting connection",
                     error=error)
-                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.Critical, duration=3)
+                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
 
             return None
 
@@ -164,7 +164,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
-            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.Warning, duration=3)
+            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
             return None
         else:
             temp_conn: pyconn = None
@@ -186,7 +186,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
                     location=FILE_LOCATION,
                     header="Attempting connection",
                     error=error)
-                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.Critical, duration=3)
+                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
 
         self.close()
 

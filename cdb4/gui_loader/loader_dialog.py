@@ -48,7 +48,6 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -85,14 +84,14 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ## "Standard" variables or constants
         ############################################################
 
-        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
         # Variable to store the qgis_pkg
-        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
+        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
 
         # Variable to store the label of this dialog
-        self.DIALOG_NAME: str = main_c.DLG_NAME_LOADER_LABEL
+        self.DLG_NAME_LABEL: str = cdbMain.MENU_LABEL_LOADER
         # Variable to store the variable name (in cdbMain) of this dialog
-        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_LOADER
+        self.DLG_NAME: str = cdbMain.DLG_NAME_LOADER
 
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
@@ -286,7 +285,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
-        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+        self.msg_bar.pushWidget(self.bar, Qgis.MessageLevel.Info)
 
 
     def evt_update_bar(self, step: int, text: str) -> None:
@@ -440,7 +439,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.NO_DB_ACCESS_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"You are not allowed to connect to this database.\n\nPlease contact your database administrator."
+            msg = f"You are not allowed to connect to this database.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "Unable to connect to database", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -483,7 +482,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\n\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br><br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -514,7 +513,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblUserInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=f"qgis_{self.DB.username}")))
             self.checks.is_usr_pkg_installed = False
 
-            msg = f"The required user schema 'qgis_{self.DB.username}' is missing.\n\nPlease contact your database administrator to install it."
+            msg = f"The required user schema 'qgis_{self.DB.username}' is missing.<br><br>Please contact your database administrator to install it."
             QMessageBox.warning(self, "User schema not found", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -545,7 +544,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw_ro) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.\n\nPlease contact your database administrator."
+            msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -562,7 +561,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             if len(cdb_schemas) == 0:
                 tc_f.fill_cdb_schemas_box_feat_count(self, None)
                 # Inform the use that all available cdb_schemas are empty.
-                msg = "The available citydb schema(s) is/are all empty.\n\nPlease load data into the database first."
+                msg = "The available citydb schema(s) is/are all empty.<br><br>Please load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
                 tl_wf.tabLayers_reset(self)
@@ -729,7 +728,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if cdb_extents_new == cdb_extents_old:
                 # Do nothing, the extents have not changed. No need to do anything
-                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
                 return None
             else: # The extents have changed. Show them on the map as dashed line
 
@@ -843,7 +842,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     has_layers_in_current_schema: bool = sql.exec_has_layers_for_cdb_schema(self)
                     if has_layers_in_current_schema:
-                        msg: str = f"To align with the next extents of '{self.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).\n\nYou may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
+                        msg: str = f"To align with the next extents of '{self.CDB_SCHEMA}', layers will be dropped (from the QGIS Package).<br><br>You may want to manually remove the layers also from QGIS Layers Panel and then, if desired, recreate, refresh and reload them in QGIS."
                         QMessageBox.warning(self, "Extents changed!", msg)
 
                         thr.run_drop_layers_thread(self) # this eventually checks the layer status
@@ -855,7 +854,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             # Inform the user
             msg: str = f"The '{self.CDB_SCHEMA}' schema has been emptied. It will disappear from the drop down menu until you upload new data again."
             QMessageBox.information(self, "Extents changed!", msg)
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
             # Reset to null the cdb_extents in the extents table in PostgreSQL
             sql.exec_upsert_extents(dlg=self, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
@@ -965,8 +964,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnRefreshLayers_clicked(self) -> None:
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
-        res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.\nDo you want to proceed?")
-        if res == 16384: #YES
+        res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.<br>Do you want to proceed?")
+        if res == QMessageBox.Yes: #16384: #YES
             thr.run_refresh_layers_thread(self)
 
         return None
@@ -1134,8 +1133,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Warn user when too many features are to be imported.
         if counter > self.settings.max_features_to_import_default:
-            res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\nDo you want to continue anyway?")
-            if res == 16384: # YES, proceed with importing layers
+            res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br>Do you want to continue anyway?")
+            if res == QMessageBox.Yes: #16384: #YES, proceed with importing layers
                 success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
                 return None # Import Cancelled
@@ -1166,7 +1165,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage(
                 message="Something went wrong while importing the layer(s)",
                 tag=self.PLUGIN_NAME,
-                level=Qgis.Critical,
+                level=Qgis.MessageLevel.Critical,
                 notifyUser=True)
             return None
 
@@ -1185,7 +1184,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         QgsMessageLog.logMessage(
                 message="Layer(s) successfully imported",
                 tag=self.PLUGIN_NAME,
-                level=Qgis.Success,
+                level=Qgis.MessageLevel.Success,
                 notifyUser=True)
 
         # To reduce the space "consumed" in the layer tree tab, 
@@ -1270,7 +1269,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             return None # Exit
 
         settings_list = [
@@ -1283,17 +1282,17 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DIALOG_NAME, settings_list)
+        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL, settings_list)
 
         if not res:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be saved!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been saved!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 
@@ -1301,13 +1300,13 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnLoadSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
-        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DIALOG_NAME)
+        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL)
         # print(settings_list)
 
         if not settings_list:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be loaded!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit without updating the settings
 
         s: dict
@@ -1329,8 +1328,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 pass
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been loaded!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 

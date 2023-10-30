@@ -4,6 +4,7 @@ import os.path
 from typing import Callable
 
 from qgis.PyQt.QtCore import Qt
+
 from qgis.core import QgsMessageLog, Qgis
 from qgis.gui import QgsCheckableComboBox
 
@@ -20,7 +21,6 @@ def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
 
     checked_items = []
     for idx in range(ccbx.count()):
-        
         if ccbx.itemCheckState(idx) == Qt.Checked:
             checked_items.append(ccbx.itemData(idx))
     return checked_items
@@ -61,11 +61,12 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
     location = ">".join([location, function_name])
 
     # Specify in the header the type of error and where it happened.
-    header = f"{header} ERROR at {location}\n ERROR: "
+    header = f"{header} ERROR at {location}<br> ERROR: "
 
     # Show the error in the log panel. Should open it even if it is closed.
     QgsMessageLog.logMessage(
         message=header + str(error),
         tag=main_c.PLUGIN_NAME_LABEL,
-        level=Qgis.Critical,
+        level=Qgis.MessageLevel.Critical,
         notifyUser=True)
+

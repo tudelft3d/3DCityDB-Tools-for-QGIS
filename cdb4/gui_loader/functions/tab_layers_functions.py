@@ -45,8 +45,8 @@ def populate_codelist_config_registry(dlg: CDB4LoaderDialog, codelist_set_name: 
     dlg.CodeListConfigRegistry: dict = {}
     dlg.CodeListConfigRegistry = dict(zip(config_metadata_keys, config_metadata_values))
 
-    # print('Initializing:\n', dlg.CodeListConfigRegistry)
-    # print('Initializing:\n', dlg.CodeListConfigRegistry[("Building", "building", "class")].__dict__)
+    # print('Initializing:<br>', dlg.CodeListConfigRegistry)
+    # print('Initializing:<br>', dlg.CodeListConfigRegistry[("Building", "building", "class")].__dict__)
 
     return None
 
@@ -501,11 +501,11 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
     # print('layer_root_container', layer_root_container)
 
     dv: CDBDetailView
-    # print("\n----------Registry")
+    # print("<br>----------Registry")
     # for k, dv in dlg.DetailViewsRegistry.items():
     #     print(k, "--", dv.name, dv.curr_class, dv.gen_name, dv.form_tab_name)
 
-    # print("\n----------Selection")
+    # print("<br>----------Selection")
     # for dv in detail_views:
     #     print(dv.curr_class, dv.gen_name, dv.form_tab_name)
 

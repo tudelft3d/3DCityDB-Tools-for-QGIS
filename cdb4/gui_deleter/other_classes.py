@@ -9,11 +9,11 @@ class DialogChecks:
 
     def __str__(self):
         return_str: str = \
-            f"Is the connection to the database established? {self.is_conn_successful}\n" + \
-            f"Is the 3DCityDB installed? {self.is_3dcitydb_installed}\n" + \
-            f"Is the QGIS Package installed? {self.is_qgis_pkg_installed}\n" + \
-            f"Is the user schema installed? {self.is_usr_pkg_installed}\n" + \
-            f"Is the user a database superuser? {self.is_superuser}\n"
+            f"Is the connection to the database established? {self.is_conn_successful}<br>" + \
+            f"Is the 3DCityDB installed? {self.is_3dcitydb_installed}<br>" + \
+            f"Is the QGIS Package installed? {self.is_qgis_pkg_installed}<br>" + \
+            f"Is the user schema installed? {self.is_usr_pkg_installed}<br>" + \
+            f"Is the user a database superuser? {self.is_superuser}<br>"
         return return_str
 
    
@@ -30,8 +30,8 @@ class DefaultSettings:
 
     def __str__(self):
         return_str: str = \
-            f"max_features_to_delete_default (DEFAULT): {self.max_features_to_delete_default}\n" + \
-            f"force_dropping_layers (DEFAULT): {self.force_dropping_layers_default}\n"
+            f"max_features_to_delete_default (DEFAULT): {self.max_features_to_delete_default}<br>" + \
+            f"force_dropping_layers (DEFAULT): {self.force_dropping_layers_default}<br>"
         return return_str
 
 
@@ -59,14 +59,14 @@ class TopLevelFeature():
     
     def __str__(self):
         return_str: str = \
-            f"name: {self.name}\n" + \
-            f"feature type: {self.feature_type}\n" + \
-            f"citydb_objectclass_id: {self.objectclass_id}\n" + \
-            f"citydb_del_function: {self.del_function}\n" + \
-            f"exists? {self.exists}\n" + \
-            f"is_ade? {self.is_ade}\n" + \
-            f"is selected? {self.is_selected}\n" + \
-            f"features number: {self.n_features}\n"
+            f"name: {self.name}<br>" + \
+            f"feature type: {self.feature_type}<br>" + \
+            f"citydb_objectclass_id: {self.objectclass_id}<br>" + \
+            f"citydb_del_function: {self.del_function}<br>" + \
+            f"exists? {self.exists}<br>" + \
+            f"is_ade? {self.is_ade}<br>" + \
+            f"is selected? {self.is_selected}<br>" + \
+            f"features number: {self.n_features}<br>"
 
         return return_str
 
@@ -99,13 +99,13 @@ class FeatureType():
     
     def __str__(self):
         return_str: str = \
-            f"name: {self.name}\n" + \
-            f"alias: {self.alias}\n" + \
-            f"layers_drop_function: {self.layers_drop_function}\n" + \
-            f"exists? {self.exists}\n" + \
-            f"is_ade? {self.is_ade}\n" + \
-            f"is selected? {self.is_selected}\n" + \
-            f"features number: {self.n_features}\n" + \
-            f"top-level features number: {len(self.top_class_features)}\n"
+            f"name: {self.name}<br>" + \
+            f"alias: {self.alias}<br>" + \
+            f"layers_drop_function: {self.layers_drop_function}<br>" + \
+            f"exists? {self.exists}<br>" + \
+            f"is_ade? {self.is_ade}<br>" + \
+            f"is selected? {self.is_selected}<br>" + \
+            f"features number: {self.n_features}<br>" + \
+            f"top-level features number: {len(self.top_class_features)}<br>"
         return return_str
 

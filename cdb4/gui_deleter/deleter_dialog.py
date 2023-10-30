@@ -45,7 +45,6 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import Qt, QThread
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
 
-from ... import cdb_tools_main_constants as main_c
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -60,8 +59,7 @@ from .other_classes import DialogChecks, DefaultSettings
 from . import deleter_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), "ui", "cdb4_deleter_dialog.ui"))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_deleter_dialog.ui"))
 
 class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     """User Dialog class of the plugin.
@@ -83,14 +81,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
 
         # Variable to store the plugin name
-        self.PLUGIN_NAME: str = main_c.PLUGIN_NAME_LABEL
+        self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
         # Variable to store the qgis_pkg
-        self.QGIS_PKG_SCHEMA: str = main_c.QGIS_PKG_SCHEMA
+        self.QGIS_PKG_SCHEMA: str = cdbMain.QGIS_PKG_SCHEMA
 
         # Variable to store the label of this dialog
-        self.DIALOG_NAME: str = main_c.DLG_NAME_DELETER_LABEL
+        self.DLG_NAME_LABEL: str = cdbMain.MENU_LABEL_DELETER
         # Variable to store the variable name (in cdbMain) of this dialog
-        self.DIALOG_VAR_NAME: str = main_c.DLG_VAR_NAME_DELETER
+        self.DLG_NAME: str = cdbMain.DLG_NAME_DELETER
 
         # Variable to store the qgis_pkg_usrgroup_* associated to the current database.
         self.GROUP_NAME: str = None
@@ -255,7 +253,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
-        self.msg_bar.pushWidget(self.bar, Qgis.Info)
+        self.msg_bar.pushWidget(self.bar, Qgis.MessageLevel.Info)
 
 
     def evt_update_bar(self, step: int, text: str) -> None:
@@ -397,7 +395,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.\n\nEither way, please contact your database administrator."
+            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.<br><br>Either way, please contact your database administrator."
             QMessageBox.warning(self, "Unavailable QGIS Package", msg)
 
             ts_wf.tabSettings_reset(self)
@@ -440,7 +438,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.\nPlease contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             ts_wf.tabSettings_reset(self)
@@ -510,7 +508,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.\nPlease contact your database administrator."
+            msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
             return None # Exit
         else:
@@ -635,15 +633,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnCleanUpSchema_clicked(self) -> None:
         """Event that is called when the 'Truncate tables' button (btnCleanUpSchema) is pressed.
         """
-        msg1: str = f"All tables in citydb schema {self.CDB_SCHEMA} will be truncated and all data will be deleted.\n\nDo you really want to proceed?"
-        msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"All tables in citydb schema {self.CDB_SCHEMA} will be truncated and all data will be deleted.<br><br>Do you really want to proceed?"
+        msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.<br><br>Do you REALLY want to proceed?"
+        msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == 16384: #YES
+            if res == QMessageBox.Yes: #16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == 16384: #YES               
+                if res == QMessageBox.Yes: #16384: #YES       
                     thr.run_cleanup_schema_thread(self)
         return None
 
@@ -1025,15 +1023,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # This case should not happen.
             return None # Exit
 
-        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you really want to proceed?"
-        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY want to proceed?"
-        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you really want to proceed?"
+        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY want to proceed?"
+        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == 16384: #YES
+        if res == QMessageBox.Yes: #16384: #YES
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == 16384: #YES
+            if res == QMessageBox.Yes: #16384: #YES
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == 16384: #YES               
+                if res == QMessageBox.Yes: #16384: #YES            
                     # This thread will also take care of checking what happens after deletion,
                     # e.g. in case that the database is completely emptied.
                     # The user will be eventually informed
@@ -1077,7 +1075,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             return None # Exit
 
         # Quick reminder:
@@ -1092,17 +1090,17 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DIALOG_NAME, settings_list)
+        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL, settings_list)
 
         if not res:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be saved!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been saved!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 
@@ -1111,13 +1109,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the button 'Save settings' is clicked
         """
         settings_list = []
-        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DIALOG_NAME)
+        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL)
         # print(settings_list)
 
         if not settings_list:
             # Inform the user
-            msg: str = f"Settings for '{self.DIALOG_NAME}' could not be loaded!"
-            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Warning, notifyUser=True)
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded!"
+            QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
             return None # Exit without updating the settings
 
         s: dict
@@ -1129,8 +1127,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 pass
 
         # Inform the user
-        msg: str = f"Settings for '{self.DIALOG_NAME}' have been loaded!"
-        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded!"
+        QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         return None
 
