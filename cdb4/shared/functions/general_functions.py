@@ -61,7 +61,7 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
     location = ">".join([location, function_name])
 
     # Specify in the header the type of error and where it happened.
-    header = f"{header} ERROR at {location}\n ERROR: "
+    header = f"{header} ERROR at {location}<br> ERROR: "
 
     # Show the error in the log panel. Should open it even if it is closed.
     QgsMessageLog.logMessage(
