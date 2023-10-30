@@ -703,16 +703,21 @@ class CDBToolsMain:
         #print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
         if not self.IS_QGIS_SUPPORTED:
+
+            msg: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
+
             v_length = len(main_c.QGIS_LTR)
             if v_length == 1:
                 v_supp_txt =f"3.{main_c.QGIS_LTR[0]}" 
-            elif v_length == 2:
-                v_supp_txt = f"3.{main_c.QGIS_LTR[0]} and 3.{main_c.QGIS_LTR[1]}"
-            elif v_length >= 3:
-                v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_LTR) if i < (v_length - 1)]))                
-                v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_LTR[-1]}"
+                msg = msg + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
+            else:
+                if v_length == 2:
+                    v_supp_txt = f"3.{main_c.QGIS_LTR[0]} and 3.{main_c.QGIS_LTR[1]}"
+                elif v_length >= 3:
+                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_LTR) if i < (v_length - 1)]))                
+                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_LTR[-1]}"
+                msg = msg + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
-            msg: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>Currently, these versions are supported: <b>{v_supp_txt}</b>!"
             QMessageBox.warning(None, "Unsupported QGIS version", msg, QMessageBox.Ok)
 
         return None
