@@ -158,7 +158,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
         # Create message box
         msgBox = QMessageBox()
         msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setText(f"You are currently already connected to schema '{dlg.CDB_SCHEMA}' in the '{dlg.DLG_NAME_LABEL}' GUI.\n\nYou can either:\n- Proceed (i.e. automatically close the other connection), or\n- Wait (i.e. manually close the other connection)")
+        msgBox.setText(f"You are already connected to schema '{dlg.CDB_SCHEMA}' in the '{dlg.DLG_NAME_LABEL}' GUI.<br><br>You can either:<br>- Proceed (i.e. automatically close the other connection), or<br>- Wait (i.e. manually close the other connection)")
         msgBox.setWindowTitle("Concurrent connection")
         msgBox.addButton(btnWait, QMessageBox.RejectRole)
         msgBox.addButton(btnProceed, QMessageBox.ActionRole)
