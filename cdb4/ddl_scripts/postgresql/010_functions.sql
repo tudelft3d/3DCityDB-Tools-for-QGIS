@@ -263,6 +263,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_qgis_pkg_usrgroup_name() IS 'Creates the name of the qgis_pkg database group for the current database';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.create_qgis_pkg_usrgroup_name() FROM public;
 
+-- Example:
 -- SELECT qgis_pkg.create_qgis_pkg_usrgroup_name();
 
 ----------------------------------------------------------------
@@ -375,7 +376,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.remove_user_from_qgis_pkg_usrgroup(varchar) IS 'Adds user to the qgis_pkg_usrgroup_* associated to the current database';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.remove_user_from_qgis_pkg_usrgroup(varchar) FROM public;
 
--- Examples
+-- Example:
 -- SELECT qgis_pkg.remove_user_from_qgis_pkg_usrgroup('giorgio');
 
 
@@ -570,6 +571,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas(boolean) FROM public;
 
+-- Example:
 --SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=FALSE) AS a;
 --SELECT a.* FROM qgis_pkg.list_cdb_schemas(only_non_empty:=TRUE) AS a;
 
@@ -644,6 +646,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_n_feats(boolean) IS 'List all schemas containing citydb tables in the current database, and optionally only the non-empty ones';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_n_feats(boolean) FROM public;
 
+-- Example:
 --SELECT a.* FROM qgis_pkg.list_cdb_schemas_n_feats(only_non_empty:=FALSE) AS a;
 --SELECT a.* FROM qgis_pkg.list_cdb_schemas_n_feats(only_non_empty:=TRUE) AS a;
 
@@ -706,7 +709,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_privs(varchar) IS 'List all cdb_schemas with privileges information regarding the usr_name';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_privs(varchar) FROM public;
 
--- Example
+-- Example:
 -- SELECT * FROM qgis_pkg.list_cdb_schemas_privs('qgis_user_ro');
 
 
@@ -768,7 +771,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features(varchar) IS 'List all cdb_schemas with privileges information regarding the usr_name';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_privs_n_features(varchar) FROM public;
 
--- Example
+-- Example:
 -- SELECT * FROM qgis_pkg.list_cdb_schemas_privs_n_features('qgis_user_ro');
 
 
@@ -818,6 +821,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_ades(varchar) IS 'List all ADEs installed in the selected cdb_schema';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_ades(varchar) FROM public;
 
+-- Example:
 --SELECT a.* FROM qgis_pkg.list_ades('citydb') AS a;
 
 
@@ -887,7 +891,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_cdb_schemas_usability(varchar, varchar) IS 'Checks whether usr_name(s) have USAGE privilege on cdb_schema(s)';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.list_cdb_schemas_usability(varchar, varchar) FROM public;
 
--- Examples
+-- Example:
 --SELECT * FROM qgis_pkg.list_cdb_schemas_usability(NULL, NULL) -- All users, all citydb schemas
 --SELECT * FROM qgis_pkg.list_cdb_schemas_usability('giorgio', NULL) -- All schemas accessible by giorgio
 --SELECT * FROM qgis_pkg.list_cdb_schemas_usability('giorgio', 'citydb') -- giorgio access citydb?
@@ -963,6 +967,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.add_ga_indices(varchar) IS 'Adds some indices to table cityobject_genericattrib';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.add_ga_indices(varchar) FROM public;
 
+-- Example:
 -- SELECT qgis_pkg.add_ga_indices(cdb_schema := 'citydb');
 
 
@@ -1032,9 +1037,10 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.drop_ga_indices(varchar) IS 'Adds some indices to table cityobject_genericattrib';
---REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_ga_indices(varchar) FROM public;
+REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_ga_indices(varchar) FROM public;
 
-SELECT qgis_pkg.drop_ga_indices(cdb_schema := 'citydb');
+-- Example:
+--SELECT qgis_pkg.drop_ga_indices(cdb_schema := 'citydb');
 
 
 ----------------------------------------------------------------
@@ -1100,7 +1106,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.create_default_qgis_pkg_user(varchar) IS 'Create a default QGIS-Package user with read-only or read & write privileges';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.create_default_qgis_pkg_user(varchar) FROM public;
 
--- Example
+-- Example:
 --SELECT qgis_pkg.create_default_qgis_pkg_user('ro');
 --SELECT qgis_pkg.create_default_qgis_pkg_user('rw');
 
@@ -1595,6 +1601,9 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.grant_qgis_usr_privileges(varchar, varchar, varchar) IS 'Grants access to the current database and read-only / read-write privileges to a user for a citydb schema';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.grant_qgis_usr_privileges(varchar, varchar, varchar) FROM public;
 
+-- Example:
+-- SELECT qgis_pkg.grant_qgis_usr_privileges('giorgio', 'ro', 'citydb')
+-- SELECT qgis_pkg.grant_qgis_usr_privileges('giorgio', 'ro', NULL)
 
 ----------------------------------------------------------------
 -- Create FUNCTION QGIS_PKG.REVOKE_QGIS_USR_PRIVILEGES
@@ -1725,6 +1734,10 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.revoke_qgis_usr_privileges(varchar, varchar) IS 'Revoke privileges from a user for a/all citydb schema(s) in the current database';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.revoke_qgis_usr_privileges(varchar, varchar) FROM public;
+
+-- Example:
+-- SELECT qgis_pkg.revoke_qgis_usr_privileges('giorgio', 'citydb')
+-- SELECT qgis_pkg.revoke_qgis_usr_privileges('giorgio', NULL)
 
 
 ----------------------------------------------------------------
@@ -2098,6 +2111,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION qgis_pkg.list_feature_types(varchar) IS 'Gets all Feature Types in all/selected user schema(s)';
 REVOKE ALL ON FUNCTION qgis_pkg.list_feature_types(varchar) FROM PUBLIC;
 
+-- Example:
 --SELECT * FROM qgis_pkg.list_feature_types('qgis_user_rw');
 --SELECT * FROM qgis_pkg.list_feature_types();
 
@@ -2827,12 +2841,8 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 COMMENT ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) IS 'Snaps 3D polygon to grid and drops it if it is smaller than the minimum area threshold';
 REVOKE EXECUTE ON FUNCTION qgis_pkg.st_snap_poly_to_grid(geometry, integer, integer, numeric) FROM public;
 
+-- Example:
 --SELECT qgis_pkg.st_snap_poly_to_grid(geometry, 1, 2, 0.01) FROM citydb.surface_geometry WHERE geometry IS NOT NULL LIMIT 10000;
-
-
-
-
-
 
 
 
