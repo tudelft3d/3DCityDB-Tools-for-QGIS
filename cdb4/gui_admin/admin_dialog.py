@@ -348,7 +348,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.lblPostInst_out.setText(c.failure_html.format(text=c.PG_VERSION_UNSUPPORTED_MSG))
 
                 # Inform the user
-                msg = f"You are connecting to PostgreSQL version {db.pg_server_version}. This version is not supported, you need version {c.PG_MIN_VERSION} or higher."
+                msg = f"You are connecting to PostgreSQL version {db.pg_server_version}. This version is not supported anymore, you need version {c.PG_MIN_VERSION} or higher."
                 QMessageBox.critical(self, "Unsupported PostgreSQL version", msg)
 
                 ti_wf.tabInstall_reset(self)
@@ -431,7 +431,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Set the label in the Connection Groupbox (Missing citydb installation)
                 self.lbl3DCityDBInst_out.setText(c.crit_warning_html.format(text=f"{db.citydb_version} (required v. {c.CDB_MIN_VERSION_MAJOR}.x)"))
 
-                msg = f"The 3D City Database installed in this database is v. {db.citydb_version} and it is not supported. You need 3D City Database v. {c.CDB_MIN_VERSION_MAJOR}.x."
+                msg = f"The 3D City Database installed in this database is v. {db.citydb_version} and it is not supported anymore. You need 3D City Database v. {c.CDB_MIN_VERSION_MAJOR}.x."
                 QMessageBox.critical(self, "Unsupported 3D City Database version", msg)
 
                 ti_wf.tabInstall_reset(self)
@@ -541,7 +541,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.btnMainUninst.setDisabled(False)
 
                 # Inform the user
-                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported. Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
+                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported anymore.<br>Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
                 QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
                 # QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning)
 
@@ -792,7 +792,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Drop schema for user' pushButton
         (btnUsrUninst) is pressed.
         """
-        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!\nDo you want to proceed?"
+        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes: #16384: #YES
             # Run scripts
