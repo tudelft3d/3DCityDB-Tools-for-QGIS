@@ -305,7 +305,7 @@ def exec_read_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Deleter
             else:
                 pass
 
-        # print("Retrieved from db:\n", settings_list)
+        # print("Retrieved from db:<br>", settings_list)
 
         return settings_list
 
