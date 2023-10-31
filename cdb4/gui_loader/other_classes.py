@@ -282,14 +282,14 @@ class FeatureType():
     
     def __str__(self):
         return_str: str = \
-            f"alias: {self.alias}<br>" + \
-            f"layers_create_function: {self.layers_create_function}<br>" + \
-            f"layers_refresh_function: {self.layers_refresh_function}<br>" + \
-            f"layers_drop_function: {self.layers_drop_function}<br>" + \
-            f"exists? {self.exists}<br>" + \
-            f"is_ade? {self.is_ade}<br>" + \
-            f"is selected? {self.is_selected}<br>" \
-            f"layers number: {len(self.layers)}<br>"
+            f"alias: {self.alias}\n" + \
+            f"layers_create_function: {self.layers_create_function}\n" + \
+            f"layers_refresh_function: {self.layers_refresh_function}\n" + \
+            f"layers_drop_function: {self.layers_drop_function}\n" + \
+            f"exists? {self.exists}\n" + \
+            f"is_ade? {self.is_ade}\n" + \
+            f"is selected? {self.is_selected}\n" \
+            f"layers number: {len(self.layers)}\n"
         return return_str
 
 
