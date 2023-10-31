@@ -370,7 +370,7 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     # 2) get the available top-level features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
     top_level_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
-    # print('<br><br>top_class_features', top_class_features)
+    # print('top_class_features', top_class_features)
 
     # 3) set up/update the top-level feature registry (exists)
     update_top_level_features_registry_exists(dlg, top_level_features)
