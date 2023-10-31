@@ -45,8 +45,8 @@ def populate_codelist_config_registry(dlg: CDB4LoaderDialog, codelist_set_name: 
     dlg.CodeListConfigRegistry: dict = {}
     dlg.CodeListConfigRegistry = dict(zip(config_metadata_keys, config_metadata_values))
 
-    # print('Initializing:<br>', dlg.CodeListConfigRegistry)
-    # print('Initializing:<br>', dlg.CodeListConfigRegistry[("Building", "building", "class")].__dict__)
+    # print('Initializing:\n', dlg.CodeListConfigRegistry)
+    # print('Initializing:\n', dlg.CodeListConfigRegistry[("Building", "building", "class")].__dict__)
 
     return None
 
@@ -359,8 +359,9 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
         rel.setStrength(0) # integer, 0 is association, 1 composition
     else:
-        rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
-        # print(rel_strength)
+        #rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
+        rel_strength = Qgis.RelationshipStrength.Association # New way of defining it, as enumeration
+        #print(rel_strength)
         rel.setStrength(rel_strength)
 
     # print("rel.is_valid", rel.isValid())
@@ -501,11 +502,11 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
     # print('layer_root_container', layer_root_container)
 
     dv: CDBDetailView
-    # print("<br>----------Registry")
+    # print("----------Registry")
     # for k, dv in dlg.DetailViewsRegistry.items():
     #     print(k, "--", dv.name, dv.curr_class, dv.gen_name, dv.form_tab_name)
 
-    # print("<br>----------Selection")
+    # print("----------Selection")
     # for dv in detail_views:
     #     print(dv.curr_class, dv.gen_name, dv.form_tab_name)
 
