@@ -170,9 +170,9 @@ def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
     dlg.DetailViewsRegistry: dict = {}
     dlg.DetailViewsRegistry = dict(zip(detail_views_keys, detail_views_values))
     
-    # print('Initializing:<br>', dlg.DetailViewsRegistry)
-    # print('Initializing:<br>', dlg.DetailViewsRegistry["address_bdg"].__dict__)
-    # print('Initializing:<br>', dlg.DetailViewsRegistry["gen_attrib_integer"].__dict__)
+    # print('Initializing:\n', dlg.DetailViewsRegistry)
+    # print('Initializing:\n', dlg.DetailViewsRegistry["address_bdg"].__dict__)
+    # print('Initializing:\n', dlg.DetailViewsRegistry["gen_attrib_integer"].__dict__)
 
     return None
 
@@ -196,9 +196,9 @@ def populate_enum_config_registry(dlg: CDB4LoaderDialog) -> None:
     dlg.EnumConfigRegistry: dict = {}
     dlg.EnumConfigRegistry = dict(zip(config_metadata_keys, config_metadata_values))
 
-    # print('Initializing:<br>', dlg.EnumLookupConfigRegistry)
-    # print('Initializing:<br>', dlg.EnumLookupConfigRegistry[(None, "CityObject", "relative_to_water")].__dict__)
-    # print('Initializing:<br>', dlg.EnumLookupConfig["gen_attrib_integer"].__dict__)
+    # print('Initializing:\n', dlg.EnumLookupConfigRegistry)
+    # print('Initializing:\n', dlg.EnumLookupConfigRegistry[(None, "CityObject", "relative_to_water")].__dict__)
+    # print('Initializing:\n', dlg.EnumLookupConfig["gen_attrib_integer"].__dict__)
 
     return None
 
