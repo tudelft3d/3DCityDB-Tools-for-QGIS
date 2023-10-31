@@ -22,15 +22,15 @@ class Connection:
         else:
             pw = '********'
         return_str: str = \
-            f"connection name: {self.connection_name}<br>" + \
-            f"host: {self.host}<br>" + \
-            f"port: {self.port}<br>" + \
-            f"db name: {self.database_name}<br>" + \
-            f"username: {self.username}<br>" + \
-            f"password: {pw}<br>" + \
-            f"id: {self.id}<br>" + \
-            f"DB version: {self.pg_server_version}<br>" + \
-            f"3DCityDB version: {self.citydb_version}<br>" + \
-            f"hex location: {self.hex_location}<br>" + \
-            f"Store credentials?: {self.store_creds}<br>"
+            f"connection name: {self.connection_name}\n" + \
+            f"host: {self.host}\n" + \
+            f"port: {self.port}\n" + \
+            f"db name: {self.database_name}\n" + \
+            f"username: {self.username}\n" + \
+            f"password: {pw}\n" + \
+            f"id: {self.id}\n" + \
+            f"DB version: {self.pg_server_version}\n" + \
+            f"3DCityDB version: {self.citydb_version}\n" + \
+            f"hex location: {self.hex_location}\n" + \
+            f"Store credentials?: {self.store_creds}\n"
         return return_str
