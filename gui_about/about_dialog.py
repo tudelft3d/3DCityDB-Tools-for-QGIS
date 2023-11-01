@@ -131,6 +131,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         #print(self.listMenu.currentItem().text())
         clickedRow: int = self.listMenu.currentRow()
         self.stackedContents.setCurrentIndex(clickedRow)
+        
         return None
 
 
@@ -139,6 +140,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         url: str = self.URL_GITHUB_PLUGIN
         sh_f.open_online_url(url)
+
         return None
 
 
@@ -147,6 +149,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         url: str = "/".join([self.URL_GITHUB_PLUGIN, "issues"])
         sh_f.open_online_url(url)
+
         return None
 
 
@@ -155,24 +158,46 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         url: str = c.URL_GITHUB_3DCITYDB
         sh_f.open_online_url(url)
+
         return None
 
 
     def evt_btn3DCityDBInstall_clicked(self) -> None:
-        """ Event that is called when the Button 'btn3DCityDBManual' is pressed.
+        """ Event that is called when the Button 'btn3DCityDBInstall' is pressed.
         For Windows OS: Opens the default web browser with the PDF file containing the installation and user guide.
-        Otherwise: Opens the url to the PDF in GitHub.
+        Otherwise: Opens the url to GitHub where the PDFs are stored.
         """
-        file_name: str = "3DCityDB_Suite_QuickInstall.pdf"
-        
+        # To be activated once we have the PDFs for each main OS
+        #
+        if self.PLATFORM_SYSTEM == "Windows":
+            file_name: str = "3DCityDB_Suite_QuickInstall.pdf"
+        # elif self.PLATFORM_SYSTEM == "Darwin":
+        #     file_name: str = "3DCityDB_Suite_QuickInstall_MacOS.pdf"
+        # elif self.PLATFORM_SYSTEM == "Linux":
+        #     file_name: str = "3DCityDB_Suite_QuickInstall_Linux.pdf"
+        # else:
+        #     file_name: str = "3DCityDB_Suite_QuickInstall_Linux.pdf"
+
         if self.PLATFORM_SYSTEM == "Windows":
             # This will open a PDF viewer instead of the browser
             pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", "3dcitydb_install", file_name)
             sh_f.open_local_PDF(pdf_path)
         else:
-            # For OS other than windows, stay safe and simply point to the PDF on GitHub
-            url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install", file_name])
+            # url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install", file_name])
+
+            # For OS other than windows, simply point to the GitHub folder because
+            # we cannot automatically guess which default PDF reader (if any) they have on their system.
+            url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install"])
             sh_f.open_online_url(url)
+
+        # **************************************
+        # Only for testing purposes
+        #
+        # url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install"])
+        # url = "/".join([self.URL_GITHUB_PLUGIN, "tree", "master", "manuals", "3dcitydb_install"])
+        # sh_f.open_online_url(url)
+        # 
+        # **************************************
 
         return None
 
