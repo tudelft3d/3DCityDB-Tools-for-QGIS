@@ -327,7 +327,6 @@ class CDBToolsMain:
         # Deleter Dialog
         self.add_action(
             icon_path = icon_path_deleter,
-            #txt = self.tr(self.PLUGIN_NAME_DELETER),
             txt = main_c.MENU_LABEL_DELETER,
             callback = self.run_deleter,
             parent = self.iface.mainWindow(),
@@ -369,6 +368,9 @@ class CDBToolsMain:
             add_to_toolbar = False) # Default: False
 
         #####################################################################
+        #
+        # For submenus, you must also uncomment the parts at the beginning of this function
+        #
         #####################################################################
 
         # qmenu_list = []
@@ -384,7 +386,7 @@ class CDBToolsMain:
         # plugin_sub_menu = plugin_menu.addMenu(plugin_sub_menu_name)
         # plugin_sub_menu.setIcon(QIcon(loader_icon_path))
 
-        # ############### Add submenu container entry
+        # ############### Add submenu to root/container entry
         # action_name = "Do something!"
         # ac1 = plugin_sub_menu.addAction(action_name) # Its parent is the plugin_sub_menu
         # ac1.setIcon(QIcon(loader_icon_path))
