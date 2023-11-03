@@ -1,4 +1,4 @@
-class Connection:
+class DBConnectionInfo:
     """Class to store connection information.
     """
     def __init__(self):
