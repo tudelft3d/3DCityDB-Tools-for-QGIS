@@ -4,7 +4,6 @@ if TYPE_CHECKING:
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
 from ..other_classes import FeatureType
-# from . import sql
 
 
 def initialize_feature_type_registry(dlg: CDB4AdminDialog) -> None:
