@@ -41,7 +41,6 @@ if TYPE_CHECKING:
  
 import os.path
 import typing
-import webbrowser
 import platform
 
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
@@ -53,6 +52,7 @@ from qgis.gui import QgisInterface
 from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
 from .shared.functions import shared_functions as sh_f
+from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 
 class CDBToolsMain:
     """QGIS Plugin Implementation. Main class.
@@ -117,6 +117,9 @@ class CDBToolsMain:
         # Welcome message upon (re)loading
         msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
+
+        self.StoredConns: list = []
+        self.StoredConns = conn_f.get_qgis_postgres_stored_conns()
 
         # Variable to store the loader dialog of the plugin.
         self.loader_dlg: CDB4LoaderDialog = None
@@ -341,6 +344,7 @@ class CDBToolsMain:
             parent = self.iface.mainWindow(),
             add_to_menu = True,
             add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
+            # add_to_toolbar = True)
 
         # Add separator
         sep: QAction = QAction() # must create a new object every time!
@@ -434,12 +438,14 @@ class CDBToolsMain:
         -   Executes the dialog
         """
         from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog # Loader dialog
-        from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
             self.first_check_QGIS_supported = False
             self.check_QGIS_version()
+
+        # Get/refresh the existing connections list from QGIS profile settings.
+        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback,
         # so that it will only load when the plugin is started.
@@ -457,10 +463,30 @@ class CDBToolsMain:
             self.loader_dlg.gvCanvas.setParent(None)
             self.loader_dlg.gvCanvasL.setParent(None)
 
-        # Get existing connections from QGIS profile settings.
-        # They are added to the combo box (cbxExistingConn), and 
-        # an event is fired (dlg.evt_cbxExistingConn_changed())
-        conn_f.get_qgis_postgres_conn_list(self.loader_dlg)
+            if stored_conns != self.StoredConns:
+                # print('Changes in connection list')
+                self.StoredConns = stored_conns
+
+            # 1st run: box to be filled anyway
+            # Add the connection list to the combo box (cbxExistingConn) 
+            # An event is fired (dlg.evt_cbxExistingConn_changed())
+            # It closes all exiting connections, and resets the dialog.
+            conn_f.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
+
+        else:
+            if stored_conns != self.StoredConns:
+                # print('Nth run: Changes in connection list')
+                self.StoredConns = stored_conns
+                # N-th run: to be carried out only in case of changes
+                # Add the connection list to the combo box (cbxExistingConn) 
+                # An event is fired (dlg.evt_cbxExistingConn_changed())
+                # It closes all exiting connections, and resets the dialog.
+                conn_f.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
+            else:
+                # No need to refresh the connection list box, no event is fired
+                # The Connection remains open and all settings are still there.
+                # print('Nth run: No changes in connection list')
+                pass
 
         self.DialogRegistry.update({self.DLG_NAME_LOADER: self.loader_dlg})
 
@@ -468,8 +494,8 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        # self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. 0, The window blocks input to other windows.
-        self.loader_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
+        # self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to other windows.
+        self.loader_dlg.setWindowModality(Qt.NonModal) # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.loader_dlg.show()
@@ -491,12 +517,14 @@ class CDBToolsMain:
         -   Executes the dialog
         """
         from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog # Deleter dialog
-        from .cdb4.gui_db_connector.functions import conn_functions as conn_f        
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
             self.first_check_QGIS_supported = False
             self.check_QGIS_version()
+
+        # Get/refresh the existing connections list from QGIS profile settings.
+        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_deleter:
@@ -511,10 +539,16 @@ class CDBToolsMain:
             # Remove empty graphics View widget from dialog.
             self.deleter_dlg.gvCanvas.setParent(None)
 
-        # Get existing connections from QGIS profile settings.
-        # They are added to the combo box (cbxExistingConn), and 
-        # an event is fired (dlg.evt_cbxExistingConn_changed())
-        conn_f.get_qgis_postgres_conn_list(self.deleter_dlg) # Stored in self.conn
+            if stored_conns != self.StoredConns:
+                # print('Changes in connection list')
+                self.StoredConns = stored_conns
+
+            conn_f.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
+
+        else:
+            if stored_conns != self.StoredConns:
+                self.StoredConns = stored_conns
+                conn_f.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
 
         self.DialogRegistry.update({self.DLG_NAME_DELETER: self.deleter_dlg})
 
@@ -545,12 +579,14 @@ class CDBToolsMain:
         -   Executes the dialog
         """
         from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog # Admin dialog
-        from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
             self.first_check_QGIS_supported = False
             self.check_QGIS_version()
+
+        # Get/refresh the existing connections list from QGIS profile settings.
+        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_admin:
@@ -558,10 +594,15 @@ class CDBToolsMain:
             # Create the dialog with elements (after translation).
             self.admin_dlg = CDB4AdminDialog(cdbMain=self)
 
-        # Get existing connections from QGIS profile settings.
-        # They are added to the combo box (cbxExistingConn), and 
-        # an event is fired (dlg.evt_cbxExistingConn_changed())
-        conn_f.get_qgis_postgres_conn_list(self.admin_dlg) # Stored in self.conn
+            if stored_conns != self.StoredConns:
+                self.StoredConns = stored_conns
+
+            conn_f.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
+
+        else:
+            if stored_conns != self.StoredConns:
+                self.StoredConns = stored_conns
+                conn_f.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
 
         self.DialogRegistry.update({self.DLG_NAME_ADMIN: self.admin_dlg})
 
@@ -600,8 +641,8 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
-        # self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
+        self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e. The window is modal to the application and blocks input to all windows.
+        # self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.admin_dlg.show()
