@@ -454,16 +454,35 @@ class QgisPackageUninstallWorker(QObject):
         # print(qgis_pkg_curr_version)
         qgis_pkg_curr_version_major    : int = qgis_pkg_curr_version.major_version   # e.g. 0
         qgis_pkg_curr_version_minor    : int = qgis_pkg_curr_version.minor_version   # e.g. 8
+        qgis_pkg_curr_version_revision : int = qgis_pkg_curr_version.minor_revision   # e.g. 1
 
         if all((qgis_pkg_curr_version_major <= 0,
                 qgis_pkg_curr_version_minor <= 8)):
+            # print("Uninstalling QGIS Package up to v. 0.8.x")
             self.uninstall_thread_qgis_pkg_till_08()
 
         elif all((qgis_pkg_curr_version_major == 0,
                 qgis_pkg_curr_version_minor == 9)):
+            # print("Uninstalling QGIS Package v. 0.9.x")
             self.uninstall_thread_qgis_pkg_09()
+
+        elif all((qgis_pkg_curr_version_major == 0,
+                qgis_pkg_curr_version_minor == 10,
+                qgis_pkg_curr_version_revision <= 2)):
+            # print("Uninstalling QGIS Package v. [0.10.0, 0.10.1, 0.10.2]")
+
+            from ..functions.tab_install_functions import initialize_feature_type_registry
             
+            # Initialize the FeatureTypeRegistry
+            # It is needed because otherwise the registry is not initialized
+            # for those versions that are below the minimum required.
+            initialize_feature_type_registry(self.dlg)
+            # print(self.dlg.FeatureTypesRegistry)
+
+            self.uninstall_thread_qgis_pkg_current()
+            pass
         else:
+            # print("Uninstalling QGIS Package")
             self.uninstall_thread_qgis_pkg_current()
 
         return None
@@ -1009,7 +1028,7 @@ class QgisPackageUninstallWorker(QObject):
         usr_names_su = ["postgres"]
 
         if usr_names_all:
-            usr_names = [elem for elem in usr_names_all if elem != 'postgres']
+            usr_names = [elem for elem in usr_names_all if elem != "postgres"]
             if curr_usr != "postgres":
                 usr_names = [elem for elem in usr_names_all if elem != curr_usr]
                 usr_names_su.append(curr_usr)
@@ -1080,6 +1099,7 @@ class QgisPackageUninstallWorker(QObject):
 
         curr_step: int = 0
 
+        #print("Conn details:", dlg.DB.__str__())
         try:
             # Open new temp session, reserved for installation.
             temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
@@ -1360,7 +1380,7 @@ class QgisPackageUninstallWorker(QObject):
             gen_f.critical_log(
                 func=self.uninstall_thread_qgis_pkg_current,
                 location=FILE_LOCATION,
-                header=f"Establishing temporary connection",
+                header="Establishing temporary connection",
                 error=error)
 
         # No FAIL = SUCCESS
