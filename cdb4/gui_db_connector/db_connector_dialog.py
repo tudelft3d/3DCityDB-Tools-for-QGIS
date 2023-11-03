@@ -41,7 +41,7 @@ from qgis.PyQt import QtWidgets, uic
 
 from ..shared.functions import general_functions as gen_f
 
-from .other_classes import Connection
+from .other_classes import DBConnectionInfo
 from .functions.conn_functions import create_db_connection
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
@@ -64,7 +64,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
 
         # Connection object variable
-        self.conn_params: Connection = None
+        self.conn_params: DBConnectionInfo = None
         
         self.gbxConnDet.bar = QgsMessageBar()
         self.verticalLayout.addWidget(self.gbxConnDet.bar, 0)
@@ -100,7 +100,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Test connection' pushButton (btnTestConn) is pressed.
         """
         # Instantiate a connection object
-        NewConnParams = Connection()
+        NewConnParams = DBConnectionInfo()
 
         # Update connection attributes parameters from 'Line Edit' user info
         NewConnParams.connection_name = self.ledConnName.text()
@@ -145,7 +145,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         and, if successful, 
         """
         # Instantiate a connection object
-        NewConnParams = Connection()
+        NewConnParams = DBConnectionInfo()
 
         # Update connection attributes parameters from 'Line Edit' user info
         NewConnParams.connection_name = self.ledConnName.text()

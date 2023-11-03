@@ -35,11 +35,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...cdb_tools_main import CDBToolsMain
-    from ..gui_db_connector.other_classes import Connection
+    from ..gui_db_connector.other_classes import DBConnectionInfo
     from .other_classes import CDBLayer
 
 import os
-from collections import namedtuple
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem, QgsLayerTreeGroup
@@ -105,7 +104,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
         # Variable to store the existing connection parameters.
-        self.DB: Connection = None
+        self.DB: DBConnectionInfo = None
 
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
@@ -160,8 +159,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.GeometryType.PolygonGeometry)
+        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.GeometryType.PolygonGeometry)
 
         # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
         self.CANVAS_L: QgsMapCanvas = QgsMapCanvas()
@@ -170,9 +169,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS_L.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_QGIS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.GeometryType.PolygonGeometry)
+        self.RUBBER_LAYERS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.GeometryType.PolygonGeometry)
+        self.RUBBER_QGIS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.GeometryType.PolygonGeometry)
 
         # Enhance various Qt Objects with their initial text. 
         # This is used in order to revert to the original state in reset operations when original text has already changed.
@@ -323,7 +322,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
-        self.DB: Connection = self.cbxExistingConn.currentData()
+        self.DB: DBConnectionInfo = self.cbxExistingConn.currentData()
         if not self.DB:
             return None
 
@@ -352,7 +351,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
-        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. 2, the window is modal to the application and blocks input to all other windows.
+        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. the window is Modal to the application and blocks input to all other windows.
         dlgConnector.show()
         dlgConnector.exec_()
 
@@ -410,7 +409,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.checks.is_conn_successful = False
             self.checks.is_postgis_installed = False
 
-            msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
+            msg = "The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -439,7 +438,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.NO_DB_ACCESS_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"You are not allowed to connect to this database.<br><br>Please contact your database administrator."
+            msg = "You are not allowed to connect to this database.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "Unable to connect to database", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -544,7 +543,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw_ro) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.<br><br>Please contact your database administrator."
+            msg: str = "No citydb schemas could be retrieved from the database. You may lack proper privileges to access them.<br><br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
 
             tl_wf.tabLayers_reset(self)
@@ -728,7 +727,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if cdb_extents_new == cdb_extents_old:
                 # Do nothing, the extents have not changed. No need to do anything
-                QgsMessageLog.logMessage(f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them.", self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+                msg: str = f"Extents of '{self.CDB_SCHEMA}' are unchanged. No need to update them."
+                QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
                 return None
             else: # The extents have changed. Show them on the map as dashed line
 
@@ -745,7 +745,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 cdb_extents_union.combineExtentWith(cdb_extents_new)
 
                 # Create new rubber band, with dahed line style
-                cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+                cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(self.CANVAS, QgsWkbTypes.GeometryType.PolygonGeometry)
                 cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
 
                 # Set up the canvas to the new extents of the cdb_schema.
@@ -914,7 +914,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs, dlg_cdb_extents, dlg_canvas)
-        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. 2 = The window blocks input to all other windows.
+        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to all other windows.
         dlgGeocoder.show()
         dlgGeocoder.exec_()
 
@@ -948,8 +948,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             selected_feat_types: list = gen_f.get_checkedItemsData(self.cbxFeatType)
 
             if len(selected_feat_types) == 0:
-                error_msg = f"You must select at least one Feature Type. Otherwise deactivate the Feature Type selection box."
-                QMessageBox.warning(self, "User schema not found", error_msg)
+                msg = "You must select at least one Feature Type. Otherwise deactivate the Feature Type selection box."
+                QMessageBox.warning(self, "User schema not found", msg)
                 return None # Exit
         else:
             # All existing FeatureTypes are selected by default
@@ -965,7 +965,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Refresh layers for schema {sch}' pushButton (btnRefreshLayers) is pressed.
         """
         res = QMessageBox.question(self, "Layer refresh", "Refreshing layers can take long time.<br>Do you want to proceed?")
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             thr.run_refresh_layers_thread(self)
 
         return None
@@ -1030,7 +1030,8 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
             # This causes the "else" to pass which we don't want.  
             pass 
         else:
-            QMessageBox.critical(self, "Warning", f"Pick a region inside the layers extents (blue area).")          
+            msg: str = "Pick a region inside the layers extents (blue area)."
+            QMessageBox.critical(self, "Warning", msg)          
             return None
 
         tl_wf.gbxLayerSelection_reset(self)
@@ -1133,8 +1134,9 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Warn user when too many features are to be imported.
         if counter > self.settings.max_features_to_import_default:
-            res = QMessageBox.question(self, "Warning", f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br>Do you want to continue anyway?")
-            if res == QMessageBox.Yes: #16384: #YES, proceed with importing layers
+            msg: str = f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br>Do you want to continue anyway?"
+            res = QMessageBox.question(self, "Warning", msg)
+            if res == QMessageBox.Yes: # proceed and import layers
                 success = tl_f.add_selected_layers_to_ToC(self, layers=selected_layers)
             else:
                 return None # Import Cancelled
@@ -1268,7 +1270,7 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
                 enable3D == self.settings.enable_3d_renderer_default
                 )):
             # No need to store the settings, they are unchanged. Inform the user
-            msg: str = f"No need to store the settings, they coincide with the default values."
+            msg: str = "No need to store the settings, they coincide with the default values."
             QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             return None # Exit
 

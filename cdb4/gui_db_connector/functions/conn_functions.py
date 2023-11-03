@@ -14,49 +14,78 @@ from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
 
 from .... import cdb_tools_main_constants as main_c
 from ...shared.functions import general_functions as gen_f
-from ..other_classes import Connection
+from ..other_classes import DBConnectionInfo
 from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(__file__)
 
-def get_qgis_postgres_conn_list(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog]) -> None:
-    """Function that reads the QGIS user settings to look for existing connections
 
-    All existing connections are stored in a 'Connection'
-    objects and can be found and accessed from 'cbxExistingConnC'
-    or 'cbxExistingConn' widget
+def get_qgis_postgres_stored_conns() -> list:
+    """Function that reads the QGIS user settings to look for existing connections
+    """
+    # Create a QgsSettings object to access the settings
+    qgis_settings = QgsSettings()
+
+    # Navigate to PostgreSQL connection settings
+    qgis_settings.beginGroup(prefix='PostgreSQL/connections')
+
+    # Get all stored connection names
+    stored_conn_list: list = qgis_settings.childGroups()
+    # print('stored_connections', stored_connections)
+
+    stored_conns = list()
+
+    # Get database connection settings for every stored connection
+    for stored_conn in stored_conn_list:
+
+        db_conn_info_dict = dict()
+
+        qgis_settings.beginGroup(prefix=stored_conn)
+        # Populate the object BEGIN
+        db_conn_info_dict['database'] = qgis_settings.value(key='database')
+        db_conn_info_dict['host']     = qgis_settings.value(key='host')
+        db_conn_info_dict['port']     = qgis_settings.value(key='port')
+        db_conn_info_dict['username'] = qgis_settings.value(key='username')
+        db_conn_info_dict['password'] = qgis_settings.value(key='password')
+        # Populate the object END
+        qgis_settings.endGroup()
+
+        stored_conns.append([stored_conn, db_conn_info_dict])
+    
+    stored_conns.sort()
+    #print(stored_conns)
+
+    return stored_conns
+
+
+def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], stored_conns: list = None) -> None:
+    """Function that fills the the 'cbxExistingConn' combobox
     """
     # Clear the contents of the comboBox from previous runs
     dlg.cbxExistingConn.clear()
 
-    qsettings = QgsSettings()
+    if stored_conns:
+        # Get database connection settings for every stored connection
+        for stored_conn_name, stored_conn_params in stored_conns:
 
-    # Navigate to PostgreSQL connection settings
-    qsettings.beginGroup('PostgreSQL/connections')
+            label = str(stored_conn_name)
+            # Create object
+            db_conn_info = DBConnectionInfo()
+            # Populate the object attributes BEGIN
+            db_conn_info.connection_name = label
+            db_conn_info.database_name   = stored_conn_params['database']
+            db_conn_info.host            = stored_conn_params['host']
+            db_conn_info.port            = stored_conn_params['port']
+            db_conn_info.username        = stored_conn_params['username']
+            db_conn_info.password        = stored_conn_params['password']
+            # Populate the object attributes END
 
-    # Get all stored connection names
-    stored_connections = qsettings.childGroups()
-
-    # Get database connection settings for every stored connection
-    for conn in stored_connections:
-
-        connectionInstance = Connection()
-
-        qsettings.beginGroup(conn)
-        connectionInstance.connection_name = conn
-        connectionInstance.database_name = qsettings.value('database')
-        connectionInstance.host = qsettings.value('host')
-        connectionInstance.port = qsettings.value('port')
-        connectionInstance.username = qsettings.value('username')
-        connectionInstance.password = qsettings.value('password')
-        qsettings.endGroup()
-
-        dlg.cbxExistingConn.addItem(f'{conn}', connectionInstance)
+            dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
     
     return None
 
 
-def create_db_connection(db_connection: Connection, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
+def create_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
     """Create a new database session and returns a new instance of the psycopg connection class.
 
     *   :param db: The connection custom object
@@ -119,7 +148,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
     """
     """
     is_unique: bool = True
-    curr_DB: Connection = dlg.DB
+    curr_DB: DBConnectionInfo = dlg.DB
     curr_CDB_SCHEMA: str = dlg.CDB_SCHEMA
     curr_DIALOG_NAME: str = dlg.DLG_NAME
     no_admin_dlgs: list = []

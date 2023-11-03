@@ -33,7 +33,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
      from ...cdb_tools_main import CDBToolsMain
-     from ..gui_db_connector.other_classes import Connection
+     from ..gui_db_connector.other_classes import DBConnectionInfo
 
 import os
 from psycopg2.extensions import connection as pyconn
@@ -102,7 +102,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
         # Variable to store the existing connection parameters.
-        self.DB: Connection = None
+        self.DB: DBConnectionInfo = None
 
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
@@ -290,7 +290,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         This function runs every time the current selection of 'Existing Connection' changes.
         """
         # Set the current database connection object variable
-        self.DB: Connection = self.cbxExistingConn.currentData()
+        self.DB: DBConnectionInfo = self.cbxExistingConn.currentData()
         if not self.DB:
             return None
 

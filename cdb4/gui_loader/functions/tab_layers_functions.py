@@ -736,8 +736,10 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
             if dv_layer or dv_layer.isValid(): # Success
                 # Add the qml-based forms
                 if dv.qml_form:
-                    # print(dv.qml_form_with_path)
-                    dv_layer.loadNamedStyle(theURI=dv.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    #print(dv.qml_form_with_path)
+                    dv_layer.loadNamedStyle(theURI=dv.qml_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
+                    #dv_layer.loadNamedStyle(theURI=dv.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    #print('qui si blocca')
                     # otherwise: categories=QgsMapLayer.AllStyleCategories
 
                 # Get the index of the field "cityobject"
@@ -914,17 +916,21 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
 
             # Attach 'attribute form' from QML file.
             if layer.qml_form:
-                new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
+                #new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+
                 # otherwise: categories=QgsMapLayer.AllStyleCategories
 
             # Attach 'symbology' from QML file.
             if layer.qml_symb:
-                new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+                #new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+                new_layer.loadNamedStyle(layer.qml_symb_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology)
 
             if dlg.cbxEnable3D.isChecked():
                 # Attach '3d symbology' from QML file.
                 if layer.qml_3d:
-                    new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                    #new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                    new_layer.loadNamedStyle(layer.qml_3d_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology3D)
             else:
                 # Deactivate 3D renderer to avoid crashes and slow downs.
                 new_layer.setRenderer3D(None)
@@ -967,7 +973,8 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
 
                 # attach the UI-based form file
                 if layer.qml_form:
-                    new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    #new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
                     # otherwise: categories=QgsMapLayer.AllStyleCategories
 
                     layer_configuration = new_layer.editFormConfig()
@@ -985,19 +992,20 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             else:
                 # Attach 'attribute form' from QML file.
                 if layer.qml_form:
-                    new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    #new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
+                    new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
                     # otherwise: categories=QgsMapLayer.AllStyleCategories
 
             # This is the common part
 
             # Attach '2D symbology' from QML file.
             if layer.qml_symb:
-                new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
+                new_layer.loadNamedStyle(theURI=layer.qml_symb_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology)
 
             if dlg.cbxEnable3D.isChecked():
                 # Attach '3D symbology' from QML file.
                 if layer.qml_3d:
-                    new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
+                    new_layer.loadNamedStyle(theURI=layer.qml_3d_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology3D)
             else:
                 # Deactivate 3D renderer to avoid crashes and slow downs.
                 new_layer.setRenderer3D(None)
