@@ -35,7 +35,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
      from ...cdb_tools_main import CDBToolsMain
-     from ..gui_db_connector.other_classes import Connection
+     from ..gui_db_connector.other_classes import DBConnectionInfo
 
 import os
 from psycopg2.extensions import connection as pyconn
@@ -99,7 +99,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Variable to store the current open connection of a database.
         self.conn: pyconn = None
         # Variable to store the existing connection parameters.
-        self.DB: Connection = None
+        self.DB: DBConnectionInfo = None
 
         self.msg_bar: QgsMessageBar
         self.bar: QProgressBar
@@ -239,7 +239,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.conn.close()
 
         # Set the current database connection object variable
-        self.DB: Connection = self.cbxExistingConn.currentData()
+        self.DB: DBConnectionInfo = self.cbxExistingConn.currentData()
 
         # Check that the connection parameters were set
         if not self.DB:
@@ -363,10 +363,10 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if is_superuser:
                 # Update the label in the Connection status
-                self.lblUserPrivileges_out.setText(c.success_html.format(text=c.USER_PRIV_MSG.format(privs=' superuser')))
+                self.lblUserPrivileges_out.setText(c.success_html.format(text=c.USER_PRIV_MSG.format(privs=" superuser")))
             else:
                 # Update the label in the Connection status
-                self.lblUserPrivileges_out.setText(c.failure_html.format(text=c.USER_PRIV_MSG.format(privs='no superuser')))
+                self.lblUserPrivileges_out.setText(c.failure_html.format(text=c.USER_PRIV_MSG.format(privs="no superuser")))
 
                 # Inform the user
                 msg = f"User '{db.username}' is not a database superuser. Please contact your database administrator."
@@ -387,8 +387,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
 
             # Inform the user
-            error_msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
-            QMessageBox.warning(self, "Connection error", error_msg)
+            msg = "The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
+            QMessageBox.warning(self, "Connection error", msg)
 
             ti_wf.tabInstall_reset(self)
             ts_wf.tabSettings_reset(self)
@@ -448,7 +448,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lbl3DCityDBInst_out.setText(c.failure_html.format(text=c.CDB_FAIL_MSG))
 
             # Inform the user
-            msg = f"The 3D City Database is not installed in this database."
+            msg = "The 3D City Database is not installed in this database."
             QMessageBox.critical(self, "No 3DCityDB found", msg)
 
             ti_wf.tabInstall_reset(self)
@@ -499,7 +499,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             # qgis_pkg_curr_version_minor_rev: int = 3
             ###########################################################
 
-            # Check that the QGIS Package version is >= than the minimum required for this versin of the plugin (see cdb4_constants.py)
+            # Check that the QGIS Package version is >= than the minimum required for this version of the plugin (see cdb4_constants.py)
             if all((qgis_pkg_curr_version_major == c.QGIS_PKG_MIN_VERSION_MAJOR,
                     qgis_pkg_curr_version_minor == c.QGIS_PKG_MIN_VERSION_MINOR,
                     qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV)):
@@ -561,7 +561,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             thr.run_install_qgis_pkg_thread(self, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=self.QGIS_PKG_SCHEMA)
 
         return None
@@ -572,7 +572,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'! Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             thr.run_uninstall_qgis_pkg_thread(self)
 
         return None
@@ -721,7 +721,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced! Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             sql.exec_create_qgis_usr_schema(self)
         if not res: # Query was canceled by user, or error occurred.
             return None
@@ -794,7 +794,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             # Run scripts
             thr.run_drop_usr_schema_thread(self)
         else: # Query was cancelled by user, or error occurred.
@@ -851,7 +851,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # Check that at least a cdb_schema has been selected
             if len(sel_cdb_schemas) == 0:
-                msg = f"You must select at least one citydb schema!"
+                msg = "You must select at least one citydb schema!"
                 QMessageBox.warning(self, "Invalid selection", msg)
                 return None # Exit and do nothing
 
