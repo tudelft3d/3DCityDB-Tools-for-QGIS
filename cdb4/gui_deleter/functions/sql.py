@@ -251,7 +251,7 @@ def upsert_extents(dlg: CDB4DeleterDialog,
         dlg.conn.rollback()
 
 
-def list_top_level_features(dlg: CDB4DeleterDialog, extents_wkt_2d: Optional[str]) -> list[Optional[TopLevelFeatureCounter]]:
+def list_top_level_features(dlg: CDB4DeleterDialog, extents_wkt_2d: Optional[str]) -> list[TopLevelFeatureCounter]:
     """SQL query that retrieves the number of available top-level features 
 
     *   :returns: List of named tuples, each one corresponding to a record.
@@ -290,78 +290,3 @@ def list_top_level_features(dlg: CDB4DeleterDialog, extents_wkt_2d: Optional[str
             location=FILE_LOCATION,
             header="Retrieving list and quantity of available top-level features in selected area",
             error=error)      
-
-
-# def list_unique_feature_types(dlg: CDB4DeleterDialog) -> tuple[str, ...]:
-#     """SQL query that retrieves the unique available feature types (CityGML modules)
-#     in the current cdb_schema and within the selection bounding box.
-
-#     *   :returns: unique feature types (e.g. ("Building", "Vegetation", "Transportation"))
-#         :rtype: tuple[str, ...]
-#     """
-
-#     extents_wkt: Optional[str]
-
-#     if dlg.CDB_SCHEMA_EXTENTS == dlg.DELETE_EXTENTS:
-#         extents_wky = None
-#     else:
-#         # Convert QgsRectangle into WKT polygon format
-#         extents_wkt = dlg.CURRENT_EXTENTS.asWktPolygon()  
-
-#     query = pysql.SQL("""
-#         SELECT feature_type 
-#         FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents}) 
-#         WHERE exists_in_db IS TRUE 
-#         ORDER BY feature_type;
-#         """).format(
-#         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-#         _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
-#         _extents = pysql.Literal(extents_wkt)
-#         )  
-
-#     try:
-#         with dlg.conn.cursor() as cur:
-#             cur.execute(query)
-#             res = cur.fetchall()
-#         dlg.conn.commit()
-
-#         feat_types: tuple[str, ...]
-#         feat_types = tuple(zip(*res))[0]
-        
-#         return feat_types
-
-#     except (Exception, psycopg2.Error) as error:
-#         gen_f.critical_log(
-#             func=list_unique_feature_types,
-#             location=FILE_LOCATION,
-#             header="Retrieving list of available feature types in selected area",
-#             error=error)
-#         dlg.conn.rollback()
-
-
-# def cleanup_cdb_schema(dlg: CDB4DeleterDialog) -> bool:
-#     """SQL query that cleans up the cdb_schema (truncates all tables) in the current database
-#     """
-#     query = pysql.SQL("""
-#         SELECT {_qgis_pgk_schema}.cleanup_schema({_cdb_schema});
-#         """).format(
-#         _qgis_pgk_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-#         _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
-#         )
-
-#     try:
-#         with dlg.conn.cursor() as cur:
-#             cur.execute(query)
-#             res = cur.execute(query)
-#         dlg.conn.commit()
-#         # print('from database:', res) # should be None is all goes well
-#         return True
-    
-#     except (Exception, psycopg2.Error) as error:
-#         dlg.conn.rollback()
-#         gen_f.critical_log(
-#             func=cleanup_cdb_schema,
-#             location=FILE_LOCATION,
-#             header=f"Cleaning up cdb_schema '{dlg.CDB_SCHEMA}'",
-#             error=error)
-#         return False
