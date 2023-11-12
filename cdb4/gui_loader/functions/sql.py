@@ -166,10 +166,15 @@ def get_layer_metadata(dlg: CDB4LoaderDialog, cols_list: list[str] = ["*"]) -> t
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            metadata = cur.fetchall()
+            res = cur.fetchall()
             # Attribute names
             col_names = [desc[0] for desc in cast(Iterable[tuple[str, ...]], cur.description)]
         dlg.conn.commit()
+
+        if not res:
+            metadata = []
+        else:
+            metadata = res
         return col_names, metadata
 
     except (Exception, psycopg2.Error) as error:
@@ -210,6 +215,10 @@ def get_detail_view_metadata(dlg: CDB4LoaderDialog) -> list[DetailViewMetadata]:
             cur.execute(query)
             res = cur.fetchall()
         dlg.conn.commit()
+
+        if not res:
+            res = []
+
         return res
 
     except (Exception, psycopg2.Error) as error:
@@ -221,7 +230,7 @@ def get_detail_view_metadata(dlg: CDB4LoaderDialog) -> list[DetailViewMetadata]:
         dlg.conn.rollback()
 
 
-def list_lookup_tables(dlg: CDB4LoaderDialog) -> tuple[str, ...]:
+def list_lookup_tables(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()]]:
     """SQL query that retrieves look-up tables from {usr_schema}.
 
     *   :returns: Look-up tables names
@@ -242,8 +251,12 @@ def list_lookup_tables(dlg: CDB4LoaderDialog) -> tuple[str, ...]:
             res=cur.fetchall()
         dlg.conn.commit()
 
-        lookups = tuple(zip(*res))[0]
-        # lookups = tuple(elem[0] for elem in cast(Iterable[tuple[str]],res))
+        if not res:
+            lookups = ()
+        else:
+            lookups: tuple[str, ...]
+            lookups = tuple(zip(*res))[0]
+            # lookups = tuple(elem[0] for elem in cast(Iterable[tuple[str]],res))
 
         return lookups
 
@@ -462,7 +475,7 @@ def list_unique_feature_types(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], t
             error=error)
 
 
-def list_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> tuple[str, ...]:
+def list_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()]]:
     """SQL query that retrieves the list of unique feature types (CityGML modules) in
     table layer_metadata 
 
@@ -488,13 +501,14 @@ def list_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> tuple[
         dlg.conn.commit()
 
         if not res:
-            return None
+            feat_types = ()
         else:
             #feat_types = tuple(elem[0] for elem in cast(Iterable[tuple[str]], res))
             feat_types: tuple[str, ...]
             feat_types = tuple(zip(*res))[0]
             # print(feat_types)
-            return feat_types
+        
+        return feat_types
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
@@ -588,11 +602,11 @@ def get_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) ->
         dlg.conn.rollback()
 
 
-def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> tuple[str, ...]:
+def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()]]:
     """SQL query that retrieves the codelist set names to fill the codelist selection box 
     
     *   :returns: the unique names in table codelist_lookup_config
-        :rtype: tuple[str, ...]
+        :rtype: Union[tuple[str, ...], tuple[()]]
     """
     query = pysql.SQL("""
         SELECT DISTINCT name FROM {_usr_schema}.codelist_lookup_config
@@ -608,13 +622,12 @@ def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> tuple[str, ...]:
             res = cur.fetchall()
         dlg.conn.commit()
 
-        # codelist_set_names = tuple(elem[0] for elem in cast(Iterable[tuple[str, ...]], res))
-        codelist_set_names: tuple[str, ...]
-        codelist_set_names = tuple(zip(*res))[0]
-
-
-        if not codelist_set_names:
+        if not res:
             codelist_set_names = ()
+        else:
+            # codelist_set_names = tuple(elem[0] for elem in cast(Iterable[tuple[str, ...]], res))
+            codelist_set_names: tuple[str, ...]
+            codelist_set_names = tuple(zip(*res))[0]
      
         return codelist_set_names
 
