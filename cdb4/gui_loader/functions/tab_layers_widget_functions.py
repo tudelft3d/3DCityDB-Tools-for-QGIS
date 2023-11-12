@@ -21,7 +21,7 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 ## Setup widget functions for 'Layer' tab
 ####################################################
 
-def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_set_names: list = None) -> None:
+def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_set_names: tuple[str, ...] = None) -> None:
     """Function that fills the 'Select CodeLists group' combo box.
     """
     # Clean combo box from previous leftovers.
@@ -30,9 +30,9 @@ def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_
     if not CityGML_codelist_set_names:
         # Disable the combobox
         dlg.cbxCodeListSelCityGML.setDisabled(True)
-        dlg.cbxCodeListSelCityGML.setDisabled(True)
+        dlg.lblCodeListSelCityGML.setDisabled(True)
     else:
-        label: str = f"None"
+        label: str = "None"
         dlg.cbxCodeListSelCityGML.addItem(label, userData=label)
         for codelist_set_name in CityGML_codelist_set_names:
             label: str = f"{codelist_set_name}"
@@ -144,13 +144,13 @@ def gbxLayerSelection_reset(dlg: CDB4LoaderDialog) -> None:
 
     return None
 
+
 def gbxCodeListSelection_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Miscellaneous option' groupbox to the DEFAULT values
     """
     dlg.cbxCodeListSelCityGML.clear()
     # dlg.cbxCodeListSelADE.clear()
     return None
-
 
 
 def gbxAvailableL_reset(dlg: CDB4LoaderDialog) -> None:
