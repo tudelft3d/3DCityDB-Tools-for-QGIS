@@ -2,7 +2,7 @@
 These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, cast, Iterable
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ..other_classes import FeatureType, CDBDetailView, EnumConfig 
@@ -28,7 +28,7 @@ def populate_codelist_config_registry(dlg: CDB4LoaderDialog, codelist_set_name: 
         return None # Exit, nothing to do
 
     # This is a list of named tuples, extracted from the db sorting by gen_name
-    config_metadata: list = sql.fetch_codelist_lookup_config(dlg, codelist_set_name)
+    config_metadata = sql.get_codelist_lookup_config(dlg, codelist_set_name)
     if not config_metadata:
         return None # Exit, nothing to do
     # print(config_metadata)
@@ -60,7 +60,7 @@ def add_layers_to_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
         feat_type.layers = [] # Empty the list the will contain CDBLayer objects
 
     # Get field names and metadata values from server.
-    col_names, layer_metadata = sql.fetch_layer_metadata(dlg)
+    col_names, layer_metadata = sql.get_layer_metadata(dlg)
 
     # Format metadata into a list of dictionaries where each element is a layer.
     layer_metadata_dict_items: list = [dict(zip(col_names, values)) for values in layer_metadata]
@@ -81,7 +81,7 @@ def add_layers_to_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
         layer = CDBLayer(*layer_metadata_dict_item.values())
 
         # Count the number of features that the layer has in the current extents.
-        sql.exec_gview_counter(dlg, layer) # Stores number in layer.n_selected.
+        sql.exec_gview_counter(dlg=dlg, layer=layer) # Stores number in layer.n_selected.
 
         # Get the FeatureType object of the current layer
         curr_FeatureType: FeatureType = dlg.FeatureTypesRegistry[layer_metadata_dict_item['feature_type']]
@@ -221,12 +221,36 @@ def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
 def get_citydb_node(dlg: CDB4LoaderDialog) -> QgsLayerTreeGroup:
     """Function that finds the citydb node in the project's 'Table of Contents' tree (by name).
 
+    *   :returns: citydb node
+        :rtype: QgsLayerTreeGroup
+    """
+
+    root = QgsProject.instance().layerTreeRoot()
+    cdb_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # cdb_node = root.findGroup(dlg.DB.database_name)
+    return cdb_node
+
+
+def get_all_dv_and_lu_nodes(dlg: CDB4LoaderDialog) -> list[QgsLayerTreeGroup]:
+    """Function that finds the citydb node in the project's 'Table of Contents' tree (by name).
+
     *   :returns: citydb node (qgis group)
         :rtype: QgsLayerTreeGroup
     """
+
     root = QgsProject.instance().layerTreeRoot()
-    cdb_node = root.findGroup(dlg.DB.database_name)
-    return cdb_node
+    group_nodes = root.findGroups(recursive=True) # Get all Group nodes, also those containing the dv and lu tables
+    dv_lu_nodes: list[QgsLayerTreeGroup] = []
+
+    if len(group_nodes) != 0:
+        for group_node in group_nodes:
+            if group_node.name() == c.detail_views_group_alias or group_node.name() == c.lookup_tables_group_alias:
+                dv_lu_nodes.append(group_node)
+            else:
+                # nothing to add
+                pass
+
+    return dv_lu_nodes
 
 
 def sort_ToC(group: QgsLayerTreeGroup) -> None:
@@ -241,7 +265,7 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
     mLNEDkeys = OrderedDict(sorted(LayerNamesEnumDict(group.children()).items(), reverse=False)).keys()
 
     mLNEDsorted = [mLNED[k].clone() for k in mLNEDkeys]
-    group.insertChildNodes(0,mLNEDsorted)  # group instead of root
+    group.insertChildNodes(0, mLNEDsorted)  # group instead of root
     for n in mLNED.values():
         group.removeChildNode(n)  # group instead of root
     # Germán Carrillo END #
@@ -250,7 +274,9 @@ def sort_ToC(group: QgsLayerTreeGroup) -> None:
     for child in group.children():
         if isinstance(child, QgsLayerTreeGroup):
             sort_ToC(child)
-        else: return None
+        else: 
+            return None
+
     return None
 
 
@@ -288,8 +314,12 @@ def add_layer_node_to_ToC(dlg: CDB4LoaderDialog, layer: CDBLayer) -> QgsLayerTre
         :rtype: QgsLayerTreeGroup
     """
     root = QgsProject.instance().layerTreeRoot()
+
+    # Database group (e.g. delft @ localhost:5432)
+    node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.db_toc_node_label)
     # Database group (e.g. delft)
-    node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.database_name)
+    # node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.database_name)
+    
     # Schema group (e.g. citydb)
     node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([dlg.DB.username, layer.cdb_schema]))
     # FeatureType group (e.g. Building)
@@ -329,22 +359,26 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     """
     dv_gen_names: list = [k for k in dlg.DetailViewsRegistry.keys() if k.startswith("address_")]
     # print("dv_gen_names", dv_gen_names)
+
     if dv_gen_name not in dv_gen_names:
         # We're creating relations that may not be valid, so exit.
         return None
 
-    dv: CDBDetailView
+    # dv: CDBDetailView
     dv = [v for k,v in dlg.DetailViewsRegistry.items() if k == dv_gen_name][0]
 
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(dlg.DB.database_name)
+
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # db_node = root.findGroup(dlg.DB.database_name)
+    
     schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
     detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
     dv_layers: list = detail_views_node.findLayers()
     # print("dv_layers", dv_layers)
-    dv_layer: QgsLayerTreeLayer
-    dv_layer = [elem for elem in dv_layers if elem.name().endswith(dv.gen_name)][0] # it should be only one!
+    # dv_layer: QgsLayerTreeLayer
+    dv_layer = [elem for elem in cast(Iterable[QgsLayerTreeLayer], dv_layers) if elem.name().endswith(dv.gen_name)][0] # it should be only one!
     # print("dv_layer", dv_layer)
 
     # Create new Relation object
@@ -359,9 +393,9 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
         rel.setStrength(0) # integer, 0 is association, 1 composition
     else:
-        #rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
+        # rel_strength = Qgis.RelationshipStrength(0) # integer, 0 is association, 1 composition
         rel_strength = Qgis.RelationshipStrength.Association # New way of defining it, as enumeration
-        #print(rel_strength)
+        # print(rel_strength)
         rel.setStrength(rel_strength)
 
     # print("rel.is_valid", rel.isValid())
@@ -415,7 +449,10 @@ def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorL
 
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(dlg.DB.database_name)
+
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # db_node = root.findGroup(dlg.DB.database_name)
+
     schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
     detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
     dv_layers: list = detail_views_node.findLayers()
@@ -489,7 +526,10 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
 
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(dlg.DB.database_name)
+
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # db_node = root.findGroup(dlg.DB.database_name)
+    
     schema_node = db_node.findGroup("@".join([dlg.DB.username,dlg.CDB_SCHEMA]))
     detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
     dv_layers: list = detail_views_node.findLayers()
@@ -591,7 +631,10 @@ def create_layer_relation_to_enumerations(dlg: CDB4LoaderDialog, layer: QgsVecto
 
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(dlg.DB.database_name)
+
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # db_node = root.findGroup(dlg.DB.database_name)
+
     schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
     enums_node = schema_node.findGroup(c.lookup_tables_group_alias)
     enum_layers = enums_node.findLayers()
@@ -626,7 +669,10 @@ def create_layer_relation_to_codelists(dlg: CDB4LoaderDialog, layer: QgsVectorLa
 
     # Isolate the layer's ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
-    db_node = root.findGroup(dlg.DB.database_name)
+
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)
+    # db_node = root.findGroup(dlg.DB.database_name)
+    
     schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
     cls_node = schema_node.findGroup(c.lookup_tables_group_alias)
     cl_layers = cls_node.findLayers()
@@ -668,13 +714,13 @@ def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
     lookups_node = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=c.lookup_tables_group_alias)
 
     # Get look-up tables names from the server.
-    lookup_tables = sql.fetch_lookup_tables(dlg)
+    lookup_tables = sql.list_lookup_tables(dlg=dlg)
 
     for lookup_table in lookup_tables:
         # Create ONLY new layers.
         if not is_layer_already_in_ToC_group(group=lookups_node, layer_name=f"{dlg.CDB_SCHEMA}_{lookup_table}"):
             uri = QgsDataSourceUri()
-            uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
+            uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
             uri.setDataSource(aSchema=usr_schema, aTable=lookup_table, aGeometryColumn=None, aKeyColumn="id")
             layer = QgsVectorLayer(path=uri.uri(False), baseName=f"{cdb_schema}_{lookup_table}", providerLib="postgres")
             if layer or layer.isValid(): # Success
@@ -784,7 +830,7 @@ def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVecto
     crs = dlg.CRS
 
     uri = QgsDataSourceUri()
-    uri.setConnection(db.host, db.port, db.database_name, db.username, db.password)
+    uri.setConnection(aHost=db.host, aPort=db.port, aDatabase=db.database_name, aUsername=db.username, aPassword=db.password)
 
     if dlg.QGIS_EXTENTS == dlg.LAYER_EXTENTS:  
         # No need to apply a spatial filter in QGIS
@@ -816,7 +862,10 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
     cdb_schema: str = dlg.CDB_SCHEMA
 
     root = QgsProject.instance().layerTreeRoot()
-    node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
+
+    node_cdb: QgsLayerTreeGroup = root.findGroup(db.db_toc_node_label)
+    # node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
+
     node_cdb_schema: QgsLayerTreeGroup = None
     node_featureType: QgsLayerTreeGroup = None
     node_feature: QgsLayerTreeGroup = None
@@ -846,7 +895,8 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         else:
             node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
     else:
-        node_cdb = add_group_node_to_ToC(root, db.database_name)
+        node_cdb = add_group_node_to_ToC(root, db.db_toc_node_label)
+        # node_cdb = add_group_node_to_ToC(root, db.database_name)
         node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
 
     # Load the generic attributes table if it is not already loaded 
