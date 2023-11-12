@@ -30,6 +30,7 @@ def get_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Delet
             cur.execute("""SELECT version FROM citydb_pkg.citydb_version();""")
             version: str = cur.fetchone()[0] # Tuple has trailing comma.
         dlg.conn.commit()
+
         return version
 
     except (Exception, psycopg2.Error) as error:
@@ -91,10 +92,10 @@ def is_qgis_pkg_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Dele
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            pkg_name = cur.fetchone()
+            res = cur.fetchone()
         dlg.conn.commit()
 
-        if pkg_name:
+        if res:
             return True
         return False
 
@@ -172,7 +173,7 @@ def is_usr_schema_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4De
         dlg.conn.rollback()
 
 
-def upsert_plugin_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str, settings_list: list[dict]) -> int:
+def upsert_plugin_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str, settings_list: list[dict]) -> Optional[int]:
     """SQL function that upserts the settings to the qgis_xxx.settings table
 
     *   :returns: None
@@ -284,31 +285,3 @@ def get_plugin_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Delete
         dlg.conn.rollback()
 
     return None
-
-
-# def list_all_cdb_schemas(dlg: CDB4AdminDialog) -> tuple[str, ...]:
-#     """SQL function that reads and retrieves all cdb_schemas, also the empty ones,
-
-#     *   :returns: Tuple of cdb_schemas
-#         :rtype: tuple[str, ...]
-#     """
-#     query = pysql.SQL("""
-#             SELECT cdb_schema FROM {_qgis_pkg_schema}.list_cdb_schemas(only_non_empty := False);
-#             """).format(
-#             _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA)
-#             )
-
-#     try:
-#         with dlg.conn.cursor() as cur:
-#             cur.execute(query)
-#             res = cur.fetchall()
-#         dlg.conn.commit()
-
-#         sch_names: tuple[str, ...] = tuple(zip(*res))[0] # trailing comma
-
-#     except (Exception, psycopg2.Error):
-#         QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
-#         dlg.conn.rollback()
-#         sch_names = () # create an empty tuple
-
-#     return sch_names
