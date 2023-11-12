@@ -21,7 +21,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
-    from ..other_classes import FeatureType
 
 import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -29,6 +28,7 @@ from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
+from ...shared.dataTypes import BBoxType
 from ...shared.functions import general_functions as gen_f
 from .. import loader_constants as c
 from . import tab_conn_functions as tc_f
@@ -115,8 +115,8 @@ class CreateLayersWorker(QObject):
         # Flag to help us break from a failing loop.
         fail_flag: bool = False
 
-        funcs_list = []
-        ft: FeatureType
+        funcs_list: list[str] = []
+        # ft: FeatureType
         if dlg.gbxFeatSel.isChecked():
             # Update the FeatureTypeMetadata with the information about the selected ones
             for ft in dlg.FeatureTypesRegistry.values():
@@ -212,7 +212,7 @@ class CreateLayersWorker(QObject):
                             )
 
                 # Update progress bar
-                msg = f"Creating detail views"
+                msg = "Creating detail views"
                 self.sig_progress.emit(step, msg)
 
                 try:
@@ -261,13 +261,13 @@ def evt_create_layers_success(dlg: CDB4LoaderDialog) -> None:
     Shows success message in QgsMessageLog
     """
     # Update the layer extents in the corresponding table in the server.
-    sql.exec_upsert_extents(dlg=dlg, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=dlg.LAYER_EXTENTS.asWktPolygon())
+    sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.MAT_VIEW, extents_wkt_2d_poly=dlg.LAYER_EXTENTS.asWktPolygon())
 
     # Perform the activities related to checking layers status, and get the result
-    check_layers_refresh_status: bool = tc_f.check_layers_status(dlg)
+    check_layers_refresh_status = tc_f.check_layers_status(dlg=dlg)
 
     if not check_layers_refresh_status:
-        evt_create_layers_fail(dlg) 
+        evt_create_layers_fail(dlg=dlg) 
 
     return None
 
@@ -382,9 +382,9 @@ class RefreshLayersWorker(QObject):
         fail_flag: bool = False
 
         # Get feature types from layer_metadata table.
-        cols_to_fetch: list = ["feature_type","gv_name"]
-        col, feattype_geom_mview = sql.fetch_layer_metadata(dlg=dlg, cols_list=cols_to_fetch)
-        col = None # Discard byproduct.
+        cols_to_fetch: list[str] = ["feature_type","gv_name"]
+        col_names, feattype_geom_mview = sql.get_layer_metadata(dlg=dlg, cols_list=cols_to_fetch)
+        col_names = None # Discard byproduct.
 
         # Set progress bar goal
         dlg.bar.setMaximum(len(feattype_geom_mview))
@@ -467,7 +467,7 @@ def evt_refresh_layers_success(dlg: CDB4LoaderDialog) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    tc_f.check_layers_status(dlg)    
+    tc_f.check_layers_status(dlg=dlg)    
 
     return None
 
@@ -495,7 +495,7 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = DropLayersWorker(dlg)
+    dlg.worker = DropLayersWorker(dlg=dlg)
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -561,15 +561,15 @@ class DropLayersWorker(QObject):
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
 
-        feat_type = ()
-        feat_types = sql.fetch_unique_feature_types_in_layer_metadata(dlg)
+        # feat_type: str
+        feat_types = sql.list_unique_feature_types_in_layer_metadata(dlg=dlg)
 
         if not feat_types:
             self.sig_finished.emit()
             return None
 
-        funcs_list = []
-        ft: FeatureType
+        funcs_list: list[str] = []
+        # ft: FeatureType
         for feat_type in feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type]
             funcs_list.append(ft.layers_drop_function)
@@ -631,7 +631,7 @@ class DropLayersWorker(QObject):
                             )
 
                 # Update progress bar
-                msg = f"Dropping detail views"
+                msg = "Dropping detail views"
                 step += 1
                 self.sig_progress.emit(step, msg)
 
@@ -680,7 +680,7 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    layers_exist_status: bool = tc_f.check_layers_status(dlg)
+    layers_exist_status = tc_f.check_layers_status(dlg=dlg)
 
     if not layers_exist_status: # i.e. we have successfully dropped all layers
 
@@ -698,7 +698,7 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
                 notifyUser=True)
 
     else:
-        evt_drop_layers_fail(dlg)
+        evt_drop_layers_fail(dlg=dlg)
 
     return None
 
@@ -713,7 +713,7 @@ def evt_drop_layers_fail(dlg: CDB4LoaderDialog) -> None:
     """
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA))
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Critical, duration=5)
 
     # Inform user that the layers are now corrupted.
     dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA)))
