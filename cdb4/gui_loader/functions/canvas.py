@@ -1,16 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import cast, Iterable, TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
-from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem
+from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayer
 from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
 from .. import loader_constants as c
 
-def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
+def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectangle = c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem = c.OSM_INIT_CRS, clear: bool = True) -> None:
     """Function to set up the additional map canvas that shows the extents.
     For the basemap it uses a OSM maps WMS layer,         
     (in 'User Connection' tab)
@@ -29,7 +29,8 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
         :type clear: bool
     """
     # OSM id of layer.
-    registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+    # registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+    registryOSM_id = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
 
     if canvas == dlg.CANVAS: # in 'User Connection' tab
         # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtents.
@@ -47,12 +48,12 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
         dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
-    canvas.setDestinationCrs(crs)
-    canvas.setExtent(extents)
+    canvas.setDestinationCrs(crs=crs)
+    canvas.setExtent(r=extents)
 
     if clear:
         # Clear map registry from old OSM layers.
-        QgsProject.instance().removeMapLayers(registryOSM_id)
+        QgsProject.instance().removeMapLayers(layerIds=registryOSM_id)
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
         # pseudo means that the layer is not going to be added to the legend.
@@ -60,13 +61,13 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
 
         # Make sure that the layer can load properly, then add layer to the registry
         if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer, addToLegend=False)
+            QgsProject.instance().addMapLayer(mapLayer=rlayer, addToLegend=False)
 
     # OSM layers object
-    registryOSM_list = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+    registryOSM_list = [i for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
 
     # Set the map canvas layer set.
-    canvas.setLayers(registryOSM_list)
+    canvas.setLayers(layers=registryOSM_list)
 
     return None
 
@@ -97,11 +98,11 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
         (in 'Layers' tab)
     """
     # Create polygon rubber band corresponding to the extents
-    extents_geometry = QgsGeometry.fromRect(extents)
-    band.setToGeometry(extents_geometry, crs)
-    band.setColor(QColor(color))
-    band.setWidth(width)
-    band.setFillColor(Qt.transparent)
+    extents_geometry = QgsGeometry.fromRect(rect=extents)
+    band.setToGeometry(geometry=extents_geometry, crs=crs)
+    band.setColor(color=QColor(color))
+    band.setWidth(width=width)
+    band.setFillColor(color=Qt.transparent)
 
     return None
 
@@ -120,7 +121,7 @@ def zoom_to_extents(canvas: QgsMapCanvas, extents: QgsRectangle) -> None:
     # In this way we overcome the problem that the variable extents will be
     # changed to new values after the zoom function, as this is not desired.
     extents_wkt: str = extents.asWktPolygon()
-    rectangle: QgsRectangle = QgsRectangle().fromWkt(extents_wkt)
-    canvas.zoomToFeatureExtent(rectangle)
+    rectangle: QgsRectangle = QgsRectangle().fromWkt(wkt=extents_wkt)
+    canvas.zoomToFeatureExtent(rect=rectangle)
 
     return None
