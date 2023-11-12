@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
-    from ..other_classes import FeatureType, TopLevelFeature
+    from ..other_classes import TopLevelFeature
 
 import math, time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
@@ -56,7 +56,7 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = CleanUpSchemaWorker(dlg)
+    dlg.worker = CleanUpSchemaWorker(dlg=dlg)
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -105,8 +105,8 @@ class CleanUpSchemaWorker(QObject):
         """Execution method that truncates all tables in the current citydb schema.
         """
         dlg = self.dlg
-        qgis_pkg_schema: str = dlg.QGIS_PKG_SCHEMA
-        cdb_schema: str = dlg.CDB_SCHEMA
+        qgis_pkg_schema = dlg.QGIS_PKG_SCHEMA
+        cdb_schema = dlg.CDB_SCHEMA
 
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
@@ -116,7 +116,7 @@ class CleanUpSchemaWorker(QObject):
         # This strategy however allows for some action in the progress bar, otherwise the user would have no cue of
         # what is going on.
 
-        table_names: tuple = (
+        table_names: tuple[str] = (
             "address_to_bridge",
             "address_to_building",
             "appear_to_surface_data",
@@ -145,7 +145,7 @@ class CleanUpSchemaWorker(QObject):
             )
 
         # Set progress bar goal:
-        steps_tot = len(table_names) + 1
+        steps_tot: int = len(table_names) + 1
         dlg.bar.setMaximum(steps_tot)
         curr_step: int = 0
         
@@ -255,7 +255,7 @@ def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.TRUNC_SUCC_MSG.format(sch=cdb_schema))
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 4)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Success, duration=4)
 
     # Inform user
     QgsMessageLog.logMessage(
@@ -264,7 +264,7 @@ def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
             level=Qgis.MessageLevel.Success,
             notifyUser=True)
 
-    tc_f.refresh_extents(dlg)
+    tc_f.refresh_extents(dlg=dlg)
 
     return None
 
@@ -280,7 +280,7 @@ def evt_clean_up_schema_fail(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 4)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Critical, duration=4)
     
     # Inform user
     QgsMessageLog.logMessage(
@@ -312,7 +312,7 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = BulkDeleteWorker(dlg, delete_mode)
+    dlg.worker = BulkDeleteWorker(dlg=dlg, delete_mode=delete_mode)
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -366,8 +366,9 @@ class BulkDeleteWorker(QObject):
 
         # Flag to help us break from a failing installation.
         fail_flag: bool = False
-        cdb_schema: str = dlg.CDB_SCHEMA
-        co_id_array_length: int = dlg.settings.max_del_array_length_default
+        cdb_schema = dlg.CDB_SCHEMA
+        co_id_array_length = dlg.settings.max_del_array_length_default
+        sel_tlfs: list[TopLevelFeature] = []
 
         sql_where: str
         if dlg.DELETE_EXTENTS == dlg.CDB_SCHEMA_EXTENTS:
@@ -389,18 +390,19 @@ class BulkDeleteWorker(QObject):
         
         elif self.delete_mode == "del_FeatureTypes":
             # 1a) Select the all Features that belong to the selected Feature Types
-            sel_fts: list = []
+            # sel_fts: list[str] = []
+            # sel_fts = []
             sel_fts = [k for k, ft in dlg.FeatureTypesRegistry.items() if ft.is_selected]
 
-            ft_rel: FeatureType
-            ft_cog: FeatureType
+            # ft_rel: FeatureType
+            # ft_cog: FeatureType
             ft_rel = dlg.FeatureTypesRegistry['Relief']
             ft_cog = dlg.FeatureTypesRegistry['CityObjectGroup']
 
             # 2a) Filter the top-level features based on the selected Featuere Types 
-            sel_tlfs: list = []               # Used for all the top-level features, except the CityObjectGroup
-            sel_tlfs = sorted([rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if (rcf.feature_type in sel_fts) and (rcf.n_features != 0)], key = lambda x: x.name)
-            
+            # sel_tlfs = []  # :list[TopLevelFeature] # Used for all the top-level features, except the CityObjectGroup
+            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.feature_type in sel_fts) and (tlf.n_features != 0)], key = lambda x: x.name)
+
             # 3a) Put the ReliefFeature and the CityObjectGroup top-level features at the end of the list 
             if (not ft_rel.is_selected) and (not ft_cog.is_selected):
                 pass # Nothing to do
@@ -428,7 +430,7 @@ class BulkDeleteWorker(QObject):
 
             tot_del_iter: int = 0
 
-            tlf: TopLevelFeature
+            # tlf: TopLevelFeature
             n_iter: int = 0
             for tlf in sel_tlfs:
                 n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
@@ -437,24 +439,24 @@ class BulkDeleteWorker(QObject):
 
         elif self.delete_mode == "del_TopLevelFeatures":
             # 1b) Pick only those top-level features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
-            sel_tlfs: list = []               # Used for all the top-level features, except the CityObjectGroup and ReliefFeature
-            sel_tlfs: list = sorted([rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if (rcf.is_selected) and (rcf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
+            # sel_tlfs = []   # : list[TopLevelFeature] Used for all the top-level features, except the CityObjectGroup and ReliefFeature
+            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.is_selected) and (tlf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
 
-            rcf_rel: TopLevelFeature
-            rcf_cog: TopLevelFeature
-            rcf_rel = dlg.TopLevelFeaturesRegistry['ReliefFeature']
-            rcf_cog = dlg.TopLevelFeaturesRegistry['CityObjectGroup']
+            # tlf_rel: TopLevelFeature
+            # tlf_cog: TopLevelFeature
+            tlf_rel = dlg.TopLevelFeaturesRegistry['ReliefFeature']
+            tlf_cog = dlg.TopLevelFeaturesRegistry['CityObjectGroup']
 
-            if rcf_rel.is_selected: # for sure it has n_features > 0, bacause it could be selected
-                sel_tlfs.append(rcf_rel)
+            if tlf_rel.is_selected: # for sure it has n_features > 0, bacause it could be selected
+                sel_tlfs.append(tlf_rel)
 
-            if rcf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
-                sel_tlfs.append(rcf_cog)
+            if tlf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
+                sel_tlfs.append(tlf_cog)
 
             # Update the number of delete iterations for each selected top-level feature
             tot_del_iter: int = 0
 
-            tlf: TopLevelFeature = None
+            # tlf: TopLevelFeature = None
             n_iter: int = 0
             for tlf in sel_tlfs:
                 n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
@@ -464,6 +466,8 @@ class BulkDeleteWorker(QObject):
         # Set progress bar goal:
         # drop_iterations: tot_del_iter actions
         # clean up global appearances: 1 action
+
+        sel_tlfs: list[TopLevelFeature]
 
         steps_tot = tot_del_iter + 1
         dlg.bar.setMaximum(steps_tot)
@@ -479,6 +483,7 @@ class BulkDeleteWorker(QObject):
                 time_start = time.time()
 
                 # Start deleting the top-level features that are neither ReliefFeature nor CityObjectGroup
+                # tlf: TopLevelFeature
                 for tlf in sel_tlfs:
                     for i in range(tlf.n_del_iter):
 
@@ -532,7 +537,7 @@ class BulkDeleteWorker(QObject):
                 )
 
                 # Update progress bar
-                msg = f"Cleaning up global appearances"
+                msg = "Cleaning up global appearances"
                 curr_step += 1
                 self.sig_progress.emit(curr_step, msg)
 
@@ -587,7 +592,7 @@ def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Success msg.
     msg = dlg.msg_bar.createMessage(c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema))
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 4)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Success, duration=4)
 
     # Inform user
     QgsMessageLog.logMessage(
@@ -596,7 +601,7 @@ def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
             level=Qgis.MessageLevel.Success,
             notifyUser=True)
 
-    tc_f.refresh_extents(dlg)
+    tc_f.refresh_extents(dlg=dlg)
 
     return None
 
@@ -612,7 +617,7 @@ def evt_buld_delete_fail(dlg: CDB4DeleterDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 4)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Critical, duration=4)
 
     # Inform user
     QgsMessageLog.logMessage(
