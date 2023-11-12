@@ -7,14 +7,14 @@ The reset functions consist of clearing text or changed text to original state,
 clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast, Iterable
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
-from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem
-# from qgis.PyQt.QtCore import Qt
+from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem, QgsMapLayer
 
 from ...shared.functions import general_functions as gen_f
+from ...shared.dataTypes import BBoxType
 from .. import deleter_constants as c
 from . import canvas, sql
 
@@ -34,7 +34,7 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     cdb_extents_wkt: str = None
 
     # Get the crs_id stored in the selected {cdb_schema}
-    srid: int = sql.fetch_cdb_schema_srid(dlg)
+    srid = sql.get_cdb_schema_srid(dlg=dlg)
     # Format CRS variable as QGIS Epsg code.
     crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
     # Store the crs into the plugin variable
@@ -44,13 +44,13 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     while not cdb_extents_wkt:
 
         # Get the extents stored in server.
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(dlg, usr_schema=dlg.USR_SCHEMA, cdb_schema=dlg.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=dlg)
 
         # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
             # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
             # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
-            sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+            sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
 
     delete_extents_wkt = cdb_extents_wkt
 
@@ -89,12 +89,12 @@ def tabConnection_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Connection' tab.
     Resets: gbxConnStatus and gbxDatabase.
     """
-    gbxDatabase_reset(dlg)
-    gbxConnStatus_reset(dlg)
+    gbxDatabase_reset(dlg=dlg)
+    gbxConnStatus_reset(dlg=dlg)
 
-    gbxCleanUpSchema_reset(dlg)
-    gbxBasemap_reset(dlg)
-    gbxFeatSel_reset(dlg)
+    gbxCleanUpSchema_reset(dlg=dlg)
+    gbxBasemap_reset(dlg=dlg)
+    gbxFeatSel_reset(dlg=dlg)
     
     dlg.btnCloseConn.setDisabled(True)
 
@@ -139,8 +139,9 @@ def gbxBasemap_reset(dlg: CDB4DeleterDialog) -> None:
         dlg.RUBBER_DELETE.reset()
 
     # Clear map registry from OSM layers.
-    registryLayers = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
-    QgsProject.instance().removeMapLayers(registryLayers)
+    registryLayers = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
+
+    QgsProject.instance().removeMapLayers(layerIds=registryLayers)
     # Refresh to show to re-render the canvas (as empty).
     dlg.CANVAS.refresh()
 
@@ -152,8 +153,8 @@ def gbxFeatSel_reset(dlg: CDB4DeleterDialog) -> None:
     """
     dlg.gbxFeatType.setChecked(False)
     dlg.gbxTopLevelClass.setChecked(False)
-    gbxFeatType_reset(dlg)
-    gbxTopLevelClass_reset(dlg)
+    gbxFeatType_reset(dlg=dlg)
+    gbxTopLevelClass_reset(dlg=dlg)
 
     dlg.gbxFeatSel.setChecked(False)
     dlg.gbxFeatSel.setDisabled(True)
