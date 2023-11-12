@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog
     from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog
     from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog    
-    from .gui_about.about_dialog import CDBAboutDialog
+    from .shared.gui_about.about_dialog import CDBAboutDialog
  
 import os.path
 import typing
@@ -118,8 +118,8 @@ class CDBToolsMain:
         msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
-        self.StoredConns: list = []
-        self.StoredConns = conn_f.get_qgis_postgres_stored_conns()
+        self.StoredConns = []
+        self.StoredConns = conn_f.list_qgis_postgres_stored_conns()
 
         # Variable to store the loader dialog of the plugin.
         self.loader_dlg: CDB4LoaderDialog = None
@@ -149,7 +149,7 @@ class CDBToolsMain:
         self.MENU_LABEL_ABOUT: str = main_c.MENU_LABEL_ABOUT
         self.DLG_NAME_ABOUT: str = main_c.DLG_NAME_ABOUT
 
-        self.DialogRegistry: dict = {}
+        self.DialogRegistry: dict[str, Union[CDB4AdminDialog, CDB4DeleterDialog, CDB4LoaderDialog]] = {}
 
         # initialize locale.
         #locale = QSettings().value("locale/userLocale")[0:2]
@@ -445,7 +445,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
+        stored_conns = conn_f.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback,
         # so that it will only load when the plugin is started.
@@ -524,7 +524,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
+        stored_conns = conn_f.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_deleter:
@@ -586,7 +586,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns: list = conn_f.get_qgis_postgres_stored_conns()
+        stored_conns = conn_f.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_admin:
@@ -610,8 +610,6 @@ class CDBToolsMain:
             close_dlg: bool = False
             close_conn: bool = False
 
-            dlg: Union[CDB4AdminDialog, CDB4DeleterDialog, CDB4LoaderDialog]
-
             # Check whether there are open dialogs and open connections
             for key, dlg in self.DialogRegistry.items():
                 if key != self.DLG_NAME_ADMIN:
@@ -625,7 +623,7 @@ class CDBToolsMain:
             if close_dlg or close_conn:
                 msg: str = f"In order to launch the '{self.MENU_LABEL_ADMIN}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs. If you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(self.admin_dlg, "Concurrent dialogs", msg)
-                if res == QMessageBox.Yes: #16384: #YES
+                if res == QMessageBox.Yes:
 
                     for key, dlg in self.DialogRegistry.items():
                         if key != self.DLG_NAME_ADMIN:
@@ -668,11 +666,11 @@ class CDBToolsMain:
         if self.PLATFORM_SYSTEM == "Windows":
             # This will open a PDF viewer instead of the browser, if available
             pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", file_name)
-            sh_f.open_local_PDF(pdf_path)
+            sh_f.open_local_PDF(pdf_path=pdf_path)
         else:
             # For OS other than windows, stay safe and simply point to the PDF on GitHub
             url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", file_name])
-            sh_f.open_online_url(url)
+            sh_f.open_online_url(url=url)
 
         return None
 
@@ -684,7 +682,7 @@ class CDBToolsMain:
         -   Sets up the plugin signals
         -   Executes the dialog
         """
-        from .gui_about.about_dialog import CDBAboutDialog # About dialog
+        from .shared.gui_about.about_dialog import CDBAboutDialog # About dialog
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_about:
@@ -726,7 +724,7 @@ class CDBToolsMain:
             if close_admin_dlg:
                 msg: str = f"In order to launch the '{dlg.DLG_NAME_LABEL}', you must first close the '{self.admin_dlg.DLG_NAME_LABEL}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(dlg, "Concurrent dialogs", msg)
-                if res == QMessageBox.Yes: #16384: #YES
+                if res == QMessageBox.Yes:
                     if close_admin_conn:
                         self.admin_dlg.conn.close()
                     if close_admin_dlg:
@@ -743,7 +741,7 @@ class CDBToolsMain:
             self.IS_QGIS_SUPPORTED = True
         else:
             self.IS_QGIS_SUPPORTED = False
-        #print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
+        # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
         if not self.IS_QGIS_SUPPORTED:
 
