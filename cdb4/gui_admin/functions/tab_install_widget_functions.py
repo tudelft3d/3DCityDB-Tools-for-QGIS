@@ -7,9 +7,10 @@ The reset functions consist of clearing text or changed text to original state,
 clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
+    from ...shared.dataTypes import CDBSchemaPrivs
 
 from qgis.PyQt.QtGui import QIcon
 
@@ -21,7 +22,7 @@ from . import tab_settings_widget_functions as ts_wf
 # Set up widget functions
 #############################################
 
-def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: tuple = None) -> None:
+def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, ...]] = None) -> None:
     """Function to reset the combobox containing the list of users.
     """
     usr_icon = QIcon(":/plugins/citydb_loader/icons/user.svg")
@@ -46,7 +47,7 @@ def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: tuple = None) -> No
             dlg.btnAddUserToGrp.setDisabled(False)
 
 
-def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: tuple = None) -> None:
+def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, ...]] = None) -> None:
     """Function to reset the combobox (drop down menu) containing the list of plugin users
     and the associated remove user from group.
     """
@@ -75,8 +76,9 @@ def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: tuple = None) -> None
     return None
 
 
-def fill_cdb_schemas_privs_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: list = None) -> None:
+def fill_cdb_schemas_privs_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: Optional[list[CDBSchemaPrivs]] = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
+    cdb_schemas_with_priv is a named tuple
     """
     # Clean combo box from previous leftovers.
     dlg.ccbSelCDBSch.clear()
@@ -116,10 +118,10 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     dlg.btnMainUninst.setDisabled(False)
 
     # Reset and Disable the Settings Tab
-    ts_wf.tabSettings_reset(dlg) # This also disables it
+    ts_wf.tabSettings_reset(dlg=dlg) # This also disables it
 
     # Reset the user installation GroupBox
-    ti_wf.gbxUserInst_reset(dlg)
+    ti_wf.gbxUserInst_reset(dlg=dlg)
 
     # Enable the User Installation Group box
     dlg.gbxUserInstCont.setDisabled(False)
@@ -130,14 +132,14 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     dlg.gbxGroupMemb.setDisabled(False)
 
     # Get the database users not belonging to the qgis_pkg_usrgroup
-    db_usr_names: tuple = sql.exec_list_qgis_pkg_non_usrgroup_members(dlg)
+    db_usr_names = sql.list_qgis_pkg_non_usrgroup_members(dlg=dlg)
     # print('Database members:', db_usr_names)
 
     # Fill and enable the combobox in Group Membership group
     # Depending on whether the tuple is populated or not,
     # the function fills the names and activates the relative button
     # Otherwise it keeps itself and the button disabled 
-    ti_wf.fill_database_users_box(dlg, db_usr_names)
+    ti_wf.fill_database_users_box(dlg=dlg, usr_names=db_usr_names)
 
     # 2) User schema creation 
     # Fill the combobox with the list of plugin users (i.e. members of the group)
@@ -148,7 +150,7 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     # Get users belonging to the group 'qgis_pkg_usrgroup_*' from current database.
     # The superuser will always be member of it, as it cannot kick itself out
     # when it removes people from the group 
-    usr_names_plugin: tuple = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
+    usr_names_plugin = sql.list_qgis_pkg_usrgroup_members(dlg=dlg)
     # print('Group members:', usr_names_plugin)
 
     # Clear the combobox with the user
@@ -156,7 +158,7 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     # Upon filling it, an event is fired (evt_cbxPluginUser_changed) that
     # checks whether the user schema has already been created or not
 
-    ti_wf.fill_plugin_users_box(dlg, usr_names_plugin)
+    ti_wf.fill_plugin_users_box(dlg=dlg, usr_names=usr_names_plugin)
 
     # 3) User privileges settings
     # This is taken care of from the evt_cbxPluginUser_changed() event, as it applied only to
@@ -177,9 +179,9 @@ def setup_post_qgis_pkg_uninstallation(dlg: CDB4AdminDialog) -> None:
     dlg.btnMainUninst.setDisabled(True)
 
     # Reset and disable the User Installation groupbox (in Installation Tab)
-    ti_wf.gbxUserInst_reset(dlg) # this also disables it
+    ti_wf.gbxUserInst_reset(dlg=dlg) # this also disables it
     # Reset the Settings tab
-    ts_wf.tabSettings_reset(dlg) # this also disables it
+    ts_wf.tabSettings_reset(dlg=dlg) # this also disables it
 
     # Enable the Settings tab
     dlg.tabSettings.setDisabled(False)
@@ -195,9 +197,9 @@ def setup_post_qgis_pkg_uninstallation(dlg: CDB4AdminDialog) -> None:
 def tabInstall_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Settings' tab. Resets: gbxInstall and lblInfoText.
     """
-    gbxMainInst_reset(dlg)
-    gbxUserInst_reset(dlg)
-    gbxConnStatus_reset(dlg)
+    gbxMainInst_reset(dlg=dlg)
+    gbxUserInst_reset(dlg=dlg)
+    gbxConnStatus_reset(dlg=dlg)
     dlg.btnCloseConn.setDisabled(True)
 
     return None
@@ -217,9 +219,9 @@ def gbxUserInst_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'User Installation Group membership' groupBox
     """
     dlg.gbxUserInst.setDisabled(True)
-    gbxGroupMemb_reset(dlg)
-    gbxUserSchemaInst_reset(dlg)
-    gbxPriv_reset(dlg)
+    gbxGroupMemb_reset(dlg=dlg)
+    gbxUserSchemaInst_reset(dlg=dlg)
+    gbxPriv_reset(dlg=dlg)
 
     return None
 
