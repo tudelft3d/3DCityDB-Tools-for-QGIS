@@ -66,7 +66,7 @@ def run_install_qgis_pkg_thread(dlg: CDB4AdminDialog, sql_scripts_path: str, qgi
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = QgisPackageInstallWorker(dlg, sql_scripts_path)
+    dlg.worker = QgisPackageInstallWorker(dlg=dlg, sql_scripts_path=sql_scripts_path)
     # Move worker object to be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -107,10 +107,10 @@ class QgisPackageInstallWorker(QObject):
     sig_success = pyqtSignal()
     sig_fail = pyqtSignal()
 
-    def __init__(self, dlg: CDB4AdminDialog, sql_scripts_path):
+    def __init__(self, dlg: CDB4AdminDialog, sql_scripts_path: str):
         super().__init__()
         self.dlg = dlg
-        self.sql_scripts_path = sql_scripts_path
+        self.sql_scripts_path: str = sql_scripts_path
 
     def install_thread(self) -> None:
         """Execution method that installs the qgis_pkg. SQL scripts are run
@@ -129,7 +129,7 @@ class QgisPackageInstallWorker(QObject):
         fail_flag: bool = False
 
         # Get an alphabetical ordered list of the script names. Important: Keep the order with number prefixes.
-        install_scripts: list = sorted(os.listdir(self.sql_scripts_path))
+        install_scripts: list[str] = sorted(os.listdir(path=self.sql_scripts_path))
 
         # Check that we read some files!
         if not install_scripts:
@@ -138,13 +138,14 @@ class QgisPackageInstallWorker(QObject):
             self.sig_finished.emit()
             return None
         else:
-            install_scripts_num = len(install_scripts)
+            install_scripts_num: int = len(install_scripts)
 
         # Check the Settings (Default Users)
-        install_users_num = 0
-        set_privileges_num = 0
-        def_usr_name_suffixes = []
-        def_usr_access_suffixes = []
+        def_usr_name_suffixes: list[str] = []
+        def_usr_access_suffixes: list[str] = []
+        install_users_num: int = 0
+        set_privileges_num: int = 0
+
 
         if dlg.gbxDefaultUsers.isEnabled():
             if dlg.ckbUserRO.isChecked():
@@ -290,7 +291,7 @@ class QgisPackageInstallWorker(QObject):
             gen_f.critical_log(
                 func=self.install_thread,
                 location=FILE_LOCATION,
-                header=f"Establishing temporary connection",
+                header="Establishing temporary connection",
                 error=error)
             self.sig_fail.emit()
 
@@ -312,7 +313,7 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    if sh_sql.is_qgis_pkg_installed(dlg):
+    if sh_sql.is_qgis_pkg_installed(dlg=dlg):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.INST_SUCC_MSG.format(pkg=pkg))
         dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
@@ -321,8 +322,8 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
         dlg.lblConnToDb_out.setText(c.success_html.format(text=dlg.DB.database_name))
 
         # Get the version of the newly installed QGIS Package
-        qgis_pkg_curr_version: tuple = sh_sql.exec_qgis_pkg_version(dlg)
         # Named tuple: full_version, major_version, minor_version, minor_revision, code_name, release_date
+        qgis_pkg_curr_version = sh_sql.get_qgis_pkg_version(dlg=dlg)
         # print("Installed QGIS Package version: ", qgis_pkg_curr_version)
 
         qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version         # e.g. 0.9.1
@@ -344,7 +345,7 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
         ti_wf.setup_post_qgis_pkg_installation(dlg)
 
     else:
-        evt_qgis_pkg_install_fail(dlg, pkg)
+        evt_qgis_pkg_install_fail(dlg=dlg, pkg=pkg)
 
 
 def evt_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
@@ -372,10 +373,10 @@ def evt_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
             notifyUser=True)
 
     # Drop corrupted installation.
-    sql.exec_drop_db_schema(dlg, schema=dlg.QGIS_PKG_SCHEMA, close_connection=False)
+    sql.drop_db_schema(dlg=dlg, schema=dlg.QGIS_PKG_SCHEMA, close_connection=False)
 
     # Fisish (re)setting up the GUI
-    ti_wf.setup_post_qgis_pkg_uninstallation(dlg)
+    ti_wf.setup_post_qgis_pkg_uninstallation(dlg=dlg)
 
 #--EVENTS  (end) ################################################################
 
@@ -400,7 +401,7 @@ def run_uninstall_qgis_pkg_thread(dlg: CDB4AdminDialog) -> None:
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = QgisPackageUninstallWorker(dlg)
+    dlg.worker = QgisPackageUninstallWorker(dlg=dlg)
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -448,7 +449,7 @@ class QgisPackageUninstallWorker(QObject):
     def uninstall_thread(self):
 
         # Named tuple: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(self.dlg)
+        qgis_pkg_curr_version = sh_sql.get_qgis_pkg_version(dlg=self.dlg)
         # print(f"Uninstalling QGIS Package version: {qgis_pkg_curr_version}")
 
         # print(qgis_pkg_curr_version)
@@ -476,7 +477,7 @@ class QgisPackageUninstallWorker(QObject):
             # Initialize the FeatureTypeRegistry
             # It is needed because otherwise the registry is not initialized
             # for those versions that are below the minimum required.
-            initialize_feature_type_registry(self.dlg)
+            initialize_feature_type_registry(dlg=self.dlg)
             # print(self.dlg.FeatureTypesRegistry)
 
             self.uninstall_thread_qgis_pkg_current()
@@ -497,21 +498,20 @@ class QgisPackageUninstallWorker(QObject):
         qgis_pkg_schema: str = self.dlg.QGIS_PKG_SCHEMA
 
         # Get users
-        usr_names_all: tuple = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
-        usr_names = []
+        usr_names_all = sql.list_qgis_pkg_usrgroup_members(dlg=dlg)
+        usr_names: list[str] = []
         if usr_names_all:
             usr_names = [elem for elem in usr_names_all if elem != 'postgres']
         else:
-            usr_names = usr_names_all
+            usr_names = [elem for elem in usr_names_all]
 
         # Get usr_schemas
-        usr_schemas = sql.exec_list_usr_schemas(dlg)
+        usr_schemas = sql.list_usr_schemas(dlg=dlg)
 
         # Get cdb_schemas
-        cdb_schemas, dummy = sh_sql.exec_list_cdb_schemas(dlg)
-        dummy = None # discard byproduct
+        cdb_schemas = sql.list_all_cdb_schemas(dlg=dlg)
 
-        drop_layers_funcs: list = [
+        drop_layers_funcs: list[str] = [
             "drop_layers_bridge",
             "drop_layers_building",
             "drop_layers_cityfurniture",
@@ -584,7 +584,7 @@ class QgisPackageUninstallWorker(QObject):
                             gen_f.critical_log(
                                 func=self.uninstall_thread,
                                 location=FILE_LOCATION,
-                                header=f"Revoking privileges from users",
+                                header="Revoking privileges from users",
                                 error=error)
                             self.sig_fail.emit()
 
@@ -594,7 +594,7 @@ class QgisPackageUninstallWorker(QObject):
                 else:
                     for usr_name in usr_names:
                         # Get current user's schema
-                        usr_schema: str = sh_sql.exec_create_qgis_usr_schema_name(dlg, usr_name)
+                        usr_schema = sh_sql.create_qgis_usr_schema_name(dlg, usr_name)
                         for cdb_schema in cdb_schemas:
                             for drop_layers_func in drop_layers_funcs:
 
@@ -691,7 +691,7 @@ class QgisPackageUninstallWorker(QObject):
             gen_f.critical_log(
                 func=self.uninstall_thread_qgis_pkg_till_08,
                 location=FILE_LOCATION,
-                header=f"Establishing temporary connection",
+                header="Establishing temporary connection",
                 error=error)
             self.sig_fail.emit()
 
@@ -721,17 +721,14 @@ class QgisPackageUninstallWorker(QObject):
 
         # Get required information
         
-        # usr_names = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
-        # print("uninstall usr_names:", usr_names)
-
         curr_usr = dlg.DB.username # this is a superuser, as he has succesfully logged in and is using the GUI.
 
         # Get users that are members of the group
-        usr_names_all = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
+        usr_names_all = sql.list_qgis_pkg_usrgroup_members(dlg=dlg)
         # print("usr_names_all:", usr_names_all)
         
-        usr_names = []
-        usr_names_su = ["postgres"]
+        usr_names: list[str] = []
+        usr_names_su: list[str] = ["postgres"]
 
         if usr_names_all:
             usr_names = [elem for elem in usr_names_all if elem != 'postgres']
@@ -742,11 +739,11 @@ class QgisPackageUninstallWorker(QObject):
         # print("usr_names:", usr_names)
         # print("usr_names_su:", usr_names_su)
 
-        drop_tuples = sql.exec_list_feature_types(dlg, usr_schema=None) # get 'em all!!
+        drop_tuples = sql.list_feature_types(dlg=dlg, usr_schema=None) # get 'em all!!
         # print("uninstall drop_tuples:", drop_tuples)
 
         # Get usr_schemas
-        usr_schemas = sql.exec_list_usr_schemas(dlg)
+        usr_schemas = sql.list_usr_schemas(dlg=dlg)
         # print("uninstall usr_schemas:", usr_schemas)
 
         # Set progress bar goal:
@@ -798,7 +795,7 @@ class QgisPackageUninstallWorker(QObject):
                             )
 
                         # Update progress bar
-                        msg = f"Revoking privileges from user: {usr_name}"
+                        msg: str = f"Revoking privileges from user: {usr_name}"
                         curr_step += 1
                         self.sig_progress.emit(curr_step, msg)
 
@@ -813,7 +810,7 @@ class QgisPackageUninstallWorker(QObject):
                             gen_f.critical_log(
                                 func=self.uninstall_thread,
                                 location=FILE_LOCATION,
-                                header=f"Revoking privileges from users",
+                                header="Revoking privileges from users",
                                 error=error)
                             self.sig_fail.emit()
 
@@ -854,7 +851,7 @@ class QgisPackageUninstallWorker(QObject):
                 if drop_tuples_num == 0:
                     pass # nothing to do 
                 else:
-                    ft: FeatureType
+                    #ft: FeatureType
                     for usr_schema, cdb_schema, feat_type in drop_tuples:
                         ft = dlg.FeatureTypesRegistry[feat_type]
                         module_drop_func = ft.layers_drop_function
@@ -924,7 +921,7 @@ class QgisPackageUninstallWorker(QObject):
 
                 # 5) Drop database group
                 if not self.dlg.GROUP_NAME:
-                    self.dlg.GROUP_NAME = sql.exec_create_qgis_pkg_usrgroup_name(dlg)
+                    self.dlg.GROUP_NAME = sql.create_qgis_pkg_usrgroup_name(dlg=dlg)
 
                 query = pysql.SQL("""
                     DROP ROLE IF EXISTS {_qgis_pkg_usrgroup};
@@ -960,7 +957,7 @@ class QgisPackageUninstallWorker(QObject):
                     )
 
                 # Update progress bar with current step and script.
-                msg = f"Dropping QGIS Package schema"
+                msg = "Dropping QGIS Package schema"
                 curr_step += 1            
                 self.sig_progress.emit(curr_step, msg)
 
@@ -985,7 +982,7 @@ class QgisPackageUninstallWorker(QObject):
             gen_f.critical_log(
                 func=self.uninstall_thread_qgis_pkg_current,
                 location=FILE_LOCATION,
-                header=f"Establishing temporary connection",
+                header="Establishing temporary connection",
                 error=error)
 
         # No FAIL = SUCCESS
@@ -1021,11 +1018,11 @@ class QgisPackageUninstallWorker(QObject):
         curr_usr = dlg.DB.username # this is a superuser, as he has succesfully logged in and is using the GUI.
 
         # Get users that are members of the group
-        usr_names_all = sql.exec_list_qgis_pkg_usrgroup_members(dlg)
+        usr_names_all = sql.list_qgis_pkg_usrgroup_members(dlg=dlg)
         # print("usr_names_all:", usr_names_all)
         
-        usr_names = []
-        usr_names_su = ["postgres"]
+        usr_names: list[str] = []
+        usr_names_su: list[str] = ["postgres"]
 
         if usr_names_all:
             usr_names = [elem for elem in usr_names_all if elem != "postgres"]
@@ -1036,24 +1033,25 @@ class QgisPackageUninstallWorker(QObject):
         # print("usr_names:", usr_names)
         # print("usr_names_su:", usr_names_su)
 
-        drop_tuples: list = []
-        drop_tuples = sql.exec_list_feature_types(dlg, usr_schema=None) # get 'em all!!
+        #drop_tuples: list[tuple[str, str, str]] = []
+        drop_tuples = sql.list_feature_types(dlg=dlg, usr_schema=None) # get 'em all!!
         # print("uninstall drop_tuples:", drop_tuples)
 
-        drop_detail_views: list = [] 
+        drop_detail_views: list[tuple[str, str]] = [] 
         if drop_tuples:
-            drop_detail_views = [*set([item[0:2] for item in drop_tuples])] # Will look like:
+            # Extract only usr_schema and citydb_schema, without repetitions. It will look like:
             # [('qgis_giorgio', 'alderaan'), ('qgis_giorgio', 'citydb'), ('qgis_user_rw', 'alderaan'), ('qgis_user_rw', 'rh')]
+            drop_detail_views = [*set([item[0:2] for item in drop_tuples])]
             # print("drop_detail_views", drop_detail_views)
 
         # Get usr_schemas
-        usr_schemas = sql.exec_list_usr_schemas(dlg)
+        # usr_schemas: tuple[str, ...] = ()
+        usr_schemas = sql.list_usr_schemas(dlg=dlg)
         # print("uninstall usr_schemas:", usr_schemas)
 
         # Get all cdb_schemas
-        cdb_schemas = []
-        cdb_schemas, dummy = sh_sql.exec_list_cdb_schemas(dlg=dlg, only_non_empty=False)
-        dummy = None
+        # cdb_schemas: tuple[str]
+        cdb_schemas = sql.list_all_cdb_schemas(dlg=dlg)
         # print("Existing cdb_schemas:", cdb_schemas)
 
         # Set progress bar goal:
@@ -1094,12 +1092,11 @@ class QgisPackageUninstallWorker(QObject):
             cdb_schemas_num: int = len(cdb_schemas)
 
 
-        steps_tot = usr_names_num + usr_names_su_num + drop_tuples_num + drop_detail_views_num + usr_schemas_num + cdb_schemas_num + 2
+        steps_tot: int = usr_names_num + usr_names_su_num + drop_tuples_num + drop_detail_views_num + usr_schemas_num + cdb_schemas_num + 2
         dlg.bar.setMaximum(steps_tot)
 
         curr_step: int = 0
 
-        #print("Conn details:", dlg.DB.__str__())
         try:
             # Open new temp session, reserved for installation.
             temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
@@ -1137,7 +1134,7 @@ class QgisPackageUninstallWorker(QObject):
                             gen_f.critical_log(
                                 func=self.uninstall_thread_qgis_pkg_current,
                                 location=FILE_LOCATION,
-                                header=f"Revoking privileges from users",
+                                header="Revoking privileges from users",
                                 error=error)
                             self.sig_fail.emit()
 
@@ -1170,7 +1167,7 @@ class QgisPackageUninstallWorker(QObject):
                             gen_f.critical_log(
                                 func=self.uninstall_thread_qgis_pkg_current,
                                 location=FILE_LOCATION,
-                                header=f"Resetting privileges from superusers",
+                                header="Resetting privileges from superusers",
                                 error=error)
                             self.sig_fail.emit()
 
@@ -1178,7 +1175,7 @@ class QgisPackageUninstallWorker(QObject):
                 if drop_tuples_num == 0:
                     pass # nothing to do 
                 else:
-                    ft: FeatureType
+                    #ft: FeatureType
                     for usr_schema, cdb_schema, feat_type in drop_tuples:
                         ft = dlg.FeatureTypesRegistry[feat_type]
                         module_drop_func = ft.layers_drop_function
@@ -1310,13 +1307,13 @@ class QgisPackageUninstallWorker(QObject):
                             gen_f.critical_log(
                                 func=self.uninstall_thread_qgis_pkg_current,
                                 location=FILE_LOCATION,
-                                header="Dropping ga indices",
+                                header="Dropping indices in generic attribute tables",
                                 error=error)
                             self.sig_fail.emit()
 
                 # 7) Drop database group
                 if not self.dlg.GROUP_NAME:
-                    self.dlg.GROUP_NAME = sql.exec_create_qgis_pkg_usrgroup_name(dlg)
+                    self.dlg.GROUP_NAME = sql.create_qgis_pkg_usrgroup_name(dlg=dlg)
 
                 query = pysql.SQL("""
                     DROP ROLE IF EXISTS {_qgis_pkg_usrgroup};
@@ -1352,7 +1349,7 @@ class QgisPackageUninstallWorker(QObject):
                     )
 
                 # Update progress bar with current step and script.
-                msg = f"Dropping QGIS Package schema"
+                msg = "Dropping QGIS Package schema"
                 curr_step += 1            
                 self.sig_progress.emit(curr_step, msg)
 
@@ -1405,7 +1402,7 @@ def evt_qgis_pkg_uninstall_success(dlg: CDB4AdminDialog) -> None:
 
     qgis_pkg_schema = dlg.QGIS_PKG_SCHEMA
 
-    is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(dlg) # Will always be true or false
+    is_qgis_pkg_installed = sh_sql.is_qgis_pkg_installed(dlg=dlg)
 
     ######### FOR DEBUGGING PURPOSES ONLY ##########
     # is_qgis_pkg_installed = False
@@ -1413,7 +1410,7 @@ def evt_qgis_pkg_uninstall_success(dlg: CDB4AdminDialog) -> None:
 
     if is_qgis_pkg_installed:
         # QGIS Package was NOT successfully removed
-        evt_qgis_pkg_uninstall_fail(dlg)
+        evt_qgis_pkg_uninstall_fail(dlg=dlg)
     else:
         # QGIS Package was successfully removed
         # Replace with Success msg.
@@ -1432,7 +1429,7 @@ def evt_qgis_pkg_uninstall_success(dlg: CDB4AdminDialog) -> None:
         dlg.lblUserInst_out.clear()
 
         # Finish (re)setting up the GUI
-        ti_wf.setup_post_qgis_pkg_uninstallation(dlg)
+        ti_wf.setup_post_qgis_pkg_uninstallation(dlg=dlg)
 
     return None
 
@@ -1477,7 +1474,7 @@ def run_drop_usr_schema_thread(dlg: CDB4AdminDialog) -> None:
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
-    dlg.worker = DropUsrSchemaWorker(dlg)
+    dlg.worker = DropUsrSchemaWorker(dlg=dlg)
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
@@ -1528,21 +1525,23 @@ class DropUsrSchemaWorker(QObject):
          # Flag to help us break from a failing installation.
         dlg = self.dlg
         fail_flag: bool = False
-        qgis_pkg_schema: str = dlg.QGIS_PKG_SCHEMA
+        qgis_pkg_schema = dlg.QGIS_PKG_SCHEMA
         
         usr_name: str = dlg.cbxUser.currentText()
-        is_superuser: bool = sql.is_superuser(dlg, usr_name)
+        is_superuser = sql.is_superuser(dlg=dlg, usr_name=usr_name)
 
         usr_schema = dlg.USR_SCHEMA
 
-        drop_tuples: list = []
-        drop_tuples = sql.exec_list_feature_types(dlg, dlg.USR_SCHEMA)
+        # drop_tuples: list = [tuple[str, str, str]] = [ListFeatureTypes]
+        # Named tuples consisting of usr_schema, cdb_schema, feature type
+        drop_tuples = sql.list_feature_types(dlg=dlg, usr_schema=dlg.USR_SCHEMA)
         # print("drop_tuples", drop_tuples)
         
-        drop_detail_views: list = []
+        drop_detail_views: list[tuple[str, str]] = []
         if drop_tuples:
-            drop_detail_views = [*set([item[0:2] for item in drop_tuples])] # Will look like:
+            # Extract only usr_schema and citydb_schema, without repetitions. It will look like:
             # [('qgis_giorgio', 'alderaan'), ('qgis_giorgio', 'citydb'), ('qgis_user_rw', 'alderaan'), ('qgis_user_rw', 'rh')]
+            drop_detail_views = [*set([item[0:2] for item in drop_tuples])]
             # print("drop_detail_views", drop_detail_views)
 
         # Overview of the procedure:
@@ -1627,7 +1626,7 @@ class DropUsrSchemaWorker(QObject):
                 else:
                     for usr_schema, cdb_schema, feat_type in drop_tuples:
 
-                        ft: FeatureType
+                        # ft: FeatureType
                         ft = dlg.FeatureTypesRegistry[feat_type]
                         module_drop_func = ft.layers_drop_function
 
@@ -1731,7 +1730,7 @@ class DropUsrSchemaWorker(QObject):
             gen_f.critical_log(
                 func=self.drop_usr_schema_thread,
                 location=FILE_LOCATION,
-                header=f"Establishing temporary connection",
+                header="Establishing temporary connection",
                 error=error)
             self.sig_fail.emit()
 
@@ -1756,10 +1755,10 @@ def evt_usr_schema_drop_success(dlg: CDB4AdminDialog) -> None:
     """
     usr_schema = dlg.USR_SCHEMA
 
-    if not sh_sql.is_usr_schema_installed(dlg):
+    if not sh_sql.is_usr_schema_installed(dlg=dlg):
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.UNINST_SUCC_MSG.format(pkg=usr_schema))
-        dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Success, 5)
+        dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Success, duration=5)
 
         # Inform user
         dlg.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=usr_schema)))
@@ -1777,10 +1776,10 @@ def evt_usr_schema_drop_success(dlg: CDB4AdminDialog) -> None:
         dlg.btnUsrUninst.setDisabled(True)
         
         # Reset and disable the user privileges groupbox
-        ti_wf.gbxPriv_reset(dlg) # this also disables it.
+        ti_wf.gbxPriv_reset(dlg=dlg) # this also disables it.
 
     else:
-        evt_usr_schema_drop_fail(dlg, usr_schema)
+        evt_usr_schema_drop_fail(dlg=dlg)
 
 
 def evt_usr_schema_drop_fail(dlg: CDB4AdminDialog) -> None:
@@ -1795,7 +1794,7 @@ def evt_usr_schema_drop_fail(dlg: CDB4AdminDialog) -> None:
 
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
-    dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
+    dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Critical, duration=5)
 
     # Inform user
     dlg.lblUserInst_out.setText(error)
