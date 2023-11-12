@@ -44,7 +44,7 @@ from ..shared.functions import general_functions as gen_f
 from .other_classes import DBConnectionInfo
 from .functions.conn_functions import create_db_connection
 
-FILE_LOCATION = gen_f.get_file_relative_path(__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
@@ -78,7 +78,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         ### SIGNALS (end) ##############################
 
-    def store_conn_parameters(self):
+    def store_conn_parameters(self) -> None:
         """Function that stores the database connection parameters in the user's profile settings for future use.
         """
         #TODO: Warn user that the connection parameters are stored locally in a .ini file
@@ -92,9 +92,9 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         new_conn_params.setValue(f'{conn_path}/username', self.conn_params.username)
         new_conn_params.setValue(f'{conn_path}/password', self.conn_params.password)
 
-        ################################################
-        ### EVENTS (start) ############################
+        return None
 
+        ### EVENTS (start) ############################
 
     def evt_btnTestConn_clicked(self) -> None:
         """Event that is called when the 'Test connection' pushButton (btnTestConn) is pressed.
@@ -124,7 +124,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             temp_conn: pyconn = None
             try:
-                temp_conn = create_db_connection(NewConnParams) # attempt to open connection and keep it open
+                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
                 # If successful, close it, otherwise an Exception will be raised.
                 temp_conn.close() # close connection after the test.
                 self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
@@ -169,7 +169,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             temp_conn: pyconn = None
             try:
-                temp_conn = create_db_connection(NewConnParams) # attempt to open connection and keep it open
+                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
                 # If successful, close it, otherwise an Exception will be raised.
                 temp_conn.close() # close connection after the test.
 
@@ -196,6 +196,8 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         It simply closes the dialog.
         """
         self.close()
+        
+        return None
 
         ### EVENTS (end) ############################
         ################################################
