@@ -199,7 +199,7 @@ class CleanUpSchemaWorker(QObject):
                 )
 
                 # Update progress bar
-                msg = "Finalizing the clean up"
+                msg = "Finalizing the clean-up"
                 curr_step += 1
                 self.sig_progress.emit(curr_step, msg)
 
