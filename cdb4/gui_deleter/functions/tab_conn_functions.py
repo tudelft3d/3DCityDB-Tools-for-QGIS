@@ -5,23 +5,27 @@ These functions are usually called from widget_setup functions
 relating to child widgets of the 'Connection Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING  #, Union
+from typing import TYPE_CHECKING, Iterable, cast, Optional   #, Union
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+    from ...shared.dataTypes import TopLevelFeatureCounter
 
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsWkbTypes
 from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
 
+from ...shared.dataTypes import BBoxType
 from ..other_classes import TopLevelFeature, FeatureType
 from .. import deleter_constants as c
 from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
 from . import canvas, sql
 
-def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: tuple = None) -> None:
+def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: Optional[list[tuple[str, bool, str]]] = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
+    The passed list of tuples is actually a list of named tuples
+    (cdb_schema, is_empty, priv_type)
     """
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
@@ -51,7 +55,7 @@ def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
     dlg.ccbxTopLevelClass.clear()
     dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
 
-    top_level_features: list = [rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if rcf.exists]
+    top_level_features = [tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if tlf.exists]
 
     if len(top_level_features) == 0: 
         dlg.ccbxTopLevelClass.setDefaultText('None available')
@@ -77,14 +81,14 @@ def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
     dlg.ccbxFeatType.clear()
     dlg.ccbxFeatType.setDefaultText('Select feature type(s)')
 
-    feat_types: list = [ft for ft in dlg.FeatureTypesRegistry.values() if ft.exists]
+    feat_types = [ft for ft in dlg.FeatureTypesRegistry.values() if ft.exists]
 
     if len(feat_types) == 0: 
         dlg.ccbxFeatType.setDefaultText('None available')
         # Disable the combobox
         dlg.ccbxFeatType.setDisabled(True) 
     else:
-        ft: FeatureType
+        # ft: FeatureType
         for ft in feat_types:
             label = f"{ft.name} ({ft.n_features})" 
             dlg.ccbxFeatType.addItemWithCheckState(
@@ -96,11 +100,11 @@ def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def initialise_top_class_features_registry(dlg: CDB4DeleterDialog) -> None:
+def initialise_top_level_features_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
     # Clean up from possible previous runs
-    dlg.TopLevelFeaturesRegistry: dict = {}
+    dlg.TopLevelFeaturesRegistry = {}
     
     dlg.TopLevelFeaturesRegistry = {
         "Bridge"                   : TopLevelFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
@@ -128,43 +132,50 @@ def initialise_top_class_features_registry(dlg: CDB4DeleterDialog) -> None:
     return None
 
 
-def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_level_features: list) -> None:
+def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_level_features: list[Optional[TopLevelFeatureCounter]]) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
 
-    top_class_features is a list of named tuples (feature_type, top_class, objectclass_id, n_feature)
+    top_level_features is a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
     """
-    # # Get the list (of namedtuples) of available top-level features the current cdb_schema
-    # top_class_features: list = sql.fetch_top_class_features_counter(dlg)
 
-    tlf: TopLevelFeature
-    top_level_feature: TopLevelFeature
     # Reset the status from potential previous checks
     for tlf in dlg.TopLevelFeaturesRegistry.values():
         tlf.exists = False
         tlf.n_features = 0 
 
-    # Set to true only for those Feature Types that exist
+    # If there are any tlf, then update
+    if len(top_level_features) != 0:
+        # Set to true only for those Feature Types that exist
+        for top_level_feature in top_level_features:
+            tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.root_class]
+            tlf.exists = True
+            tlf.n_features = top_level_feature.n_feature
+    else:
+        # nothing to update! All already reset before.
+        pass
 
-    for top_level_feature in top_level_features:
-        tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.root_class]
-        tlf.exists = True
-        tlf.n_features = top_level_feature.n_feature 
     return None
 
 
-def update_top_class_features_is_selected(dlg: CDB4DeleterDialog, sel_top_class_features) -> None:
+def update_top_level_features_registry_is_selected(dlg: CDB4DeleterDialog, sel_top_level_features: list[Optional[TopLevelFeature]]) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
-    """
-    rcf: TopLevelFeature
-    # Reset the status from potential previous checks
-    for rcf in dlg.TopLevelFeaturesRegistry.values():
-        rcf.is_selected = False
 
-    if len(sel_top_class_features) != 0:
+    sel_top_level_features is a list of userData objects from the combobox.
+    In this case, it is a list[TopLevelFeature]
+    """
+
+    # Reset the status from potential previous checks
+    for tlf in dlg.TopLevelFeaturesRegistry.values():
+        tlf.is_selected = False
+
+    if len(sel_top_level_features) != 0:
         # Set to true only for those Feature Types that are selected
-        for top_class_feature in sel_top_class_features:
-            rcf = dlg.TopLevelFeaturesRegistry[top_class_feature.name]
-            rcf.is_selected = True
+        for top_level_feature in sel_top_level_features:
+            tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.name]
+            tlf.is_selected = True
+    else:
+        # Nothing to do
+        pass
 
     return None
 
@@ -173,7 +184,7 @@ def initialize_feature_types_registry(dlg: CDB4DeleterDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
     # Clean up from possible previous runs
-    dlg.FeatureTypesRegistry: dict = {}
+    dlg.FeatureTypesRegistry = {}
 
     dlg.FeatureTypesRegistry = {
         "Bridge"          : FeatureType(name="Bridge"          , alias='bridge'         ),
@@ -193,31 +204,34 @@ def initialize_feature_types_registry(dlg: CDB4DeleterDialog) -> None:
 
 
 def update_feature_type_registry_exists(dlg: CDB4DeleterDialog) -> None:
-    """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
+    """Function to update the dictionary containing Feature Type metadata for the current cdb_schema
     """
-    ft: FeatureType
+
     # Reset the status from potential previous checks
     for ft in dlg.FeatureTypesRegistry.values():
         ft.exists = False
         ft.n_features = 0
 
     tlf_existing = []
-    tlf_existing = [rcf for rcf in dlg.TopLevelFeaturesRegistry.values() if rcf.exists is True]
+    tlf_existing = [tlf for tlf in cast(Iterable[TopLevelFeature], dlg.TopLevelFeaturesRegistry.values()) if tlf.exists is True]
 
     # Set to true only for those Feature Types that exist and sum the values to get the total
-    tlf: TopLevelFeature 
-    for tlf in tlf_existing:
-        ft = dlg.FeatureTypesRegistry[tlf.feature_type]
-        ft.exists = True
-        ft.n_features += tlf.n_features 
+    if len(tlf_existing) != 0:
+        for tlf in tlf_existing:
+            ft = dlg.FeatureTypesRegistry[tlf.feature_type]
+            ft.exists = True
+            ft.n_features += tlf.n_features
+    else:
+        # Nothing to update, already reset before.
+        pass
 
     return None
 
 
-def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_types: list) -> None:
+def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_types: list[Optional[FeatureType]]) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-    ft: FeatureType
+
     # Reset the status from potential previous selections
     for ft in dlg.FeatureTypesRegistry.values():
         ft.is_selected = False
@@ -227,6 +241,9 @@ def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_ty
         for feat_type in sel_feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type.name]
             ft.is_selected = True
+    else:
+        # Nothing to do, already reset before
+        pass
 
     return None
 
@@ -235,12 +252,12 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
     """Function to update the extents of the cdb_schema after deleting data.
     """
     # Recompute the extents
-    is_geom_null, x_min, y_min, x_max, y_max, srid = sql.exec_compute_cdb_schema_extents(dlg)
+    is_geom_null, x_min, y_min, x_max, y_max, srid = sql.compute_cdb_schema_extents(dlg=dlg)
     srid = None # Discard unneeded variable.
 
     if not is_geom_null:
 
-        cdb_extents_old: QgsRectangle = dlg.CDB_SCHEMA_EXTENTS
+        cdb_extents_old = dlg.CDB_SCHEMA_EXTENTS
         cdb_extents_new = QgsRectangle()
         cdb_extents_new.set(x_min, y_min, x_max, y_max, False)
 
@@ -260,10 +277,11 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
             canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=dlg.CDB_SCHEMA_EXTENTS)
 
-            QgsMessageLog.logMessage(f"Extents of '{dlg.CDB_SCHEMA}' are unchanged.", dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' are unchanged."
+            QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
             # 2) Update the registries
-            refresh_registries(dlg)
+            refresh_registries(dlg=dlg)
 
             return None # Exit
 
@@ -273,11 +291,12 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
 
             # Before resetting the bboxes, show the new ones
             cdb_extents_new_wkt: str = cdb_extents_new.asWktPolygon()
-            temp_cdb_extents_new: QgsRectangle = QgsRectangle().fromWkt(cdb_extents_new_wkt)
+            temp_cdb_extents_new: QgsRectangle = QgsRectangle().fromWkt(wkt=cdb_extents_new_wkt)
 
             # Create new rubber band
             cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(dlg.CANVAS, QgsWkbTypes.PolygonGeometry)
-            cdb_extents_new_rubber_band.setLineStyle(Qt.DashLine)
+            # cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.DashLine)
 
             # Drop the old magenta one
             dlg.RUBBER_DELETE.reset()
@@ -286,7 +305,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             canvas.insert_rubber_band(band=cdb_extents_new_rubber_band, extents=cdb_extents_new, crs=dlg.CRS, width=3, color=c.CDB_EXTENTS_COLOUR)
 
             vis_extents: QgsRectangle = QgsRectangle(cdb_extents_old)
-            vis_extents.combineExtentWith(cdb_extents_new)
+            vis_extents.combineExtentWith(rect=cdb_extents_new)
 
             canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=vis_extents)
 
@@ -295,7 +314,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             QMessageBox.information(dlg, "Extents changed!", msg)
 
             # Update the the cdb_extents in the extents table in PostgreSQL
-            sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=cdb_extents_new_wkt)
+            sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=cdb_extents_new_wkt)
 
             # Define the new cdb_extents
             dlg.CDB_SCHEMA_EXTENTS = temp_cdb_extents_new
@@ -325,13 +344,13 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
         QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
 
         # Reset to null the cdb_extents in the extents table in PostgreSQL
-        sql.exec_upsert_extents(dlg=dlg, bbox_type=c.CDB_SCHEMA_EXT_TYPE, extents_wkt_2d_poly=None)
+        sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
         # Reset to null the layer extents in table usr_schema.extents in PostgreSQL
-        sql.exec_upsert_extents(dlg=dlg, bbox_type=c.LAYER_EXT_TYPE, extents_wkt_2d_poly=None)
+        sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.MAT_VIEW, extents_wkt_2d_poly=None)
 
         # Clean up everything, the user must start again now. There is nothing to do.
-        ts_wf.tabSettings_reset(dlg)
-        tc_wf.tabConnection_reset(dlg)
+        ts_wf.tabSettings_reset(dlg=dlg)
+        tc_wf.tabConnection_reset(dlg=dlg)
 
         # Close the current open connection.
         if dlg.conn is not None:
@@ -352,8 +371,8 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     # 6) fill the feature type checkable combobox    
     # 7) Now we are ready for the user to choose and click the delete selected features button.
 
-    curr_extents_poly_wkt: str = None
-    curr_extents = QgsRectangle()
+    curr_extents: Optional[QgsRectangle]
+    curr_extents_poly_wkt: Optional[str]
 
     # 1) set the bounding box (depending on whether the gbxBasemap is enabled or not)
     if dlg.gbxBasemap.isChecked():
@@ -362,27 +381,27 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
             curr_extents_poly_wkt = None
         else:
             curr_extents = dlg.CURRENT_EXTENTS
-            curr_extents_poly_wkt: str = curr_extents.asWktPolygon()
+            curr_extents_poly_wkt = curr_extents.asWktPolygon()
     else:
         curr_extents = None
         curr_extents_poly_wkt = None
 
     # 2) get the available top-level features in the proper bbox from the database
     # function returns a list of named tuples (feature_type, root_class, objectclass_id, n_feature)
-    top_level_features = sql.fetch_top_level_features_counter(dlg, curr_extents_poly_wkt)
+    top_level_features = sql.list_top_level_features(dlg=dlg, extents_wkt_2d=curr_extents_poly_wkt)
     # print('top_class_features', top_class_features)
 
     # 3) set up/update the top-level feature registry (exists)
-    update_top_level_features_registry_exists(dlg, top_level_features)
+    update_top_level_features_registry_exists(dlg=dlg, top_level_features=top_level_features)
 
     # 4) set up/update the Feature Type registry (exists)
-    update_feature_type_registry_exists(dlg)
+    update_feature_type_registry_exists(dlg=dlg)
 
     # 5) Fill the top-level checkable combobox
-    fill_top_level_features_box(dlg)
+    fill_top_level_features_box(dlg=dlg)
 
     # 6) Fill the Feature type checkable combobox 
-    fill_feature_types_box(dlg)
+    fill_feature_types_box(dlg=dlg)
 
     # msg: str = f"Registries of '{dlg.CDB_SCHEMA}' updated."
     # QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
