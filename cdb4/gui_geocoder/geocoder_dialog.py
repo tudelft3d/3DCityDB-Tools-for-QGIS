@@ -146,19 +146,16 @@ class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
                 wgs_location = [float(place[key]) for key in place if key in ["lat", "lon"]]
 
                 # Create a new point
-                point_4326 = QgsPointXY(wgs_location[1], wgs_location[0])
+                point_4326: QgsPointXY = QgsPointXY(wgs_location[1], wgs_location[0])
 
                 # Reprojected the point coordinates back to the 3DCityDB EPSG code
-                point: QgsPointXY
-                point = CRSTransformer.transform(
-                        point=point_4326, 
-                        direction=Qgis.TransformDirection.Reverse)
+                point: QgsPointXY = CRSTransformer.transform(point=point_4326, direction=Qgis.TransformDirection.Reverse)
 
                 # Fill the combobox
                 nom_label = str(place["display_name"])
                 self.cbxGeocodeMatches.addItem(
-                    nom_label, 
-                    point)
+                    nom_label,   # there is no key for this parameter!
+                    userData=point)
 
                 # Switch to the next page of the stacked Widget
                 self.stackedWidget.setCurrentIndex(1)
