@@ -3,11 +3,12 @@ These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Optional
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
+    from ...shared.dataTypes import QgisPKGVersion
 
 import psycopg2, psycopg2.sql as pysql
 from psycopg2.extras import NamedTupleCursor
@@ -18,7 +19,7 @@ from . import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def fetch_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> str:
+def get_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> str:
     """SQL query that reads and retrieves the 3DCityDB version.
 
     *   :returns: 3DCityDB version.
@@ -33,14 +34,14 @@ def fetch_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Del
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=fetch_3dcitydb_version,
+            func=get_3dcitydb_version,
             location=FILE_LOCATION,
             header="Retrieving 3DCityDB version",
             error=error)
         dlg.conn.rollback()
 
 
-def exec_create_qgis_usr_schema_name(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_name: str = None) -> str:
+def create_qgis_usr_schema_name(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_name: Optional[str] = None) -> str:
     """Calls the qgis_pkg function that derives the name of the usr_schema from the usr_name.
     """
     if usr_name is None:
@@ -66,7 +67,7 @@ def exec_create_qgis_usr_schema_name(dlg: Union[CDB4AdminDialog, CDB4LoaderDialo
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_create_qgis_usr_schema_name,
+            func=create_qgis_usr_schema_name,
             location=FILE_LOCATION,
             header=f"Deriving user schema name for user {usr_name}",
             error=error)
@@ -106,12 +107,14 @@ def is_qgis_pkg_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Dele
         dlg.conn.rollback()
 
 
-def exec_qgis_pkg_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> tuple:
-    """SQL function that reads and retrieves the qgis_pkg version
+def get_qgis_pkg_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> QgisPKGVersion:
+    """SQL function that retrieves the qgis_pkg version
 
-    *   :returns: The qgis_pkg version.
-        :rtype: named tuple
+    *   :returns: The qgis_pkg version as named tuple:
+        version, full_version, major_version, minor_version, minor_revision, code_name, release_date.
+    *   :rtype: QgisPKGVersion - NamedTuple[str, str, int, int, int, str, str]
     """
+    
     query = pysql.SQL("""
         SELECT * FROM {_qgis_pkg_schema}.qgis_pkg_version();
         """).format(
@@ -123,13 +126,13 @@ def exec_qgis_pkg_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Dele
             cur.execute(query)
             # this is a named tuple containing: 
             # version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-            version: tuple = cur.fetchone()
+            version: QgisPKGVersion = cur.fetchone()
         dlg.conn.commit()
         return version
 
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=exec_qgis_pkg_version,
+            func=get_qgis_pkg_version,
             location=FILE_LOCATION,
             header=f"Retrieving {dlg.QGIS_PKG_SCHEMA} version",
             error=error)
@@ -169,38 +172,7 @@ def is_usr_schema_installed(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4De
         dlg.conn.rollback()
 
 
-def exec_list_cdb_schemas(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], only_non_empty: bool = False) -> tuple:
-    """SQL function that reads and retrieves all cdb_schemas, optionally even the empty ones,
-    and a boolean boloolean value to see if it's empty or not.
-
-    *   :returns: Two tuples
-        :rtype: tuple(str), tuple(bool)
-    """
-    query = pysql.SQL("""
-            SELECT * FROM {_qgis_pkg_schema}.list_cdb_schemas({_only_non_empty});
-            """).format(
-            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-            _only_non_empty = pysql.Literal(only_non_empty)
-            )
-
-    try:
-        with dlg.conn.cursor() as cur:
-            cur.execute(query)
-            res = cur.fetchall()
-        dlg.conn.commit()
-        schema_names = tuple(zip(*res))[0] # trailing comma
-        schema_is_empty = tuple(zip(*res))[1] # trailing comma        
-
-    except (Exception, psycopg2.Error):
-        QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
-        dlg.conn.rollback()
-        schema_names = tuple() # create an empty tuple
-        schema_is_empty = tuple()  # create an empty tuple
-
-    return schema_names, schema_is_empty
-
-
-def exec_upsert_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str, settings_list: list) -> int:
+def upsert_plugin_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str, settings_list: list[dict]) -> int:
     """SQL function that upserts the settings to the qgis_xxx.settings table
 
     *   :returns: None
@@ -214,7 +186,6 @@ def exec_upsert_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Delet
     # ... etc.
     # ]
 
-    s: dict
     for s in settings_list:
         for k, v in s.items():
             if k == "data_value":
@@ -256,14 +227,14 @@ def exec_upsert_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Delet
         dlg.conn.rollback()
 
 
-def exec_read_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str) -> list:
+def get_plugin_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog], usr_schema: str, dialog_name: str) -> list[dict]:
     """SQL function that reads settings from the qgis_xxx.settings table
 
     *   :returns: list
         :rtype: list(dict)
     """
     # "settings_list is a list of dictionaries structured as follows:
-    # The data_type is integer, the data_value is is read as string but will be converted
+    # The data_type is integer, the data_value is read as string but will be converted
     # settings_list = [
     # {'name' : "decPrec", 'data_type' : 2, 'data_value' : 3},
     # {'name' : "minArea", 'data_type' : 3, 'data_value' : 0.001},
@@ -288,7 +259,6 @@ def exec_read_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Deleter
 
         settings_list = [dict(zip(col_names, values)) for values in res]
 
-        s: dict
         for s in settings_list:
             dt = s["data_type"]
             v = s["data_value"]
@@ -314,3 +284,31 @@ def exec_read_settings(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4Deleter
         dlg.conn.rollback()
 
     return None
+
+
+# def list_all_cdb_schemas(dlg: CDB4AdminDialog) -> tuple[str, ...]:
+#     """SQL function that reads and retrieves all cdb_schemas, also the empty ones,
+
+#     *   :returns: Tuple of cdb_schemas
+#         :rtype: tuple[str, ...]
+#     """
+#     query = pysql.SQL("""
+#             SELECT cdb_schema FROM {_qgis_pkg_schema}.list_cdb_schemas(only_non_empty := False);
+#             """).format(
+#             _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA)
+#             )
+
+#     try:
+#         with dlg.conn.cursor() as cur:
+#             cur.execute(query)
+#             res = cur.fetchall()
+#         dlg.conn.commit()
+
+#         sch_names: tuple[str, ...] = tuple(zip(*res))[0] # trailing comma
+
+#     except (Exception, psycopg2.Error):
+#         QgsMessageLog.logMessage(f"No citydb schema could be retrieved from the database.", main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Warning)
+#         dlg.conn.rollback()
+#         sch_names = () # create an empty tuple
+
+#     return sch_names

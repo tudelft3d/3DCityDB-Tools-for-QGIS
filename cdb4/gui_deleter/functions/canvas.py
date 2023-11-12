@@ -1,16 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast, Iterable
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
-from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem
+from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayer
 from qgis.gui import QgsRubberBand, QgsMapCanvas
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
 from .. import deleter_constants as c
 
-def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRectangle=c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem=c.OSM_INIT_CRS, clear: bool=True) -> None:
+def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRectangle = c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem = c.OSM_INIT_CRS, clear: bool = True) -> None:
     """Function to set up the additional map canvas that shows the extents.
     For the basemap it uses a OSM maps WMS layer
 
@@ -27,16 +27,16 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
         :type clear: bool
     """
     # OSM id of layer.
-    registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
-
+    # registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
+    registryOSM_id = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
     # dlg.qgbxExtents.blockSignals(True)
     # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
     # dlg.qgbxExtents.blockSignals(False)
     dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     # Set CRS and extents of the canvas
-    canvas.setDestinationCrs(crs)
-    canvas.setExtent(extents)
+    canvas.setDestinationCrs(crs=crs)
+    canvas.setExtent(r=extents)
 
     if clear:
         # Clear map registry from old OSM layers.
@@ -44,17 +44,17 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
         # pseudo means that the layer is not going to be added to the legend.
-        rlayer = QgsRasterLayer(c.OSM_URI, baseName=c.OSM_NAME, providerType="wms")
+        rlayer: QgsRasterLayer = QgsRasterLayer(c.OSM_URI, baseName=c.OSM_NAME, providerType="wms")
 
         # Make sure that the layer can load properly, then add layer to the registry
         if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer, addToLegend=False)
+            QgsProject.instance().addMapLayer(mapLayer=rlayer, addToLegend=False)
 
     # OSM layers object
     registryOSM_list = [i for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
 
     # Set the map canvas layer set.
-    canvas.setLayers(registryOSM_list)
+    canvas.setLayers(layers=registryOSM_list)
 
     return None
 
@@ -83,11 +83,11 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
         (in 'Layers' tab)
     """
     # Create polygon rubber band corresponding to the extents
-    extents_geometry = QgsGeometry.fromRect(extents)
-    band.setToGeometry(extents_geometry, crs)
+    extents_geometry: QgsGeometry = QgsGeometry.fromRect(rect=extents)
+    band.setToGeometry(geometry=extents_geometry, crs=crs)
     band.setColor(QColor(color))
-    band.setWidth(width)
-    band.setFillColor(Qt.transparent)
+    band.setWidth(width=width)
+    band.setFillColor(color=Qt.transparent)
 
     return None
 

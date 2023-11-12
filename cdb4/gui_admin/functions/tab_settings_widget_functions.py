@@ -19,7 +19,7 @@ def tabSettings_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Settings' tab
     """
     dlg.tabSettings.setDisabled(True)
-    gbxDefaultUsers_reset(dlg)
+    gbxDefaultUsers_reset(dlg=dlg)
     dlg.btnResetToDefault.setDisabled(True)
 
     return None

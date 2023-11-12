@@ -31,7 +31,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ..cdb_tools_main import CDBToolsMain
+    from ...cdb_tools_main import CDBToolsMain
 
 import os.path
 
@@ -39,7 +39,7 @@ from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import QUrl 
 from qgis.PyQt.QtGui import QTextDocument
 
-from ..shared.functions import shared_functions as sh_f 
+from ..functions import shared_functions as sh_f 
 from . import about_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer

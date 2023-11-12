@@ -490,7 +490,7 @@ p, li { white-space: pre-wrap; }
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../../icons/plugin_icon.png</pixmap>
+    <pixmap>../../../icons/plugin_icon.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>

@@ -45,7 +45,7 @@ class FeatureType():
             self.is_ade = True
         else:
             self.is_ade = False
-        #self.n_features = n_features
+        # self.n_features = n_features
     
     def __str__(self):
         return_str: str = \

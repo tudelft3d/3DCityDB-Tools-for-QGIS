@@ -66,17 +66,19 @@ ul.l2 {
 -->
 
 <div id="0.8.6">
-<h3>Version 0.8.6 (2023-10-31)</h3>
+<h3>Version 0.8.6 (2023-11-15)</h3>
 <h4>Main changes</h4>
 <p>
 <ul class="l1">
   <li>Client-side
     <ul class="l2">
-	  <li>Added support for QGIS v. 3.34 LTR</li>
+	  <li>Added support for QGIS v. 3.34 (soon to become LTR)</li>
 	  <li>Added plug-in About dialog (NEW)</li>
 	  <li>Added shortcut to open Installation and User manual (as PDF)</li>
 	  <li>Added check whether QGIS version is supported upon first run of a dialog</li>
-	  <li>Fixed: Users without password can still connect and store the connection parameters</li>
+	  <li>Layer Loader: Dropping layers forces now automatic removal of corresponding layers loaded in QGIS Layer tab</li>
+	  <li>Fixed: Users without password can now connect and store connection parameters</li>
+	  <li>Fixed: Button to import selected layers in Layer Loader is now properly activated/deactivated</li>
     </ul>
   </li>	
   <li>QGIS Package (version 0.10.3)
@@ -84,7 +86,7 @@ ul.l2 {
       <li>Fixed bug in function to set privileges</li>
     </ul>
   </li>
-  <li>Minor code clean-up</li>
+  <li>Other minor bug fixes, code clean-up, added/reworked Python type hints</li>
 </ul>
 </p>
 <div>

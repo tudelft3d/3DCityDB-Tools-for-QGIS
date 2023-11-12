@@ -12,9 +12,7 @@ def initialize_feature_type_registry(dlg: CDB4AdminDialog) -> None:
     # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
     # NOTE: This is at the moment hard-coded, with ADE it will have to be possibly chanced
 
-    dlg.FeatureTypesRegistry: dict = {}
-
-    dlg.FeatureTypesRegistry: dict = {
+    dlg.FeatureTypesRegistry = {
         "Bridge"          : FeatureType(alias='bridge'         , ade_prefix=None),
         "Building"        : FeatureType(alias='building'       , ade_prefix=None),
         "CityFurniture"   : FeatureType(alias='cityfurniture'  , ade_prefix=None),

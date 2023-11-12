@@ -39,6 +39,7 @@ def open_online_url(url: str) -> None:
 
     return None
 
+
 def open_local_PDF(pdf_path: str) -> None:
     """ Opens a PDF file in the default web browser.
     Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not

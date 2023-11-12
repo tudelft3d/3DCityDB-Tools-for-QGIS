@@ -55,7 +55,7 @@ from .functions import tab_conn_functions as tc_f
 from .functions import tab_settings_widget_functions as ts_wf
 from .functions import canvas, sql
 from .functions import threads as thr
-from .other_classes import DialogChecks, DefaultSettings
+from .other_classes import DialogChecks, DefaultSettings, FeatureType, TopLevelFeature
 from . import deleter_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
@@ -117,8 +117,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Metadata Registries (dictionaries)
         # Variable to store metadata about the Feature Types (i.e. CityGML modules/packages) 
-        self.FeatureTypesRegistry: dict = {}
-        self.TopLevelFeaturesRegistry: dict = {}
+        self.FeatureTypesRegistry: dict[str, FeatureType] = {}
+        self.TopLevelFeaturesRegistry: dict[str, TopLevelFeature] = {}
 
         # Variable to store the selected crs.
         self.CRS: QgsCoordinateReferenceSystem = None
@@ -139,8 +139,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_DELETE = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+
+        # QgsWkbTypes.PolygonGeometry works from 3.22 till (at least) 3.34
+        # Qgis.GeometryType.Polygon won't work in 3.22 and 3.28. Introduced in 3.32.
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
+        # self.RUBBER_CDB_SCHEMA = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+        self.RUBBER_DELETE = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
+        # self.RUBBER_DELETE = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
 
         # Enhance various Qt Objects with their initial text. 
         # This is used in order to revert to the original state in reset operations when original text has already changed.
@@ -222,8 +227,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def dlg_reset_all(self) -> None:
         """ Function that resets the whole dialog.
         """
-        ts_wf.tabSettings_reset(self)
-        tc_wf.tabConnection_reset(self)
+        ts_wf.tabSettings_reset(dlg=self)
+        tc_wf.tabConnection_reset(dlg=self)
 
         return None
 
@@ -253,7 +258,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
-        self.msg_bar.pushWidget(self.bar, Qgis.MessageLevel.Info)
+        self.msg_bar.pushWidget(widget=self.bar, level=Qgis.MessageLevel.Info)
 
 
     def evt_update_bar(self, step: int, text: str) -> None:
@@ -279,6 +284,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Update progress with current step
         self.bar.setValue(step)
 
+        return None
+
     ### Required functions END ############################
 
     ### EVENTS (start) ############################
@@ -295,8 +302,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             return None
 
         # Reset the tabs
-        ts_wf.tabSettings_reset(self)
-        tc_wf.tabConnection_reset(self)
+        ts_wf.tabSettings_reset(dlg=self)
+        tc_wf.tabConnection_reset(dlg=self)
 
         # Reset and (re)enable the "3D City Database" connection box and buttons
         # Enable the group box "Database" and reset the label, enable the Connect button, e
@@ -304,6 +311,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.btnConnectToDb.setText(self.btnConnectToDb.init_text.format(db=self.DB.database_name))
         self.btnConnectToDb.setDisabled(False)  # Enable the button 
         # self.lblConnectToDB.setDisabled(False)
+
+        return None
 
 
     def evt_btnNewConn_clicked(self) -> None:
@@ -321,6 +330,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # Add new connection to the Existing connections
         if dlgConnector.conn_params:
             self.cbxExistingConn.addItem(f"{dlgConnector.conn_params.connection_name}", dlgConnector.conn_params)
+
+        return None
 
 
     def evt_btnConnectToDb_clicked(self) -> None:
@@ -351,11 +362,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
         # Additionally, set self.DB.pg_server_version
-        is_connection_successful: bool = conn_f.open_connection(self)
+        is_connection_successful: bool = conn_f.open_connection(dlg=self)
 
         if is_connection_successful:
             # Show database name
-            self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
+            self.lblConnToDb_out.setText(c.success_html.format(text=" AS ".join([self.DB.db_toc_node_label, self.DB.username])))
+            # self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
 
             if self.DB.pg_server_version is not None:
@@ -366,16 +378,16 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 return None # Exit
 
         else: # Connection failed!
-            tc_wf.gbxConnStatus_reset(self)
+            tc_wf.gbxConnStatus_reset(dlg=self)
             self.gbxConnStatus.setDisabled(False)
             self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
             self.checks.is_conn_successful = False
 
-            msg = f"The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
+            msg = "The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
-            ts_wf.tabSettings_reset(self)
-            tc_wf.tabConnection_reset(self)
+            ts_wf.tabSettings_reset(dlg=self)
+            tc_wf.tabConnection_reset(dlg=self)
             # Close the current open connection.
             if self.conn is not None:
                 self.conn.close()
@@ -385,21 +397,21 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 2) Can I connect to the qgis_pkg (and access its functions?) If yes, continue.
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
-        is_qgis_pkg_installed: bool = sh_sql.is_qgis_pkg_installed(self)
+        is_qgis_pkg_installed = sh_sql.is_qgis_pkg_installed(dlg=self)
 
         if is_qgis_pkg_installed:
             # I can now access the functions of the qgis_pkg (at least the public ones)
             # Set the current usr_schema name in self.USR_SCHEMA.
-            sh_sql.exec_create_qgis_usr_schema_name(self)
+            sh_sql.create_qgis_usr_schema_name(dlg=self)
         else:
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"The QGIS Package is either not installed in this database or you are not granted permission to use it.<br><br>Either way, please contact your database administrator."
+            msg = "The QGIS Package is either not installed in this database or you are not granted permission to use it.<br><br>Either way, please contact your database administrator."
             QMessageBox.warning(self, "Unavailable QGIS Package", msg)
 
-            ts_wf.tabSettings_reset(self)
-            tc_wf.tabConnection_reset(self)
+            ts_wf.tabSettings_reset(dlg=self)
+            tc_wf.tabConnection_reset(dlg=self)
             # Close the current open connection.
             if self.conn is not None:
                 self.conn.close()
@@ -410,7 +422,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Get the current qgis_pkg version and check that it is compatible.
         # Named tuple: version, full_version, major_version, minor_version, minor_revision, code_name, release_date
-        qgis_pkg_curr_version = sh_sql.exec_qgis_pkg_version(self)
+        qgis_pkg_curr_version = sh_sql.get_qgis_pkg_version(dlg=self)
 
         # print(qgis_pkg_curr_version)
         qgis_pkg_curr_version_txt      : str = qgis_pkg_curr_version.version
@@ -441,8 +453,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
-            ts_wf.tabSettings_reset(self)
-            tc_wf.tabConnection_reset(self)
+            ts_wf.tabSettings_reset(dlg=self)
+            tc_wf.tabConnection_reset(dlg=self)
             # Close the current open connection.
             if self.conn is not None:
                 self.conn.close()
@@ -452,11 +464,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 4) Is my usr_schema installed? If yes, continue.
 
         # Check if qgis_{usr} schema (e.g. qgis_giorgio) is installed in the database.
-        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(self)
+        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(dlg=self)
 
         if is_usr_schema_inst:
             # Show message in Connection Status the 3DCityDB version if installed
-            self.DB.citydb_version: str = sh_sql.fetch_3dcitydb_version(self)
+            self.DB.citydb_version: str = sh_sql.get_3dcitydb_version(dlg=self)
             self.lbl3DCityDBInst_out.setText(c.success_html.format(text=self.DB.citydb_version))
             self.checks.is_3dcitydb_installed = True
 
@@ -470,8 +482,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             msg = f"The required user schema 'qgis_{self.DB.username}' is missing. Please contact your database administrator to install it."
             QMessageBox.warning(self, "User schema not found", msg)
 
-            ts_wf.tabSettings_reset(self)
-            tc_wf.tabConnection_reset(self)
+            ts_wf.tabSettings_reset(dlg=self)
+            tc_wf.tabConnection_reset(dlg=self)
             # Close the current open connection.
             if self.conn is not None:
                 self.conn.close()
@@ -481,8 +493,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 5) Are there cdb_schemas I am allowed to connect to? If yes, continue
         # 6) Can I connect with RW privileges to at least one non-empty cdb_schema? If yes, continue
 
-        cdb_schemas_rw: list = []
-        cdb_schemas: list = [] 
+        #cdb_schemas_rw: list[tuple[str, bool, str]] = []
+        #cdb_schemas: list[tuple[str, bool, str]] = [] 
         # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
         #####################################################################################################
         # Namedtuple with: cdb_schema, co_number, priv_type
@@ -495,7 +507,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if cdb_schema.co_number != 0]
         #####################################################################################################
         # Namedtuple with: cdb_schema, is_empty, priv_type
-        cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv(self)
+        cdb_schemas_extended = sql.list_cdb_schemas_with_priv(dlg=self)
         # print('cdb_schema_extended', cdb_schemas_extended)
 
         # Select tuples of cdb_schemas that have number of cityobjects <> 0
@@ -508,19 +520,19 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = f"No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
+            msg: str = "No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
             return None # Exit
         else:
             if len(cdb_schemas) == 0:
-                tc_f.fill_cdb_schemas_box(self, None)
+                tc_f.fill_cdb_schemas_box(self, cdb_schemas=None)
                 
                 # Inform the use that all available cdb_schemas are empty.
-                msg = "The available citydb schema(s) is/are all empty. Please load data into the database first."
+                msg: str = "The available citydb schema(s) is/are all empty. Please load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
-                ts_wf.tabSettings_reset(self)
-                tc_wf.tabConnection_reset(self)
+                ts_wf.tabSettings_reset(dlg=self)
+                tc_wf.tabConnection_reset(dlg=self)
                 # Close the current open connection.
                 if self.conn is not None:
                     self.conn.close()
@@ -535,11 +547,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 # We can start:
 
                 # 1) Initialize the registries
-                tc_f.initialise_top_class_features_registry(self)
-                tc_f.initialize_feature_types_registry(self)
+                tc_f.initialise_top_level_features_registry(dlg=self)
+                tc_f.initialize_feature_types_registry(dlg=self)
 
                 # 2) Fill the cdb_schema combobox
-                tc_f.fill_cdb_schemas_box(self, cdb_schemas)
+                tc_f.fill_cdb_schemas_box(dlg=self, cdb_schemas=cdb_schemas)
                 # At this point, filling the schema box, activates the 'evt_cbxSchema_changed' event.
 
         return None # Exit
@@ -557,16 +569,15 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.cbxSchema.currentData():
             return None
 
-        is_connection_unique: bool
         is_connection_unique = conn_f.check_connection_uniqueness(dlg=self, cdbMain=cdbMain)
         if not is_connection_unique:
             return None # Stop and do not proceed
 
         # Reset the Settings tabs in case they were open/changed from before 
-        ts_wf.tabSettings_reset(self) # Reset the Settings tab to the Default settings
-        tc_wf.gbxCleanUpSchema_reset(self)
-        tc_wf.gbxBasemap_reset(self)        
-        tc_wf.gbxFeatSel_reset(self)
+        ts_wf.tabSettings_reset(dlg=self) # Reset the Settings tab to the Default settings
+        tc_wf.gbxCleanUpSchema_reset(dlg=self)
+        tc_wf.gbxBasemap_reset(dlg=self)        
+        tc_wf.gbxFeatSel_reset(dlg=self)
 
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         self.DELETE_EXTENTS = QgsRectangle()
@@ -591,11 +602,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.gbxFeatSel.setDisabled(False)
 
         # Setup the 'Basemap (OSM)' groupbox.
-        tc_wf.gbxBasemap_setup(self)
+        tc_wf.gbxBasemap_setup(dlg=self)
         # This will eventually fire a evt_qgbxExtents_ext_changed event
 
-        tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxTopLevelClass_reset(self)
+        tc_wf.gbxFeatType_reset(dlg=self)
+        tc_wf.gbxTopLevelClass_reset(dlg=self)
 
         return None
 
@@ -605,8 +616,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         status: bool = self.gbxCleanUpSchema.isChecked()
 
-        tc_wf.gbxFeatType_reset(self)
-        tc_wf.gbxTopLevelClass_reset(self)
+        tc_wf.gbxFeatType_reset(dlg=self)
+        tc_wf.gbxTopLevelClass_reset(dlg=self)
 
         if status: # it is checked to be enabled
             # Enable the button
@@ -637,11 +648,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.<br><br>Do you REALLY want to proceed?"
         msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == QMessageBox.Yes: #16384: #YES
+            if res == QMessageBox.Yes:
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == QMessageBox.Yes: #16384: #YES       
+                if res == QMessageBox.Yes:
                     thr.run_cleanup_schema_thread(self)
         return None
 
@@ -653,7 +664,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if status: # it is checked to be enabled
             # (Re) Setup the 'Basemap (OSM)' groupbox.
-            tc_wf.gbxBasemap_setup(self) # fires a evt_qgbxExtents_ext_changed() event
+            tc_wf.gbxBasemap_setup(dlg=self) # fires a evt_qgbxExtents_ext_changed() event
             self.gvCanvas.setDisabled(False)
             self.qgbxExtents.setDisabled(False)
             # Enable the "Set to schema" button
@@ -754,10 +765,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             canvas.insert_rubber_band(band=self.RUBBER_DELETE, extents=self.DELETE_EXTENTS, crs=self.CRS, width=2, color=c.DELETE_EXTENTS_COLOUR)
 
             # print("from: evt_qgbxExtents_ext_changed")
-            tc_f.refresh_registries(self)
+            tc_f.refresh_registries(dlg=self)
 
         else:
-            QMessageBox.critical(self, "Warning", f"Pick a region intersecting the extents of '{self.CDB_SCHEMA}' (black area).")
+            msg: str = f"Pick a region intersecting the extents of '{self.CDB_SCHEMA}' (black area)."
+            QMessageBox.critical(self, "Warning", msg)
 
         return None
 
@@ -770,7 +782,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         - have changed and the new cdb extents contain the old ones (only update the ribbons)
         - have changed and the new cdb extents do not strictly contain the old ones (drop existing layers, update ribbons)
         """
-        tc_f.refresh_extents(self)
+        tc_f.refresh_extents(dlg=self)
 
         return None
    
@@ -779,7 +791,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the current 'Calculate from City model' pushButton (btnCityExtents) is pressed.
         """
         # Get the extents stored in server (already computed at this point).
-        cdb_extents_wkt: str = sql.fetch_precomputed_extents(self, usr_schema=self.USR_SCHEMA, cdb_schema=self.CDB_SCHEMA, ext_type=c.CDB_SCHEMA_EXT_TYPE)
+        cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=self)
 
         # Convert extents format to QgsRectangle object.
         cdb_extents = QgsRectangle.fromWkt(cdb_extents_wkt)
@@ -802,7 +814,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs, dlg_cdb_extents, dlg_canvas)
-        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. 2 = The window blocks input to all other windows.
+        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to all other windows.
         dlgGeocoder.show()
         dlgGeocoder.exec_()
 
@@ -823,11 +835,11 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Enable the groupbox gbxBasemap
                 self.gbxBasemap.setDisabled(False)
 
-            tc_wf.workaround_gbxFeatType(self)
-            tc_wf.workaround_gbxTopLevelClass(self)
+            tc_wf.workaround_gbxFeatType(dlg=self)
+            tc_wf.workaround_gbxTopLevelClass(dlg=self)
 
             # Set up/update the "Select Features" group box
-            tc_f.refresh_registries(self)
+            tc_f.refresh_registries(dlg=self)
 
             # Enable the groupbox FeatType
             self.gbxFeatType.setDisabled(False)
@@ -837,9 +849,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             # Enable the Delete Selected features button
             self.btnDelSelFeatures.setDisabled(False)
 
-
         else: # when unchecked, it disables itself automatically
-            tc_wf.gbxFeatSel_reset(self) # it disables itself, I need to reenable it
+            tc_wf.gbxFeatSel_reset(dlg=self) # it disables itself, I need to reenable it
             # (Re)enable the gbxFeatSel groupbox
             self.gbxFeatSel.setDisabled(False)
 
@@ -995,47 +1006,47 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         
         elif self.gbxFeatType.isChecked():
             # Get the list (tuple) of selected Feature Types in the current cdb_schema
-            sel_feat_types: list = gen_f.get_checkedItemsData(self.ccbxFeatType)
+            sel_feat_types: list[FeatureType] = gen_f.get_checkedItemsData(self.ccbxFeatType)
             # print("Selected Feature Types:", sel_feat_types)
 
             if len(sel_feat_types) == 0:
-                msg: str = "You must select at least a Feature Type from the combo box."
+                msg: str = "You must select at least a Feature type from the combo box."
                 res = QMessageBox.warning(self, "Missing selection", msg)
                 return None # Exit
             else:
                 delete_mode = "del_FeatureTypes"
-                tc_f.update_feature_type_registry_is_selected(self, sel_feat_types)
+                tc_f.update_feature_type_registry_is_selected(dlg=self, sel_feat_types=sel_feat_types)
 
         elif self.gbxTopLevelClass.isChecked():
-            # Get the list (tuple) of selected Top-level Features in the current cdb_schema
-            sel_top_level_features: list = gen_f.get_checkedItemsData(self.ccbxTopLevelClass)
+            # Get the list of selected Top-level Features in the current cdb_schema
+            sel_top_level_features: list[TopLevelFeature] = gen_f.get_checkedItemsData(self.ccbxTopLevelClass)
             # print("Selected Top-level features:", sel_top_class_features)
 
             if len(sel_top_level_features) == 0:
-                msg: str = "You must select at least a Top-level feature Type from the combo box."
+                msg: str = "You must select at least a Top-level feature from the combo box."
                 res = QMessageBox.warning(self, "Missing selection", msg)
                 return None # Exit
             else:
                 delete_mode = "del_TopLevelFeatures"
-                tc_f.update_top_class_features_is_selected(self, sel_top_level_features)
+                tc_f.update_top_level_features_registry_is_selected(dlg=self, sel_top_level_features=sel_top_level_features)
 
         else:
             # This case should not happen.
             return None # Exit
 
-        msg1: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you really want to proceed?"
-        msg2: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY want to proceed?"
-        msg3: str = f"Data will be deleted from citydb schema {self.CDB_SCHEMA}.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll loose data, don't tell we didn't warn you..."
+        msg1: str = f"Data will be deleted from citydb schema '{self.CDB_SCHEMA}'.<br><br>Do you really want to proceed?"
+        msg2: str = f"Data will be deleted from citydb schema '{self.CDB_SCHEMA}'.<br><br>Do you REALLY want to proceed?"
+        msg3: str = f"Data will be deleted from citydb schema '{self.CDB_SCHEMA}'.<br><br>Do you REALLY REALLY want to proceed?<br><br>If you'll lose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == QMessageBox.Yes: #16384: #YES
+        if res == QMessageBox.Yes:
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == QMessageBox.Yes: #16384: #YES
+            if res == QMessageBox.Yes:
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == QMessageBox.Yes: #16384: #YES            
+                if res == QMessageBox.Yes:
                     # This thread will also take care of checking what happens after deletion,
                     # e.g. in case that the database is completely emptied.
                     # The user will be eventually informed
-                    thr.run_bulk_delete_thread(self, delete_mode)
+                    thr.run_bulk_delete_thread(dlg=self, delete_mode=delete_mode)
 
         return None
 
@@ -1043,8 +1054,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnCloseConn_clicked(self) -> None:
         """Event that is called when the 'Close current connection' pushButton (btnCloseConn) is pressed.
         """
-        ts_wf.tabSettings_reset(self)
-        tc_wf.tabConnection_reset(self)
+        ts_wf.tabSettings_reset(dlg=self)
+        tc_wf.tabConnection_reset(dlg=self)
 
         # Close the current open connection.
         if self.conn is not None:
@@ -1059,7 +1070,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnResetToDefault_clicked(self) -> None:
         """Event that is called when the button 'Reset to default values' is clicked
         """
-        ts_wf.tabSettings_reset(self) # This also disables it and the buttons.
+        ts_wf.tabSettings_reset(dlg=self) # This also disables it and the buttons.
         # Reactivate it, as well as the buttons
         self.tabSettings.setDisabled(False)       
 
@@ -1072,9 +1083,9 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         delArraySize = self.sbxArraySize.value()
 
         if all((delArraySize == self.settings.max_del_array_length_default,
-                )):
+            )):
             # No need to store the settings, they are unchanged. Inform the user
-            msg: str = f"No need to store the settings, they coincide with the default values."
+            msg: str = "No need to store the settings, they coincide with the default values."
             QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             return None # Exit
 
@@ -1084,13 +1095,13 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 3 real
         # 4 boolean (cast to int())
 
-        settings_list = []
+        settings_list: list[dict] = []
         settings_list = [
             {'name': 'delArraySize' , 'data_type': 2, 'data_value': delArraySize , 'label': self.settings.max_del_array_length_label},
         ]
         # print(settings_list)
 
-        res = sh_sql.exec_upsert_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL, settings_list)
+        res = sh_sql.upsert_plugin_settings(dlg=self, usr_schema=self.USR_SCHEMA, dialog_name=self.DLG_NAME_LABEL, settings_list=settings_list)
 
         if not res:
             # Inform the user
@@ -1108,8 +1119,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnLoadSettings_clicked(self) -> None:
         """Event that is called when the button 'Save settings' is clicked
         """
-        settings_list = []
-        settings_list = sh_sql.exec_read_settings(self, self.USR_SCHEMA, self.DLG_NAME_LABEL)
+        settings_list: list[dict] = []
+        settings_list = sh_sql.get_plugin_settings(dlg=self, usr_schema=self.USR_SCHEMA, dialog_name=self.DLG_NAME_LABEL)
         # print(settings_list)
 
         if not settings_list:
