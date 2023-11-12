@@ -37,7 +37,8 @@ class DialogChecks:
                 self.layers_exist,
                 self.layers_refreshed)):
             return True
-        return False
+        else:
+            return False
 
     
 class DefaultSettings:
@@ -66,7 +67,7 @@ class DefaultSettings:
         self.enable_ui_based_forms_label: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return_str: str = \
             f"simp_geom_enabled (DEFAULT): {self.simp_geom_enabled_default}<br>" + \
             f"simp_geom_dec_prec (DEFAULT): {self.simp_geom_dec_prec_default}<br>" + \
@@ -280,7 +281,7 @@ class FeatureType():
         self.n_features = n_features
         self.layers = [] # Will contain the CDBLayer objects to be loaded
     
-    def __str__(self):
+    def __str__(self) -> str:
         return_str: str = \
             f"alias: {self.alias}\n" + \
             f"layers_create_function: {self.layers_create_function}\n" + \
