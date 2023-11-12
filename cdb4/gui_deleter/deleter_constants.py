@@ -1,4 +1,4 @@
-"""This module contains constant values that are used within the CityDB-Loader plugin for 3DCityDB v. 4.x
+"""This module contains constant values that are used within the CityDB-Tools plugin for 3DCityDB v. 4.x
 """
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 from qgis.PyQt.QtGui import QColor
@@ -10,13 +10,8 @@ QGIS_PKG_MIN_VERSION_MINOR: int = 10
 QGIS_PKG_MIN_VERSION_MINOR_REV: int = 3
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
-# Extent types
-CDB_SCHEMA_EXT_TYPE: str = "db_schema"
-LAYER_EXT_TYPE: str      = "m_view"
-
-# Extent types
 # Check more here: https://doc.qt.io/qt-5/qt.html#GlobalColor-enum
-CDB_EXTENTS_COLOUR:   QColor = Qt.black
+CDB_EXTENTS_COLOUR: QColor = Qt.black
 DELETE_EXTENTS_COLOUR: QColor = Qt.red
 
 # Basemaps
@@ -62,25 +57,25 @@ btnDelSelFeatures_t: str    = "Delete data from schema '{sch}'"
 icon_msg_core: str = """
                 <html><head/><body><p> 
                 <img src="{image_rc}" style='vertical-align: bottom'/> 
-                <span style=" color:{color_hex};">{addtional_text}</span>
+                <span style=" color:{color_hex};">{additional_text}</span>
                 </p></body></html>
                 """
 success_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/success_icon.svg',
     color_hex='#00E400',   # green
-    addtional_text='{text}')
+    additional_text='{text}')
 
 failure_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/failure_icon.svg',
     color_hex='#FF0000',  # red
-    addtional_text='{text}')
+    additional_text='{text}')
 
 warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/warning_icon.svg',
     color_hex='#FFA701',  # Orange
-    addtional_text='{text}')
+    additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/critical_warning_icon.svg',
     color_hex='#DA4453', # pale red
-    addtional_text='{text}')
+    additional_text='{text}')
