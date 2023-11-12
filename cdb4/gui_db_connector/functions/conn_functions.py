@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, cast, Iterable, Optional
 if TYPE_CHECKING:
     from ....cdb_tools_main import CDBToolsMain
     from ...gui_admin.admin_dialog import CDB4AdminDialog
@@ -17,11 +17,12 @@ from ...shared.functions import general_functions as gen_f
 from ..other_classes import DBConnectionInfo
 from . import sql
 
-FILE_LOCATION = gen_f.get_file_relative_path(__file__)
+FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 
-def get_qgis_postgres_stored_conns() -> list:
+def list_qgis_postgres_stored_conns() -> Optional[list[tuple[str, dict]]]:
     """Function that reads the QGIS user settings to look for existing connections
+    It results in a list[tuple[str, dict]]
     """
     # Create a QgsSettings object to access the settings
     qgis_settings = QgsSettings()
@@ -30,10 +31,10 @@ def get_qgis_postgres_stored_conns() -> list:
     qgis_settings.beginGroup(prefix='PostgreSQL/connections')
 
     # Get all stored connection names
-    stored_conn_list: list = qgis_settings.childGroups()
+    stored_conn_list = qgis_settings.childGroups()
     # print('stored_connections', stored_connections)
 
-    stored_conns = list()
+    stored_conns = []
 
     # Get database connection settings for every stored connection
     for stored_conn in stored_conn_list:
@@ -50,15 +51,20 @@ def get_qgis_postgres_stored_conns() -> list:
         # Populate the object END
         qgis_settings.endGroup()
 
-        stored_conns.append([stored_conn, db_conn_info_dict])
+        t: tuple[str, dict] = (stored_conn, db_conn_info_dict)
+        stored_conns: list[tuple[str, dict]]
+        stored_conns.append(t)
     
     stored_conns.sort()
-    #print(stored_conns)
+    # stored_conns.sort(reverse=True)
+    # print(stored_conns)
 
     return stored_conns
 
 
-def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], stored_conns: list = None) -> None:
+def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], 
+                             stored_conns: Optional[list[tuple[str, dict]]] = None
+                             ) -> None:
     """Function that fills the the 'cbxExistingConn' combobox
     """
     # Clear the contents of the comboBox from previous runs
@@ -68,16 +74,17 @@ def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB
         # Get database connection settings for every stored connection
         for stored_conn_name, stored_conn_params in stored_conns:
 
-            label = str(stored_conn_name)
+            label: str = stored_conn_name
             # Create object
             db_conn_info = DBConnectionInfo()
             # Populate the object attributes BEGIN
-            db_conn_info.connection_name = label
-            db_conn_info.database_name   = stored_conn_params['database']
-            db_conn_info.host            = stored_conn_params['host']
-            db_conn_info.port            = stored_conn_params['port']
-            db_conn_info.username        = stored_conn_params['username']
-            db_conn_info.password        = stored_conn_params['password']
+            db_conn_info.connection_name   = label
+            db_conn_info.database_name     = stored_conn_params['database']
+            db_conn_info.host              = stored_conn_params['host']
+            db_conn_info.port              = stored_conn_params['port']
+            db_conn_info.username          = stored_conn_params['username']
+            db_conn_info.password          = stored_conn_params['password']
+            db_conn_info.db_toc_node_label = stored_conn_params['database'] + " @ " + stored_conn_params['host'] + ":" +  str(stored_conn_params['port'])
             # Populate the object attributes END
 
             dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
@@ -136,7 +143,7 @@ def open_connection(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDia
     if dlg.conn:
         dlg.conn.commit() # This seems redundant.
         # Get server version.
-        version: str = sql.fetch_posgresql_server_version(dlg)
+        version = sql.get_posgresql_server_version(dlg=dlg)
         # Store version into the connection object.
         dlg.DB.pg_server_version = version
         return True
@@ -149,19 +156,19 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
     """
     is_unique: bool = True
     curr_DB: DBConnectionInfo = dlg.DB
-    curr_CDB_SCHEMA: str = dlg.CDB_SCHEMA
-    curr_DIALOG_NAME: str = dlg.DLG_NAME
-    no_admin_dlgs: list = []
+    curr_CDB_SCHEMA = dlg.CDB_SCHEMA
+    curr_DIALOG_NAME = dlg.DLG_NAME
 
-    no_admin_dlgs = [dlg for k,dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_NAME_ADMIN, curr_DIALOG_NAME]]
+    non_admin_dlgs = []
+    non_admin_dlgs = [dlg for k, dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_NAME_ADMIN, curr_DIALOG_NAME]]
 
     # Conditions: 
     # 1) Connection exists, is open
     # 2) Same connection variables (database, usr)
     # 3) Same selected cdb_schema
 
-    if no_admin_dlgs:
-        for dlg in no_admin_dlgs:
+    if non_admin_dlgs:
+        for dlg in non_admin_dlgs:
             if dlg.conn:
                 if dlg.conn.closed == 0:
                     if dlg.CDB_SCHEMA:
@@ -175,7 +182,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
 
     # print(is_unique)
     if is_unique:
-        return is_unique
+        return True
     else:
         # ask what to do: wait or close the other?
         # Create buttons
@@ -202,4 +209,4 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
             return True
         elif res == btnWait:
             # print('Wait and close manually')
-            return is_unique
+            return False
