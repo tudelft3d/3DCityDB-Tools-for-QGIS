@@ -985,20 +985,27 @@ class CDB4LoaderDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         # Check whether there are layers loaded in QGIS, and inform the user. If the user decides to drop the layers
         # all loaded layers will lose the link to the respective database view and should be removed before.
+        drop_layers: bool = True
 
-        curr_db_node = tl_f.get_citydb_node(dlg=self) 
+        curr_db_node = tl_f.get_citydb_node(dlg=self)
+        # print("curr_db_node:", curr_db_node.name())
         curr_cdb_schema_node_label: str = "@".join([self.DB.username, self.CDB_SCHEMA])
+
 
         if curr_db_node:
             curr_cdb_schema_node = curr_db_node.findGroup(name=curr_cdb_schema_node_label)
+            # print("curr_cdb_schema_node:", curr_cdb_schema_node.name())
             if curr_cdb_schema_node:
+                
                 msg: str = f"This will force the <b>automatic removal of all layers, detail views and look-up tables</b> currently loaded in QGIS and visible in group <b>'{curr_cdb_schema_node_label}'</b> of <b>'{self.DB.db_toc_node_label}'</b>.<br><br>Do you want to proceed anyway?"
                 res = QMessageBox.question(self, "Drop layers", msg)
+
                 if res == QMessageBox.Yes:
                     curr_db_node.removeChildNode(curr_cdb_schema_node)
-                    thr.run_drop_layers_thread(dlg=self)
-        else:
-            # There are no layers loaded in QGIS, we can drop the layers in the database without problems.
+                else:
+                    drop_layers = False
+
+        if drop_layers:
             thr.run_drop_layers_thread(dlg=self)
 
         return None
