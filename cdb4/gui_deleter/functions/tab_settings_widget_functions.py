@@ -22,7 +22,7 @@ FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 def tabSettings_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Settings' tab
     """
-    gbxMiscSettings_reset(dlg)
+    gbxMiscSettings_reset(dlg=dlg)
     dlg.tabSettings.setDisabled(True)
 
     return None
