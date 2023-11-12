@@ -30,7 +30,7 @@ class DefaultSettings:
 
     def __str__(self):
         return_str: str = \
-            f"max_features_to_delete_default (DEFAULT): {self.max_features_to_delete_default}\n" + \
+            f"max_features_to_delete_default (DEFAULT): {self.max_del_array_length_default}\n" + \
             f"force_dropping_layers (DEFAULT): {self.force_dropping_layers_default}\n"
         return return_str
 
@@ -76,11 +76,11 @@ class FeatureType():
                 name: str,
                 alias: str,
                 layers_drop_function: str = None,
-                exists: bool = None,                   # i.e. exists in the selected cdb_schema?
+                exists: bool = None, # i.e. exists in the selected cdb_schema?
                 is_ade: bool = False,
                 is_selected: bool = False,
                 n_features: int = 0,
-                top_class_features: list = []
+                top_level_features: list = []
                 ):
         
         self.name = name 
@@ -95,7 +95,7 @@ class FeatureType():
         self.is_ade = is_ade
         self.is_selected = is_selected
         self.n_features = n_features
-        self.top_class_features = top_class_features # Will contain the TopClassFeatures objects to be deleted
+        self.top_level_features = top_level_features # Will contain the Top-Level Features objects to be deleted
     
     def __str__(self):
         return_str: str = \
@@ -106,6 +106,6 @@ class FeatureType():
             f"is_ade? {self.is_ade}\n" + \
             f"is selected? {self.is_selected}\n" + \
             f"features number: {self.n_features}\n" + \
-            f"top-level features number: {len(self.top_class_features)}\n"
+            f"top-level features number: {len(self.top_level_features)}\n"
         return return_str
 
