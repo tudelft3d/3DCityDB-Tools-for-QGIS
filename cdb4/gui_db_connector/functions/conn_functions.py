@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union, cast, Iterable, Optional
+from typing import TYPE_CHECKING, Union, Optional
 if TYPE_CHECKING:
     from ....cdb_tools_main import CDBToolsMain
     from ...gui_admin.admin_dialog import CDB4AdminDialog
@@ -43,11 +43,15 @@ def list_qgis_postgres_stored_conns() -> Optional[list[tuple[str, dict]]]:
 
         qgis_settings.beginGroup(prefix=stored_conn)
         # Populate the object BEGIN
-        db_conn_info_dict['database'] = qgis_settings.value(key='database')
-        db_conn_info_dict['host']     = qgis_settings.value(key='host')
-        db_conn_info_dict['port']     = qgis_settings.value(key='port')
-        db_conn_info_dict['username'] = qgis_settings.value(key='username')
-        db_conn_info_dict['password'] = qgis_settings.value(key='password')
+        db_conn_info_dict['database']          = qgis_settings.value(key='database')
+        db_conn_info_dict['host']              = qgis_settings.value(key='host')
+        db_conn_info_dict['port']              = qgis_settings.value(key='port')
+        db_conn_info_dict['username']          = qgis_settings.value(key='username')
+        db_conn_info_dict['password']          = qgis_settings.value(key='password')
+        db_conn_info_dict['db_toc_node_label'] = qgis_settings.value(key='database') + " @ " + qgis_settings.value(key='host') + ":" + str(qgis_settings.value(key='port'))
+
+        print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
+
         # Populate the object END
         qgis_settings.endGroup()
 
@@ -84,7 +88,8 @@ def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB
             db_conn_info.port              = stored_conn_params['port']
             db_conn_info.username          = stored_conn_params['username']
             db_conn_info.password          = stored_conn_params['password']
-            db_conn_info.db_toc_node_label = stored_conn_params['database'] + " @ " + stored_conn_params['host'] + ":" +  str(stored_conn_params['port'])
+            db_conn_info.db_toc_node_label = stored_conn_params['db_toc_node_label']
+            # db_conn_info.db_toc_node_label = stored_conn_params['database'] + " @ " + stored_conn_params['host'] + ":" +  str(stored_conn_params['port'])
             # Populate the object attributes END
 
             dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
