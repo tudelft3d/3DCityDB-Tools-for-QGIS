@@ -50,7 +50,7 @@ def list_qgis_postgres_stored_conns() -> Optional[list[tuple[str, dict]]]:
         db_conn_info_dict['password']          = qgis_settings.value(key='password')
         db_conn_info_dict['db_toc_node_label'] = qgis_settings.value(key='database') + " @ " + qgis_settings.value(key='host') + ":" + str(qgis_settings.value(key='port'))
 
-        print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
+        # print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
 
         # Populate the object END
         qgis_settings.endGroup()
@@ -81,6 +81,7 @@ def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB
             label: str = stored_conn_name
             # Create object
             db_conn_info = DBConnectionInfo()
+
             # Populate the object attributes BEGIN
             db_conn_info.connection_name   = label
             db_conn_info.database_name     = stored_conn_params['database']
@@ -89,7 +90,6 @@ def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB
             db_conn_info.username          = stored_conn_params['username']
             db_conn_info.password          = stored_conn_params['password']
             db_conn_info.db_toc_node_label = stored_conn_params['db_toc_node_label']
-            # db_conn_info.db_toc_node_label = stored_conn_params['database'] + " @ " + stored_conn_params['host'] + ":" +  str(stored_conn_params['port'])
             # Populate the object attributes END
 
             dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
