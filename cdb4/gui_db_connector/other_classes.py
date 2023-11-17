@@ -12,9 +12,9 @@ class DBConnectionInfo:
         self.is_active: bool = None
         self.pg_server_version: str = None # PostgreSQL server version
         self.citydb_version: str = None # 3DCityDB version
+        self.db_toc_node_label: str = None
         self.id = id(self)
         self.hex_location = hex(self.id)
-        self.db_toc_node_label: str = None
 
     def __str__(self):
         pw: str
