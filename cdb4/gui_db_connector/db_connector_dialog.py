@@ -40,7 +40,6 @@ from qgis.gui import QgsMessageBar
 from qgis.PyQt import QtWidgets, uic
 
 from ..shared.functions import general_functions as gen_f
-
 from .other_classes import DBConnectionInfo
 from .functions.conn_functions import create_db_connection
 
@@ -96,6 +95,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         ### EVENTS (start) ############################
 
+
     def evt_btnTestConn_clicked(self) -> None:
         """Event that is called when the 'Test connection' pushButton (btnTestConn) is pressed.
         """
@@ -108,6 +108,7 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         NewConnParams.port = self.ledPort.text()
         NewConnParams.database_name = self.ledDb.text()
         NewConnParams.username = self.ledUserName.text()
+
         if self.qledPassw.text() == "":
             NewConnParams.password = None
         else:
@@ -167,9 +168,14 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
             self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
             return None
         else:
+            
+            NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" +  str(NewConnParams.port)
+            print('set from New conn Dialog', NewConnParams.db_toc_node_label)
+
             temp_conn: pyconn = None
             try:
                 temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+                
                 # If successful, close it, otherwise an Exception will be raised.
                 temp_conn.close() # close connection after the test.
 
