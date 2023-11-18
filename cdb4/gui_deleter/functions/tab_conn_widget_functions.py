@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, cast, Iterable
 if TYPE_CHECKING:       
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
-from qgis.core import QgsProject, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem, QgsMapLayer
+from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import Qgis, QgsProject, QgsMessageLog, QgsGeometry, QgsRectangle, QgsCoordinateReferenceSystem, QgsMapLayer
 
 from ...shared.functions import general_functions as gen_f
 from ...shared.dataTypes import BBoxType
@@ -31,7 +32,6 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     for further spatial queries.
     The basemap is zoomed-in to the cdb_extent (i.e. the extents of the whole city model).
     """
-    cdb_extents_wkt: str = None
 
     # Get the crs_id stored in the selected {cdb_schema}
     srid = sql.get_cdb_schema_srid(dlg=dlg)
@@ -40,17 +40,27 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     # Store the crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
     dlg.CRS_is_geographic = dlg.CRS.isGeographic()
+    # print(f"In gbxBasemap_setup: CRS from database {dlg.CRS.postgisSrid()}, is geographic? {dlg.CRS_is_geographic}")
 
-    while not cdb_extents_wkt:
-
-        # Get the extents stored in server.
+    cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=dlg)
+    if not cdb_extents_wkt:
+        sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
         cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=dlg)
-
-        # Extents could be None (not computed yet).
         if not cdb_extents_wkt:
-            # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
-            # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
-            sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
+            # Something went wrong on the server when computin the bbox
+            msg: str = f"Something went wrong while computing the extents on the server."
+            QMessageBox.critical(dlg, "Uups, server... not serving!", msg)
+            QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
+            return None
+
+    # while not cdb_extents_wkt:
+    #     # Get the extents stored in server.
+    #     cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=dlg)
+    #     # Extents could be None (not computed yet).
+    #     if not cdb_extents_wkt:
+    #         # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects)'.
+    #         # This function automatically upsert the bbox to the table of the precomputed extents in the usr_schema
+    #         sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
 
     delete_extents_wkt = cdb_extents_wkt
 
