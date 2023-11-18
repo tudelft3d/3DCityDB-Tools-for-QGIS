@@ -62,7 +62,11 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
 
     #-SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    # ...
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
 
     # Execute worker's 'run' method.
     dlg.thread.started.connect(dlg.worker.clean_up_schema_thread)
@@ -75,7 +79,13 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
-    # Reenable the GUI
+    # Re-enable the GUI
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))  
+    dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
@@ -296,8 +306,7 @@ def evt_clean_up_schema_fail(dlg: CDB4DeleterDialog) -> None:
 #####################################################################################
 
 def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
-    """Function that uninstalls the qgis_pkg schema from the database
-    by branching a new Worker thread to execute the operation on.
+    """Function that bulk deletes Features from the selected schema.
     """
     # Add a new progress bar to follow the installation procedure.
     for index in range(dlg.vLayoutUserConn.count()):
@@ -318,7 +327,11 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
 
     #-SIGNALS--(start)--################################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    # ...
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxCleanUpSchema.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
 
     # Execute worker's 'run' method.
     dlg.thread.started.connect(dlg.worker.bulk_delete_thread)
@@ -331,7 +344,13 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
-    # Reenable the GUI
+    # Re-enable the GUI
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))  
+    dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxCleanUpSchema.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
