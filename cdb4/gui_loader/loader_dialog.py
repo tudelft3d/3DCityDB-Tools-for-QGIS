@@ -962,7 +962,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         # Set the label to the "ongoing" message
         # Upon successful layer creation, the label will be set accordingly.
-        self.lblLayerExist_out.setText(c.ongoing_html.format(text=c.REFR_LAYERS_ONGOING_MSG))
+        self.lblLayerExist_out.setText(c.ongoing_html.format(text=c.SCHEMA_LAYER_ONGOING_MSG))
 
         # Run the thread
         thr.run_create_layers_thread(dlg=self)
@@ -978,7 +978,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer refresh, the label will be set accordingly.
-            self.lblLayerRefr_out.setText(c.ongoing_html.format(text=c.SCHEMA_LAYER_ONGOING_MSG))
+            self.lblLayerRefr_out.setText(c.ongoing_html.format(text=c.REFR_LAYERS_ONGOING_MSG))
 
             # Run the thread
             thr.run_refresh_layers_thread(dlg=self)
