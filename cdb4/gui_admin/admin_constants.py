@@ -13,7 +13,7 @@ CDB_MIN_VERSION_MINOR: int = 0 # Currently not used
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
 QGIS_PKG_MIN_VERSION_MINOR: int = 10
-QGIS_PKG_MIN_VERSION_MINOR_REV: int = 3
+QGIS_PKG_MIN_VERSION_MINOR_REV: int = 4
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
 # Path to SQL scripts to install the QGIS Package
