@@ -11,7 +11,7 @@ from ... import cdb_tools_main_constants as main_c
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
 QGIS_PKG_MIN_VERSION_MINOR: int = 10
-QGIS_PKG_MIN_VERSION_MINOR_REV: int = 3
+QGIS_PKG_MIN_VERSION_MINOR_REV: int = 4
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
 # Path to QML configuration files
@@ -54,10 +54,12 @@ INST_FAIL_VERSION_MSG: str = "Unsupported version of QGIS Package"
 INST_MSG: str = "Schema '{pkg}' is installed"
 INST_FAIL_MSG: str = "Schema '{pkg}' is not installed"
 SCHEMA_LAYER_MSG: str = "Layers for schema '{sch}' already exist"
+SCHEMA_LAYER_ONGOING_MSG: str = "Layers are being created. Please wait!"
 SCHEMA_LAYER_FAIL_MSG: str = "Layers need to be created for schema '{sch}'"
 REFR_LAYERS_MSG: str = "Latest refresh: {date}"
+REFR_LAYERS_ONGOING_MSG: str = "Layers are being refreshed. Please wait!"
 REFR_LAYERS_FAIL_MSG: str = "Layers must be refreshed"
-LAYER_CR_SUCC_MSG: str  = "Layers  created in schema '{sch}'"
+LAYER_CR_SUCC_MSG: str  = "Layers created in schema '{sch}'"
 LAYER_CR_ERROR_MSG: str = "Error while creating layers in schema '{sch}'"
 LAYER_DR_SUCC_MSG: str  = "Layers removed from schema '{sch}'"
 LAYER_DR_ERROR_MSG: str = "Error while removing layers from schema '{sch}'"
@@ -90,9 +92,15 @@ failure_html: str = icon_msg_core.format(
     color_hex='#FF0000',  # red
     additional_text='{text}')
 
+ongoing_html: str = icon_msg_core.format(
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
+    # image_rc=':/plugins/citydb_loader/icons/loading.gif',
+    color_hex='#FF7E33',  # orange2
+    additional_text='{text}')
+
 warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/warning_icon.svg',
-    color_hex='#FFA701',  # orange
+    color_hex='#FFA701',  # orange1
     additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
