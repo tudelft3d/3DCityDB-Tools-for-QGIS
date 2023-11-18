@@ -8,13 +8,13 @@ import os.path
 # Qt.ApplicationModal	2	The window is modal to the application and blocks input to all windows.
 
 # Supported QGIS minor versions, i.e. version 3.xx
-#QGIS_LTR: tuple = (22,) # With one-item tuples, do not forget to add a column after it!! :-)
+# QGIS_LTR: tuple = (22,) # With one-item tuples, do not forget to add a column after it!! :-)
 QGIS_LTR: tuple = (22, 28, 34)
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV:   int = 6
+PLUGIN_VERSION_REV:   int = 7
 
 # Paths
 PLUGIN_ABS_PATH: str      = os.path.normpath(os.path.dirname(__file__))
@@ -24,7 +24,6 @@ PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
 PLUGIN_ROOT_DIR: str  = os.path.split(os.path.dirname(__file__))[1]
 # print("PLUGIN_ROOT_DIR", PLUGIN_ROOT_DIR) # e.g. citydb-tools 
 URL_GITHUB_PLUGIN: str   = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS"
-
 
 # Database schemas where QGIS Package is installed etc.
 QGIS_PKG_SCHEMA: str = "qgis_pkg"
