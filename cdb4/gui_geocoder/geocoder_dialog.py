@@ -32,32 +32,23 @@
  ***************************************************************************/
 """
 import os, requests
-from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.core import (
-            Qgis, 
-            QgsProject, 
-            QgsRectangle, 
-            QgsCoordinateReferenceSystem, 
-            QgsCoordinateTransform, 
-            QgsCoordinateReferenceSystem, 
-            QgsProject, 
-            QgsPointXY)
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QMessageBox, QDialog
+from qgis.core import Qgis, QgsProject, QgsRectangle, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsPointXY
 from qgis.gui import QgsMapCanvas
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), "ui", "geocoder_dialog.ui"))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "geocoder_dialog.ui"))
 
-# class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
-class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
+
+class GeoCoderDialog(QDialog, FORM_CLASS):
     """GeoCoder Dialog class of the plugin.
     The GUI is imported from an external .ui xml
     """
 
     # def __init__(self, cdbMain: CDBToolsMain, parent=None):
     def __init__(self, dlg_crs: QgsCoordinateReferenceSystem, dlg_cdb_extents: QgsRectangle, dlg_canvas: QgsMapCanvas, parent=None):
-        """Constructor."""
+        """Constructor"""
         super(GeoCoderDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
@@ -67,19 +58,19 @@ class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
         ## From here you can add your variables or constants
         ############################################################
-        self.srid: int = dlg_crs.postgisSrid()
-        self.extents: QgsRectangle = dlg_cdb_extents
-        self.canvas: QgsMapCanvas = dlg_canvas
+        self.srid = dlg_crs.postgisSrid()
+        self.extents = dlg_cdb_extents
+        self.canvas = dlg_canvas
 
         self.inputField.setPlaceholderText("Type here a place name, e.g. 'Padova, Italy'")
 
         ### SIGNALS (start) ############################
         #### Query Tab
         self.btnSearchPlace.clicked.connect(self.evt_btnSearchPlace_clicked)
-        self.btnCancel1.clicked.connect(self.evt_btnCancel1_clicked)
+        self.btnCancel1.clicked.connect(self.evt_btnCancel_clicked)
         #### Zoom Tab
         self.btnZoomTo.clicked.connect(self.evt_btnZoomTo_clicked)
-        self.btnCancel2.clicked.connect(self.evt_btnCancel2_clicked)
+        self.btnCancel2.clicked.connect(self.evt_btnCancel_clicked)
         ### SIGNALS (end) ##############################
 
     ################################################
@@ -167,14 +158,8 @@ class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return None
 
-
-    def evt_btnCancel1_clicked(self) -> None:
-        """Event that is called when the button 'btnCancel1' is clicked.
-        """
-        self.close()
-        return None
-    
         ##### Events for 'Zoom tab'
+
 
     def evt_btnZoomTo_clicked(self) -> None:
         """Event that is called when the button 'btnZoomTo' is clicked.
@@ -186,9 +171,9 @@ class GeoCoderDialog(QtWidgets.QDialog, FORM_CLASS):
         return None
 
 
-    def evt_btnCancel2_clicked(self) -> None:
-        """Event that is called when the button 'btnCancel2' is clicked.
+    def evt_btnCancel_clicked(self) -> None:
+        """Event that is called when a button 'Cancel' is clicked.
         """
-        self.close()        
-        
+        self.close()
+
         return None
