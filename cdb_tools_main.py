@@ -343,7 +343,7 @@ class CDBToolsMain:
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            # add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
+            # add_to_toolbar = False)
             add_to_toolbar = True)
 
         # Add separator
