@@ -32,24 +32,22 @@ Class DBConnectorDialog
  ***************************************************************************/
 """
 import os
-import psycopg2
 from psycopg2.extensions import connection as pyconn
-
 
 from qgis.core import Qgis, QgsSettings
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
-
 from ..shared.functions import general_functions as gen_f
 from .other_classes import DBConnectionInfo
-from .functions.conn_functions import create_db_connection
+from .functions.conn_functions import open_db_connection
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
+
 
 class DBConnectorDialog(QDialog, FORM_CLASS):
     """Connector Dialog. This dialog pops up when a user requests to make a new connection.
@@ -80,6 +78,7 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         self.btnCancel.clicked.connect(self.evt_btnCancel_clicked)
 
         ### SIGNALS (end) ##############################
+
 
     def store_conn_parameters(self) -> bool:
         """Function that stores the database connection parameters in the user's profile settings for future use.
@@ -130,24 +129,17 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
             self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
-            return None
         else:
             temp_conn: pyconn = None
-            try:
-                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
-                # If successful, close it, otherwise an Exception will be raised.
+            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            if temp_conn:
                 temp_conn.close() # close connection after the test.
                 self.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
-
-            except (Exception, psycopg2.Error) as error:
-                gen_f.critical_log(
-                    func=self.evt_btnTestConn_clicked,
-                    location=FILE_LOCATION,
-                    header="Attempting connection",
-                    error=error)
+            else:
+                # Nothing to close, there is no connection.
                 self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
 
-            return None
+        return None
 
 
     def evt_btnOK_clicked(self) -> None:
@@ -174,26 +166,15 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
-            
             self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
-
-            return None
-
         else:
-            
             NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" +  str(NewConnParams.port)
             # print('set from New conn Dialog', NewConnParams.db_toc_node_label)
-
             temp_conn: pyconn = None
-            try:
-                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
-                
-                # If successful, close it, otherwise an Exception will be raised.
+            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            if temp_conn:
                 temp_conn.close() # close connection after the test.
-
-                # Assign the new connection parameters to the variable, they will be added to the dropbox in the parent dialog.
                 self.conn_params = NewConnParams
-
                 # Store the new connection parameters for future use.
                 if self.checkBox.isChecked():
                     if self.store_conn_parameters():
@@ -202,14 +183,11 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
                         return None
                 else:
                     self.close()
-
-            except (Exception, psycopg2.Error) as error:
-                gen_f.critical_log(
-                    func=self.evt_btnTestConn_clicked,
-                    location=FILE_LOCATION,
-                    header="Attempting connection",
-                    error=error)
+            else:
+                # Nothing to close, there is no connection.
                 self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
+            
+        return None
 
 
     def evt_btnCancel_clicked(self) -> None:
