@@ -980,7 +980,7 @@ class QgisPackageUninstallWorker(QObject):
             temp_conn.rollback()
             fail_flag = True
             gen_f.critical_log(
-                func=self.uninstall_thread_qgis_pkg_current,
+                func=self.uninstall_thread_qgis_pkg_09,
                 location=FILE_LOCATION,
                 header="Establishing temporary connection",
                 error=error)
