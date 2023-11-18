@@ -19,17 +19,24 @@ from . import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
-def get_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> str:
+def get_3dcitydb_version(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CDB4DeleterDialog]) -> Optional[str]:
     """SQL query that reads and retrieves the 3DCityDB version.
 
     *   :returns: 3DCityDB version.
         :rtype: str
     """
+
     try:
         with dlg.conn.cursor() as cur:
             cur.execute("""SELECT version FROM citydb_pkg.citydb_version();""")
-            version: str = cur.fetchone()[0] # Tuple has trailing comma.
+            res = cur.fetchone()[0] # Tuple has trailing comma.
         dlg.conn.commit()
+
+        if res:
+            version: str
+            version = res
+        else:
+            version = None
 
         return version
 
@@ -58,11 +65,12 @@ def create_qgis_usr_schema_name(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CD
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            usr_schema: str = cur.fetchone()[0] # Trailing comma
+            res = cur.fetchone()[0] # Trailing comma
         dlg.conn.commit()
-
+        usr_schema: str = res
+        
         # Asign the value to the variable in the plugin
-        dlg.USR_SCHEMA = usr_schema
+        # dlg.USR_SCHEMA = usr_schema
 
         return usr_schema
 
