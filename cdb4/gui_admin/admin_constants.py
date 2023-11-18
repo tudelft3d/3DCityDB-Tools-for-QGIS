@@ -28,8 +28,10 @@ PG_VERSION_UNSUPPORTED_MSG: str = "Unsupported PostgreSQL version"
 CDB_FAIL_MSG: str = "3DCityDB is not installed"
 USER_PRIV_MSG: str = "Current user has {privs} privileges"
 INST_FAIL_VERSION_MSG: str = "Unsupported version of QGIS Package"
+INST_ONGOING_MSG: str = "Schema '{pkg}' being installed"
 INST_SUCC_MSG: str = "Schema '{pkg}' installed"
 INST_FAIL_MSG: str = "Schema '{pkg}' not installed"
+UNINST_ONGOING_MSG: str = "Schema '{pkg}' being uninstalled"
 UNINST_SUCC_MSG: str = "Schema '{pkg}' uninstalled"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
@@ -55,9 +57,14 @@ failure_html: str = icon_msg_core.format(
     color_hex='#FF0000',  # red
     additional_text='{text}')
 
+ongoing_html: str = icon_msg_core.format(
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
+    color_hex='#FF7E33',  # orange2
+    additional_text='{text}')
+
 warning_html: str = icon_msg_core.format(
     image_rc=':/plugins/citydb_loader/icons/warning_icon.svg',
-    color_hex='#FFA701',  # orange
+    color_hex='#FFA701',  # orange1
     additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(

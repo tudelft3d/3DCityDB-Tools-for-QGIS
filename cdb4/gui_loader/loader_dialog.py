@@ -52,7 +52,6 @@ from ..shared.dataTypes import BBoxType
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
-
 from ..shared.functions import general_functions as gen_f
 from ..shared.functions import sql as sh_sql
 from .functions import tab_conn_widget_functions as tc_wf
@@ -963,7 +962,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         # Set the label to the "ongoing" message
         # Upon successful layer creation, the label will be set accordingly.
-        self.lblLayerExist_out.setText(c.ongoing_html.format(text=c.REFR_LAYERS_ONGOING_MSG))
+        self.lblLayerExist_out.setText(c.ongoing_html.format(text=c.SCHEMA_LAYER_ONGOING_MSG))
 
         # Run the thread
         thr.run_create_layers_thread(dlg=self)
@@ -979,7 +978,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer refresh, the label will be set accordingly.
-            self.lblLayerRefr_out.setText(c.ongoing_html.format(text=c.SCHEMA_LAYER_ONGOING_MSG))
+            self.lblLayerRefr_out.setText(c.ongoing_html.format(text=c.REFR_LAYERS_ONGOING_MSG))
 
             # Run the thread
             thr.run_refresh_layers_thread(dlg=self)
@@ -1168,75 +1167,68 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         # NOTE: this built-in method works only for string types. 
         # Check https://qgis.org/api/qgscheckablecombobox_8cpp_source.html line 173
 
-        # Get the total number of features to be imported.
+        # Get the total number of features to be imported. Since the button has been pressed
+        # there is AT LEAST 1 layer to be imported.
+
         counter = 0
-        # layer: CDBLayer
         for layer in selected_layers:
             counter += layer.n_selected
 
         # Warn user when too many features are to be imported.
         if counter > self.settings.max_features_to_import_default:
-            msg: str = f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br>Do you want to continue anyway?"
+            msg: str = f"Many features ({counter}) within the selected area!<br>This could reduce QGIS performance and may lead to crashes.<br><br>Do you want to continue anyway?"
             res = QMessageBox.question(self, "Warning", msg)
-            if res == QMessageBox.Yes: # proceed and import layers
-                success = tl_f.add_selected_layers_to_ToC(dlg=self, layers=selected_layers)
-            else:
+            if res != QMessageBox.Yes:
                 return None # Import Cancelled
+
+        # Codelist settings and loading of the configs
+        sel_CityGML_codelist_set: str = self.cbxCodeListSelCityGML.currentData()
+        if sel_CityGML_codelist_set == "None":
+            # do nothing
+            pass
         else:
+            if any([not self.selectedCityGMLCodeListSet,                           # Nothing selected
+                    self.selectedCityGMLCodeListSet != sel_CityGML_codelist_set,   # Different selection from before
+                    ]):
+                # Set the new value
+                self.selectedCityGMLCodeListSet = sel_CityGML_codelist_set
+                # print("Working with Codelist set:", self.selectedCodeListSet)
+                # Initialize the enum_lookup_config_registry
+                tl_f.populate_codelist_config_registry(dlg=self, codelist_set_name=sel_CityGML_codelist_set)
 
-            # Codelist settings and loading of the configs
-            sel_CityGML_codelist_set: str = self.cbxCodeListSelCityGML.currentData()
-            if sel_CityGML_codelist_set == "None":
-                # do nothing
-                pass
-            else:
-                if any([not self.selectedCityGMLCodeListSet, self.selectedCityGMLCodeListSet != sel_CityGML_codelist_set]):
-                    # Set the new value
-                    self.selectedCityGMLCodeListSet = sel_CityGML_codelist_set
-                    # print("Working with Codelist set:", self.selectedCodeListSet)
-                    # Initialize the enum_lookup_config_registry
-                    tl_f.populate_codelist_config_registry(dlg=self, codelist_set_name=sel_CityGML_codelist_set)
+        # TODO: Add similar process for selected ADE codelist set
 
-            success = tl_f.add_selected_layers_to_ToC(dlg=self, layers=selected_layers)
+        num_imported_layers = tl_f.add_selected_layers_to_ToC(dlg=self, layers=selected_layers)
 
-            # TO DO
-            # 
-            # Add similar process for selected ADE codelist set
-            # 
-            # 
+        # Fix the layout of the layer tree only if something has been really imported
+        if num_imported_layers > 0:
+            # Structure 'Table of Contents' tree.
+            db_node = tl_f.get_citydb_node(dlg=self)
+            tl_f.sort_ToC(group=db_node)
+            tl_f.send_to_ToC_top(group=db_node)
 
-        if not success:
-            msg = "Something went wrong while importing the layer(s)"
-            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
-            return None
+            # Finally bring the Relief Feature type at the bottom of the ToC.
+            tl_f.send_to_ToC_bottom(node=QgsProject.instance().layerTreeRoot())
 
-        # Structure 'Table of Contents' tree.
-        db_node = tl_f.get_citydb_node(dlg=self)
-        tl_f.sort_ToC(group=db_node)
-        tl_f.send_to_ToC_top(group=db_node)
+            # Set CRS of the project to match the one of the 3DCityDB.
+            QgsProject.instance().setCrs(crs=self.CRS)
+            
+            # A final success message.
+            msg = "Layer(s) successfully imported"
+            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Success, notifyUser=True)
 
-        # Finally bring the Relief Feature type at the bottom of the ToC.
-        tl_f.send_to_ToC_bottom(node=QgsProject.instance().layerTreeRoot())
+            # When adding a new layer, the dv and lu tables are always expanded.
+            # To reduce the space "consumed" in the layer tree tab, 
+            # close all detail view groups and the look-up tables groups
+            # Additionally, unselect them, thus making the spatial layers in the dv invisible
 
-        # Set CRS of the project to match the one of the 3DCityDB.
-        QgsProject.instance().setCrs(crs=self.CRS)
-        
-        # A final success message.
-        msg = "Layer(s) successfully imported"
-        QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Success, notifyUser=True)
-
-        # When adding a new layer, the dv and lu tables are always expanded.
-        # To reduce the space "consumed" in the layer tree tab, 
-        # close all detail view groups and the look-up tables groups
-        # Additionally, unselect them, thus making the spatial layers in the dv invisible
-
-        dv_lu_nodes = tl_f.get_all_dv_and_lu_nodes(dlg=self)
-        if len(dv_lu_nodes) != 0:
-            for node in dv_lu_nodes:
-                # print(node.name())
-                if node.isExpanded():
-                    node.setExpanded(False)
-                    node.setItemVisibilityCheckedRecursive(False)
+            dv_lu_nodes = tl_f.get_all_dv_and_lu_nodes(dlg=self)
+            if len(dv_lu_nodes) != 0:
+                for node in dv_lu_nodes:
+                    # print(node.name())
+                    if node.isExpanded():
+                        node.setExpanded(False)
+                        node.setItemVisibilityCheckedRecursive(False)
 
         return None
 

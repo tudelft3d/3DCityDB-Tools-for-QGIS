@@ -74,7 +74,10 @@ def run_install_qgis_pkg_thread(dlg: CDB4AdminDialog, sql_scripts_path: str, qgi
 
     #-SIGNALS--(start)--################################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    # ...
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxUserInstCont.setDisabled(True))  
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))  
 
     # Execute worker's 'run' method.
     dlg.thread.started.connect(dlg.worker.install_thread)
@@ -87,7 +90,12 @@ def run_install_qgis_pkg_thread(dlg: CDB4AdminDialog, sql_scripts_path: str, qgi
     dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
-    # Reenable the GUI
+    # Re-enable the GUI
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxUserInstCont.setDisabled(False))  
+
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False)) 
+
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
@@ -337,11 +345,7 @@ def evt_qgis_pkg_install_success(dlg: CDB4AdminDialog, pkg: str) -> None:
         dlg.lblMainInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG + " (v. " + qgis_pkg_curr_version_txt + ")").format(pkg=dlg.QGIS_PKG_SCHEMA))
 
         # Inform user
-        QgsMessageLog.logMessage(
-                message=c.INST_SUCC_MSG.format(pkg=pkg),
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.MessageLevel.Success,
-                notifyUser=True)
+        QgsMessageLog.logMessage(message=c.INST_SUCC_MSG.format(pkg=pkg), tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Success, notifyUser=True)
 
         # Finish (re)setting up the GUI
         ti_wf.setup_post_qgis_pkg_installation(dlg)
@@ -368,11 +372,7 @@ def evt_qgis_pkg_install_fail(dlg: CDB4AdminDialog, pkg: str) -> None:
 
     # Inform user
     dlg.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MSG.format(pkg=pkg)))
-    QgsMessageLog.logMessage(
-            message=c.INST_FAIL_MSG.format(pkg=pkg),
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
+    QgsMessageLog.logMessage(message=c.INST_FAIL_MSG.format(pkg=pkg), tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
     # Drop corrupted installation.
     sql.drop_db_schema(dlg=dlg, schema=dlg.QGIS_PKG_SCHEMA, close_connection=False)
@@ -409,7 +409,10 @@ def run_uninstall_qgis_pkg_thread(dlg: CDB4AdminDialog) -> None:
 
     #-SIGNALS--(start)--################################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    # ...
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxUserInstCont.setDisabled(True))  
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))  
 
     # Execute worker's 'run' method.
     dlg.thread.started.connect(dlg.worker.uninstall_thread)
@@ -422,7 +425,12 @@ def run_uninstall_qgis_pkg_thread(dlg: CDB4AdminDialog) -> None:
     dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
-    # Reenable the GUI
+    # Re-enable the GUI
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxUserInstCont.setDisabled(False))  
+
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False)) 
+
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status
@@ -478,6 +486,7 @@ class QgisPackageUninstallWorker(QObject):
             print("Uninstalling QGIS Package v. [0.10.x]")
             # Initialize the FeatureTypeRegistry
             initialize_feature_type_registry(dlg=self.dlg)
+            # print("FeatureTypesRegistry initialized")
             # print(self.dlg.FeatureTypesRegistry)
 
             self.uninstall_thread_qgis_pkg_current()
@@ -1244,7 +1253,7 @@ class QgisPackageUninstallWorker(QObject):
                             self.sig_fail.emit()
                             break
 
-                print("Dropping details views: done")
+                print("Dropping detail views: done")
 
                 # 5) drop usr_schemas
                 if usr_schemas_num > 0:
@@ -1342,7 +1351,7 @@ class QgisPackageUninstallWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-                print("Dropping database groun: done")
+                print("Dropping database group: done")
 
                 # 9) drop qgis_pkg schema
                 query = pysql.SQL("""
@@ -1496,7 +1505,7 @@ def run_drop_usr_schema_thread(dlg: CDB4AdminDialog) -> None:
     dlg.worker.sig_finished.connect(dlg.worker.deleteLater)
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
-    # Reenable the GUI
+    # Re-enable the GUI
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     # On installation status

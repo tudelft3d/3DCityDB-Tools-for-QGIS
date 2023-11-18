@@ -89,14 +89,14 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # Reenable the GUI
-    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
 
-    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
     # 
     # Feature select, Create, Refresh, Drop, Buttons will be taken care by function tc_f.check_layers_status(dlg=dlg)
     # 
-    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
@@ -364,13 +364,13 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # (Re)Enable widgets.
-    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(False))
 
-    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
     
@@ -555,19 +555,17 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # (Re)Enable widgets.
+    dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
 
-    # dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
-    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
-
-    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
     
-    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+    dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
     
     dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))

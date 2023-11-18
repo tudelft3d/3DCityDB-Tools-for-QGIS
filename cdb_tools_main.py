@@ -51,7 +51,6 @@ from qgis.gui import QgisInterface
 from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
 from .shared.functions import shared_functions as sh_f
-# from .cdb4.gui_db_connector.functions import conn_functions as conn_f
 from .cdb4.gui_db_connector.other_classes import DBConnectionInfo
 
 
@@ -173,7 +172,7 @@ class CDBToolsMain:
         *   :returns: Translated version of message.
             :rtype: str
         """
-        return QCoreApplication.translate("3DCityDB Manager", message)
+        return QCoreApplication.translate("3DCityDB Tools", message)
 
 
     def add_action(self,
@@ -344,8 +343,8 @@ class CDBToolsMain:
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
-            # add_to_toolbar = True)
+            # add_to_toolbar = False) # Default: False (but useful to set it to True in development mode).
+            add_to_toolbar = True)
 
         # Add separator
         sep: QAction = QAction() # must create a new object every time!
