@@ -556,6 +556,10 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
+            # Set the label to the "ongoing" message
+            # Upon successful layer creation, the label will be set accordingly.
+            self.lblMainInst_out.setText(c.ongoing_html.format(text=c.INST_ONGOING_MSG.format(pkg=self.QGIS_PKG_SCHEMA)))
+            # Run the thread
             thr.run_install_qgis_pkg_thread(dlg=self, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=self.QGIS_PKG_SCHEMA)
 
         return None
@@ -567,6 +571,10 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
+            # Set the label to the "ongoing" message
+            # Upon successful layer creation, the label will be set accordingly.
+            self.lblMainInst_out.setText(c.ongoing_html.format(text=c.UNINST_ONGOING_MSG.format(pkg=self.QGIS_PKG_SCHEMA)))
+            # Run the thread
             thr.run_uninstall_qgis_pkg_thread(dlg=self)
 
         return None
@@ -712,6 +720,10 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
+            # Set the label to the "ongoing" message
+            # Upon successful layer creation, the label will be set accordingly.
+            self.lblUserInst_out.setText(c.ongoing_html.format(text=c.INST_ONGOING_MSG.format(pkg=self.USR_SCHEMA)))
+            # Run the thread
             sql.create_qgis_usr_schema(dlg=self)
         if not res: # Query was canceled by user, or error occurred.
             return None
@@ -785,7 +797,10 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
-            # Run scripts
+            # Set the label to the "ongoing" message
+            # Upon successful layer creation, the label will be set accordingly.
+            self.lblUserInst_out.setText(c.ongoing_html.format(text=c.UNINST_ONGOING_MSG.format(pkg=self.USR_SCHEMA)))
+            # Run the thread
             thr.run_drop_usr_schema_thread(dlg=self)
         else: # Query was cancelled by user, or error occurred.
             return None
