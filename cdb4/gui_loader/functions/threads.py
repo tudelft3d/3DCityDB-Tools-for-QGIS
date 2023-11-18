@@ -62,10 +62,18 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
 
     #-SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
-    dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
@@ -81,6 +89,15 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # Reenable the GUI
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
+
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+    # 
+    # Feature select, Create, Refresh, Drop, Buttons will be taken care by function tc_f.check_layers_status(dlg=dlg)
+    # 
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
@@ -163,7 +180,7 @@ class CreateLayersWorker(QObject):
 
         try:
             # Open new temp session
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Create layers and detail views)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Create layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -322,10 +339,16 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
 
     #-SIGNALS---(start)--################################################################
     # Disable widgets to avoid queuing signals.
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
@@ -341,12 +364,16 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(dlg.thread.deleteLater)
 
     # (Re)Enable widgets.
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
 
-    # dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(False))
-    # dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(False))
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
+    
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     dlg.worker.sig_finished.connect(lambda: evt_refresh_layers_success(dlg))
@@ -391,7 +418,7 @@ class RefreshLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for mat refresh.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Refresh layers)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Refresh layers)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -501,10 +528,18 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
 
     #-SIGNALS--(start)--################################################################
     # Disable widgets to avoid queuing signals.
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnCreateLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnDropLayers.setDisabled(True))
+
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
+
     dlg.thread.started.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.tabSettings.setDisabled(True))
 
@@ -522,10 +557,18 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # (Re)Enable widgets.
 
     # dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
+    dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(False))
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(False))
+
+    dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(False))
+
     dlg.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
+    
+    dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(False))
+    
     dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
@@ -583,7 +626,7 @@ class DropLayersWorker(QObject):
 
         try:
             # Open new temp session, reserved for dropping layers.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Drop layers and detail views)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Drop layers and detail views)"]))
             with temp_conn:
 
                 # Start measuring time
