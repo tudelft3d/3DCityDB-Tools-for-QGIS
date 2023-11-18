@@ -2,7 +2,7 @@
 These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union, cast, Iterable
+from typing import TYPE_CHECKING, Union, cast, Iterable, Optional
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ..other_classes import FeatureType, CDBDetailView, EnumConfig 
@@ -198,7 +198,7 @@ def send_to_ToC_top(group: QgsLayerTreeGroup) -> None:
 
 def send_to_ToC_bottom(node: QgsLayerTreeGroup) -> None:
     """Function that send the input group to the bottom of the project's 'Table of Contents' tree.
-    #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
+    # NOTE: this function could be generalized to accept ToC index location as a parameter (int).
     """
     group = None
     names = [child.name() for child in node.children()]
@@ -402,11 +402,8 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     if rel.isValid(): # Success
         QgsProject.instance().relationManager().addRelation(rel)
     else:
-        QgsMessageLog.logMessage(
-            message=f"Invalid relation: {rel.name()}",
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.Critical,
-            notifyUser=True)
+        msg: str = f"Invalid relation: {rel.name()}"
+        QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
     # ###############################################
     # Now start working on the form attached to the layer
@@ -490,11 +487,8 @@ def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorL
         if rel.isValid(): # Success
             QgsProject.instance().relationManager().addRelation(rel)
         else:
-            QgsMessageLog.logMessage(
-                message=f"Invalid relation: {rel.name()}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Critical,
-                notifyUser=True)
+            msg: str = f"Invalid relation: {rel.name()}"
+            QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
         # Now set up the tab in the qml tab of the attribute form attached to the layer
         if dlg.settings.enable_ui_based_forms is False:
@@ -575,11 +569,8 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
         if rel.isValid(): # Success
             QgsProject.instance().relationManager().addRelation(rel)
         else:
-            QgsMessageLog.logMessage(
-                message=f"Invalid relation: {rel.name()}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Critical,
-                notifyUser=True)
+            msg: str = f"Invalid relation: {rel.name()}"
+            QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
         # Now set up the tab in the qml tab of the attribute form attached to the layer
         if dlg.settings.enable_ui_based_forms is False:
@@ -726,15 +717,11 @@ def add_lookup_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
             if layer or layer.isValid(): # Success
                 lookups_node.addLayer(layer)
                 QgsProject.instance().addMapLayer(layer, False)
-                # QgsMessageLog.logMessage(
-                #     message=f"Look-up table import: {cdb_schema}_{lookup_table}",
-                #     tag=dlg.PLUGIN_NAME,
-                #     level=Qgis.Success, notifyUser=True)
+                # msg: str = f"Look-up table import: {cdb_schema}_{lookup_table}"
+                # QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             else: # Fail
-                QgsMessageLog.logMessage(
-                    message=f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}",
-                    tag=dlg.PLUGIN_NAME,
-                    level=Qgis.Critical, notifyUser=True)
+                msg: str = f"Look-up table failed to properly load: {cdb_schema}_{lookup_table}"
+                QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
     # After loading all look-ups, sort them by name.
     sort_ToC(lookups_node)
@@ -804,11 +791,8 @@ def add_detail_view_tables_to_ToC(dlg: CDB4LoaderDialog) -> None:
                 QgsProject.instance().addMapLayer(dv_layer, False)
 
             else:
-                QgsMessageLog.logMessage(
-                    message=f"Detail view '{dv.name}' is not valid",
-                    tag=dlg.PLUGIN_NAME,
-                    level=Qgis.Critical,
-                    notifyUser=True)
+                msg: str = f"Detail view '{dv.name}' is not valid"
+                QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
     return None
 
@@ -844,28 +828,27 @@ def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVecto
     return new_layer
     
 
-def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
+def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) -> int:
     """Function to imports the selected layer(s) in the user's qgis project.
 
     *   :param layers: A list containing View object that correspond to the server views.
         :type layers: list(CDBLayer)
 
-    *   :returns: The import attempt result
-        :rtype: bool
+    *   :returns: The number of actually imported layers (excluding those already loaded)
+        :rtype: int
+
     """
+    import_counter: int = 0
     if not layers:
         # nothing to do
-        return None # Exit
+        return import_counter # Exit with zero imported layers.
 
     # Just to shorten the variables names.
     db = dlg.DB
     cdb_schema: str = dlg.CDB_SCHEMA
 
     root = QgsProject.instance().layerTreeRoot()
-
     node_cdb: QgsLayerTreeGroup = root.findGroup(db.db_toc_node_label)
-    # node_cdb: QgsLayerTreeGroup = root.findGroup(db.database_name)
-
     node_cdb_schema: QgsLayerTreeGroup = None
     node_featureType: QgsLayerTreeGroup = None
     node_feature: QgsLayerTreeGroup = None
@@ -896,7 +879,6 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
     else:
         node_cdb = add_group_node_to_ToC(root, db.db_toc_node_label)
-        # node_cdb = add_group_node_to_ToC(root, db.database_name)
         node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
 
     # Load the generic attributes table if it is not already loaded 
@@ -904,7 +886,8 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_dv = add_group_node_to_ToC(node_cdb_schema, c.detail_views_group_alias)
         add_detail_view_tables_to_ToC(dlg)
     else:
-        # QgsMessageLog.logMessage(f"Generic attributes table already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        # msg: str = "Generic attributes table already loaded: skipping"
+        # QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
         pass
 
     # Load the look-up tables if they are not already loaded 
@@ -912,11 +895,11 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         node_lookup = add_group_node_to_ToC(node_cdb_schema, c.lookup_tables_group_alias) 
         add_lookup_tables_to_ToC(dlg)
     else:
-        # QgsMessageLog.logMessage(f"Look-up tables already loaded: skipping", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+        # msg: str = "Look-up tables already loaded: skipping"
+        # QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
         pass
 
     # Start loading the selected layer(s)
-    layer: CDBLayer
     for layer in layers:
         # Check if the layer has already been loaded before
         layer_found = False
@@ -926,13 +909,16 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             if node_feature:
                 node_lod = node_feature.findGroup(layer.lod)
                 if node_lod:
-                    existing_layers: list = node_lod.findLayers()
+                    existing_layers = node_lod.findLayers()
                     for existing_layer in existing_layers:
                         if existing_layer.name() == layer.layer_name:
                             layer_found = True
 
         if layer_found:
-            QgsMessageLog.logMessage(f"Layer {layer.layer_name} already in Layer Tree: skip reloading", dlg.PLUGIN_NAME, level=Qgis.Info, notifyUser=True)
+            msg: str = f"Layer {layer.layer_name} already in Layer Tree: skip reloading"
+            QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+            # Memory refresher: The "continue" statement rejects all the remaining statements
+            # in the current iteration of the loop and moves the control back to the top of the loop
             continue
 
         # Build the Table of Contents Tree or Restructure it.
@@ -943,11 +929,8 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
         if new_layer or new_layer.isValid(): # Success
             pass
         else: # Fail
-            QgsMessageLog.logMessage(
-                message=f"Failed to properly load: {layer.layer_name}",
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.Critical,
-                notifyUser=True)
+            msg: str = f"Failed to properly load: {layer.layer_name}"
+            QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             return False
 
         # Set the layer as read-only if the current cdb_schema is read only
@@ -955,31 +938,22 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
             new_layer.setReadOnly()
 
         ###########################################################################################
-        # To switch to "normal" (old) forms, simply set the value to FALSE in the dlg.settings.
-        # You can also hard-code it as default in class LoaderDefaultSettings (see other_classes.py)
-        #
-        # This is for allowing the plugin to work "as usual" while we test and implement the ui-based forms
-        # (which takes place in the "else" part of this switch)
+        # To use "normal" (old) forms, simply set the value to FALSE in the dlg.settings.
+        # See the default in class LoaderDefaultSettings (see other_classes.py)
         ###########################################################################################
         if dlg.settings.enable_ui_based_forms is False:
-            # print("using old-style forms")
-
             # Attach 'attribute form' from QML file.
             if layer.qml_form:
                 new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
-                #new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
-
                 # otherwise: categories=QgsMapLayer.AllStyleCategories
 
             # Attach 'symbology' from QML file.
             if layer.qml_symb:
-                #new_layer.loadNamedStyle(layer.qml_symb_with_path, categories=QgsMapLayer.Symbology)
                 new_layer.loadNamedStyle(layer.qml_symb_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology)
 
             if dlg.cbxEnable3D.isChecked():
                 # Attach '3d symbology' from QML file.
                 if layer.qml_3d:
-                    #new_layer.loadNamedStyle(layer.qml_3d_with_path, categories=QgsMapLayer.Symbology3D)
                     new_layer.loadNamedStyle(layer.qml_3d_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology3D)
             else:
                 # Deactivate 3D renderer to avoid crashes and slow downs.
@@ -1008,81 +982,14 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list) -> bool:
                 # Setup the relations for this layer to the look-up tables
                 create_layer_relation_to_enumerations(dlg, layer=new_layer, layer_metadata=layer)
                 create_layer_relation_to_codelists(dlg, layer=new_layer, layer_metadata=layer)
-        # #############################################################
-        # EXPERIMENTAL, TO TEST THE NEW UI-BASED FORMS
-        #
-        # At the moment, only layers of class "Building" are affected.
-        # All other layers still get the "old" forms.
-        # This will chance once we are done with the test phase.
-        #
-        ###############################################################
+            
+            # Finally, increment the counter after loading the layer and all the associated stuff
+            import_counter += 1
+
         else:
-            # print("using new ui-style forms (only for building at the moment)")
+            # This is where we may decide to deal with ui-based attribute forms
+            pass
 
-            if layer.curr_class in ["Building", "BuildingPart"]:
-
-                # attach the UI-based form file
-                if layer.qml_form:
-                    #new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
-                    new_layer.loadNamedStyle(theURI=layer.qml_ui_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
-                    # otherwise: categories=QgsMapLayer.AllStyleCategories
-
-                    layer_configuration = new_layer.editFormConfig()
-                    # print("uiForm path", layer_configuration.uiForm()) # The placeholder one written in the ui-file
-                    layer_configuration.setUiForm(ui=layer.ui_file_with_path)
-                    # print("uiForm path", layer_configuration.uiForm()) # The full path to the one on the local machine
-                    #
-                    # All other changes to the settings?
-                    # print("layout", layer_configuration.layout())
-                    # layout: 1 = TabLayout
-                    # layout: 2 = UiFileLayout
-                    #
-                    new_layer.setEditFormConfig(layer_configuration) # Necessary!
- 
-            else:
-                # Attach 'attribute form' from QML file.
-                if layer.qml_form:
-                    #new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, categories=QgsMapLayer.Fields|QgsMapLayer.Forms)
-                    new_layer.loadNamedStyle(theURI=layer.qml_form_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Fields|QgsMapLayer.StyleCategory.Forms)
-                    # otherwise: categories=QgsMapLayer.AllStyleCategories
-
-            # This is the common part
-
-            # Attach '2D symbology' from QML file.
-            if layer.qml_symb:
-                new_layer.loadNamedStyle(theURI=layer.qml_symb_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology)
-
-            if dlg.cbxEnable3D.isChecked():
-                # Attach '3D symbology' from QML file.
-                if layer.qml_3d:
-                    new_layer.loadNamedStyle(theURI=layer.qml_3d_with_path, loadFromLocalDb=False, categories=QgsMapLayer.StyleCategory.Symbology3D)
-            else:
-                # Deactivate 3D renderer to avoid crashes and slow downs.
-                new_layer.setRenderer3D(None)
-
-            # Insert the layer to the assigned group
-            node_lod.addLayer(new_layer)
-            QgsProject.instance().addMapLayer(new_layer, False)
-
-            # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-            if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
-
-                if layer.curr_class in ["Building", "BuildingPart"]:
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bdg")
-                elif layer.curr_class == "BuildingDoor":
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bdg_door")
-                if layer.curr_class in ["Bridge", "BridgePart"]:
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bri")
-                elif layer.curr_class == "BridgeDoor":
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bri_door")
-        
-                # Now, for all layers that are CityObjects
-                create_layer_relation_to_dv_gen_attrib(dlg, layer=new_layer)
-                create_layer_relation_to_dv_ext_ref(dlg, layer=new_layer)
-
-                # Setup the relations for this layer to the look-up (enumeration) tables
-                create_layer_relation_to_enumerations(dlg, layer=new_layer)
-
-        ####################################################################
-
-    return True # All went well
+    # Return the number of layers that have been really loaded.
+    # print(f"Imported {import_counter} layers into QGIS")
+    return import_counter 
