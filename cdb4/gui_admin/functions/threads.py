@@ -1221,7 +1221,7 @@ class QgisPackageUninstallWorker(QObject):
                             SELECT {_qgis_pkg_schema}.drop_detail_view({_usr_schema},{_cdb_schema} );
                             """).format(
                             _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                            _usr_schema = pysql.Literal(usr_name),
+                            _usr_schema = pysql.Literal(usr_schema),
                             _cdb_schema = pysql.Literal(cdb_schema)
                             )
 
