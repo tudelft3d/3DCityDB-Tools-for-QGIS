@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Union
 if TYPE_CHECKING:
     from ....cdb_tools_main import CDBToolsMain
     from ...gui_admin.admin_dialog import CDB4AdminDialog
@@ -8,100 +8,22 @@ if TYPE_CHECKING:
 
 import psycopg2
 from psycopg2.extensions import connection as pyconn
-from qgis.core import QgsSettings
+# from qgis.core import QgsSettings
 
 from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
 
 from .... import cdb_tools_main_constants as main_c
 from ...shared.functions import general_functions as gen_f
 from ..other_classes import DBConnectionInfo
-from . import sql
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 
-def list_qgis_postgres_stored_conns() -> Optional[list[tuple[str, dict]]]:
-    """Function that reads the QGIS user settings to look for existing connections
-    It results in a list[tuple[str, dict]]
-    """
-    # Create a QgsSettings object to access the settings
-    qgis_settings = QgsSettings()
-
-    # Navigate to PostgreSQL connection settings
-    qgis_settings.beginGroup(prefix='PostgreSQL/connections')
-
-    # Get all stored connection names
-    stored_conn_list = qgis_settings.childGroups()
-    # print('stored_connections', stored_connections)
-
-    stored_conns = []
-
-    # Get database connection settings for every stored connection
-    for stored_conn in stored_conn_list:
-
-        db_conn_info_dict = dict()
-
-        qgis_settings.beginGroup(prefix=stored_conn)
-        # Populate the object BEGIN
-        db_conn_info_dict['database']          = qgis_settings.value(key='database')
-        db_conn_info_dict['host']              = qgis_settings.value(key='host')
-        db_conn_info_dict['port']              = qgis_settings.value(key='port')
-        db_conn_info_dict['username']          = qgis_settings.value(key='username')
-        db_conn_info_dict['password']          = qgis_settings.value(key='password')
-        db_conn_info_dict['db_toc_node_label'] = qgis_settings.value(key='database') + " @ " + qgis_settings.value(key='host') + ":" + str(qgis_settings.value(key='port'))
-
-        print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
-
-        # Populate the object END
-        qgis_settings.endGroup()
-
-        t: tuple[str, dict] = (stored_conn, db_conn_info_dict)
-        stored_conns: list[tuple[str, dict]]
-        stored_conns.append(t)
-    
-    stored_conns.sort()
-    # stored_conns.sort(reverse=True)
-    # print(stored_conns)
-
-    return stored_conns
-
-
-def fill_connection_list_box(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], 
-                             stored_conns: Optional[list[tuple[str, dict]]] = None
-                             ) -> None:
-    """Function that fills the the 'cbxExistingConn' combobox
-    """
-    # Clear the contents of the comboBox from previous runs
-    dlg.cbxExistingConn.clear()
-
-    if stored_conns:
-        # Get database connection settings for every stored connection
-        for stored_conn_name, stored_conn_params in stored_conns:
-
-            label: str = stored_conn_name
-            # Create object
-            db_conn_info = DBConnectionInfo()
-            # Populate the object attributes BEGIN
-            db_conn_info.connection_name   = label
-            db_conn_info.database_name     = stored_conn_params['database']
-            db_conn_info.host              = stored_conn_params['host']
-            db_conn_info.port              = stored_conn_params['port']
-            db_conn_info.username          = stored_conn_params['username']
-            db_conn_info.password          = stored_conn_params['password']
-            db_conn_info.db_toc_node_label = stored_conn_params['db_toc_node_label']
-            # db_conn_info.db_toc_node_label = stored_conn_params['database'] + " @ " + stored_conn_params['host'] + ":" +  str(stored_conn_params['port'])
-            # Populate the object attributes END
-
-            dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
-    
-    return None
-
-
-def create_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
+def open_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c.PLUGIN_NAME_LABEL) -> pyconn:
     """Create a new database session and returns a new instance of the psycopg connection class.
 
-    *   :param db: The connection custom object
-        :rtype: Connection
+    *   :param db_connection: The connection custom object
+        :rtype: DBConnectionInfo
  
     *   :param app_name: A name for the session
         :rtype: str
@@ -123,37 +45,32 @@ def create_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c
     
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
-            func=create_db_connection,
+            func=open_db_connection,
             location=FILE_LOCATION,
             header="Invalid connection settings",
             error=error)
 
 
-def open_connection(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], app_name: str = main_c.PLUGIN_NAME_LABEL) -> bool:
-    """Opens a connection using the parameters stored in dlg.DB
-    and retrieves the server version. The server version is stored
-    in 'pg_server_version' attribute of the Connection object.
+def get_posgresql_server_version(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog]) -> str:
+    """SQL query that reads and retrieves the server version.
 
-    *   :param app_name: A name for the session
+    *   :returns: PostgreSQL server version as string (e.g. 14.6)
         :rtype: str
-
-    *   :returns: connection attempt results
-        :rtype: bool
     """
-    dlg.conn: pyconn = None
-    
-    # Open and set the connection.
-    dlg.conn = create_db_connection(db_connection=dlg.DB, app_name=app_name)
-    
-    if dlg.conn:
-        dlg.conn.commit() # This seems redundant.
-        # Get server version.
-        version = sql.get_posgresql_server_version(dlg=dlg)
-        # Store version into the connection object.
-        dlg.DB.pg_server_version = version
-        return True
-    else:
-        return False
+    try:
+        with dlg.conn.cursor() as cur:
+            cur.execute(query="""SHOW server_version;""")
+            version = str(cur.fetchone()[0]) # Tuple has trailing comma.
+        dlg.conn.commit()
+        return version
+
+    except (Exception, psycopg2.Error) as error:
+        dlg.conn.rollback()
+        gen_f.critical_log(
+            func=get_posgresql_server_version,
+            location=FILE_LOCATION,
+            header="Retrieving PostgreSQL server version",
+            error=error)
 
 
 def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog], cdbMain: CDBToolsMain) -> bool:

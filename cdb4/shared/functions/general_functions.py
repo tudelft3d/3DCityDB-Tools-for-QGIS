@@ -64,9 +64,5 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
     header = f"{header} ERROR at {location}<br> ERROR: "
 
     # Show the error in the log panel. Should open it even if it is closed.
-    QgsMessageLog.logMessage(
-        message=header + str(error),
-        tag=main_c.PLUGIN_NAME_LABEL,
-        level=Qgis.MessageLevel.Critical,
-        notifyUser=True)
+    QgsMessageLog.logMessage(message=header + str(error), tag=main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Critical, notifyUser=True)
 

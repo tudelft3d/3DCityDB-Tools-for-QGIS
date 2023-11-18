@@ -42,9 +42,9 @@ from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
-from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QThread
-from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
+from qgis.PyQt.QtWidgets import QDialog, QMessageBox, QProgressBar, QVBoxLayout
 
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_db_connector.functions import conn_functions as conn_f
@@ -62,7 +62,7 @@ from . import admin_constants as c
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_admin_dialog.ui"))
 
-class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
+class CDB4AdminDialog(QDialog, FORM_CLASS):
     """Administrator Dialog class of the plugin. The GUI is imported from an external .ui xml
     """
 
@@ -315,13 +315,12 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         #       if no: continue and offer to install
         # -------------------------------------------------------------------------------------------
 
-        # 1) Can I connect to the database?
+        # 1) Can I connect to the database? If yes, continue
+        # Attempt to connect to the database
+        self.conn = conn_f.open_db_connection(db_connection=self.DB, app_name = self.PLUGIN_NAME)
 
-        # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
-        # Additionally, set self.DB.pg_server_version
-        is_connection_successful = conn_f.open_connection(self, self.DLG_NAME_LABEL)
-
-        if is_connection_successful:
+        if self.conn:
+            self.DB.pg_server_version = conn_f.get_posgresql_server_version(dlg=self)
             # Set/update the status check variable
             self.checks.is_conn_successful = True
 
@@ -333,7 +332,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.btnCloseConn.setDisabled(False)
             
             # Get the PosgreSQL version (i.e. v. 10.0)
-            postgres_major_version: int = int(db.pg_server_version.split(".")[0])
+            postgres_major_version = int(db.pg_server_version.split(".")[0])
 
             #######################################
             # Only for debugging purposes
@@ -350,7 +349,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.lblPostInst_out.setText(c.failure_html.format(text=c.PG_VERSION_UNSUPPORTED_MSG))
 
                 # Inform the user
-                msg = f"You are connecting to PostgreSQL version {db.pg_server_version}. This version is not supported anymore, you need version {c.PG_MIN_VERSION} or higher."
+                msg = f"You are connecting to PostgreSQL v. {db.pg_server_version}. This version is not supported anymore, you need v. {c.PG_MIN_VERSION} or higher."
                 QMessageBox.critical(self, "Unsupported PostgreSQL version", msg)
 
                 ti_wf.tabInstall_reset(dlg=self)
@@ -371,7 +370,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.lblUserPrivileges_out.setText(c.failure_html.format(text=c.USER_PRIV_MSG.format(privs="no superuser")))
 
                 # Inform the user
-                msg = f"User '{db.username}' is not a database superuser. Please contact your database administrator."
+                msg = f"User '{db.username}' is not a database superuser.<br><br>Please contact your database administrator."
                 QMessageBox.critical(self, "Insufficient user privileges", msg)
 
                 ti_wf.tabInstall_reset(dlg=self)
@@ -389,7 +388,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
 
             # Inform the user
-            msg = "The selected connection to the PostgreSQL server cannot be established. Please check whether it is still valid: the connection parameters may have to be updated!"
+            msg = "The selected connection to the PostgreSQL server cannot be established.<br><br>Please check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
             ti_wf.tabInstall_reset(dlg=self)
@@ -399,21 +398,15 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
 
             return None # Exit
 
-        # 2) Is the 3DCityDB installed? 
+        # 2) Is the 3DCityDB installed?
+        # Store version into the connection object.
+        self.DB.citydb_version = sh_sql.get_3dcitydb_version(dlg=self)
 
-        # Check that database has 3DCityDB installed.
-        is_3dcitydb_installed = sql.is_3dcitydb_installed(dlg=self)
-
-        ###########################################
-        # Only for debugging purposes
-        # is_3dcitydb_installed = False
-        ###########################################
-
-        if is_3dcitydb_installed:
+        if self.DB.citydb_version:
             # Set/update the status check variable
             self.checks.is_3dcitydb_installed = True
 
-            citydb_version_major: int = int(db.citydb_version.split(".")[0])
+            citydb_version_major = int(db.citydb_version.split(".")[0])
 
             #####################################
             # Only for debugging purposes
@@ -433,7 +426,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Set the label in the Connection Groupbox (Missing citydb installation)
                 self.lbl3DCityDBInst_out.setText(c.crit_warning_html.format(text=f"{db.citydb_version} (required v. {c.CDB_MIN_VERSION_MAJOR}.x)"))
 
-                msg = f"The 3D City Database installed in this database is v. {db.citydb_version} and it is not supported. You need 3D City Database v. {c.CDB_MIN_VERSION_MAJOR}.x."
+                msg = f"The 3D City Database installed in this database is v. {db.citydb_version} and is not supported. You need 3D City Database v. {c.CDB_MIN_VERSION_MAJOR}.x."
                 QMessageBox.critical(self, "Unsupported 3D City Database version", msg)
 
                 ti_wf.tabInstall_reset(dlg=self)
@@ -442,6 +435,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.conn.close()
 
                 return None
+
         else:
             # Set/update the status check variable
             self.checks.is_3dcitydb_installed = False
@@ -524,8 +518,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 # print('self.GROUP_NAME:', self.GROUP_NAME)
 
                 # Set the current user schema name for the current db admin user (e.g. postgres)
-                # self.USR_SCHEMA is now set.
-                sh_sql.create_qgis_usr_schema_name(dlg=self)
+                self.USR_SCHEMA = sh_sql.create_qgis_usr_schema_name(dlg=self)
                 # print('self.USR_SCHEMA:', self.USR_SCHEMA)
 
                 # Finish setting up the GUI
@@ -543,9 +536,8 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.btnMainUninst.setDisabled(False)
 
                 # Inform the user
-                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported anymore.<br>Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
+                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported.<br>Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
                 QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
-                # QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning)
 
         else:  # QGIS Package is not installed
             # Set/update the status check variable
@@ -561,7 +553,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnMainInst_clicked(self) -> None:
         """Event that is called when the 'Install to database' pushButton (btnMainInst) is pressed.
         """
-        msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced! Do you want to proceed?"
+        msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
             thr.run_install_qgis_pkg_thread(dlg=self, sql_scripts_path=c.PG_SCRIPTS_INST_PATH, qgis_pkg_schema=self.QGIS_PKG_SCHEMA)
@@ -572,7 +564,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnMainUninst_clicked(self) -> None:
         """Event that is called when the 'Uninstall from database' pushButton (btnMainUninst) is pressed.
         """
-        msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'! Do you want to proceed?"
+        msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
             thr.run_uninstall_qgis_pkg_thread(dlg=self)
@@ -602,7 +594,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         ti_wf.fill_plugin_users_box(dlg=self, usr_names=usr_names)
 
         # Inform user
-        msg = f"User '{usr_name}' has been succesfully added to the database group '{self.GROUP_NAME}'"
+        msg = f"User '{usr_name}' has been succesfully added to the database group '{self.GROUP_NAME}'."
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info)
 
         return None
@@ -627,7 +619,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # Create the corresponding usr_schema, add the usr_name to the group (if it is not yet member), 
         # set it to the self.USR_SCHEMA
-        sh_sql.create_qgis_usr_schema_name(dlg=self, usr_name=usr_name)
+        self.USR_SCHEMA = sh_sql.create_qgis_usr_schema_name(dlg=self, usr_name=usr_name)
     
         # Set the labels of the buttons
         # self.btnUsrInst.setText(self.btnUsrInst.init_text.format(usr=usr_name))
@@ -652,9 +644,6 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             # Enable privileges groupbox
             self.gbxPriv.setDisabled(False)
 
-            # Retrieve the list of cdb_schemas with their privileges status
-            # cdb_schemas_with_priv = sql.exec_list_cdb_schemas_with_privileges(self, usr_name)
-            
             # Retrieve the list of cdb_schemas with their privileges status
             # Function returns a list of named tuples (cdb_schema, co_number, priv_type)
             cdb_schemas = sql.list_cdb_schemas_privs(dlg=self, usr_name=usr_name)
@@ -713,7 +702,6 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         # Inform user
         msg = f"User '{usr_name}' has been succesfully removed from group '{self.GROUP_NAME}'"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info)
-        # QMessageBox.information(self, "User added!", msg)
 
         return None
 
@@ -721,7 +709,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnUsrInst_clicked(self) -> None:
         """Event that is called when the 'Create schema for user' pushButton (btnUsrInst) is pressed.
         """
-        msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced! Do you want to proceed?"
+        msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
             sql.create_qgis_usr_schema(dlg=self)
@@ -794,7 +782,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the 'Drop schema for user' pushButton
         (btnUsrUninst) is pressed.
         """
-        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br>Do you want to proceed?"
+        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br><br>Do you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
             # Run scripts
@@ -865,21 +853,21 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', privileges revoked from ALL citydb schemas."            
             else: 
-                msg = f"For user '{sel_usr_name}', privileges revoked from citydb schemas: {sel_cdb_schemas}"  
+                msg = f"For user '{sel_usr_name}', privileges revoked from citydb schemas: {sel_cdb_schemas}."  
 
         elif selected_priv == "Grant Read-only":
             sql.grant_qgis_usr_privileges(self, usr_name=sel_usr_name, priv_type=CDBPrivType.READ_ONLY, cdb_schemas=sel_cdb_schemas)
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', read-only privileges granted to ALL citydb schemas."            
             else: 
-                msg = f"For user '{sel_usr_name}', read-only privileges granted to citydb schemas: {sel_cdb_schemas}"  
+                msg = f"For user '{sel_usr_name}', read-only privileges granted to citydb schemas: {sel_cdb_schemas}."  
 
         elif selected_priv == "Grant Read & Write":
             sql.grant_qgis_usr_privileges(self, usr_name=sel_usr_name, priv_type=CDBPrivType.READ_WRITE, cdb_schemas=sel_cdb_schemas)
             if not sel_cdb_schemas:
                 msg = f"For user '{sel_usr_name}', read & write privileges granted to ALL citydb schemas."            
             else: 
-                msg = f"For user '{sel_usr_name}', read & write privileges granted to citydb schemas: {sel_cdb_schemas}"  
+                msg = f"For user '{sel_usr_name}', read & write privileges granted to citydb schemas: {sel_cdb_schemas}."  
 
 
         # Retrieve again the list of cdb_schemas and their privileges status
@@ -901,6 +889,7 @@ class CDB4AdminDialog(QtWidgets.QDialog, FORM_CLASS):
         """
         ts_wf.tabSettings_reset(dlg=self)
         ti_wf.tabInstall_reset(dlg=self)
+        
         # Close the current open connection.
         if self.conn is not None:
             self.conn.close()

@@ -41,9 +41,9 @@ from psycopg2.extensions import connection as pyconn
 from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 
-from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QThread
-from qgis.PyQt.QtWidgets import QMessageBox, QProgressBar, QVBoxLayout
+from qgis.PyQt.QtWidgets import QDialog, QMessageBox, QProgressBar, QVBoxLayout
 
 from ..gui_db_connector.db_connector_dialog import DBConnectorDialog
 from ..gui_geocoder.geocoder_dialog import GeoCoderDialog
@@ -61,7 +61,7 @@ from . import deleter_constants as c
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "cdb4_deleter_dialog.ui"))
 
-class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
+class CDB4DeleterDialog(QDialog, FORM_CLASS):
     """User Dialog class of the plugin.
     The GUI is imported from an external .ui xml
     """
@@ -126,14 +126,14 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         self.CRS_is_geographic: bool = None    # Will be True if we are using lon lat in the database, False if we use projected coordinates
  
         # Variable to store the selected extents.
-        self.CURRENT_EXTENTS: QgsRectangle = cdbMain.iface.mapCanvas().extent()
+        self.CURRENT_EXTENTS = cdbMain.iface.mapCanvas().extent()
         # Variable to store the extents of the selected cdb_schema
         self.CDB_SCHEMA_EXTENTS = QgsRectangle()
         # Variable to store the extents of the delete extents
         self.DELETE_EXTENTS = QgsRectangle()
 
         # Variable to store an additional canvas (to show the extents in the CONNECTION TAB).
-        self.CANVAS: QgsMapCanvas = QgsMapCanvas()
+        self.CANVAS = QgsMapCanvas()
         self.CANVAS.enableAntiAliasing(True)
         self.CANVAS.setMinimumWidth(300)
         self.CANVAS.setMaximumHeight(350)
@@ -359,18 +359,17 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # -------------------------------------------------------------------------------------------
 
         # 1) Can I connect to the database? If yes, continue
+        # Attempt to connect to the database
+        self.conn = conn_f.open_db_connection(db_connection=self.DB, app_name = self.PLUGIN_NAME)
 
-        # Attempt to connect to the database, returns True/False, and if successful, store connection in self.conn
-        # Additionally, set self.DB.pg_server_version
-        is_connection_successful: bool = conn_f.open_connection(dlg=self)
-
-        if is_connection_successful:
+        if self.conn:
+            # Set self.DB.pg_server_version
+            self.DB.pg_server_version = conn_f.get_posgresql_server_version(dlg=self)
             # Show database name
             self.lblConnToDb_out.setText(c.success_html.format(text=" AS ".join([self.DB.db_toc_node_label, self.DB.username])))
-            # self.lblConnToDb_out.setText(c.success_html.format(text=self.DB.database_name))
             self.checks.is_conn_successful = True
 
-            if self.DB.pg_server_version is not None:
+            if self.DB.pg_server_version:
                 # Show server version
                 self.lblPostInst_out.setText(c.success_html.format(text=self.DB.pg_server_version))
             else:
@@ -395,6 +394,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             return None # Exit
 
         # 2) Can I connect to the qgis_pkg (and access its functions?) If yes, continue.
+        # Check if the qgis_pkg schema (main installation) is installed in database.
+        # This checks that:
+        # a) I have been granted usage of the database AND
+        # b) the QGIS Package has been indeed installed.
 
         # Check if the qgis_pkg schema (main installation) is installed in database.
         is_qgis_pkg_installed = sh_sql.is_qgis_pkg_installed(dlg=self)
@@ -402,7 +405,8 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         if is_qgis_pkg_installed:
             # I can now access the functions of the qgis_pkg (at least the public ones)
             # Set the current usr_schema name in self.USR_SCHEMA.
-            sh_sql.create_qgis_usr_schema_name(dlg=self)
+            # self.USR_SCHEMA = sh_sql.create_qgis_usr_schema_name(dlg=self)
+            pass
         else:
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_MISSING_MSG))
             self.checks.is_qgis_pkg_installed = False
@@ -450,7 +454,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg: str = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported anymore.<br>Please contact your database administrator and update the QGIS Package to version {c.QGIS_PKG_MIN_VERSION_TXT} (or higher)."
+            msg = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported.<br>Please contact your database administrator."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             ts_wf.tabSettings_reset(dlg=self)
@@ -463,8 +467,10 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # 4) Is my usr_schema installed? If yes, continue.
 
+        # Set the current usr_schema name in self.USR_SCHEMA.
+        self.USR_SCHEMA = sh_sql.create_qgis_usr_schema_name(dlg=self)
         # Check if qgis_{usr} schema (e.g. qgis_giorgio) is installed in the database.
-        is_usr_schema_inst: bool = sh_sql.is_usr_schema_installed(dlg=self)
+        is_usr_schema_inst = sh_sql.is_usr_schema_installed(dlg=self)
 
         if is_usr_schema_inst:
             # Show message in Connection Status the 3DCityDB version if installed
@@ -493,19 +499,6 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # 5) Are there cdb_schemas I am allowed to connect to? If yes, continue
         # 6) Can I connect with RW privileges to at least one non-empty cdb_schema? If yes, continue
 
-        #cdb_schemas_rw: list[tuple[str, bool, str]] = []
-        #cdb_schemas: list[tuple[str, bool, str]] = [] 
-        # Get the list of 3DCityDB schemas from database as a tuple. If empty, len(tuple)=0
-        #####################################################################################################
-        # Namedtuple with: cdb_schema, co_number, priv_type
-        # cdb_schemas_extended = sql.exec_list_cdb_schemas_with_priv_feat_count(self)
-        # print('cdb_schema_extended', cdb_schemas_extended)
-
-        # Select tuples of cdb_schemas that have number of cityobjects <> 0
-        # AND the user has 'rw' privileges.
-        # cdb_schemas_rw = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type == 'rw']
-        # cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if cdb_schema.co_number != 0]
-        #####################################################################################################
         # Namedtuple with: cdb_schema, is_empty, priv_type
         cdb_schemas_extended = sql.list_cdb_schemas_with_priv(dlg=self)
         # print('cdb_schema_extended', cdb_schemas_extended)
@@ -514,13 +507,12 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
         # AND the user has 'rw' privileges.
         cdb_schemas_rw = [cdb_schema for cdb_schema in cdb_schemas_extended if cdb_schema.priv_type == 'rw']
         cdb_schemas = [cdb_schema for cdb_schema in cdb_schemas_rw if not cdb_schema.is_empty]
-        #####################################################################################################
         # print(cdb_schemas_rw)
         # print(cdb_schemas)
 
         if len(cdb_schemas_rw) == 0: 
             # Inform the user that there are no cdb_schemas to be chosen from.
-            msg: str = "No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
+            msg = "No citydb schemas could be retrieved from the database for which you have read & write privileges.<br>Please contact your database administrator."
             QMessageBox.warning(self, "No accessible citydb schemas found", msg)
             return None # Exit
         else:
@@ -528,7 +520,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                 tc_f.fill_cdb_schemas_box(self, cdb_schemas=None)
                 
                 # Inform the use that all available cdb_schemas are empty.
-                msg: str = "The available citydb schema(s) is/are all empty. Please load data into the database first."
+                msg = "The available citydb schema(s) is/are all empty. Please load data into the database first."
                 QMessageBox.warning(self, "Empty citydb schema(s)", msg)
 
                 ts_wf.tabSettings_reset(dlg=self)
@@ -538,6 +530,7 @@ class CDB4DeleterDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.conn.close()
 
                 return None
+            
             else: # Finally, we have all conditions to proceed: 
 
                 # 7) Am I a superuser? Take note, as only superusers can truncate tables (limit of 3DCityDB current implementation)

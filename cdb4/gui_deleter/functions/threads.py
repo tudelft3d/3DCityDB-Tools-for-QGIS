@@ -151,7 +151,7 @@ class CleanUpSchemaWorker(QObject):
         
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Clean up schema (TRUNCATE)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Clean up schema (TRUNCATE)"]))
             with temp_conn:
                 # Start measuring time
                 time_start = time.time()                
@@ -476,7 +476,7 @@ class BulkDeleteWorker(QObject):
 
         # Open new temp session, reserved for installation.
         try:
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Bulk Deleter)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Bulk Deleter)"]))
             with temp_conn:
 
                 # Start measuring time

@@ -37,29 +37,6 @@ def fill_cdb_schemas_box(dlg: CDB4LoaderDialog, cdb_schemas: list[CDBSchemaPrivs
     return None
 
 
-# def fill_cdb_schemas_box_feat_count(dlg: CDB4LoaderDialog, cdb_schemas: list[NamedTuple] = None) -> None:
-#     """Function that fills the 'Citydb schema(s)' combo box.
-#     """
-#     # Clean combo box from previous leftovers.
-#     dlg.cbxSchema.clear()
-
-#     if not cdb_schemas:
-#         # Disable the combobox
-#         dlg.cbxSchema.setDisabled(True)
-#         dlg.lblSchema.setDisabled(True)
-#     else:
-#         for cdb_schema in cdb_schemas:
-#             label: str = f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type}): {cdb_schema.co_number} CityObjects"
-#             dlg.cbxSchema.addItem(label, userData=cdb_schema)
-#         if not dlg.cbxSchema.isEnabled():
-#             # Enable the combobox
-#             dlg.cbxSchema.setDisabled(False)
-#             dlg.lblSchema.setDisabled(False)
-   
-#     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
-#     return None
-
-
 def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills feature types checkable combo box
     """
@@ -250,7 +227,6 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.btnDropLayers.setDisabled(True)
     
     else:   # There are already layers from before
-
         # Set the labels in the connection tab: There are layers
         dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.checks.layers_exist = True

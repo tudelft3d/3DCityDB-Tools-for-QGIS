@@ -21,16 +21,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:       
     from ...gui_admin.admin_dialog import CDB4AdminDialog
-    from ..other_classes import FeatureType
+    from psycopg2.extensions import connection as pyconn
 
 import os
 import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import Qgis, QgsMessageLog
 import psycopg2, psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import sql as sh_sql, general_functions as gen_f
+from ..functions.tab_install_functions import initialize_feature_type_registry
 from .. import admin_constants as c
 from . import tab_install_widget_functions as ti_wf
 from . import sql
@@ -169,7 +171,7 @@ class QgisPackageInstallWorker(QObject):
 
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Installation)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Installation)"]))
             with temp_conn:
 
                 # Start measuring time
@@ -459,32 +461,31 @@ class QgisPackageUninstallWorker(QObject):
 
         if all((qgis_pkg_curr_version_major <= 0,
                 qgis_pkg_curr_version_minor <= 8)):
-            # print("Uninstalling QGIS Package up to v. 0.8.x")
+            
+            print("Uninstalling QGIS Package up to v. 0.8.x")
             self.uninstall_thread_qgis_pkg_till_08()
 
         elif all((qgis_pkg_curr_version_major == 0,
                 qgis_pkg_curr_version_minor == 9)):
-            # print("Uninstalling QGIS Package v. 0.9.x")
+            
+            print("Uninstalling QGIS Package v. 0.9.x")
             self.uninstall_thread_qgis_pkg_09()
 
         elif all((qgis_pkg_curr_version_major == 0,
                 qgis_pkg_curr_version_minor == 10,
-                qgis_pkg_curr_version_revision <= 2)):
-            # print("Uninstalling QGIS Package v. [0.10.0, 0.10.1, 0.10.2]")
-
-            from ..functions.tab_install_functions import initialize_feature_type_registry
+                qgis_pkg_curr_version_revision <= c.QGIS_PKG_MIN_VERSION_MINOR_REV)):
             
+            print("Uninstalling QGIS Package v. [0.10.x]")
             # Initialize the FeatureTypeRegistry
-            # It is needed because otherwise the registry is not initialized
-            # for those versions that are below the minimum required.
             initialize_feature_type_registry(dlg=self.dlg)
             # print(self.dlg.FeatureTypesRegistry)
 
             self.uninstall_thread_qgis_pkg_current()
-            pass
         else:
-            # print("Uninstalling QGIS Package")
-            self.uninstall_thread_qgis_pkg_current()
+            # Inform the user that the detected versio cannot be uninstalled
+            msg: str = "The currently installed version of the QGIS Package cannot be uninstalled using this version of the QGIS Package Administrator."
+            QMessageBox.warning(self, "Connection error", msg)
+            QgsMessageLog.logMessage(message=msg, tag=self.dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
 
         return None
 
@@ -552,7 +553,7 @@ class QgisPackageUninstallWorker(QObject):
         curr_step: int = 0
 
         try:
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
                 # 1) revoke privileges: for all users
@@ -778,7 +779,7 @@ class QgisPackageUninstallWorker(QObject):
 
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
 
                 # 1) revoke privileges: for all normal users
@@ -980,7 +981,7 @@ class QgisPackageUninstallWorker(QObject):
             temp_conn.rollback()
             fail_flag = True
             gen_f.critical_log(
-                func=self.uninstall_thread_qgis_pkg_current,
+                func=self.uninstall_thread_qgis_pkg_09,
                 location=FILE_LOCATION,
                 header="Establishing temporary connection",
                 error=error)
@@ -1097,18 +1098,16 @@ class QgisPackageUninstallWorker(QObject):
 
         curr_step: int = 0
 
+        temp_conn: pyconn
         try:
             # Open new temp session, reserved for installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(QGIS Package Uninstallation)"]))
             with temp_conn:
-
                 # Start measuring time
                 time_start = time.time()
 
                 # 1) revoke privileges: for all normal users
-                if usr_names_num == 0:
-                    pass # nothing to do 
-                else:
+                if usr_names_num > 0:
                     for usr_name in usr_names:
 
                         query = pysql.SQL("""
@@ -1138,10 +1137,10 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
+                print("Revoking privileges for users: done")
+
                 # 2) reset privileges for superusers ("postgres" and, in case, the current user)
-                if usr_names_su_num == 0:
-                    pass # nothing to do 
-                else:
+                if usr_names_su_num > 0:
                     for usr_name in usr_names_su:
 
                         query = pysql.SQL("""
@@ -1171,11 +1170,10 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
+                print("Revoking privileges for superusers: done")
+
                 # 3) drop feature types (layers)
-                if drop_tuples_num == 0:
-                    pass # nothing to do 
-                else:
-                    #ft: FeatureType
+                if drop_tuples_num > 0:
                     for usr_schema, cdb_schema, feat_type in drop_tuples:
                         ft = dlg.FeatureTypesRegistry[feat_type]
                         module_drop_func = ft.layers_drop_function
@@ -1211,17 +1209,17 @@ class QgisPackageUninstallWorker(QObject):
                             temp_conn.rollback()
                             self.sig_fail.emit()
 
+                print("Dropping layers: done")
+
                 # 4) drop detail views (dt_* views)
-                if drop_detail_views_num == 0:
-                    pass # nothing to do 
-                else:
+                if drop_detail_views_num > 0:
                     for usr_schema, cdb_schema in drop_detail_views:
 
                         query = pysql.SQL("""
                             SELECT {_qgis_pkg_schema}.drop_detail_view({_usr_schema},{_cdb_schema} );
                             """).format(
                             _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                            _usr_schema = pysql.Literal(usr_name),
+                            _usr_schema = pysql.Literal(usr_schema),
                             _cdb_schema = pysql.Literal(cdb_schema)
                             )
 
@@ -1246,10 +1244,10 @@ class QgisPackageUninstallWorker(QObject):
                             self.sig_fail.emit()
                             break
 
+                print("Dropping details views: done")
+
                 # 5) drop usr_schemas
-                if usr_schemas_num == 0:
-                    pass # nothing to do 
-                else:
+                if usr_schemas_num > 0:
                     for usr_schema in usr_schemas:
 
                         query = pysql.SQL("""
@@ -1278,10 +1276,10 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
+                print("Dropping usr_schemas: done")
+
                 # 7) Drop ga_indices
-                if cdb_schemas_num == 0:
-                    pass # nothing to do 
-                else:
+                if cdb_schemas_num > 0:
                     for cdb_schema in cdb_schemas:
 
                         query = pysql.SQL("""
@@ -1311,8 +1309,11 @@ class QgisPackageUninstallWorker(QObject):
                                 error=error)
                             self.sig_fail.emit()
 
-                # 7) Drop database group
+                print("Dropping ga indices: done")
+
+                # 8) Drop database group
                 if not self.dlg.GROUP_NAME:
+                    # Create the name and assign it to the variable
                     self.dlg.GROUP_NAME = sql.create_qgis_pkg_usrgroup_name(dlg=dlg)
 
                 query = pysql.SQL("""
@@ -1341,7 +1342,9 @@ class QgisPackageUninstallWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-                # 8) drop qgis_pkg schema
+                print("Dropping database groun: done")
+
+                # 9) drop qgis_pkg schema
                 query = pysql.SQL("""
                     DROP SCHEMA IF EXISTS {_qgis_pkg_schema} CASCADE;
                     """).format(
@@ -1368,11 +1371,13 @@ class QgisPackageUninstallWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
+                print("Dropping qgis_pkg schema: done")
+
                 # Measure elapsed time
                 print(f"Uninstallation of the QGIS Package completed in {round((time.time() - time_start), 4)} seconds")
 
         except (Exception, psycopg2.Error) as error:
-            temp_conn.rollback()
+            # temp_conn.rollback()
             fail_flag = True
             gen_f.critical_log(
                 func=self.uninstall_thread_qgis_pkg_current,
@@ -1448,13 +1453,11 @@ def evt_qgis_pkg_uninstall_fail(dlg: CDB4AdminDialog) -> None:
     msg = dlg.msg_bar.createMessage(error)
     dlg.msg_bar.pushWidget(msg, Qgis.MessageLevel.Critical, 5)
 
+    # Update the label in the connection status
+    dlg.lblMainInst_out.setText(c.failure_html.format(text=error))
+
     # Inform user
-    dlg.lblMainInst_out.setText(error)
-    QgsMessageLog.logMessage(
-            message=error,
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
+    QgsMessageLog.logMessage(message=error, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
     
     return None
 
@@ -1576,7 +1579,7 @@ class DropUsrSchemaWorker(QObject):
 
         try:
             # Open new temp session, reserved for usr_schema installation.
-            temp_conn = conn_f.create_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(User schema Uninstallation)"]))
+            temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(User schema Uninstallation)"]))
             with temp_conn:
 
                 # Start measuring time

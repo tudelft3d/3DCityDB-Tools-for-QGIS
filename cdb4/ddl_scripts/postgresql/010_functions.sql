@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 3;
-code_name      := 'Revenge of the pumpkin';
-release_date   := '2023-10-31'::date;
+minor_revision := 4;
+code_name      := 'November rain';
+release_date   := '2023-11-18'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -1820,12 +1820,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.compute_cdb_schema_extents(varchar, boolean)
 CREATE OR REPLACE FUNCTION qgis_pkg.compute_cdb_schema_extents(
 cdb_schema 		varchar,
 is_geographic	boolean DEFAULT FALSE  -- TRUE is EPSG uses long-lat, FALSE if is projected (Default)
--- The polygon will have its coordinated approximated to:
--- EITHER floor and ceiling if coordinate system is projected
--- OR the 6th decimal position is coordinates are geographic (e.g. x = long, y = lat)
-
--- TO DO: instead of passing it from the GUI, have the function determine autonomously if it's projected or not.
--- Requires string pattern with the metadata in the refernce system table in public.
+-- The polygon will have its coordinated approximated to the 6th decimal position
 )
 RETURNS TABLE(
 	is_geom_null boolean,
@@ -1859,17 +1854,25 @@ IF cdb_extents IS NULL THEN
 ELSE
 	is_geom_null := FALSE;
 
-	IF is_geographic IS TRUE THEN
-		x_min        := round(ST_Xmin(cdb_extents)::numeric, geog_coords_prec);
-		x_max        := round(ST_Xmax(cdb_extents)::numeric, geog_coords_prec);
-		y_min        := round(ST_Ymin(cdb_extents)::numeric, geog_coords_prec);
-		y_max        := round(ST_Ymax(cdb_extents)::numeric, geog_coords_prec);
-	ELSE
-		x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
-		x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
-		y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
-		y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
-	END IF;
+	-- IF is_geographic IS TRUE THEN
+	-- 	x_min        := round(ST_Xmin(cdb_extents)::numeric, geog_coords_prec);
+	-- 	x_max        := round(ST_Xmax(cdb_extents)::numeric, geog_coords_prec);
+	-- 	y_min        := round(ST_Ymin(cdb_extents)::numeric, geog_coords_prec);
+	-- 	y_max        := round(ST_Ymax(cdb_extents)::numeric, geog_coords_prec);
+	-- ELSE
+	-- 	x_min        :=   floor(ST_Xmin(cdb_extents))::numeric;
+	-- 	x_max        := ceiling(ST_Xmax(cdb_extents))::numeric;
+	-- 	y_min        :=   floor(ST_Ymin(cdb_extents))::numeric;
+	-- 	y_max        := ceiling(ST_Ymax(cdb_extents))::numeric;
+	-- END IF;
+
+	-- Since with compount EPSG codes is it not alwayes possible to get a correct answer (e.g. in QGIS),
+	-- we simply ignore the is_geographic.
+
+	x_min        := round(ST_Xmin(cdb_extents)::numeric, geog_coords_prec);
+	x_max        := round(ST_Xmax(cdb_extents)::numeric, geog_coords_prec);
+	y_min        := round(ST_Ymin(cdb_extents)::numeric, geog_coords_prec);
+	y_max        := round(ST_Ymax(cdb_extents)::numeric, geog_coords_prec);
 
 	-- Get the srid from the cdb_schema
 	EXECUTE format('SELECT srid FROM %I.database_srs LIMIT 1', cdb_schema) INTO srid;

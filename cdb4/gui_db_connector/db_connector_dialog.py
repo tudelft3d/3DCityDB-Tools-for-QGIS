@@ -32,25 +32,27 @@ Class DBConnectorDialog
  ***************************************************************************/
 """
 import os
-import psycopg2
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsSettings
 from qgis.gui import QgsMessageBar
-from qgis.PyQt import QtWidgets, uic
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
 from ..shared.functions import general_functions as gen_f
 from .other_classes import DBConnectionInfo
-from .functions.conn_functions import create_db_connection
+from .functions.conn_functions import open_db_connection
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db_connector_dialog.ui"))
 
-class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
+
+class DBConnectorDialog(QDialog, FORM_CLASS):
     """Connector Dialog. This dialog pops up when a user requests to make a new connection.
     """
+
     def __init__(self, parent=None):
         super(DBConnectorDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -64,9 +66,9 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Connection object variable
         self.conn_params: DBConnectionInfo = None
-        
-        self.gbxConnDet.bar = QgsMessageBar()
-        self.verticalLayout.addWidget(self.gbxConnDet.bar, 0)
+
+        self.bar = QgsMessageBar()
+        self.verticalLayout.addWidget(self.bar, 0)
 
         ### SIGNALS (start) ############################
 
@@ -77,21 +79,27 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         ### SIGNALS (end) ##############################
 
-    def store_conn_parameters(self) -> None:
+
+    def store_conn_parameters(self) -> bool:
         """Function that stores the database connection parameters in the user's profile settings for future use.
         """
-        #TODO: Warn user that the connection parameters are stored locally in a .ini file
+        
+        msg: str = f"The connection parameters are going to be stored locally on this machine and will not be encrypted.\n\nDo you want to continue anyway?"
+        res = QMessageBox.question(self, "Save connection parameters?", msg)
+        if res == QMessageBox.Yes:
 
-        new_conn_params = QgsSettings()
-        conn_path= f'PostgreSQL/connections/{self.conn_params.connection_name}'
+            new_conn_params = QgsSettings()
+            conn_path= f'PostgreSQL/connections/{self.conn_params.connection_name}'
 
-        new_conn_params.setValue(f'{conn_path}/database', self.conn_params.database_name)
-        new_conn_params.setValue(f'{conn_path}/host', self.conn_params.host)
-        new_conn_params.setValue(f'{conn_path}/port', self.conn_params.port)
-        new_conn_params.setValue(f'{conn_path}/username', self.conn_params.username)
-        new_conn_params.setValue(f'{conn_path}/password', self.conn_params.password)
+            new_conn_params.setValue(f'{conn_path}/database', self.conn_params.database_name)
+            new_conn_params.setValue(f'{conn_path}/host', self.conn_params.host)
+            new_conn_params.setValue(f'{conn_path}/port', self.conn_params.port)
+            new_conn_params.setValue(f'{conn_path}/username', self.conn_params.username)
+            new_conn_params.setValue(f'{conn_path}/password', self.conn_params.password)
 
-        return None
+            return True
+        else:
+            return False
 
         ### EVENTS (start) ############################
 
@@ -120,25 +128,18 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
-            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
-            return None
+            self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
         else:
             temp_conn: pyconn = None
-            try:
-                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
-                # If successful, close it, otherwise an Exception will be raised.
+            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            if temp_conn:
                 temp_conn.close() # close connection after the test.
-                self.gbxConnDet.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
+                self.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
+            else:
+                # Nothing to close, there is no connection.
+                self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
 
-            except (Exception, psycopg2.Error) as error:
-                gen_f.critical_log(
-                    func=self.evt_btnTestConn_clicked,
-                    location=FILE_LOCATION,
-                    header="Attempting connection",
-                    error=error)
-                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
-
-            return None
+        return None
 
 
     def evt_btnOK_clicked(self) -> None:
@@ -165,42 +166,39 @@ class DBConnectorDialog(QtWidgets.QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host, 
                 not NewConnParams.port, not NewConnParams.database_name, 
                 not NewConnParams.username)):
-            self.gbxConnDet.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
-            return None
+            self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
         else:
-            
             NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" +  str(NewConnParams.port)
-            print('set from New conn Dialog', NewConnParams.db_toc_node_label)
-
+            # print('set from New conn Dialog', NewConnParams.db_toc_node_label)
             temp_conn: pyconn = None
-            try:
-                temp_conn = create_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
-                
-                # If successful, close it, otherwise an Exception will be raised.
+            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            if temp_conn:
                 temp_conn.close() # close connection after the test.
-
-                # Assign the new connection parameters to the variable, they will be added to the dropbox in the parent dialog.
                 self.conn_params = NewConnParams
-
                 # Store the new connection parameters for future use.
                 if self.checkBox.isChecked():
-                    self.store_conn_parameters()
-                                
-            except (Exception, psycopg2.Error) as error:
-                gen_f.critical_log(
-                    func=self.evt_btnTestConn_clicked,
-                    location=FILE_LOCATION,
-                    header="Attempting connection",
-                    error=error)
-                self.gbxConnDet.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
-
-        self.close()
+                    if self.store_conn_parameters():
+                        self.close()
+                    else:
+                        return None
+                else:
+                    self.close()
+            else:
+                # Nothing to close, there is no connection.
+                self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
+            
+        return None
 
 
     def evt_btnCancel_clicked(self) -> None:
         """Event that is called when the 'Cancel' pushButton (btnCancel) is pressed.
-        It simply closes the dialog.
+        It removes possible connection parameters and closes the dialog.
         """
+
+        # Drop possible values that we may have assigned.
+        self.conn_params = None
+
+        # Close the dialog
         self.close()
         
         return None
