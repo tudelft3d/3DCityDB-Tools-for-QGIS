@@ -51,24 +51,6 @@ def is_superuser(dlg: CDB4AdminDialog, usr_name: str) -> bool:
         dlg.conn.rollback()  
 
 
-def is_3dcitydb_installed(dlg: CDB4AdminDialog) -> bool:
-    """Function that checks whether the current database has the 
-    3DCityDB installed. The check is done by querying the 3DCityDB
-    version from citydb_pkg.version().
-
-    On 3DCityDB absence a database error is emitted which means that
-    it is not installed.
-    """
-    version = sh_sql.get_3dcitydb_version(dlg=dlg)
-
-    if version: # Could be None
-        # Store version into the connection object.
-        dlg.DB.citydb_version = version
-        return True
-    else:
-        return False
-
-
 def create_qgis_pkg_usrgroup_name(dlg: CDB4AdminDialog) -> str:
     """SQL function that retrieves the name of the qgis_pkg_usrgroup_* group
     associated to the current database
