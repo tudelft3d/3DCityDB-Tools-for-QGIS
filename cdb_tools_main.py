@@ -32,7 +32,7 @@
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Optional, Callable
 if TYPE_CHECKING:       
     from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog
     from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog
@@ -40,19 +40,20 @@ if TYPE_CHECKING:
     from .shared.gui_about.about_dialog import CDBAboutDialog
  
 import os.path
-import typing
 import platform
 
 from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QMenu
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsSettings, QgsMessageLog
 from qgis.gui import QgisInterface
 
 from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
 from .shared.functions import shared_functions as sh_f
-from .cdb4.gui_db_connector.functions import conn_functions as conn_f
+# from .cdb4.gui_db_connector.functions import conn_functions as conn_f
+from .cdb4.gui_db_connector.other_classes import DBConnectionInfo
+
 
 class CDBToolsMain:
     """QGIS Plugin Implementation. Main class.
@@ -118,8 +119,8 @@ class CDBToolsMain:
         msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
-        self.StoredConns = []
-        self.StoredConns = conn_f.list_qgis_postgres_stored_conns()
+        self.StoredConns = self.list_qgis_postgres_stored_conns()
+        # print("self.StoredConns", self.StoredConns)
 
         # Variable to store the loader dialog of the plugin.
         self.loader_dlg: CDB4LoaderDialog = None
@@ -152,9 +153,9 @@ class CDBToolsMain:
         self.DialogRegistry: dict[str, Union[CDB4AdminDialog, CDB4DeleterDialog, CDB4LoaderDialog]] = {}
 
         # initialize locale.
-        #locale = QSettings().value("locale/userLocale")[0:2]
-        #locale_path = os.path.join(self.PLUGIN_ABS_PATH, "i18n", "CDBToolsMain_{}.qm".format(locale))
-        #if os.path.exists(locale_path):
+        # locale = QSettings().value("locale/userLocale")[0:2]
+        # locale_path = os.path.join(self.PLUGIN_ABS_PATH, "i18n", "CDBToolsMain_{}.qm".format(locale))
+        # if os.path.exists(locale_path):
         #    self.translator = QTranslator()
         #    self.translator.load(locale_path)
         #    QCoreApplication.installTranslator(self.translator)
@@ -178,13 +179,13 @@ class CDBToolsMain:
     def add_action(self,
             icon_path: str,
             txt: str,
-            callback: typing.Callable[..., None],
+            callback: Callable[..., None],
             enabled_flag: bool = True,
             add_to_menu: bool = True,
             add_to_toolbar: bool = True,
-            status_tip: typing.Optional[str] = None,
-            whats_this: typing.Optional[str] = None,
-            parent: typing.Optional[QWidget] = None) -> QAction:
+            status_tip: Optional[str] = None,
+            whats_this: Optional[str] = None,
+            parent: Optional[QWidget] = None) -> QAction:
         """Add a toolbar icon to the toolbar.
 
         *   :param icon_path: Path to the icon for this action. Can be a
@@ -232,7 +233,7 @@ class CDBToolsMain:
         # Create action object
         action = QAction(icon=icon, text=txt, parent=parent)
         # Signal to run plugin when clicked (execute main method: run())
-        action.triggered.connect(callback)
+        action.triggered.connect(slot=callback)
         # Set the name of the action
         action.setObjectName(txt)
         # Set the action as enabled (not greyed out)
@@ -445,7 +446,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns = conn_f.list_qgis_postgres_stored_conns()
+        stored_conns = self.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback,
         # so that it will only load when the plugin is started.
@@ -471,7 +472,7 @@ class CDBToolsMain:
             # Add the connection list to the combo box (cbxExistingConn) 
             # An event is fired (dlg.evt_cbxExistingConn_changed())
             # It closes all exiting connections, and resets the dialog.
-            conn_f.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
+            self.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
 
         else:
             if stored_conns != self.StoredConns:
@@ -481,7 +482,7 @@ class CDBToolsMain:
                 # Add the connection list to the combo box (cbxExistingConn) 
                 # An event is fired (dlg.evt_cbxExistingConn_changed())
                 # It closes all exiting connections, and resets the dialog.
-                conn_f.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
+                self.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
             else:
                 # No need to refresh the connection list box, no event is fired
                 # The Connection remains open and all settings are still there.
@@ -524,7 +525,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns = conn_f.list_qgis_postgres_stored_conns()
+        stored_conns = self.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_deleter:
@@ -543,12 +544,12 @@ class CDBToolsMain:
                 # print('Changes in connection list')
                 self.StoredConns = stored_conns
 
-            conn_f.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
+            self.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
 
         else:
             if stored_conns != self.StoredConns:
                 self.StoredConns = stored_conns
-                conn_f.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
+                self.fill_connection_list_box(dlg=self.deleter_dlg, stored_conns=self.StoredConns)
 
         self.DialogRegistry.update({self.DLG_NAME_DELETER: self.deleter_dlg})
 
@@ -586,7 +587,7 @@ class CDBToolsMain:
             self.check_QGIS_version()
 
         # Get/refresh the existing connections list from QGIS profile settings.
-        stored_conns = conn_f.list_qgis_postgres_stored_conns()
+        stored_conns = self.list_qgis_postgres_stored_conns()
 
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
         if self.first_start_admin:
@@ -597,12 +598,12 @@ class CDBToolsMain:
             if stored_conns != self.StoredConns:
                 self.StoredConns = stored_conns
 
-            conn_f.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
+            self.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
 
         else:
             if stored_conns != self.StoredConns:
                 self.StoredConns = stored_conns
-                conn_f.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
+                self.fill_connection_list_box(dlg=self.admin_dlg, stored_conns=self.StoredConns)
 
         self.DialogRegistry.update({self.DLG_NAME_ADMIN: self.admin_dlg})
 
@@ -762,3 +763,82 @@ class CDBToolsMain:
             QMessageBox.warning(None, "Unsupported QGIS version", msg, QMessageBox.Ok)
 
         return None
+
+
+    def fill_connection_list_box(self, dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], 
+                                stored_conns: Optional[list[tuple[str, dict]]] = None
+                                ) -> None:
+        """Function that fills the the 'cbxExistingConn' combobox
+        """
+        # Clear the contents of the comboBox from previous runs
+        dlg.cbxExistingConn.clear()
+
+        if stored_conns:
+            # Get database connection settings for every stored connection
+            for stored_conn_name, stored_conn_params in stored_conns:
+
+                label: str = stored_conn_name
+                # Create object
+                db_conn_info = DBConnectionInfo()
+
+                # Populate the object attributes BEGIN
+                db_conn_info.connection_name   = label
+                db_conn_info.database_name     = stored_conn_params['database']
+                db_conn_info.host              = stored_conn_params['host']
+                db_conn_info.port              = stored_conn_params['port']
+                db_conn_info.username          = stored_conn_params['username']
+                db_conn_info.password          = stored_conn_params['password']
+                db_conn_info.db_toc_node_label = stored_conn_params['db_toc_node_label']
+                # Populate the object attributes END
+
+                dlg.cbxExistingConn.addItem(label, userData=db_conn_info)
+
+        return None
+
+
+    def list_qgis_postgres_stored_conns(self) -> Optional[list[tuple[str, dict]]]:
+        """Function that reads the QGIS user settings to look for existing connections
+        It results in a list[tuple[str, dict]]
+        """
+        # Create a QgsSettings object to access the settings
+        qgis_settings = QgsSettings()
+
+        # Navigate to PostgreSQL connection settings
+        qgis_settings.beginGroup(prefix='PostgreSQL/connections')
+
+        # Get all stored connection names
+        stored_conn_list = qgis_settings.childGroups()
+        # print('stored_connections', stored_connections)
+
+        stored_conns = []
+
+        # Get database connection settings for every stored connection
+        for stored_conn in stored_conn_list:
+
+            db_conn_info_dict = dict()
+
+            qgis_settings.beginGroup(prefix=stored_conn)
+            # Populate the object BEGIN
+            db_conn_info_dict['database']          = qgis_settings.value(key='database')
+            db_conn_info_dict['host']              = qgis_settings.value(key='host')
+            db_conn_info_dict['port']              = qgis_settings.value(key='port')
+            db_conn_info_dict['username']          = qgis_settings.value(key='username')
+            db_conn_info_dict['password']          = qgis_settings.value(key='password')
+            db_conn_info_dict['db_toc_node_label'] = qgis_settings.value(key='database') + " @ " + qgis_settings.value(key='host') + ":" + str(qgis_settings.value(key='port'))
+
+            # print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
+
+            # Populate the object END
+            qgis_settings.endGroup()
+
+            t: tuple[str, dict] = (stored_conn, db_conn_info_dict)
+            stored_conns: list[tuple[str, dict]]
+            stored_conns.append(t)
+        
+        stored_conns.sort()
+        # stored_conns.sort(reverse=True)
+        # print(stored_conns)
+
+        return stored_conns
+
+
