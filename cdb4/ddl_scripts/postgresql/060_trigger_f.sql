@@ -777,7 +777,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_solitary_vegetat_object CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_solitary_vegetat_object()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME,'_sol_veg_obj_', 1); 
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME,'_veg_sol_veg_obj_', 1); 
 BEGIN
 EXECUTE format('SELECT %I.del_solitary_vegetat_object(ARRAY[$1]);', cdb_schema) USING OLD.id;
 RETURN OLD;
@@ -1936,7 +1936,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_plant_cover CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_plant_cover()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_plant_cover_', 1);
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_veg_plant_cover_', 1);
   obj    qgis_pkg.obj_cityobject;
   obj_1  qgis_pkg.obj_plant_cover;
 BEGIN
