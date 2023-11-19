@@ -2,7 +2,7 @@
 These functions are usually called from widget_setup functions relating to child widgets of the 'Import Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union, cast, Iterable, Optional
+from typing import TYPE_CHECKING, Union, cast, Iterable
 if TYPE_CHECKING:       
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ..other_classes import FeatureType, CDBDetailView, EnumConfig 
@@ -96,15 +96,13 @@ def fill_feature_type_box(dlg: CDB4LoaderDialog) -> None:
     """Function that fills out the 'Feature Types' combo box.
     Uses the 'layer_metadata' table in usr_schema to instantiate useful python objects
     """
-    # Create 'Feature Type' and 'View' objects
+    # Every time we need to check, because the (QGIS) bbox may have changed
     add_layers_to_feature_type_registry(dlg)
-    
-    ft: FeatureType
-    layer: CDBLayer
 
     # Clear from previous runs
     dlg.cbxFeatureType.clear()
 
+    layer: CDBLayer
     # Add only those Feature Types that have at least one view containing > 0 features.
     for key, ft in dlg.FeatureTypesRegistry.items():
         for layer in ft.layers:
