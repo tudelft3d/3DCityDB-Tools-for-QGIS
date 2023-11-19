@@ -1109,14 +1109,14 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
     def evt_cbxFeatureType_changed(self) -> None:
         """Event that is called when the 'Feature Type'comboBox (cbxFeatureType) current index changes.
         """
-        # Clear 'Geometry Level' combo box from previous runs.
+        # Clear 'Level of Detail' combo box from previous runs
         self.cbxLod.clear()
 
-        # Enable 'Geometry Level' combo box
-        self.cbxLod.setDisabled(False)
-
-        # Fill out the LoDs, based on the selected extents and Feature Type.
+        # Fill out the LoDs, based on the selected extents and Feature Type
         tl_f.fill_lod_box(dlg=self)
+
+        # Enable 'Level of Detail' combo box
+        self.cbxLod.setDisabled(False)
 
         return None
 
@@ -1124,17 +1124,20 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
     def evt_cbxLod_changed(self) -> None:
         """Event that is called when the 'Geometry Level'comboBox (cbxLod) current index changes.
         """
-        # Enable 'Features to Import' group box.
-        self.gbxAvailableL.setDisabled(False)
-
-        # Clear 'Features' checkable combo box from previous runs.
+        # Clear 'Select Layers to Import' checkable combo box from previous runs.
         self.ccbxLayers.clear()
 
-        # Revert to initial text.
+        # Revert 'Select Layers to Import' checkable combo box the to initial text.
         self.ccbxLayers.setDefaultText(self.ccbxLayers.init_text)
+
+        # Disable 'Import' pushbutton
+        self.btnImport.setDisabled(True)
 
         # Fill out the features.
         tl_f.fill_layers_box(dlg=self)
+
+        # Enable 'Available Layers' group box.
+        self.gbxAvailableL.setDisabled(False)
 
         return None
 
@@ -1149,7 +1152,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             # Enable 'Import' pushbutton.
             self.btnImport.setDisabled(False)
         else:
-            # Revert to initial text and disable 'Import' pushbutton
+            # Disable 'Import' pushbutton
             self.btnImport.setDisabled(True)
 
         return None
