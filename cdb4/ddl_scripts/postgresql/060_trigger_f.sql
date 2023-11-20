@@ -1209,7 +1209,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_waterboundary_surface CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_waterboundary_surface()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME,'_waterboundary_', 1); 
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME,'_waterbody_', 1); 
 BEGIN
 EXECUTE format('SELECT %I.del_waterboundary_surface(ARRAY[$1]);', cdb_schema) USING OLD.id;
 RETURN OLD;
@@ -1245,9 +1245,9 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_del_waterboundary_surface_watersurface CA
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_del_waterboundary_surface_watersurface()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterboundary_surface_', 1); 
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterbody_', 1); 
 BEGIN
-EXECUTE format('SELECT %I.del_waterboundary_surface[$1]);', cdb_schema) USING OLD.id;
+EXECUTE format('SELECT %I.del_waterboundary_surface(ARRAY[$1]);', cdb_schema) USING OLD.id;
 RETURN OLD;
 EXCEPTION
   WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.tr_del_waterboundary_surface_watersurface(): %', SQLERRM;
@@ -2612,7 +2612,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_waterboundary_surface CASCADE;
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_waterboundary_surface()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterboundary_', 1);
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterbody_', 1);
   obj    qgis_pkg.obj_cityobject;
 BEGIN
 obj.id                     := OLD.id;
@@ -2647,7 +2647,7 @@ DROP FUNCTION IF EXISTS    qgis_pkg.tr_upd_waterboundary_surface_watersurface CA
 CREATE OR REPLACE FUNCTION qgis_pkg.tr_upd_waterboundary_surface_watersurface()
 RETURNS trigger AS $$
 DECLARE
-  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterboundary_', 1);
+  cdb_schema CONSTANT varchar := split_part(TG_TABLE_NAME, '_waterbody_', 1);
   obj    qgis_pkg.obj_cityobject;
   obj_1  qgis_pkg.obj_waterboundary_surface;
 BEGIN
