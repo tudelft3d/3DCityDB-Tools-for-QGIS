@@ -103,7 +103,7 @@
       <editWidget type="TextEdit"></editWidget>
     </field>
 <!-- root/parent attributes -->
-    <field configurationFlags="None" name="tunnel_id">
+    <field name="tunnel_id" configurationFlags="None">
       <editWidget type="TextEdit"></editWidget>
     </field>
   </fieldConfiguration>
@@ -123,11 +123,12 @@
     <alias index="12" name="Reason for update" field="reason_for_update"/>
     <alias index="13" name="Lineage" field="lineage"/>
 <!-- parent/root attributes -->
-    <alias index="101" name="Tunnel(Part) ID" field="tunnel_id"/>
+    <alias index="101"  name="Tunnel(Part) ID" field="tunnel_id"/>
   </aliases>
   <defaults></defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1" field="id"/>
+<!-- other attributes -->	
   </constraints>
   <constraintExpressions></constraintExpressions>
   <expressionfields/>
@@ -241,8 +242,6 @@
         </editor_configuration>
       </attributeEditorRelation>
     </attributeEditorContainer> -->
-<!-- just an empty line -->
-    </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
     <field editable="0" name="id"/>
