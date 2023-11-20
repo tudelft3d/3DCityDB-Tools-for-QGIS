@@ -8,6 +8,7 @@ Test whether it makes sense to add an update statement to delete trigger functio
 Version 0.10.4
 Function [qgis_pkg.compute_bbox_extents(...)] no more rounds coordinates
 Fixed bug in delete trigger functions for Solitary Vegetation Object and Plant Cover
+Fixed bugs in delete and update trigger functions for WaterSurface
 
 2023-10-31
 ----------

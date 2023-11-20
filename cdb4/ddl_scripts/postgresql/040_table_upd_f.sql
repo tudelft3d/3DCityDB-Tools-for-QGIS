@@ -1372,8 +1372,8 @@ BEGIN
 
 EXECUTE format('
 UPDATE %I.waterboundary_surface AS t SET
-  water_level           := $1.water_level,
-  water_level_codespace := $1.water_level_codespace
+  water_level           = $1.water_level,
+  water_level_codespace = $1.water_level_codespace
 WHERE t.id = $1.id RETURNING id', cdb_schema) INTO updated_id USING obj;
 
 RETURN updated_id;
