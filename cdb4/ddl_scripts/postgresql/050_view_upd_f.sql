@@ -833,10 +833,10 @@ COMMENT ON FUNCTION qgis_pkg.upd_masspoint_relief_atts(qgis_pkg.obj_cityobject, 
 REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_masspoint_relief_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_relief_component, varchar) FROM public;
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERBODY_ATTS
+-- Create FUNCTION QGIS_PKG.UPD_WATERBOUNDARY_SURFACE_WATERSURFACE_ATTS
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS    qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) CASCADE;
-CREATE OR REPLACE FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(
+DROP FUNCTION IF EXISTS    qgis_pkg.upd_waterboundary_surface_watersurface_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) CASCADE;
+CREATE OR REPLACE FUNCTION qgis_pkg.upd_waterboundary_surface_watersurface_atts(
 obj      qgis_pkg.obj_cityobject,
 obj_1    qgis_pkg.obj_waterboundary_surface,
 cdb_schema varchar
@@ -851,11 +851,11 @@ PERFORM qgis_pkg.upd_t_waterboundary_surface(obj_1, cdb_schema);
 
 RETURN updated_id;
 EXCEPTION
-  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterboundary_surface_waterbody_atts(id: %): %', obj.id, SQLERRM;
+  WHEN OTHERS THEN RAISE NOTICE 'qgis_pkg.upd_waterboundary_surface_watersurface_atts(id: %): %', obj.id, SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (for class WaterBody) (and parent ones)';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_waterboundary_surface_waterbody_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.upd_waterboundary_surface_watersurface_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) IS 'Update attributes of table WATERBOUNDARY_SURFACE (for class WaterSurface) (and parent ones)';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.upd_waterboundary_surface_watersurface_atts(qgis_pkg.obj_cityobject, qgis_pkg.obj_waterboundary_surface, varchar) FROM public;
 
 --**************************
 DO $MAINBODY$
