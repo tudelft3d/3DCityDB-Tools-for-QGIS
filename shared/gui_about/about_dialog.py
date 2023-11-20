@@ -108,6 +108,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Buttons
         self.btnOpenGitHub.clicked.connect(self.evt_btnOpenGitHub_clicked)
+        self.btnIdeas.clicked.connect(self.evt_btnIdeas_clicked)
         self.btnIssueBug.clicked.connect(self.evt_btnIssueBug_clicked)
 
         self.btn3DCityDBDownload.clicked.connect(self.evt_btn3DCityDBDownload_clicked)
@@ -127,8 +128,8 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_listMenu_ItemClicked(self) -> None:
         """Event that is called when an item of the ListMenu is clicked
         """
-        #print(self.listMenu.currentRow())
-        #print(self.listMenu.currentItem().text())
+        # print(self.listMenu.currentRow())
+        # print(self.listMenu.currentItem().text())
         clickedRow: int = self.listMenu.currentRow()
         self.stackedContents.setCurrentIndex(clickedRow)
         
@@ -139,6 +140,17 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
         url: str = self.URL_GITHUB_PLUGIN
+        # print(url)
+        sh_f.open_online_url(url)
+
+        return None
+
+
+    def evt_btnIdeas_clicked(self) -> None:
+        """Event that is called when the Button 'btnIdeas' is pressed.
+        """
+        url: str = "/".join([self.URL_GITHUB_PLUGIN, "issues", "35"])
+        # print(url)
         sh_f.open_online_url(url)
 
         return None
@@ -148,6 +160,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
         """
         url: str = "/".join([self.URL_GITHUB_PLUGIN, "issues"])
+        # print(url)
         sh_f.open_online_url(url)
 
         return None
@@ -157,6 +170,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         """Event that is called when the Button 'btn3DCityDBDownload' is pressed.
         """
         url: str = c.URL_GITHUB_3DCITYDB
+        # print(url)
         sh_f.open_online_url(url)
 
         return None
@@ -168,26 +182,34 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         Otherwise: Opens the url to GitHub where the PDFs are stored.
         """
         # To be activated once we have the PDFs for each main OS
-        #
         if self.PLATFORM_SYSTEM == "Windows":
-            file_name: str = "3DCityDB_Suite_QuickInstall.pdf"
+            file_name: str = "3DCityDB_Suite_QuickInstall_Windows.pdf"
         # elif self.PLATFORM_SYSTEM == "Darwin":
-        #     file_name: str = "3DCityDB_Suite_QuickInstall_MacOS.pdf"
+            # file_name: str = "3DCityDB_Suite_QuickInstall_macOS.pdf"
         # elif self.PLATFORM_SYSTEM == "Linux":
         #     file_name: str = "3DCityDB_Suite_QuickInstall_Linux.pdf"
         # else:
         #     file_name: str = "3DCityDB_Suite_QuickInstall_Linux.pdf"
 
+        # **************************************
+        # Only for testing purposes
+        #
+        # self.PLATFORM_SYSTEM = "Darwin"
+        # 
+        # **************************************
+
         if self.PLATFORM_SYSTEM == "Windows":
             # This will open a PDF viewer instead of the browser
             pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", "3dcitydb_install", file_name)
+            # print(pdf_path)
             sh_f.open_local_PDF(pdf_path)
         else:
             # url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install", file_name])
 
-            # For OS other than windows, simply point to the GitHub folder because
-            # we cannot automatically guess which default PDF reader (if any) they have on their system.
+            # For OSes other than Windows, simply point to the GitHub folder because
+            # we cannot automatically guess which default PDF reader (if any) they have on their system
             url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install"])
+            # print(url)
             sh_f.open_online_url(url)
 
         # **************************************
@@ -205,7 +227,9 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnOnline3DCityDBManual_clicked(self) -> None:
         """Event that is called when the Button 'btn3DCityDBManual' is pressed.
         """
+        
         url: str = c.URL_GITHUB_3DCITYDB_MANUAL
+        # print(url)
         sh_f.open_online_url(url)
     
         return None
@@ -214,6 +238,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     def evt_btnClose_clicked(self) -> None:
         """Event that is called when the 'Close' pushButton (btnClose) is pressed.
         """
+
         self.close()
         return None
 

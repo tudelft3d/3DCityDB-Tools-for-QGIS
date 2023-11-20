@@ -181,15 +181,15 @@
     <widget class="QPushButton" name="btnIssueBug">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>376</x>
        <y>390</y>
-       <width>181</width>
+       <width>165</width>
        <height>23</height>
       </rect>
      </property>
      <property name="minimumSize">
       <size>
-       <width>0</width>
+       <width>165</width>
        <height>23</height>
       </size>
      </property>
@@ -206,15 +206,21 @@
     <widget class="QPushButton" name="btnOpenGitHub">
      <property name="geometry">
       <rect>
-       <x>40</x>
+       <x>10</x>
        <y>390</y>
-       <width>191</width>
+       <width>165</width>
        <height>23</height>
       </rect>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="minimumSize">
       <size>
-       <width>0</width>
+       <width>165</width>
        <height>23</height>
       </size>
      </property>
@@ -226,6 +232,31 @@
      </property>
      <property name="text">
       <string>Open GitHub repository</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnIdeas">
+     <property name="geometry">
+      <rect>
+       <x>193</x>
+       <y>390</y>
+       <width>165</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>165</width>
+       <height>23</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>23</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Ideas, suggestions?</string>
      </property>
     </widget>
    </widget>
@@ -476,6 +507,15 @@ p, li { white-space: pre-wrap; }
    <property name="text">
     <string>Close</string>
    </property>
+   <property name="autoDefault">
+    <bool>true</bool>
+   </property>
+   <property name="default">
+    <bool>true</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QLabel" name="lbl_img">
    <property name="geometry">
@@ -614,9 +654,10 @@ p, li { white-space: pre-wrap; }
  </widget>
  <tabstops>
   <tabstop>listMenu</tabstop>
-  <tabstop>txtAbout</tabstop>
   <tabstop>btnOpenGitHub</tabstop>
+  <tabstop>btnIdeas</tabstop>
   <tabstop>btnIssueBug</tabstop>
+  <tabstop>txtAbout</tabstop>
   <tabstop>txtDevelopers</tabstop>
   <tabstop>txtChangelog</tabstop>
   <tabstop>txtReferences</tabstop>
