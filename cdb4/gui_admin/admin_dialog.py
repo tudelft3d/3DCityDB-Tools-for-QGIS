@@ -489,16 +489,17 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
 
             ###########################################################
             # Only for testing purposes
-            # qgis_pkg_curr_version_txt      : str = "0.7.3"
-            # qgis_pkg_curr_version_major    : int = 0
-            # qgis_pkg_curr_version_minor    : int = 7
-            # qgis_pkg_curr_version_minor_rev: int = 3
+            # qgis_pkg_curr_version_major: int     = 0
+            # qgis_pkg_curr_version_minor: int     = 9
+            # qgis_pkg_curr_version_minor_rev: int = 5
+            # qgis_pkg_curr_version_txt: str = ".".join([str(qgis_pkg_curr_version_major), str(qgis_pkg_curr_version_minor), str(qgis_pkg_curr_version_minor_rev)])
             ###########################################################
 
             # Check that the QGIS Package version is >= than the minimum required for this version of the plugin (see cdb4_constants.py)
             if all((qgis_pkg_curr_version_major == c.QGIS_PKG_MIN_VERSION_MAJOR,
                     qgis_pkg_curr_version_minor == c.QGIS_PKG_MIN_VERSION_MINOR,
-                    qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV)):
+                    qgis_pkg_curr_version_minor_rev >= c.QGIS_PKG_MIN_VERSION_MINOR_REV,
+                    )):
 
                 # Set/update the status check variable
                 self.checks.is_qgis_pkg_supported = True
@@ -524,7 +525,30 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
                 # Finish setting up the GUI
                 ti_wf.setup_post_qgis_pkg_installation(dlg=self)
 
-            else: # Wrong (outdated?) version of QGIS Package
+            elif any((qgis_pkg_curr_version_major > c.QGIS_PKG_MIN_VERSION_MAJOR,
+                      all((qgis_pkg_curr_version_major == c.QGIS_PKG_MIN_VERSION_MAJOR, qgis_pkg_curr_version_minor > c.QGIS_PKG_MIN_VERSION_MINOR))
+                    )):
+                # This is a future, most likely incompatible version of the QGIS Package.
+                # For example: 1.x.x or 0.11.x, if the current is 0.10.x)
+
+                # Set/update the status check variable
+                self.checks.is_qgis_pkg_supported = False
+
+                # Update the Connection Status label 
+                self.lblMainInst_out.setText(c.warning_html.format(text=c.INST_FAIL_VERSION_MSG))
+
+                # Deactivate the Main Installation Group box
+                self.gbxMainInst.setDisabled(True)
+                # Deactivate the User Installation Group box
+                self.gbxUserInstCont.setDisabled(False)
+
+                # Inform the user
+                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in the database you are connecting to is more recent than the one supported by this plug-in (v. {c.QGIS_PKG_MIN_VERSION_MAJOR}.{c.QGIS_PKG_MIN_VERSION_MINOR}.x).<br><br>Please upgrade your plug-in to a more recent version or contact the database administrator."
+                QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
+
+                return None # Exit
+
+            else: # Wrong (outdated) version of QGIS Package
                 # Set/update the status check variable
                 self.checks.is_qgis_pkg_supported = False
 
