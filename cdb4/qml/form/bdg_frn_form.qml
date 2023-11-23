@@ -326,5 +326,4 @@
   <reuseLastValue></reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
-
 </qgis>
