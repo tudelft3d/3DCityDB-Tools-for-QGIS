@@ -2,6 +2,11 @@
 
 This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB), which currently supports CityGML v. 1.0 and 2.0.
 
+<p align="center">
+<a href="https://3d.bk.tudelft.nl/gagugiaro/video/3DCityDB-Tools_0.8.x.mp4" target="_blank">
+<img src="images/3DCityDB-Tools_0.8.x_movie_screenshot1.jpg" width="240"/></a>
+</p>
+
 # Introduction
 
 The plug-in allows to connect to local or remote instances of the free and open-source CityGML [3D City Database](https://www.3dcitydb.org) for PostgreSQL/PostGIS and to load data as "classical" layers into QGIS. Once data layers are available in QGIS, the user can interact with them as usual, i.e. perform analyses, work with associated attributes, explore and visualise the data in 2D and 3D, etc. Additionally, data in the database can be deleted, either using classical QGIS editing tools, or bulk-wise.
