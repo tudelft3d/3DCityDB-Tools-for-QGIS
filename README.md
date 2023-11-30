@@ -3,8 +3,12 @@
 This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB), which currently supports CityGML v. 1.0 and 2.0.
 
 <p align="center">
+<br>
+<kbd>
 <a href="https://3d.bk.tudelft.nl/gagugiaro/video/3DCityDB-Tools_0.8.x.mp4" target="_blank">
-<img src="images/3DCityDB-Tools_0.8.x_movie_screenshot1.jpg" width="240"/></a>
+<img style="border:1px solid black;" src="images/3DCityDB-Tools_0.8.x_movie_screenshot1.jpg" width="600"/></a>
+</kbd>
+<br><br>
 </p>
 
 # Introduction
