@@ -4,8 +4,8 @@
 [general]
 name=3DCityDB Tools
 qgisMinimumVersion=3.22
-description=Tools to visualize and manipulate CityGML data stored in the 3D City Database
-version=0.8.7
+description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database
+version=0.8.8
 author=Giorgio Agugiaro, Konstantinos Pantelios
 email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
@@ -18,7 +18,7 @@ about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostG
  - The "QGIS Package Administrator": it allows to install the server-side part of the plug-in and to manage database user privileges.
 
  Further details can be found in the PDF files contained in the \manuals subfolder of the plugin installation directory. On the GitHub repository further details are provided, and some test datasets can be downloaded.
- 
+
 tracker=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
 repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
@@ -29,7 +29,8 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.8.7 Bug fixes and minor improvements
+changelog= 0.8.8 Minor edits
+ 0.8.7 Bug fixes and minor improvements
  0.8.6 Added About dialog GUI and other minor improvements
  0.8.5 Fixed minor bugs in the QGIS client
  0.8.4 Fixed minor bugs in the QGIS Package
