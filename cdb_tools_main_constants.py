@@ -14,7 +14,7 @@ QGIS_LTR: tuple = (22, 28, 34)
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV:   int = 8
+PLUGIN_VERSION_REV:   int = 9
 
 # Paths
 PLUGIN_ABS_PATH: str      = os.path.normpath(os.path.dirname(__file__))
@@ -38,7 +38,7 @@ PLUGIN_NAME_LABEL: str  = "3DCityDB Tools"
 MENU_LABEL_LOADER: str  = "Layer Loader"
 MENU_LABEL_DELETER: str = "Bulk Deleter"
 MENU_LABEL_ADMIN: str   = "QGIS Package Administrator"
-MENU_LABEL_USRGUIDE: str= "User guide (PDF)"
+MENU_LABEL_USRGUIDE: str= "User guide (Online PDF)"
 MENU_LABEL_ABOUT: str   = "About"
 
 # Dialog names
