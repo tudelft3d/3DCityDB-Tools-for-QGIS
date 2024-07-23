@@ -343,7 +343,6 @@ class CDBToolsMain:
             callback = self.run_admin,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            # add_to_toolbar = False)
             add_to_toolbar = True)
 
         # Add separator
@@ -360,7 +359,7 @@ class CDBToolsMain:
             callback = self.run_usr_guide,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = False) # Default: False
+            add_to_toolbar = False)
 
         # About Dialog - Leave this at the end, so it will be the last icon.
         self.add_action(
@@ -369,7 +368,7 @@ class CDBToolsMain:
             callback = self.run_about,
             parent = self.iface.mainWindow(),
             add_to_menu = True,
-            add_to_toolbar = False) # Default: False
+            add_to_toolbar = True)
 
         #####################################################################
         #
@@ -662,15 +661,8 @@ class CDBToolsMain:
         Otherwise: Opens the url to the PDF in GitHub.
         """
         file_name: str = "3DCityDB-Tools_UserGuide.pdf"
-
-        if self.PLATFORM_SYSTEM == "Windows":
-            # This will open a PDF viewer instead of the browser, if available
-            pdf_path = os.path.join(self.PLUGIN_ABS_PATH, "manuals", file_name)
-            sh_f.open_local_PDF(pdf_path=pdf_path)
-        else:
-            # For OS other than windows, stay safe and simply point to the PDF on GitHub
-            url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", file_name])
-            sh_f.open_online_url(url=url)
+        url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", file_name])
+        sh_f.open_online_url(url=url)
 
         return None
 
