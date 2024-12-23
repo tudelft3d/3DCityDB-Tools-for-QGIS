@@ -454,7 +454,7 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
             self.lblMainInst_out.setText(c.failure_html.format(text=c.INST_FAIL_VERSION_MSG))
             self.checks.is_qgis_pkg_installed = False
 
-            msg = f"The current version of the QGIS Package installed in this database is {qgis_pkg_curr_version_txt} and is not supported.<br>Please contact your database administrator."
+            msg = f"The QGIS Package installed in this PostgreSQL database is version <b>{qgis_pkg_curr_version_txt}</b> and is not supported anymore. The minimum required is version <b>{c.QGIS_PKG_MIN_VERSION_TXT}</b>.<br><br>Please contact your database administrator to update to the latest version of the QGIS Package."
             QMessageBox.warning(self, "Unsupported version of QGIS Package", msg)
 
             ts_wf.tabSettings_reset(dlg=self)
@@ -474,7 +474,7 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
 
         if is_usr_schema_inst:
             # Show message in Connection Status the 3DCityDB version if installed
-            self.DB.citydb_version: str = sh_sql.get_3dcitydb_version(dlg=self)
+            self.DB.citydb_version = sh_sql.get_3dcitydb_version(dlg=self)
             self.lbl3DCityDBInst_out.setText(c.success_html.format(text=self.DB.citydb_version))
             self.checks.is_3dcitydb_installed = True
 

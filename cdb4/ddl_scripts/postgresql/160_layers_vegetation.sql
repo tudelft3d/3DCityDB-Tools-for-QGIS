@@ -158,7 +158,7 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('SolitaryVegetationObject'::varchar, 7::integer, 'veg_sol_veg_obj'::varchar)
+	('SolitaryVegetationObject'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'SolitaryVegetationObject', NULL)::integer, 'veg_sol_veg_obj'::varchar)
 	) AS t(class_name, class_id, class_label)
 LOOP
 
@@ -307,7 +307,7 @@ END LOOP;  -- sol veg obj
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('PlantCover'::varchar, 7::integer, 'veg_plant_cover'::varchar)
+	('PlantCover'::varchar, qgis_pkg.class_name_to_class_id(cdb_schema, 'PlantCover', NULL)::integer, 'veg_plant_cover'::varchar)
 	) AS t(class_name, class_id, class_label)
 LOOP
 
@@ -384,7 +384,7 @@ sql_layer := concat(sql_layer, qgis_pkg.generate_sql_matview_header(qi_usr_schem
 		INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = o.',t.lodx_label,'_multi_surface_id AND sg.geometry IS NOT NULL)
 	WHERE
-		o.',t.lodx_label,'_multi_surface_id IS NULL AND o.',t.lodx_label,'_multi_solid_id IS NULL 
+		o.',t.lodx_label,'_multi_surface_id IS NOT NULL AND o.',t.lodx_label,'_multi_solid_id IS NULL 
 	GROUP BY sg.cityobject_id
 WITH NO DATA;
 COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of ',r.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';

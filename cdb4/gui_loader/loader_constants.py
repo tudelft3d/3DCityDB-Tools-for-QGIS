@@ -11,7 +11,7 @@ from ... import cdb_tools_main_constants as main_c
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
 QGIS_PKG_MIN_VERSION_MINOR: int = 10
-QGIS_PKG_MIN_VERSION_MINOR_REV: int = 4
+QGIS_PKG_MIN_VERSION_MINOR_REV: int = 5
 QGIS_PKG_MIN_VERSION_TXT: str = ".".join([str(QGIS_PKG_MIN_VERSION_MAJOR), str(QGIS_PKG_MIN_VERSION_MINOR), str(QGIS_PKG_MIN_VERSION_MINOR_REV)])
 
 # Path to QML configuration files
