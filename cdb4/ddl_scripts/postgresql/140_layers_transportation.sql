@@ -158,7 +158,7 @@ sql_layer := NULL; sql_ins := NULL; sql_trig := NULL;
 ---------------------------------------------------------------
 FOR r IN 
 	SELECT * FROM (VALUES
-	('TransportationComplex'::varchar,	qgis_pkg.class_name_to_class_id(cdb_schema, 'AuxiliaryTrafficArea', NULL)::integer,	'trn_complex'::varchar),
+	('TransportationComplex'::varchar,	qgis_pkg.class_name_to_class_id(cdb_schema, 'TransportationComplex', NULL)::integer,	'trn_complex'::varchar),
 	('Track',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Track', NULL)						,	'trn_track'),
 	('Railway',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Railway', NULL)					,	'trn_railway'),
 	('Road',							qgis_pkg.class_name_to_class_id(cdb_schema, 'Road', NULL)						,	'trn_road'),
@@ -274,14 +274,14 @@ FROM (
 		o.',t.lodx_name,'_multi_surface_id IS NOT NULL
 	UNION 
 	SELECT 
-		o.transportation_complex_id co_id
+		o.transportation_complex_id AS co_id
 	FROM 
 		',qi_cdb_schema,'.traffic_area AS o
-	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (o.id = co.id AND o.objectclass_id = ',r.class_id,' ',sql_where,')
-	INNER JOIN ',qi_cdb_schema,'.transportation_complex AS tc ON (tc.id = o.transportation_complex_id AND o.objectclass_id = ',r.class_id,')	
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (co.id = o.id ',sql_where,')
+	INNER JOIN ',qi_cdb_schema,'.transportation_complex AS tc ON (tc.id = o.transportation_complex_id AND tc.objectclass_id = ',r.class_id,')	
 	WHERE
 		o.',t.lodx_name,'_multi_surface_id IS NOT NULL AND o.transportation_complex_id IS NOT NULL
-) as foo;
+) AS foo;
 ');
 EXECUTE sql_feat_count INTO num_features;
 
@@ -437,7 +437,7 @@ sql_cfu_atts,'
   g.geom::geometry(MultiPolygonZ,',srid,')
 FROM
 	',qi_usr_schema,'.',qi_gv_name,' AS g 
-	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',r.class_id,')
+	INNER JOIN ',qi_cdb_schema,'.cityobject AS co ON (g.co_id = co.id AND co.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.traffic_area AS o ON (o.id = co.id AND o.objectclass_id = ',u.class_id,')
   	INNER JOIN ',qi_cdb_schema,'.transportation_complex AS tc ON (tc.id = o.transportation_complex_id AND tc.objectclass_id = ',r.class_id,');
 COMMENT ON VIEW ',qi_usr_schema,'.',qi_l_name,' IS ''View of (',r.class_name,') ',t.lodx_name,' ',u.class_name,' in schema ',qi_cdb_schema,''';
