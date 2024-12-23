@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 4;
-code_name      := 'November rain';
-release_date   := '2023-11-18'::date;
+minor_revision := 5;
+code_name      := 'Snowy holidays';
+release_date   := '2024-12-23'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
