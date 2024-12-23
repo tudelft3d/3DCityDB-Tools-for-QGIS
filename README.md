@@ -72,7 +72,7 @@ and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft)
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](http://resolver.tudelft.nl/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
+- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
 - Initial tests to support the 3DCityDB 5.0 (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b) 
 - ...the sky is the limit...
 
