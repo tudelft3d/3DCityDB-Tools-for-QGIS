@@ -17,7 +17,7 @@ about=This plugin connects to the 3D City Database (v. 4.x) for PostgreSQL/PostG
 
  - The "QGIS Package Administrator": it allows to install the server-side part of the plug-in and to manage database user privileges.
 
- Further details can be found in the PDF files contained in the \manuals subfolder of the plugin installation directory. On the GitHub repository further details are provided, and some test datasets can be downloaded.
+ On the GitHub repository further resources are provided: the installation and user manual, as well as some test datasets can be downloaded.
 
 tracker=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 
