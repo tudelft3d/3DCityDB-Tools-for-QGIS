@@ -2,7 +2,7 @@
 # Mandatory items:
 
 [general]
-name=3DCityDB Tools
+name=3DCityDB Tools DEV
 qgisMinimumVersion=3.22
 description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database
 version=0.8.10
@@ -29,7 +29,7 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.8.10 Added support for QGIS 3.40, bug fixes
+changelog= 0.8.10 Added support for QGIS 3.40, some server-side bug fixes
  0.8.9 Minor changes
  0.8.8 Minor edits
  0.8.7 Bug fixes and minor improvements
