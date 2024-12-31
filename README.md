@@ -68,6 +68,15 @@ with contributions by:
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
+# Citation
+
+If you use the 3DCityDB-Tools sowtware in scientific work, please cite our paper:
+
+- Agugiaro, G., Pantelios, K., León-Sánchez, C., Yao, Z., Nagel, C.,<br/>
+**Introducing the 3DCityDB-Tools plug-in for QGIS**.<br/>
+Recent Advances in 3D Geoinformation Science - Proceedings of the 18th 3D GeoInfo Conference, Springer, 2024, pp. 797–821.<br/>
+Link to [open-access PDF](https://research.tudelft.nl/files/181225651/978-3-031-43699-4_48.pdf).
+
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
