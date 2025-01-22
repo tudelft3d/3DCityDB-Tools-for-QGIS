@@ -1387,7 +1387,8 @@ sql_layer := concat(sql_layer,'
 		INNER JOIN ',qi_cdb_schema,'.surface_geometry AS sg ON (sg.root_id = ig.relative_brep_id AND sg.implicit_geometry IS NOT NULL)
 	WHERE
 		o.',t.lodx_label,'_implicit_rep_id IS NOT NULL
-	GROUP BY o.id;
+	GROUP BY o.id
+WITH NO DATA;
 COMMENT ON MATERIALIZED VIEW ',qi_usr_schema,'.',qi_gv_name,' IS ''Mat. view of (',r.class_name,') ',s.class_name,' ',t.lodx_name,' in schema ',qi_cdb_schema,''';
 ',qgis_pkg.generate_sql_matview_footer(qi_usr_name, qi_usr_schema, ql_l_name, qi_gv_name));
 
