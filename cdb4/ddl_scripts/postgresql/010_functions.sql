@@ -2750,7 +2750,9 @@ perform_snapping 	integer DEFAULT 0, 			-- i.e. default is 0 ("do nothing"), oth
 digits 				integer DEFAULT 3,			-- number of digits after comma for precision
 area_min			numeric DEFAULT 0.0001 		-- minimum acceptable area of a polygon 
 )
-RETURNS geometry AS $$
+RETURNS geometry 
+SET search_path TO public, pg_catalog, pg_temp
+AS $$
 DECLARE
 dec_prec 		numeric;
 srid_id 		integer;
