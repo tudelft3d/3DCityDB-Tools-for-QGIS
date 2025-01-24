@@ -105,9 +105,9 @@ DECLARE
 BEGIN
 major_version  := 0;
 minor_version  := 10;
-minor_revision := 5;
-code_name      := 'Snowy holidays';
-release_date   := '2024-12-23'::date;
+minor_revision := 6;
+code_name      := 'Frosty roads...';
+release_date   := '2025-01-23'::date;
 version        := concat(major_version,'.',minor_version,'.',minor_revision);
 full_version   := concat(major_version,'.',minor_version,'.',minor_revision,' "',code_name,'", released on ',release_date);
 
@@ -2661,9 +2661,11 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.compute_schemas_disk_size() FROM public;
 ----------------------------------------------------------------
 DROP FUNCTION IF EXISTS    qgis_pkg.st_3darea_poly(geometry);
 CREATE OR REPLACE FUNCTION qgis_pkg.st_3darea_poly(
-polygon3d geometry			-- must be a 3D polygon
+polygon3d	geometry		-- must be a 3D polygon
 )
-RETURNS numeric AS $$
+RETURNS numeric
+SET search_path TO public, pg_catalog, pg_temp
+AS $$
 DECLARE
 ring geometry;
 n_points integer;
@@ -2732,9 +2734,9 @@ RETURN area;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'util_pkg.st_3darea_poly(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.st_3darea_poly(): Error QUERY_CANCELED';
 	WHEN OTHERS THEN
-		RAISE EXCEPTION 'util_pkg.st_3darea_poly(): %', SQLERRM;
+		RAISE EXCEPTION 'qgis_pkg.st_3darea_poly(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 COMMENT ON FUNCTION qgis_pkg.st_3darea_poly(geometry) IS 'Returns the 3D area of a 3D polygon';
@@ -2750,7 +2752,7 @@ perform_snapping 	integer DEFAULT 0, 			-- i.e. default is 0 ("do nothing"), oth
 digits 				integer DEFAULT 3,			-- number of digits after comma for precision
 area_min			numeric DEFAULT 0.0001 		-- minimum acceptable area of a polygon 
 )
-RETURNS geometry 
+RETURNS geometry
 SET search_path TO public, pg_catalog, pg_temp
 AS $$
 DECLARE

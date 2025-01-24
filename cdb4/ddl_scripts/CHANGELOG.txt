@@ -3,6 +3,12 @@
 Test whether it makes sense to add "hard-coded" bbox filter also to views.
 Test whether it makes sense to add an update statement to delete trigger functions to reduce number of features in table layer metadata
 
+2025-01-23
+----------
+Version 0.10.6
+Fixed functions to work with PostgreSQL 17
+Fixed bug in function [qgis_pkg.generate_sql_layers_bridge(...)]
+
 2024-12-23
 ----------
 Version 0.10.5
