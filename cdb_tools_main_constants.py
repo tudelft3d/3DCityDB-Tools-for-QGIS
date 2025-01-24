@@ -14,7 +14,7 @@ QGIS_LTR: tuple = (22, 28, 34, 40)
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV:   int = 10
+PLUGIN_VERSION_REV:   int = 11
 
 # Paths
 PLUGIN_ABS_PATH: str      = os.path.normpath(os.path.dirname(__file__))
