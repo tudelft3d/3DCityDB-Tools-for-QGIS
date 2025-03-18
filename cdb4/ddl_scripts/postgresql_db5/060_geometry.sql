@@ -10,7 +10,7 @@
 -- qgis_pkg.create_geometry_relief_component()
 -- qgis_pkg.create_geometry_address()
 -- qgis_pkg.create_geometry_view()
--- qgis_pkg.create_all_geometry_view_in_schema()
+-- qgis_pkg.create_all_geometry_views()
 -- qgis_pkg.refresh_geometry_materialized_view()
 -- qgis_pkg.refresh_all_geometry_materialized_view()
 -- qgis_pkg.drop_geometry_view()
@@ -727,11 +727,11 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.create_geometry_view(varchar, varchar, integ
 
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.CREATE_ALL_GEOMETRY_VIEW_IN_SCHEMA()
+-- Create FUNCTION QGIS_PKG.CREATE_ALL_GEOMETRY_VIEWS()
 ----------------------------------------------------------------
 /*  The function creates all (materialized) views based on all the available feature geometries of a given schema */
-DROP FUNCTION IF EXISTS qgis_pkg.create_all_geometry_view_in_schema(varchar, varchar, integer, integer, boolean, varchar);
-CREATE OR REPLACE FUNCTION qgis_pkg.create_all_geometry_view_in_schema(
+DROP FUNCTION IF EXISTS qgis_pkg.create_all_geometry_views(varchar, varchar, integer, integer, boolean, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.create_all_geometry_views(
     usr_schema varchar,
 	cdb_schema varchar,
     parent_objectclass_id integer DEFAULT NULL,
@@ -873,19 +873,19 @@ END IF;
  
 EXCEPTION
     WHEN QUERY_CANCELED THEN
-        RAISE EXCEPTION 'qgis_pkg.create_all_geometry_view_in_schema(): Error QUERY_CANCELED';
+        RAISE EXCEPTION 'qgis_pkg.create_all_geometry_views(): Error QUERY_CANCELED';
     WHEN OTHERS THEN
-        RAISE EXCEPTION 'qgis_pkg.create_all_geometry_view_in_schema(): %', SQLERRM;
+        RAISE EXCEPTION 'qgis_pkg.create_all_geometry_views(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_all_geometry_view_in_schema(varchar, varchar, integer, integer, boolean, varchar) IS 'Create all available (materialized) views in a given schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_all_geometry_view_in_schema(varchar, varchar, integer, integer, boolean, varchar) FROM PUBLIC;
+COMMENT ON FUNCTION qgis_pkg.create_all_geometry_views(varchar, varchar, integer, integer, boolean, varchar) IS 'Create all available (materialized) views in a given schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_all_geometry_views(varchar, varchar, integer, integer, boolean, varchar) FROM PUBLIC;
 --Example
--- SELECT * FROM qgis_pkg.create_all_geometry_view_in_schema('qgis_bstsai', 'citydb', NULL, 901); -- p_oc_id & oc_id not found test
--- SELECT * FROM qgis_pkg.create_all_geometry_view_in_schema('qgis_bstsai', 'cityd', 0, 901); -- cdb_schema not found test
--- SELECT * FROM qgis_pkg.create_all_geometry_view_in_schema('qgis_bstsai', 'citydb', NULL, NULL, TRUE); -- (db_schema, mv)
--- SELECT * FROM qgis_pkg.create_all_geometry_view_in_schema('qgis_bstsai', 'citydb', 0, 901);
--- SELECT * FROM qgis_pkg.create_all_geometry_view_in_schema('qgis_bstsai', 'citydb', 0, 901, TRUE);
+-- SELECT * FROM qgis_pkg.create_all_geometry_views('qgis_bstsai', 'citydb', NULL, 901); -- p_oc_id & oc_id not found test
+-- SELECT * FROM qgis_pkg.create_all_geometry_views('qgis_bstsai', 'cityd', 0, 901); -- cdb_schema not found test
+-- SELECT * FROM qgis_pkg.create_all_geometry_views('qgis_bstsai', 'citydb', NULL, NULL, TRUE); -- (db_schema, mv)
+-- SELECT * FROM qgis_pkg.create_all_geometry_views('qgis_bstsai', 'citydb', 0, 901);
+-- SELECT * FROM qgis_pkg.create_all_geometry_views('qgis_bstsai', 'citydb', 0, 901, TRUE);
 
 
 ----------------------------------------------------------------

@@ -363,6 +363,9 @@ SELECT DISTINCT ON (cdb_schema, parent_objectclass_id, parent_classname, objectc
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''TerrainIntersectionCurve'' 		THEN ''TerrainInterCurve''
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''Point'' 							THEN ''Pt''
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''ImplicitRepresentation'' 		THEN ''Implicit''
+		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''Geometry'' 						THEN ''(D)Geometry''
+		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''RoofEdge'' 						THEN ''(D)RoofEdge''	
+		ELSE ''Deprecated''
     END								::text 				AS geometry_type,
 							 
 	CASE
@@ -379,7 +382,10 @@ SELECT DISTINCT ON (cdb_schema, parent_objectclass_id, parent_classname, objectc
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''MultiCurve'' 					THEN ''MultiLineStringZ''
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''TerrainIntersectionCurve'' 		THEN ''MultiLineStringZ''
 		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''Point'' 							THEN ''PointZ''
-		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''ImplicitRepresentation'' 		THEN ''MultiPolygonZ''					 
+		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''ImplicitRepresentation'' 		THEN ''MultiPolygonZ''
+		-- For dealing the deprecated geometries
+		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''Geometry'' 						THEN ''MultiPolygonZ''
+		WHEN (SUBSTRING(p.name FROM POSITION(''lod%'' IN p.name) + 5)) = ''RoofEdge'' 						THEN ''MultiPolygonZ''			 					 
 	END								::text 				AS postgis_geom_type,
 	clock_timestamp()				::timestamptz(3) 	AS last_modification_date
 FROM 

@@ -228,9 +228,9 @@ IF attribute_ids IS NOT NULL THEN
 				IF view_col_name <> 'f_id' THEN
 					val_col_type := qgis_pkg.get_view_column_type(qi_usr_schema, attri_view_name, view_col_name);
 					IF val_col_type <> 'json' THEN
-					attri_idx_name := concat('"', qi_lv_name_idx, '_a', attri_count, '_', val_col_count, '"');
-sql_statement := concat(sql_statement,'
-CREATE INDEX ',attri_idx_name,' ON ',qi_usr_schema,'."',qi_lv_name,'" ("',view_col_name,'");');
+						attri_idx_name := concat('"', qi_lv_name_idx, '_a', attri_count, '_', val_col_count, '"');
+						sql_statement := concat(sql_statement,'
+						CREATE INDEX ',attri_idx_name,' ON ',qi_usr_schema,'."',qi_lv_name,'" ("',view_col_name,'");');
 					END IF;
 				END IF;
 				val_col_count := val_col_count + 1;
@@ -722,7 +722,7 @@ CREATE OR REPLACE FUNCTION qgis_pkg.create_attris_table_view(
 	is_matview boolean DEFAULT FALSE,
 	is_all_attris boolean DEFAULT FALSE
 )
-RETURNS integer[]
+RETURNS text
 AS $$
 DECLARE
 	qi_usr_name varchar	  := (SELECT substring(usr_schema from 'qgis_(.*)') AS usr_name);
@@ -787,7 +787,7 @@ ELSE
 	view_name 			:= concat('"', matview_prefix, qi_cdb_schema, '_', classname, '_g_', geometry_id,'_attributes"');
 	sql_view_header 	:= qgis_pkg.generate_sql_matview_header(qi_usr_schema, view_name);
 	sql_matview_footer 	:= concat('
-CREATE INDEX ', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_attri_f_id_idx ON ', qi_usr_schema, '.', view_name, ' (f_id);');
+CREATE INDEX ', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_a_f_id_idx ON ', qi_usr_schema, '.', view_name, ' (f_id);');
 END IF;
 
 num_attri := (ARRAY_LENGTH(attri_ids, 1));
@@ -841,7 +841,7 @@ IF attri_ids IS NOT NULL THEN
 		-- adding matview footer, excluding the json type column
 			IF attri_val_col_types[i] <> 'true' THEN
 				sql_matview_footer := concat(sql_matview_footer,'
-				CREATE INDEX "', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_attri_', (trim (both '"' FROM attri_val_cols[i])),'_idx" ON ', qi_usr_schema, '.', view_name, ' (',attri_val_cols[i],');');
+				CREATE INDEX "', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_a_', attri_id, '_', i, '_idx" ON ', qi_usr_schema, '.', view_name, ' (',attri_val_cols[i],');');
 			END IF;
 		END IF;
 	END LOOP;
@@ -913,7 +913,7 @@ IF attri_ids IS NOT NULL THEN
 					-- adding matview footer, excluding the json type column
 					IF attri_val_col_types[j] <> 'true' THEN
 						sql_matview_footer := concat(sql_matview_footer,'
-						CREATE INDEX "', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_attri_', (trim (both '"' FROM attri_val_cols[j])),'_idx" ON ', qi_usr_schema, '.', view_name, ' (',attri_val_cols[j],');');
+						CREATE INDEX "', qi_cdb_schema,'_', objectclass_id, '_g_', geometry_id, '_a_', attri_id, '_', j,'_idx" ON ', qi_usr_schema, '.', view_name, ' (',attri_val_cols[j],');');
 					END IF;
 				END IF;
 			END LOOP;
@@ -953,9 +953,10 @@ ELSE
 	RAISE EXCEPTION 'No attribute found to create attribute table.';
 END IF;
 
-EXECUTE sql_atv;
+-- EXECUTE sql_atv;
+RETURN sql_atv;
 
-RETURN v_attri_ids;
+-- RETURN v_attri_ids;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN

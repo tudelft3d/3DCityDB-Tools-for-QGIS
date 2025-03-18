@@ -348,8 +348,10 @@ bbox_type					varchar,
 objectclass_id				integer,
 classname					varchar,
 parent_attribute_name		varchar, -- NULL if not nested attribute
+abbr_p_attri_name			varchar, -- for custom-enty of abbreviation for super long p_attri_name
 parent_attribute_typename	varchar, -- NULL if not nested attribute
 attribute_name				varchar,
+abbr_attri_name				varchar, -- for custom-enty of abbreviation for super long attri_name
 attribute_typename			varchar,
 is_nested					boolean, -- false: inline, true: nested
 is_multiple     			boolean, -- false: single, true: multiple
@@ -374,8 +376,10 @@ CREATE INDEX fameta_bbox_type_idx 			ON qgis_pkg.feature_attribute_metadata_temp
 CREATE INDEX fameta_oc_id_idx     			ON qgis_pkg.feature_attribute_metadata_template (objectclass_id);
 CREATE INDEX fameta_oc_name_idx     		ON qgis_pkg.feature_attribute_metadata_template (classname);
 CREATE INDEX fameta_p_attri_name_idx   		ON qgis_pkg.feature_attribute_metadata_template (parent_attribute_name);
+CREATE INDEX fameta_abbr_p_attri_name_idx   ON qgis_pkg.feature_attribute_metadata_template (abbr_p_attri_name);
 CREATE INDEX fameta_p_attri_tname_idx   	ON qgis_pkg.feature_attribute_metadata_template (parent_attribute_typename);
 CREATE INDEX fameta_attri_name_idx   		ON qgis_pkg.feature_attribute_metadata_template (attribute_name);
+CREATE INDEX fameta_abbr_attri_name_idx   	ON qgis_pkg.feature_attribute_metadata_template (abbr_attri_name);
 CREATE INDEX fameta_attri_tname_idx   		ON qgis_pkg.feature_attribute_metadata_template (attribute_typename);
 CREATE INDEX fameta_is_nested_idx   		ON qgis_pkg.feature_attribute_metadata_template (is_nested);
 CREATE INDEX fameta_is_multiple_idx   		ON qgis_pkg.feature_attribute_metadata_template (is_multiple);

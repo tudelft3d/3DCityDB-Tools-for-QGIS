@@ -21,10 +21,12 @@
 -- qgis_pkg.attribute_key_id_to_name()
 -- qgis_pkg.generate_sql_attribute_matview_footer()
 -- qgis_pkg.create_attribute_view()
--- qgis_pkg.create_all_attribute_view_in_schema()
+-- qgis_pkg.create_all_attribute_views()
 -- qgis_pkg.drop_attribute_view()
 -- qgis_pkg.drop_all_attribute_views()
---
+-- qgis_pkg.truncate_attri_name_inline()
+-- qgis_pkg.truncate_attri_name_nested()
+
 -- ***********************************************************************
 
 ----------------------------------------------------------------
@@ -357,6 +359,7 @@ DECLARE
 	qi_cdb_schema varchar:= quote_ident(cdb_schema);
 	qi_oc_id integer := objectclass_id;
 	qi_attri_name text:= attribute_name;
+	re_attri_name text := (SELECT qgis_pkg.truncate_attri_name_inline(usr_schema, cdb_schema, objectclass_id, attribute_name));
 	cdb_bbox_type_array CONSTANT varchar[]:= ARRAY['db_schema', 'm_view', 'qgis'];
 	cdb_envelope geometry;
 	attri_val_cols text[]; attri_val_col text;
@@ -404,14 +407,14 @@ IF attri_val_cols IS NOT NULL THEN
 	LOOP
 		IF val_col_count = 1 THEN
 			sql_attri := concat(sql_attri,'
-				p.',attri_val_col,' AS "',attribute_name,'",');
+				p.',attri_val_col,' AS "',re_attri_name,'",');
 		ELSE
 			IF attri_val_col = 'val_uom' THEN
 			sql_attri := concat(sql_attri,'
-				p.',attri_val_col,' AS "',attribute_name,'_', 'UoM', '",');
+				p.',attri_val_col,' AS "',re_attri_name,'_', 'UoM', '",');
 			ELSE 
 			sql_attri := concat(sql_attri,'
-				p.',attri_val_col,' AS "',attribute_name,'_',SUBSTRING(attri_val_col FROM 'val_(.*)'),'",'); -- INITCAP
+				p.',attri_val_col,' AS "',re_attri_name,'_',SUBSTRING(attri_val_col FROM 'val_(.*)'),'",'); -- INITCAP
 			END IF;
 		END IF;
 		val_col_count := val_col_count + 1;
@@ -477,6 +480,7 @@ DECLARE
 	qi_cdb_schema varchar:= quote_ident(cdb_schema);
 	qi_oc_id integer := objectclass_id;
 	qi_attri_name text:= attribute_name;
+	re_attri_name text := (SELECT qgis_pkg.truncate_attri_name_inline(usr_schema, cdb_schema, objectclass_id, attribute_name));
 	attri_val_cols text[]; attri_val_col text;
 	attri_val_cols_type_array text[][]; attri_val_col_type text;
 	cdb_bbox_type_array CONSTANT varchar[] := ARRAY['db_schema', 'm_view', 'qgis'];
@@ -532,15 +536,15 @@ IF qi_n_val_cols > 1 THEN
 			-- only the first val_col will be named as the attribute name
 			IF val_col_count = 1 THEN 
 				sql_attri := concat(sql_attri,'
-					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',attribute_name,'_',iter_count::text,'",');
+					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',re_attri_name,'_',iter_count::text,'",');
 			-- the rest val_cols will be named without the 'val_' prefix, like column 'val_codespace' will be renamed as 'codespace'
 			ELSE
 				IF attri_val_col = 'val_uom' THEN
 				sql_attri := concat(sql_attri,'
-					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',attribute_name,'_UoM', '_', iter_count::text, '",');
+					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',re_attri_name,'_UoM', '_', iter_count::text, '",');
 				ELSE 
 				sql_attri := concat(sql_attri,'
-					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',attribute_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_', iter_count::text, '",'); -- INITCAP
+					(',attribute_name,'_', iter_count::text,').',attri_val_col,' AS "',re_attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_', iter_count::text, '",'); -- INITCAP
 				END IF;
 			END IF;
 			val_col_count := val_col_count + 1; 
@@ -561,7 +565,7 @@ IF qi_n_val_cols > 1 THEN
 	sql_ctb_header := '(f_id bigint, ';
 	WHILE iter_count <= max_multiplicity
 	LOOP
-		sql_ctb_header := concat(sql_ctb_header,'',attribute_name,'_', iter_count::text, ' ', qi_ct_type_name,',');
+		sql_ctb_header := concat(sql_ctb_header,'',re_attri_name,'_', iter_count::text, ' ', qi_ct_type_name,',');
 		iter_count = iter_count + 1;
 	END LOOP;
 	sql_ctb_header := LEFT(sql_ctb_header, LENGTH(sql_ctb_header) - 1);
@@ -589,8 +593,8 @@ ELSE
 	LOOP
 		-- Concatenate additional column names with increasing numbers
 	sql_attri := concat(sql_attri, '
-		ct.',attribute_name,'_', iter_count::text,' AS ', attribute_name,'_',iter_count::text,',');
-			sql_ctb_header := concat(sql_ctb_header,'"',attribute_name,'_', iter_count::text,'" ', attri_val_col_type,',');
+		ct.',attribute_name,'_', iter_count::text,' AS ', re_attri_name,'_',iter_count::text,',');
+			sql_ctb_header := concat(sql_ctb_header,'"',re_attri_name,'_', iter_count::text,'" ', attri_val_col_type,',');
 			iter_count = iter_count + 1;
 		END LOOP;
 		sql_ctb_header = LEFT(sql_ctb_header, LENGTH(sql_ctb_header) - 1);	-- Remove the end comma
@@ -743,7 +747,8 @@ DECLARE
 	cdb_bbox_type_array CONSTANT varchar[]:= ARRAY['db_schema', 'm_view', 'qgis'];
 	cdb_envelope geometry;
 	oc_id integer := objectclass_id;
-	p_attri_name text := parent_attribute_name;
+	qi_p_attri_name text := parent_attribute_name;
+	re_attri_name text;
 	attri_names text[]; attri_name text;
 	attri_val_cols text[]; attri_val_col text;
 	val_col_count integer:= 1; -- 1-based index of array in postgresql
@@ -785,6 +790,7 @@ SELECT
 -- Dynamically add SELECT clause
 FOREACH attri_name IN ARRAY attri_names
 LOOP
+re_attri_name := (SELECT qgis_pkg.truncate_attri_name_nested(usr_schema, cdb_schema, oc_id, parent_attribute_name, attri_name));
 EXECUTE format('SELECT * FROM qgis_pkg.attribute_value_column_check(%L,%L,%L)', qi_cdb_schema, objectclass_id, attri_name) INTO attri_val_cols;
 qi_n_val_cols := ARRAY_LENGTH(attri_val_cols, 1);
 	-- multiple value columns
@@ -795,15 +801,15 @@ qi_n_val_cols := ARRAY_LENGTH(attri_val_cols, 1);
 			-- only the first val_col will be named as the attribute name
 			IF val_col_count = 1 THEN
 				sql_attri := concat(sql_attri,'
-					MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', parent_attribute_name, '_', attri_name, '",');
+					MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', re_attri_name, '",');
 			-- the rest val_cols will be named without the 'val_' prefix, like column 'val_codespace' will be renamed as 'Codespace'
 			ELSE
 				IF attri_val_col = 'val_uom' THEN
 					sql_attri := concat(sql_attri,'
-						MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', parent_attribute_name, '_', attri_name, '_UoM",');
+						MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', re_attri_name, '_UoM",');
 				ELSE
 					sql_attri := concat(sql_attri,'
-						MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', parent_attribute_name, '_', attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'",'); -- INITCAP
+						MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_col,' END) AS "', re_attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'",'); -- INITCAP
 				END IF;
 			END IF;
 			val_col_count := val_col_count + 1; 
@@ -811,7 +817,7 @@ qi_n_val_cols := ARRAY_LENGTH(attri_val_cols, 1);
 		val_col_count := 1;
 	ELSE
 	sql_attri := concat(sql_attri,'
-		MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_cols[1],' END) AS "', parent_attribute_name, '_', attri_name, '",');
+		MAX(CASE WHEN p1.name = ', quote_literal(attri_name),' THEN p1.', attri_val_cols[1],' END) AS "', re_attri_name, '",');
 	END IF;
     
     -- Update the is_multiple_value_columns, n_value_columns, value_columns
@@ -828,7 +834,7 @@ qi_n_val_cols := ARRAY_LENGTH(attri_val_cols, 1);
 		AND fam.attribute_name = %L;
 	', 
 	qi_usr_schema, qi_is_multiple_val_cols, qi_n_val_cols, attri_val_cols, 
-	qi_cdb_schema, oc_id, p_attri_name, attri_name);
+	qi_cdb_schema, oc_id, qi_p_attri_name, attri_name);
 END LOOP;
 
 -- Add the FROM clause
@@ -876,6 +882,7 @@ DECLARE
 	cdb_envelope geometry;
 	oc_id integer := objectclass_id;
 	qi_p_attri_name text := parent_attribute_name;
+	re_attri_name text;
 	attri_names text[]; attri_name text;
 	attri_val_cols text[]; attri_val_col text; attri_val_cols_nested text[];
 	additional_col_name text;
@@ -969,6 +976,7 @@ IF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,1) 
 	LOOP
 		FOREACH attri_name IN ARRAY attri_names
 		LOOP
+			re_attri_name := (SELECT qgis_pkg.truncate_attri_name_nested(usr_schema, cdb_schema, oc_id, parent_attribute_name, attri_name));
             -- Update ct_type_name if there are multiple val_cols
 			EXECUTE format ('
 			UPDATE %I.feature_attribute_metadata AS fam
@@ -988,14 +996,14 @@ IF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,1) 
 				-- only the first val_col will be named as the attribute name
 				IF val_col_count = 1 THEN
 						sql_attri := concat(sql_attri, '
-							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', parent_attribute_name, '_', attri_name, '_', iter_count::text, '",');
+							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', re_attri_name, '_', iter_count::text, '",');
 				ELSE 
 					IF attri_val_col = 'val_uom' THEN
 						sql_attri := concat(sql_attri, '
-							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', parent_attribute_name, '_', attri_name, '_UoM_', iter_count, '",');
+							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', re_attri_name, '_UoM_', iter_count, '",');
 					ELSE
 						sql_attri := concat(sql_attri, '
-							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', parent_attribute_name, '_', attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_',iter_count, '",'); -- INITCAP
+							(', attri_name, '_', iter_count::text, ').', attri_val_col, ' AS "', re_attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_',iter_count, '",'); -- INITCAP
 					END IF;
 				END IF;
 				val_col_count := val_col_count +1;
@@ -1015,6 +1023,7 @@ ELSIF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,
 	LOOP
 		FOREACH attri_name IN ARRAY attri_names
 		LOOP
+			re_attri_name := (SELECT qgis_pkg.truncate_attri_name_nested(usr_schema, cdb_schema, oc_id, parent_attribute_name, attri_name));
 			sql_ctb_header := concat(sql_ctb_header, attri_name, '_', iter_count::text, ' ', val_col_type, ',');
 			EXECUTE format('SELECT * FROM qgis_pkg.attribute_value_column_check(%L,%L,%L)', qi_cdb_schema, objectclass_id, attri_name) INTO attri_val_cols;
 			FOREACH attri_val_col IN ARRAY attri_val_cols
@@ -1022,14 +1031,14 @@ ELSIF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,
 				-- only the first val_col will be named as the attribute name
 				IF val_col_count = 1 THEN
 						sql_attri := concat(sql_attri, '
-							', attri_name, '_', iter_count::text, ' AS "', parent_attribute_name, '_', attri_name, '_', iter_count::text, '",');
+							', attri_name, '_', iter_count::text, ' AS "', re_attri_name, '_', iter_count::text, '",');
 				ELSE 
 					IF attri_val_col = 'val_uom' THEN
 						sql_attri := concat(sql_attri, '
-							', attri_name, '_', iter_count::text, ' AS "', parent_attribute_name, '_', attri_name, '_UoM_', iter_count, '",');
+							', attri_name, '_', iter_count::text, ' AS "', re_attri_name, '_UoM_', iter_count, '",');
 					ELSE
 						sql_attri := concat(sql_attri, '
-							', attri_name, '_', iter_count::text, ' AS "', parent_attribute_name, '_', attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_',iter_count, '",'); -- INITCAP
+							', attri_name, '_', iter_count::text, ' AS "', re_attri_name, '_', SUBSTRING(attri_val_col FROM 'val_(.*)'),'_',iter_count, '",'); -- INITCAP
 					END IF;
 				END IF;
 				val_col_count := val_col_count +1;
@@ -1091,7 +1100,7 @@ DECLARE
 	qi_cdb_schema varchar := quote_ident(cdb_schema);
     cdb_bbox_type_array CONSTANT varchar[] := ARRAY['db_schema', 'm_view', 'qgis'];
 	oc_id integer := objectclass_id;
-	p_attri_name text:= parent_attribute_name;
+	qi_p_attri_name text:= parent_attribute_name;
 	qi_is_multiple boolean DEFAULT FALSE;
     qi_max_multiplicity integer;
     srid integer;
@@ -1127,7 +1136,7 @@ WHERE fam.cdb_schema = %L
 	AND fam.parent_attribute_name = %L;
 ',
 qi_usr_schema, qi_is_multiple, qi_max_multiplicity, qi_cdb_schema,
-oc_id, p_attri_name);
+oc_id, qi_p_attri_name);
 	
 RETURN sql_attri;
 
@@ -1673,10 +1682,10 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.create_attribute_view(varchar, varchar, inte
 
 
 ----------------------------------------------------------------
--- Create FUNCTION QGIS_PKG.CREATE_ALL_ATTRIBUTE_VIEW_IN_SCHEMA()
+-- Create FUNCTION QGIS_PKG.create_all_attribute_views()
 ----------------------------------------------------------------
-DROP FUNCTION IF EXISTS qgis_pkg.create_all_attribute_view_in_schema(varchar, varchar, integer, boolean, varchar);
-CREATE OR REPLACE FUNCTION qgis_pkg.create_all_attribute_view_in_schema(
+DROP FUNCTION IF EXISTS qgis_pkg.create_all_attribute_views(varchar, varchar, integer, boolean, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.create_all_attribute_views(
     usr_schema varchar,
 	cdb_schema varchar,
     objectclass_id integer DEFAULT NULL,
@@ -1789,18 +1798,18 @@ END IF;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN
-		RAISE EXCEPTION 'qgis_pkg.create_all_attribute_view_in_schema(): Error QUERY_CANCELED';
+		RAISE EXCEPTION 'qgis_pkg.create_all_attribute_views(): Error QUERY_CANCELED';
 	WHEN OTHERS THEN 
-		RAISE EXCEPTION 'qgis_pkg.create_all_attribute_view_in_schema(): %', SQLERRM;
+		RAISE EXCEPTION 'qgis_pkg.create_all_attribute_views(): %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION qgis_pkg.create_all_attribute_view_in_schema(varchar, varchar, integer, boolean, varchar) IS 'Create all attribute view(s) or materialized view(s) of the objectclass within given schema';
-REVOKE EXECUTE ON FUNCTION qgis_pkg.create_all_attribute_view_in_schema(varchar, varchar, integer, boolean, varchar) FROM public;
+COMMENT ON FUNCTION qgis_pkg.create_all_attribute_views(varchar, varchar, integer, boolean, varchar) IS 'Create all attribute view(s) or materialized view(s) of the objectclass within given schema';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.create_all_attribute_views(varchar, varchar, integer, boolean, varchar) FROM public;
 --Example
--- SELECT * FROM qgis_pkg.create_all_attribute_view_in_schema('qgis_bstsai', 'citydb', 901);
--- SELECT * FROM qgis_pkg.create_all_attribute_view_in_schema('qgis_bstsai', 'citydb', 901, TRUE);
--- SELECT * FROM qgis_pkg.create_all_attribute_view_in_schema('qgis_bstsai', 'citydb');
--- SELECT * FROM qgis_pkg.create_all_attribute_view_in_schema('qgis_bstsai', 'citydb', NULL, TRUE);
+-- SELECT * FROM qgis_pkg.create_all_attribute_views('qgis_bstsai', 'citydb', 901);
+-- SELECT * FROM qgis_pkg.create_all_attribute_views('qgis_bstsai', 'citydb', 901, TRUE);
+-- SELECT * FROM qgis_pkg.create_all_attribute_views('qgis_bstsai', 'citydb');
+-- SELECT * FROM qgis_pkg.create_all_attribute_views('qgis_bstsai', 'citydb', NULL, TRUE);
 
 
 ----------------------------------------------------------------
@@ -1969,3 +1978,216 @@ REVOKE EXECUTE ON FUNCTION qgis_pkg.drop_all_attribute_views(varchar, varchar, i
 -- SELECT * FROM qgis_pkg.drop_all_attribute_views('qgis_bstsai', 'citydb', 901, TRUE); -- drop all attribute matviews in citydb schema
 -- SELECT * FROM qgis_pkg.drop_all_attribute_views('qgis_bstsai', 'alderaan'); -- drop all attribute views in citydb schema
 -- SELECT * FROM qgis_pkg.drop_all_attribute_views('qgis_bstsai', 'alderaan', NULL, TRUE); -- drop all attribute matviews in citydb schema
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.TRUNCATE_ATTRI_NAME_INLINE()
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS qgis_pkg.truncate_attri_name_inline(varchar, varchar, integer, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.truncate_attri_name_inline(
+	usr_schema varchar,
+	cdb_schema varchar,
+	objectclass_id integer,
+	attri_name varchar
+)
+RETURNS varchar AS $$
+DECLARE
+	qi_usr_schema varchar := quote_ident(usr_schema);
+	qi_cdb_schema varchar := quote_ident(cdb_schema);
+	ql_cdb_schema varchar := quote_literal(cdb_schema);
+	oc_id int := objectclass_id;
+    truncated_text varchar;
+	sql_abbre_update text;
+BEGIN
+    -- start with the full text
+    truncated_text := attri_name;
+
+    -- reduce length until it fits within 63 bytes, the limit of PostgreSQL column name binary length
+	-- 55 is set to spare buffer bytes for attribute that has second column such as height_UoM
+    WHILE octet_length(truncated_text) > 55 LOOP
+        truncated_text := left(truncated_text, char_length(truncated_text) - 1);
+		RAISE NOTICE 'The attribute name "%" is too long and is truncated to: "%"', attri_name, truncated_text;
+    END LOOP;
+
+	sql_abbre_update := concat('
+	UPDATE ',qi_usr_schema,'.feature_attribute_metadata 
+	SET abbr_attri_name = ', quote_literal(truncated_text),'
+	WHERE cdb_schema = ',ql_cdb_schema,' AND objectclass_id = ',oc_id,' AND attribute_name = ',quote_literal(attri_name),';
+	');
+	EXECUTE sql_abbre_update;
+
+    RETURN truncated_text;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.truncate_attri_name_inline: Error QUERY_CANCELED';
+  	WHEN OTHERS THEN
+		RAISE EXCEPTION 'qgis_pkg.truncate_attri_name_inline: %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.truncate_attri_name_inline(varchar, varchar, integer, varchar) IS 'Truncate the length of the "inline" attribute name to ensure that its binaray length is smaller than 63, which is the limit of PostgreSQL columns';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.truncate_attri_name_inline(varchar, varchar, integer, varchar) FROM PUBLIC;
+-- Example
+-- SELECT qgis_pkg.truncate_attri_name_inline('qgis_bstsai', 'tokyo', 901, '13_区市町村コード_大字・町コード_町・丁目コード');
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.TRUNCATE_ATTRI_NAME_NESTED()
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS qgis_pkg.truncate_attri_name_nested(varchar, varchar, integer, varchar, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.truncate_attri_name_nested(
+	usr_schema varchar,
+	cdb_schema varchar,
+	objectclass_id integer,
+    p_attri_name varchar,
+    attri_name varchar
+)
+RETURNS varchar AS $$
+DECLARE
+	qi_usr_schema varchar := quote_ident(usr_schema);
+	qi_cdb_schema varchar := quote_ident(cdb_schema);
+	ql_cdb_schema varchar := quote_literal(cdb_schema);
+    nested_attri_name text := concat(p_attri_name, '_', attri_name);
+	oc_id int := objectclass_id;
+    truncated_p_attri varchar;
+    truncated_text varchar;
+    user_abbreviation varchar;
+    max_total_length int := 63;  -- PostgreSQL column name limit
+	sql_abbr text;
+BEGIN
+    -- Step 1: Check if the combined attribute name exceeds 63 bytes
+    IF octet_length(nested_attri_name) > max_total_length THEN
+        RAISE NOTICE '"%" is too long. Checking for abbreviations of the parent attribute', nested_attri_name;
+
+        -- Step 2: Check if an abbreviation already exists
+		sql_abbr := concat('
+			SELECT abbr_p_attri_name FROM ',qi_usr_schema,'.feature_attribute_metadata
+			WHERE cdb_schema = ',ql_cdb_schema,' AND objectclass_id = ', oc_id,'
+			AND parent_attribute_name = ',quote_literal(p_attri_name),'
+			AND attribute_name = ',quote_literal(attri_name),';
+		');
+		EXECUTE sql_abbr INTO truncated_p_attri;
+
+		-- Debugging: Show the retrieved abbreviation
+        RAISE NOTICE 'Retrieved abbreviation: %', truncated_p_attri;
+
+        -- Step 3: If no abbreviation exists, call Python script to get user input
+        IF truncated_p_attri IS NULL THEN
+			RAISE EXCEPTION '"%" is too long! Please specify an abbreviation', p_attri_name;
+		ELSE
+            -- Validate the user input
+			user_abbreviation := truncated_p_attri;
+            IF user_abbreviation IS NOT NULL AND char_length(user_abbreviation) > 1 THEN
+
+                -- Re-run the function with the new abbreviation
+                RETURN qgis_pkg.truncate_attri_name_nested(usr_schema, cdb_schema, oc_id, user_abbreviation, attri_name);
+            ELSE
+                RAISE EXCEPTION 'Invalid abbreviation entered!';
+            END IF;
+        END IF;
+    ELSE
+        truncated_p_attri := p_attri_name; -- If name fits, keep original
+    END IF;
+
+    -- Step 4: Generate final attribute name
+    truncated_text := concat(truncated_p_attri, '_', attri_name);
+
+    -- Step 5: If still exceeding 63 bytes, truncate child attribute while keeping at least 5 characters
+    WHILE octet_length(truncated_text) > max_total_length AND char_length(attri_name) > 5 LOOP
+        attri_name := left(attri_name, char_length(attri_name) - 1);
+        truncated_text := concat(truncated_p_attri, '_', attri_name);
+    END LOOP;
+
+    RETURN truncated_text;
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.truncate_attri_name_nested: Error QUERY_CANCELED';
+  	WHEN OTHERS THEN
+		RAISE EXCEPTION 'qgis_pkg.truncate_attri_name_nested: %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.truncate_attri_name_nested(varchar, varchar, integer, varchar, varchar) IS 'Truncate the length of the "nested" attribute name to ensure that its binaray length is smaller than 63, which is the limit of PostgreSQL columns';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.truncate_attri_name_nested(varchar, varchar, integer, varchar, varchar) FROM PUBLIC;
+-- Example
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '城南地区河川流域浸水予想区域（改定）（想定最大規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '利根川水系利根川洪水浸水想定区域（想定最大規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '多摩水系多摩川、浅川、大栗川洪水浸水想定区域（想定最大規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '石神井川及び白子川流域浸水予想区域（想定最大規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '石神井川及び白子川流域浸水予想区域（想定最大規模）', '浸水深');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（計画規模）', '浸水深');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（計画規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（計画規模）', '規模');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（想定最大規模）', '浸水深');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（想定最大規模）', '浸水ランク');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（想定最大規模）', '規模');
+-- SELECT qgis_pkg.truncate_attri_name_nested('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（想定最大規模）', '継続時間');
+
+
+----------------------------------------------------------------
+-- Create FUNCTION QGIS_PKG.UPDATE_NESTED_ATTRI_ABBR()
+----------------------------------------------------------------
+DROP FUNCTION IF EXISTS qgis_pkg.update_nested_attri_abbr(varchar, varchar, integer, varchar);
+CREATE OR REPLACE FUNCTION qgis_pkg.update_nested_attri_abbr(
+	usr_schema varchar,
+	cdb_schema varchar,
+	objectclass_id integer,
+	attri_name varchar,
+	abbr_attri_name varchar,
+	is_child_attri boolean DEFAULT NULL
+)
+RETURNS varchar AS $$
+DECLARE
+	qi_usr_schema varchar := quote_ident(usr_schema);
+	qi_cdb_schema varchar := quote_ident(cdb_schema);
+	ql_cdb_schema varchar := quote_literal(cdb_schema);
+	oc_id int := objectclass_id;
+	ori_attri varchar;
+    abbr_attri varchar;
+	sql_abbre_update text;
+BEGIN
+	-- Check if feature attribute metadata table exists
+	IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = qi_usr_schema AND table_name = 'feature_attribute_metadata') THEN
+		RAISE EXCEPTION '%.feature_attribute_metadata table not yet created. Please create it first', qi_usr_schema;
+	END IF;
+
+	-- Determine which attribute column to update based on is_child_attri
+    IF is_child_attri THEN
+        ori_attri := 'attribute_name';
+        abbr_attri := 'abbr_attri_name';
+    ELSE
+        ori_attri := 'parent_attribute_name';
+        abbr_attri := 'abbr_p_attri_name';
+    END IF;
+
+	sql_abbre_update := concat('
+	UPDATE ',qi_usr_schema,'.feature_attribute_metadata 
+	SET ',abbr_attri,' = ', quote_literal(abbr_attri_name),'
+	WHERE cdb_schema = ',ql_cdb_schema,' AND objectclass_id = ',oc_id,' AND ',ori_attri,' = ',quote_literal(attri_name),';
+	');
+	EXECUTE sql_abbre_update;
+
+	RETURN format('%s (%s): %s -> %s', cdb_schema, oc_id, attri_name, abbr_attri_name);
+
+EXCEPTION
+	WHEN QUERY_CANCELED THEN
+		RAISE EXCEPTION 'qgis_pkg.update_nested_attri_abbr: Error QUERY_CANCELED';
+  	WHEN OTHERS THEN
+		RAISE EXCEPTION 'qgis_pkg.update_nested_attri_abbr: %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION qgis_pkg.update_nested_attri_abbr(varchar, varchar, integer, varchar, varchar, boolean) IS 'Update the user-specified abbreviations for nested attributes that exceed the 63 bytes li';
+REVOKE EXECUTE ON FUNCTION qgis_pkg.update_nested_attri_abbr(varchar, varchar, integer, varchar, varchar, boolean) FROM PUBLIC;
+-- Example
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '利根川水系利根川洪水浸水想定区域（想定最大規模）', '利根川浸水想定(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '利根川水系利根川洪水浸水想定区域（計画規模）', '利根川水系浸水想定(計画)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '利根川水系江戸川洪水浸水想定区域（想定最大規模）', '江戸川浸水想定(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '利根川水系江戸川洪水浸水想定区域（計画規模）', '江戸川浸水想定区域(計画)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '多摩水系多摩川、浅川、大栗川洪水浸水想定区域（想定最大規模）', '多摩水系浸水想定(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '多摩水系多摩川、浅川、大栗川洪水浸水想定区域（計画規模）', '多摩水系浸水想定(計画)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '江東内部河川流域浸水予想区域（想定最大規模）', '江東內部浸水予想(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '石神井川及び白子川流域浸水予想区域（想定最大規模）', '石神井川浸水予想(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '神田川流域浸水予想区域（想定最大規模）', '神田川浸水予想(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（想定最大規模）', '荒川水系浸水想定(想定最大)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '荒川水系荒川洪水浸水想定区域（計画規模）', '荒川水系浸水想定(計画)');
+-- SELECT qgis_pkg.update_nested_attri_abbr('qgis_bstsai', 'tokyo', 901, '野川、仙川、入間川、谷沢川及び丸子川流域浸水予想区域（想定最大規模）', '野川浸水予想(想定最大)');
