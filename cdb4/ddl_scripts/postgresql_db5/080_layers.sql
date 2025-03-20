@@ -722,7 +722,7 @@ CREATE OR REPLACE FUNCTION qgis_pkg.create_attris_table_view(
 	is_matview boolean DEFAULT FALSE,
 	is_all_attris boolean DEFAULT FALSE
 )
-RETURNS text
+RETURNS integer[]
 AS $$
 DECLARE
 	qi_usr_name varchar	  := (SELECT substring(usr_schema from 'qgis_(.*)') AS usr_name);
@@ -817,10 +817,14 @@ IF attri_ids IS NOT NULL THEN
 	ct_type_header := (SELECT (REGEXP_MATCH(sql_attri, '(DROP TYPE IF EXISTS .*?;[\n\s]*CREATE TYPE .*?;)'))[1]);
 	IF ct_type_header IS NOT NULL THEN
 		ct_type_name := (SELECT (REGEXP_MATCH(sql_attri, 'DROP TYPE IF EXISTS (.*?);[\s\n]*CREATE TYPE (.*?) AS \(.*?\);'))[1]);
-		check_ct_type_name := trim(both '"' from ct_type_name);
+		check_ct_type_name := trim(both '"' from split_part(ct_type_name, '.', 2));
 		sql_attri := (SELECT (REGEXP_SUBSTR(sql_attri, 'SELECT.*?AS ct\(.*?\)')));
 		--Check if ct_type already existed
-		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = check_ct_type_name) THEN
+		IF NOT EXISTS (
+			SELECT 1 FROM pg_type t 
+			JOIN pg_namespace n ON t.typnamespace = n.oid
+    		WHERE t.typname = check_ct_type_name
+    		AND n.nspname = qi_cdb_schema) THEN
 			sql_atv_ct_header := concat(sql_atv_ct_header,
 			ct_type_header);
 		END IF;
@@ -890,10 +894,15 @@ IF attri_ids IS NOT NULL THEN
 			ct_type_header := (SELECT (REGEXP_MATCH(sql_attri, '(DROP TYPE IF EXISTS .*?;[\n\s]*CREATE TYPE .*?;)'))[1]);
 			IF ct_type_header IS NOT NULL THEN
 				ct_type_name := (SELECT (REGEXP_MATCH(sql_attri, 'DROP TYPE IF EXISTS (.*?);[\s\n]*CREATE TYPE (.*?) AS \(.*?\);'))[1]);
-				check_ct_type_name := trim(both '"' from ct_type_name);
+				check_ct_type_name := trim(both '"' from split_part(ct_type_name, '.', 2));
 				sql_attri := (SELECT (REGEXP_SUBSTR(sql_attri, 'SELECT.*?AS ct\(.*?\)')));
 				--Check if ct_type already existed
-				IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = check_ct_type_name) THEN
+				IF NOT EXISTS (
+					SELECT 1 FROM pg_type t 
+					JOIN pg_namespace n ON t.typnamespace = n.oid
+					WHERE t.typname = check_ct_type_name
+					AND n.nspname = qi_cdb_schema
+				) THEN
 					sql_atv_ct_header := concat(sql_atv_ct_header,
 					ct_type_header);
 				END IF;
@@ -953,10 +962,10 @@ ELSE
 	RAISE EXCEPTION 'No attribute found to create attribute table.';
 END IF;
 
--- EXECUTE sql_atv;
-RETURN sql_atv;
+EXECUTE sql_atv;
+-- RETURN sql_atv;
 
--- RETURN v_attri_ids;
+RETURN v_attri_ids;
 
 EXCEPTION
 	WHEN QUERY_CANCELED THEN

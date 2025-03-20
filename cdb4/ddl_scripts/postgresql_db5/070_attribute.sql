@@ -315,8 +315,8 @@ DECLARE
 	sql_ct_type text;
 BEGIN	
 sql_ct_type := concat('
-DROP TYPE IF EXISTS ',ct_type_name,'; 
-CREATE TYPE ',ct_type_name,' AS (');
+DROP TYPE IF EXISTS ',qi_cdb_schema,'.',ct_type_name,'; 
+CREATE TYPE ',qi_cdb_schema,'.',ct_type_name,' AS (');
 	
 FOREACH attri_val_col IN ARRAY attri_val_cols
 LOOP
@@ -558,14 +558,14 @@ IF qi_n_val_cols > 1 THEN
 	LOOP
 		sql_ctb_val_col := concat(sql_ctb_val_col,'p.',attri_val_col,',');
 	END LOOP;
-	sql_ctb_val_col := concat('(',LEFT(sql_ctb_val_col, LENGTH(sql_ctb_val_col) - 1),')::',qi_ct_type_name);
+	sql_ctb_val_col := concat('(',LEFT(sql_ctb_val_col, LENGTH(sql_ctb_val_col) - 1),')::',qi_cdb_schema,'.',qi_ct_type_name);
 
 	-- Generate crosstab columns header with attribute name and composite type(qi_ct_type_name)
 	iter_count := 1;
 	sql_ctb_header := '(f_id bigint, ';
 	WHILE iter_count <= max_multiplicity
 	LOOP
-		sql_ctb_header := concat(sql_ctb_header,'',re_attri_name,'_', iter_count::text, ' ', qi_ct_type_name,',');
+		sql_ctb_header := concat(sql_ctb_header,'',re_attri_name,'_', iter_count::text, ' ', qi_cdb_schema, '.', qi_ct_type_name,',');
 		iter_count = iter_count + 1;
 	END LOOP;
 	sql_ctb_header := LEFT(sql_ctb_header, LENGTH(sql_ctb_header) - 1);
@@ -970,7 +970,7 @@ IF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,1) 
     -- and the SELECT clause in crosstab body will only be p1.(val_col)
     EXECUTE format ('SELECT * FROM qgis_pkg.create_compostie_type_name(%L,%L,%L)', qi_cdb_schema, objectclass_id, parent_attribute_name) INTO qi_ct_type_name;
 	EXECUTE format ('SELECT * FROM qgis_pkg.create_compostie_type_header(%L,%L,%L)', qi_cdb_schema, qi_ct_type_name, attri_val_cols_nested) INTO sql_ct_type_def;
-	sql_ctb_val_col := concat('(',LEFT(sql_ctb_val_col, LENGTH(sql_ctb_val_col) - 1),')::', qi_ct_type_name);
+	sql_ctb_val_col := concat('(',LEFT(sql_ctb_val_col, LENGTH(sql_ctb_val_col) - 1),')::',qi_cdb_schema,'.', qi_ct_type_name);
 
 	WHILE iter_count <= max_multiplicity
 	LOOP
@@ -989,7 +989,7 @@ IF (attri_val_cols_nested IS NOT NULL AND ARRAY_LENGTH(attri_val_cols_nested,1) 
 			', 
 			qi_usr_schema, qi_ct_type_name, qi_cdb_schema, oc_id, qi_p_attri_name);
             
-			sql_ctb_header := concat(sql_ctb_header, attri_name, '_', iter_count::text, ' ', qi_ct_type_name, ',');
+			sql_ctb_header := concat(sql_ctb_header, attri_name, '_', iter_count::text, ' ',qi_cdb_schema, '.', qi_ct_type_name, ',');
 			EXECUTE format('SELECT * FROM qgis_pkg.attribute_value_column_check(%L,%L,%L)', qi_cdb_schema, objectclass_id, attri_name) INTO attri_val_cols;
 			FOREACH attri_val_col IN ARRAY attri_val_cols
 			LOOP
@@ -1372,24 +1372,6 @@ WHERE fam.cdb_schema = ',ql_cdb_schema,'
 EXECUTE sql_attri_name INTO attri_name;
 
 IF attri_name IS NULL THEN
-	-- Nested attribute, return the name with parent attribute and child attribute concatenated with '_'
-	-- sql_attri_name := concat('
-	-- 	WITH nested_attri AS (
-	-- 		SELECT parent_attribute_name AS p_attri
-	-- 		FROM ',qi_usr_schema,'.feature_attribute_metadata
-	-- 		WHERE cdb_schema = ', ql_cdb_schema,' AND id = ', attribute_id,'
-	-- 	)
-	-- 	SELECT array_to_string(
-	-- 		ARRAY(
-	-- 		SELECT concat(parent_attribute_name, ''_'', attribute_name)
-	-- 		FROM ',qi_usr_schema,'.feature_attribute_metadata, nested_attri
-	-- 		WHERE cdb_schema = ', ql_cdb_schema,' 
-	-- 			AND objectclass_id = ', oc_id,'
-	-- 			AND parent_attribute_name = nested_attri.p_attri
-	-- 		), '',''
-	-- 	)
-	-- ');
-
 	-- Only return the parent attribute names
 	sql_attri_name := concat('
 		SELECT parent_attribute_name AS p_attri
@@ -2162,7 +2144,7 @@ BEGIN
 
 	sql_abbre_update := concat('
 	UPDATE ',qi_usr_schema,'.feature_attribute_metadata 
-	SET ',abbr_attri,' = ', quote_literal(abbr_attri_name),'
+	SET ',abbr_attri,' = ', quote_literal(abbr_attri_name),', last_modification_date = clock_timestamp()
 	WHERE cdb_schema = ',ql_cdb_schema,' AND objectclass_id = ',oc_id,' AND ',ori_attri,' = ',quote_literal(attri_name),';
 	');
 	EXECUTE sql_abbre_update;
