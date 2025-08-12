@@ -27,8 +27,8 @@ This repository provides server-side support to 3DCityDB-Tools Plug-In for QGIS,
 ## Requirements
   This server-side support of the 3DCityDB-Tools for QGIS has been developed using:
   - **[PostgreSQL](https://www.postgresql.org/) >= 12** (version 16) with **[PostGIS](https://postgis.net/) >= 3.0** (version 3.4.2)
-  - **[3DCityDB 5.0 Command line tool](https://github.com/3dcitydb/citydb-tool)** (version 0.8.1-beta)
-  - **[QGIS](https://www.qgis.org/download/)** (version 3.34.8-Prizren)
+  - **[3DCityDB 5.0 Command line tool](https://github.com/3dcitydb/citydb-tool)** (version 0.8.1-beta or higher)
+  - **[QGIS](https://www.qgis.org/download/)** (version 3.34.8-Prizren or higher)
 
   For managing PostgreSQL, the open-source tool [pgAdmin4](https://www.pgadmin.org/) is in use and is recommended.
 
