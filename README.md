@@ -48,7 +48,7 @@ This repository provides server-side support to 3DCityDB-Tools Plug-In for QGIS,
 
 ## Support
 - You are kindly invited to submit issues, ideas, and suggestions to this repository.
-- Contact: bstsai1022@gmail.com
+- Contact: [Bing-Shiuan Tsai](bstsai1022@gmail.com) or [Giorgio Agugiaro](g.agugiaro@tudelft.nl)
 
 ## Citation
 If you would like to get further information of the work of this repository, please have a look at the MSc thesis:
