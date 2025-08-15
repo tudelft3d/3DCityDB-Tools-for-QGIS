@@ -36,7 +36,7 @@ This repository provides server-side support to 3DCityDB-Tools Plug-In for QGIS,
 <p align="center">
 <br>
 <kbd>
-<a href="/video/demo_3dcitydb5.mp4" target="_blank">
+<a href="https://3d.bk.tudelft.nl/gagugiaro/video/3DCityDB-Tools_3dcitydb5_server_side.mp4" target="_blank">
   <!-- <a href="https://drive.google.com/file/d/1DQMauAGE3JKBcGCiTsvTX5V0qBaqZ0F8/view?usp=sharing" target="_blank"> -->
 <img style="border:1px solid black;" src="docs/images/demo_cover.png" width="600"/></a>
 </kbd>
