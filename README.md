@@ -53,10 +53,10 @@ This repository provides server-side support to 3DCityDB-Tools Plug-In for QGIS,
 ## Citation
 If you would like to get further information of the work of this repository, please have a look at the MSc thesis:
 
-- Tsai, B.-S., Agugiaro, G., León-Sánchez, C., Yao, Z., Nagel, C., 2025,<br>
+- Tsai, B.-S., Agugiaro, G., León-Sánchez, C., Nagel, C., Yao, Z., 2025<br>
 **Introducing server-side support for 3DCityDB 5.0 to the 3DCityDB-Tools plug-in for QGIS**<br>
 ISPRS Ann. Arch. Photogramm. Remote Sens. Spatial Inf. Sci., 20th 3D GeoInfo & 9th Smart Data Smart Cities Conference, Japan. (in press)
 
-- Tsai, B.-S., 2024,<br>
+- Tsai, B.-S., 2024<br>
 **3DCityDB-Tools plug-in for QGIS: Adding server-side support to 3DCityDB v.5.0**<br>
 [[Link](https://repository.tudelft.nl/record/uuid:5992ba24-8618-48d7-9e24-28839b5da16b)] [[BibTeX](docs/CITATION.bib)]
