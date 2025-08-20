@@ -11,14 +11,14 @@
       Create a new user and set privileges for this newly created role by granting full access in the side panel under `Login/Group Roles`.
 
       <p align="center">
-        <img src="../docs/images/create%20user%20name.png" alt="create new role" width="500"/>
+        <img src="../images/create%20user%20name.png" alt="create new role" width="500"/>
       </p>
 
   2. **Create new database for data import**
 
       Create a new database under the PostgreSQL server.
       <p align="center">
-        <img src="../docs/images/create new db.png" alt="create db" width="300"/>
+        <img src="../images/create new db.png" alt="create db" width="300"/>
       </p>
 
   3. **Create necessary extensions**
@@ -58,7 +58,7 @@
 
   After successful execution, two default schemas (citydb and citydb_pkg) will be created under the target database. You can create additional 3DCityDB 5.0 schemas by running the `create_schema` shell script.
   <p align="center"> 
-    <img src="../docs/images/create db schema.png" alt="create 3dcitydb" width="500"/> 
+    <img src="../images/create db schema.png" alt="create 3dcitydb" width="500"/> 
   </p>
 
 ## Step 5: Import Spatial Data

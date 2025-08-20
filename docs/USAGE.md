@@ -30,13 +30,13 @@
 1. Download and unzip the package of this repository
 2. Open pgAdmin4
 3. Create new query tool tab
-4. Execute all SQL script files in order under the `postgresql` folder
+4. Execute all SQL script files in order under the `postgresql_citydb5` folder
 5. Verify successful installation of `qgis_pkg` schema
 </details>
 
 ### User Schema Creation
 <details>
-<summary>Create user schema for storing metadata tables and GIS layers</summary><br> 
+<summary>Create user schema for storing metadata tables and GIS layers</summary>
 
 ```sql
 SELECT * FROM qgis_pkg.create_qgis_usr_schema('usr_name');
@@ -93,7 +93,7 @@ The extent type determines the bounding boxes used for:
 
 Results stored in `feature_geometry_metadata` table under the `usr_schema`:
 <p align="center"> 
-<img src="../docs/images/meta_geom.png" alt="meta_geom"/> 
+<img src="../images/meta_geom.png" alt="meta_geom"/> 
 </p>
 </details>
 
@@ -114,7 +114,7 @@ Similar scanning options:
 
 Results stored in `feature_attribute_metadata` table under the `usr_schema`:
 <p align="center"> 
-<img src="../docs/images/meta_attri.png" alt="meta_attri"/> 
+<img src="../images/meta_attri.png" alt="meta_attri"/> 
 </p>
 </details>  
 
@@ -140,7 +140,7 @@ The metadata tables provide options for:
 - Stores as materialized view
 - `LEFT JOIN` with geometry materialized view
 <p align="center"> 
-    <img src="../docs/images/layer approach.png" alt="layer_2"/> 
+    <img src="../images/layer approach.png" alt="layer_2"/> 
 </p>
 </details>
 
@@ -250,7 +250,7 @@ Optional Parameters:
 
 Layer information stored in `layer_metadata` table under the `usr_schema`:
 <p align="center"> 
-  <img src="../docs/images/meta_layer.png" alt="meta_layer"/> 
+  <img src="../images/meta_layer.png" alt="meta_layer"/> 
 </p>
 </details>
 
@@ -274,7 +274,7 @@ SELECT * FROM qgis_pkg.create_layer(
 ```
 Result:
 <p align="center"> 
-<img src="../docs/images/layer_example1.png" alt="layer_1"/> 
+<img src="../images/layer_example1.png" alt="layer_1"/> 
 </p>
 
 Generated views:
@@ -301,7 +301,7 @@ Generated views:
 ```
 Result:
 <p align="center"> 
-<img src="../docs/images/layer_example2.png" alt="layer_2"/> 
+<img src="../images/layer_example2.png" alt="layer_2"/> 
 </p>
 
 Generated views:
@@ -320,43 +320,43 @@ SELECT * FROM qgis_pkg.create_all_layer('usr_schema', 'cdb_schema');
 
 - Railway dataset result:
     <p align="center"> 
-    <img src="../docs/images/railway_2D.png" alt="railway_2D"/> 
+    <img src="../images/railway_2D.png" alt="railway_2D"/> 
     </p>
     <p align="center"> 
-    <img src="../docs/images/railway_3D.png" alt="railway_3D"/> 
+    <img src="../images/railway_3D.png" alt="railway_3D"/> 
     </p>
 
 - Rijsen-Holten dataset result:
     - Full extent:
         <p align="center"> 
-        <img src="../docs/images/rh_full_2d.png" alt="rh_full_2d"/> 
+        <img src="../images/rh_full_2d.png" alt="rh_full_2d"/> 
         </p>
         <p align="center"> 
-        <img src="../docs/images/rh_full_3d.png" alt="rh_full_3d"/> 
+        <img src="../images/rh_full_3d.png" alt="rh_full_3d"/> 
         </p>
 
     - Smaller extent:
         <p align="center"> 
-        <img src="../docs/images/rh_small_2d.png" alt="rh_small_2d"/> 
+        <img src="../images/rh_small_2d.png" alt="rh_small_2d"/> 
         </p>
         <p align="center"> 
-        <img src="../docs/images/rh_small_3d.png" alt="rh_small_3d"/> 
+        <img src="../images/rh_small_3d.png" alt="rh_small_3d"/> 
         </p>
 
 - Tokyo dataset result:
     <p align="center"> 
-    <img src="../docs/images/Tokyo_result_2d.png" alt="tokyo_2d"/> 
+    <img src="../images/Tokyo_result_2d.png" alt="tokyo_2d"/> 
     </p>
     <p align="center"> 
-    <img src="../docs/images/Tokyo_result_3d.png" alt="tokyo_3d"/> 
+    <img src="../images/Tokyo_result_3d.png" alt="tokyo_3d"/> 
     </p>
 
 - New York Transportation dataset result:
     <p align="center"> 
-    <img src="../docs/images/nyc_2d.png" alt="ny_2d"/> 
+    <img src="../images/nyc_2d.png" alt="ny_2d"/> 
     </p>
     <p align="center"> 
-    <img src="../docs/images/nyc_3d.png" alt="ny_3d"/> 
+    <img src="../images/nyc_3d.png" alt="ny_3d"/> 
     </p>
 </details>
 
@@ -399,14 +399,14 @@ Currently, features without direct geometry representations (e.g., traffic space
 <tr>
 <td width="50%">
 <p align="center">
-<img src="../docs/images/envelope_result_no_panel.png" alt="envelope_result"/>
+<img src="../images/envelope_result_no_panel.png" alt="envelope_result"/>
 <br>
 <em>Feature Envelope</em>
 </p>
 </td>
 <td width="50%">
 <p align="center">
-<img src="../docs/images/aggre_result_no_panel.png" alt="aggre_result"/>
+<img src="../images/aggre_result_no_panel.png" alt="aggre_result"/>
 <br>
 <em>Child Feature Geometry Aggregation</em>
 </p>
@@ -424,21 +424,21 @@ Future work will focus on implementing both approaches to provide comprehensive 
 <tr>
 <td width="33%">
 <p align="center">
-<img src="../docs/images/traffic_area.png" alt="traffic_area"/>
+<img src="../images/traffic_area.png" alt="traffic_area"/>
 <br>
 <em>Original layer of (Auxiliary) traffic area</em>
 </p>
 </td>
 <td width="33%">
 <p align="center">
-<img src="../docs/images/road&square.png" alt="road&square"/>
+<img src="../images/road&square.png" alt="road&square"/>
 <br>
 <em>Derived layer of Road and Square</em>
 </p>
 </td>
 <td width="33%">
 <p align="center">
-<img src="../docs/images/section&square.png" alt="section&square"/>
+<img src="../images/section&square.png" alt="section&square"/>
 <br>
 <em>Derived layer of (Inter)Section and Square</em>
 </p>
