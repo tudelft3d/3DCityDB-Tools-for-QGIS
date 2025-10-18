@@ -55,7 +55,7 @@ If you would like to get further information of the work of this repository, ple
 
 - Tsai, B.-S., Agugiaro, G., León-Sánchez, C., Nagel, C., Yao, Z., 2025<br>
 **Introducing server-side support for 3DCityDB 5.0 to the 3DCityDB-Tools plug-in for QGIS**<br>
-ISPRS Ann. Arch. Photogramm. Remote Sens. Spatial Inf. Sci., 20th 3D GeoInfo & 9th Smart Data Smart Cities Conference, Japan. (in press)
+ISPRS Ann. Arch. Photogramm. Remote Sens. Spatial Inf. Sci., 20th 3D GeoInfo & 9th Smart Data Smart Cities Conference, Japan. [[Link](https://isprs-annals.copernicus.org/articles/X-4-W6-2025/193/2025/)]
 
 - Tsai, B.-S., 2024<br>
 **3DCityDB-Tools plug-in for QGIS: Adding server-side support to 3DCityDB v.5.0**<br>
