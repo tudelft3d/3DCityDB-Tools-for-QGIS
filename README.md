@@ -1,6 +1,6 @@
 # 3DCityDB Tools for QGIS
 
-This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB), which currently supports CityGML 1.0 and 2.0.
+This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database v. 4.x** (aka 3DCityDB), which currently supports CityGML 1.0 and 2.0.
 
 <p align="center">
 <br>
