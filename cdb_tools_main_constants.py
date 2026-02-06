@@ -9,12 +9,12 @@ import os.path
 
 # Supported QGIS minor versions, i.e. version 3.xx
 # QGIS_LTR: tuple = (22,) # With one-item tuples, do not forget to add a column after it!! :-)
-QGIS_LTR: tuple = (22, 28, 34, 40)
+QGIS_LTR: tuple = (22, 28, 34, 40, 44)
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV:   int = 11
+PLUGIN_VERSION_REV:   int = 12
 
 # Paths
 PLUGIN_ABS_PATH: str      = os.path.normpath(os.path.dirname(__file__))
