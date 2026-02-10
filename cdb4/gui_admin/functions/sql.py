@@ -121,6 +121,7 @@ def list_usr_schemas(dlg: CDB4AdminDialog) -> Union[tuple[str, ...], tuple[()]]:
 
     return usr_schemas
 
+
 def list_all_cdb_schemas(dlg: CDB4AdminDialog) -> Union[tuple[str, ...], tuple[()]]:
     """SQL function that reads and retrieves all cdb_schemas, also the empty ones,
 
@@ -271,6 +272,7 @@ def list_qgis_pkg_non_usrgroup_members(dlg: CDB4AdminDialog) -> Union[tuple[str,
 def add_user_to_qgis_pkg_usrgroup(dlg: CDB4AdminDialog, usr_name: str) -> None:
     """SQL function that add the user to database group "qgis_usrgroup"
     """
+
     query = pysql.SQL("""
 	    SELECT {_qgis_pkg_schema}.add_user_to_qgis_pkg_usrgroup({_usr_name});
         """).format(
