@@ -48,7 +48,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
         if not cdb_extents_wkt:
             # Something went wrong on the server when computin the bbox
             msg: str = f"Something went wrong while computing the extents on the server."
-            QMessageBox.critical(dlg, "Uups, server... not serving!", msg)
+            QMessageBox.critical(dlg, "Ups, server... not serving!", msg)
             QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             return None
 
