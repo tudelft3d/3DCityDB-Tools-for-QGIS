@@ -11,9 +11,15 @@ def open_online_url(url: str) -> None:
     Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
     available from pyQGIS
 
-    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using Python v. 3.9 at the moment)
+    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using Python v. 3.12 at the moment)
     """
+    # **** Only for debugging purposes *****
+    # Override the variable, just for testing
+    # url = "https://www.arepubblica.it"
+    # **************************************
+
     plugin_name: str = main_c.PLUGIN_NAME_LABEL
+
     try:
         r = requests.head(url)
         if r.ok: # it is a boolean
@@ -23,19 +29,22 @@ def open_online_url(url: str) -> None:
                 msg = f"Webbrowser error: {e}"
                 QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
         elif r.status_code == 404:
-            msg = f"HTTP Error 404: Page not found.<br>The following URL may be broken or dead:<br><br><a href=\"{url}\">{url}</a>"
+            msg = f"HTTP Error 404: Page not found.\nThe following URL may be broken or dead: {url}"
+            msg_rich = f"HTTP Error 404: Page not found.<br>The following URL may be broken or dead:<br><br><a href=\"{url}\">{url}</a>"
             QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
-            QMessageBox.warning(None, "URL unreachable", msg)
+            QMessageBox.warning(None, "URL unreachable", msg_rich)
         else:
-            msg = f"Error with URL<br><br><a href=\"{url}\">{url}</a>"
+            msg = f"Error with URL: {url}"
+            msg_rich = f"Error with URL<br><br><a href=\"{url}\">{url}</a>"
             QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
-            QMessageBox.warning(None, "URL unreachable", msg) 
+            QMessageBox.warning(None, "URL unreachable", msg_rich) 
 
     except requests.ConnectionError as e:
         # print(e)
-        msg = f"URL <a href=\"{url}\">{url}</a> could not be opened.<br><br>Is your internet connection up and working?"
+        msg = f"URL {url} could not be opened.\n\nIs your internet connection up and working?"
+        msg_rich = f"URL <a href=\"{url}\">{url}</a> could not be opened.<br><br>Is your internet connection up and working?"
         QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
-        QMessageBox.warning(None, "URL unreachable", msg)
+        QMessageBox.warning(None, "URL unreachable", msg_rich)
 
     return None
 
@@ -52,8 +61,9 @@ def open_local_PDF(pdf_path: str) -> None:
     if os.path.isfile(pdf_path): # The file exists
         webbrowser.open_new_tab("file:///" + pdf_path)
     else:
-        msg = f"The following file could not be found in your system:<br><br>{pdf_path}"
+        msg = f"The following file could not be found in your system:\n\n{pdf_path}"
+        msg_rich = f"The following file could not be found in your system:<br><br>{pdf_path}"
         QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
-        QMessageBox.warning(None, "File not found", msg)
+        QMessageBox.warning(None, "File not found", msg_rich)
 
     return None
