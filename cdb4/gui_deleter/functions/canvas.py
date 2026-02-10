@@ -29,9 +29,6 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
     # OSM id of layer.
     # registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     registryOSM_id = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
-    # dlg.qgbxExtents.blockSignals(True)
-    # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
-    # dlg.qgbxExtents.blockSignals(False)
     dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
 
     # Set CRS and extents of the canvas
@@ -40,6 +37,11 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
 
     if clear:
         # Clear map registry from old OSM layers.
+
+        ###########################################################
+        # QgsProject.instance().removeMapLayers(layerIds=registryOSM_id)
+        # Since QGIS 3.44, the parameter is layers and not layerIds. To keep compatibility, we simply pass the value.
+        ###########################################################
         QgsProject.instance().removeMapLayers(registryOSM_id)
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
