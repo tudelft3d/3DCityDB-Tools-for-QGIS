@@ -42,9 +42,6 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
 
     elif canvas == dlg.CANVAS_L: # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsL.
-        # dlg.qgbxExtentsL.blockSignals(True)
-        # dlg.qgbxExtentsL.setOutputCrs(crs)
-        # dlg.qgbxExtentsL.blockSignals(False)
         dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 
     # Set CRS and extents of the canvas
@@ -53,7 +50,12 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
 
     if clear:
         # Clear map registry from old OSM layers.
-        QgsProject.instance().removeMapLayers(layerIds=registryOSM_id)
+
+        ###########################################################
+        # QgsProject.instance().removeMapLayers(layerIds=registryOSM_id)
+        # Since QGIS 3.44, the parameter is layers and not layerIds. To keep compatibility, we simply pass the value.
+        ###########################################################
+        QgsProject.instance().removeMapLayers(registryOSM_id)
 
         # Create WMS "pseudo-layer" to set as the basemap of the canvas
         # pseudo means that the layer is not going to be added to the legend.

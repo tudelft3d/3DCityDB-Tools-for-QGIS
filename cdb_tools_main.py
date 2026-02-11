@@ -115,7 +115,9 @@ class CDBToolsMain:
         self.first_check_QGIS_supported: bool = True        
 
         # Welcome message upon (re)loading
-        msg: str = f"<br><br>------ WELCOME! -------<br>You are using the <b>{self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT}</b> plug-in running on <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b> on a <b>{self.PLATFORM_SYSTEM}</b> machine.<br>-----------------------------<br>"
+        # PLEASE NOTE: Rich text support is not recognised anymore and stripped from msg strings since 3.40 of QgsMeesageLog.
+        msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} plug-in running on QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
+ 
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
         self.StoredConns = self.list_qgis_postgres_stored_conns()
@@ -620,7 +622,7 @@ class CDBToolsMain:
 
             # If so, inform the user and then close them.
             if close_dlg or close_conn:
-                msg: str = f"In order to launch the '{self.MENU_LABEL_ADMIN}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs. If you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
+                msg: str = f"In order to launch the '{self.MENU_LABEL_ADMIN}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs.\nIf you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(self.admin_dlg, "Concurrent dialogs", msg)
                 if res == QMessageBox.Yes:
 
@@ -735,23 +737,21 @@ class CDBToolsMain:
             self.IS_QGIS_SUPPORTED = False
         # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
-        if not self.IS_QGIS_SUPPORTED:
-
-            msg: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
+            msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
 
             v_length = len(main_c.QGIS_LTR)
             if v_length == 1:
                 v_supp_txt =f"3.{main_c.QGIS_LTR[0]}" 
-                msg = msg + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
+                msg_rich = msg_rich + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
             else:
                 if v_length == 2:
                     v_supp_txt = f"3.{main_c.QGIS_LTR[0]} and 3.{main_c.QGIS_LTR[1]}"
                 elif v_length >= 3:
                     v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_LTR) if i < (v_length - 1)]))                
                     v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_LTR[-1]}"
-                msg = msg + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
+                msg_rich = msg_rich + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
-            QMessageBox.warning(None, "Unsupported QGIS version", msg, QMessageBox.Ok)
+            QMessageBox.warning(None, "Unsupported QGIS version", msg_rich, QMessageBox.Ok)
 
         return None
 

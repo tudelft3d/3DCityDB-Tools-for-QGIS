@@ -45,7 +45,7 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plug-in has been developed using [**QGIS**](https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR**, **3.28 LTR**, **3.34 LTR** and **3.40 LTR**. Please note that support and further development focuses only on LTR versions.
+The plug-in has been developed using [**QGIS**](https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR**, **3.28 LTR**, **3.34 LTR**, **3.40 LTR** and **3.44 LTR**. Please note that support and further development focuses only on LTR versions.
 
 The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 

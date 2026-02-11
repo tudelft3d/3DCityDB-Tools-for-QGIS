@@ -2,10 +2,11 @@
 # Mandatory items:
 
 [general]
-name=3DCityDB Tools DEV
+name=3DCityDB Tools
 qgisMinimumVersion=3.22
-description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database
-version=0.8.11
+supportsQt6=false
+description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database 4.x
+version=0.8.12
 author=Giorgio Agugiaro, Konstantinos Pantelios
 email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
@@ -29,7 +30,8 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.8.11 Added support for PostgreSQL 17
+changelog= 0.8.12 Added support for QGIS 3.44 and tested with PostgreSQL 18
+ 0.8.11 Fixed issue with PostgreSQL 17
  0.8.10 Added support for QGIS 3.40, some server-side bug fixes
  0.8.9 Minor changes
  0.8.8 Minor edits

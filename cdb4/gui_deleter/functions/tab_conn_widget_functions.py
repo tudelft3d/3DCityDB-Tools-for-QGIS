@@ -49,7 +49,7 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
         if not cdb_extents_wkt:
             # Something went wrong on the server when computin the bbox
             msg: str = f"Something went wrong while computing the extents on the server."
-            QMessageBox.critical(dlg, "Uups, server... not serving!", msg)
+            QMessageBox.critical(dlg, "Ups, server... not serving!", msg)
             QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             return None
 
@@ -151,7 +151,7 @@ def gbxBasemap_reset(dlg: CDB4DeleterDialog) -> None:
     # Clear map registry from OSM layers.
     registryLayers = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
 
-    QgsProject.instance().removeMapLayers(layerIds=registryLayers)
+    QgsProject.instance().removeMapLayers(registryLayers)
     # Refresh to show to re-render the canvas (as empty).
     dlg.CANVAS.refresh()
 

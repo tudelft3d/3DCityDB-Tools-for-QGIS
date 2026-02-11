@@ -370,7 +370,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
                 self.lblUserPrivileges_out.setText(c.failure_html.format(text=c.USER_PRIV_MSG.format(privs="no superuser")))
 
                 # Inform the user
-                msg = f"User '{db.username}' is not a database superuser.<br><br>Please contact your database administrator."
+                msg = f"User '{db.username}' is not a database superuser.\n\nPlease contact your database administrator."
                 QMessageBox.critical(self, "Insufficient user privileges", msg)
 
                 ti_wf.tabInstall_reset(dlg=self)
@@ -388,7 +388,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
             self.lblConnToDb_out.setText(c.failure_html.format(text=c.CONN_FAIL_MSG))
 
             # Inform the user
-            msg = "The selected connection to the PostgreSQL server cannot be established.<br><br>Please check whether it is still valid: the connection parameters may have to be updated!"
+            msg = "The selected connection to the PostgreSQL server cannot be established.\n\nPlease check whether it is still valid: the connection parameters may have to be updated!"
             QMessageBox.warning(self, "Connection error", msg)
 
             ti_wf.tabInstall_reset(dlg=self)
@@ -543,7 +543,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
                 self.gbxUserInstCont.setDisabled(False)
 
                 # Inform the user
-                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in the database you are connecting to is more recent than the one supported by this plug-in (v. {c.QGIS_PKG_MIN_VERSION_MAJOR}.{c.QGIS_PKG_MIN_VERSION_MINOR}.x).<br><br>Please upgrade your plug-in to a more recent version or contact the database administrator."
+                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in the database you are connecting to is more recent than the one supported by this plug-in (v. {c.QGIS_PKG_MIN_VERSION_MAJOR}.{c.QGIS_PKG_MIN_VERSION_MINOR}.x).\n\nPlease upgrade your plug-in to a more recent version or contact the database administrator."
                 QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
 
                 return None # Exit
@@ -560,7 +560,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
                 self.btnMainUninst.setDisabled(False)
 
                 # Inform the user
-                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported.<br>Please uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
+                msg = f"The QGIS Package (v. {qgis_pkg_curr_version_txt}) installed in this database is not supported.\nPlease uninstall it and replace it with the one (v. {c.QGIS_PKG_MIN_VERSION_TXT}) provided herewith."
                 QMessageBox.warning(self, "Unsupported QGIS Package version", msg)
 
         else:  # QGIS Package is not installed
@@ -577,7 +577,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
     def evt_btnMainInst_clicked(self) -> None:
         """Event that is called when the 'Install to database' pushButton (btnMainInst) is pressed.
         """
-        msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
+        msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message
@@ -592,7 +592,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
     def evt_btnMainUninst_clicked(self) -> None:
         """Event that is called when the 'Uninstall from database' pushButton (btnMainUninst) is pressed.
         """
-        msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'!<br><br>Do you want to proceed?"
+        msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message
@@ -741,7 +741,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
     def evt_btnUsrInst_clicked(self) -> None:
         """Event that is called when the 'Create schema for user' pushButton (btnUsrInst) is pressed.
         """
-        msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced!<br><br>Do you want to proceed?"
+        msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message
@@ -785,11 +785,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
 
             # Inform user
             self.lblUserInst_out.setText(c.success_html.format(text=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA)))
-            QgsMessageLog.logMessage(
-                    message=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA),
-                    tag=self.PLUGIN_NAME,
-                    level=Qgis.MessageLevel.Success,
-                    notifyUser=True)
+            QgsMessageLog.logMessage(message=c.INST_SUCC_MSG.format(pkg=self.USR_SCHEMA), tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Success, notifyUser=True)
         else:
             # Enable the remove from group button
             self.btnRemoveUserFromGrp.setDisabled(False)
@@ -807,18 +803,14 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
 
             # Inform user
             self.lblUserInst_out.setText(c.crit_warning_html.format(text=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA)))
-            QgsMessageLog.logMessage(
-                    message=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA),
-                    tag=self.PLUGIN_NAME,
-                    level=Qgis.MessageLevel.Critical,
-                    notifyUser=True)
+            QgsMessageLog.logMessage(message=c.INST_FAIL_MSG.format(pkg=self.USR_SCHEMA), tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
 
 
     def evt_btnUsrUninst_clicked(self) -> None:
         """Event that is called when the 'Drop schema for user' pushButton
         (btnUsrUninst) is pressed.
         """
-        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!<br><br>Do you want to proceed?"
+        msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
         if res == QMessageBox.Yes:
             # Set the label to the "ongoing" message

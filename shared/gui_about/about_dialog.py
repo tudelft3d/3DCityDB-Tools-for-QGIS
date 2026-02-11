@@ -191,7 +191,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         # 
         # **************************************
 
-        # Simply point to the GitHub folder because
+        # Simply point to the GitHub folder
         url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install"])
         # print(url)
         sh_f.open_online_url(url)
