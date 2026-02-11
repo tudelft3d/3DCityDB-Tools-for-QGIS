@@ -4,6 +4,7 @@
 [general]
 name=3DCityDB Tools
 qgisMinimumVersion=3.22
+supportsQt6=false
 description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database 4.x
 version=0.8.12
 author=Giorgio Agugiaro, Konstantinos Pantelios
