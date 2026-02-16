@@ -104,7 +104,7 @@ def insert_rubber_band(band: QgsRubberBand, extents: QgsRectangle, crs: QgsCoord
     band.setToGeometry(geometry=extents_geometry, crs=crs)
     band.setColor(color=QColor(color))
     band.setWidth(width=width)
-    band.setFillColor(color=Qt.transparent)
+    band.setFillColor(color=Qt.GlobalColor.transparent)
 
     return None
 
