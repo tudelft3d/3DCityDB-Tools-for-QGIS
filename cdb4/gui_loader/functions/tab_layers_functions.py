@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ..other_classes import FeatureType, CDBDetailView, EnumConfig 
 
+from qgis.PyQt.QtCore import Qt
+
 from collections import OrderedDict
 from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup, 
                         QgsVectorLayer, QgsDataSourceUri, QgsAttributeEditorElement,
@@ -157,7 +159,7 @@ def fill_layers_box(dlg: CDB4LoaderDialog) -> None:
             if layer.n_selected > 0:
                 dlg.ccbxLayers.addItemWithCheckState(
                     text=f'{layer.layer_name} ({layer.n_selected})',
-                    state=0,
+                    state = Qt.CheckState.Unchecked, # i.e. state = 0,
                     userData=layer)
     # TODO: 05-02-2021 Add separator between different features
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
@@ -185,7 +187,7 @@ def get_attForm_child(container: QgsAttributeEditorContainer, child_name: str) -
 
 def send_to_ToC_top(group: QgsLayerTreeGroup) -> None: 
     """Function that send the input group to the top of the project's 'Table of Contents' tree.
-    #NOTE: this function could be generalized to accept ToC index location as a parameter (int).
+    # NOTE: this function could be generalized to accept ToC index location as a parameter (int).
     """
     # According to qgis docs, this is the prefered way.
     root = QgsProject.instance().layerTreeRoot()
@@ -225,7 +227,6 @@ def get_citydb_node(dlg: CDB4LoaderDialog) -> QgsLayerTreeGroup:
 
     root = QgsProject.instance().layerTreeRoot()
     cdb_node = root.findGroup(dlg.DB.db_toc_node_label)
-    # cdb_node = root.findGroup(dlg.DB.database_name)
     return cdb_node
 
 
