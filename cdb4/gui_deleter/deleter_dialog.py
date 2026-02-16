@@ -254,7 +254,8 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         self.bar = QProgressBar(parent=self.msg_bar)
 
         # Setup progress bar.
-        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        #self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.bar.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
@@ -323,9 +324,9 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         """
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
-        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. 2, the window is modal to the application and blocks input to all windows.
+        dlgConnector.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. 2, the window is modal to the application and blocks input to all windows.
         dlgConnector.show()
-        dlgConnector.exec_()
+        dlgConnector.exec()
 
         # Add new connection to the Existing connections
         if dlgConnector.conn_params:
@@ -641,11 +642,11 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         msg2: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted.\n\nDo you REALLY want to proceed?"
         msg3: str = f"ALL tables in citydb schema {self.CDB_SCHEMA} will be truncated and ALL data will be deleted FOREVER.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll loose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == QMessageBox.Yes:
+            if res == QMessageBox.StandardButton.Yes:
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == QMessageBox.Yes:
+                if res == QMessageBox.StandardButton.Yes:
                     thr.run_cleanup_schema_thread(self)
         return None
 
@@ -807,9 +808,9 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs, dlg_cdb_extents, dlg_canvas)
-        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to all other windows.
+        dlgGeocoder.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window blocks input to all other windows.
         dlgGeocoder.show()
-        dlgGeocoder.exec_()
+        dlgGeocoder.exec()
 
         return None
 
@@ -884,7 +885,7 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
             self.ckbFeatTypeAll.setDisabled(True)
             # Clear the previous selected items
             for i in range(self.ccbxFeatType.count()):
-                self.ccbxFeatType.setItemCheckState(i, Qt.Unchecked)
+                self.ccbxFeatType.setItemCheckState(i, Qt.CheckState.Unchecked)
             # Disable combo box cbxFeatType
             self.ccbxFeatType.setDisabled(True)
 
@@ -908,13 +909,13 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         if status: # Selected/Checked
             # Select all items in combobox with cdb_schemas, set status to 2 (Checked)
             for i in range(self.ccbxFeatType.count()):
-                 self.ccbxFeatType.setItemCheckState(i, Qt.Checked)
+                 self.ccbxFeatType.setItemCheckState(i, Qt.CheckState.Checked)
             # Disable the drop down menu
             self.ccbxFeatType.setDisabled(True)
         else:
             # Unselect all items in combobox with cdb_schemas, set status to 0 (Unchecked)
             for i in range(self.ccbxFeatType.count()):
-                 self.ccbxFeatType.setItemCheckState(i, Qt.Unchecked)
+                 self.ccbxFeatType.setItemCheckState(i, Qt.CheckState.Unchecked)
             # Enable the drop down menu
             self.ccbxFeatType.setDisabled(False)
             
@@ -947,7 +948,7 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
             self.ckbTopLevelClassAll.setDisabled(True)
             # Clear the previous selected items
             for i in range(self.ccbxTopLevelClass.count()):
-                self.ccbxTopLevelClass.setItemCheckState(i, Qt.Unchecked)
+                self.ccbxTopLevelClass.setItemCheckState(i, Qt.CheckState.Unchecked)
             # Disable combo box cbxFeatType
             self.ccbxTopLevelClass.setDisabled(True)
 
@@ -971,13 +972,13 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         if status: # Selected/Checked
             # Select all items in combobox with cdb_schemas, set status to 2 (Checked)
             for i in range(self.ccbxTopLevelClass.count()):
-                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.Checked)
+                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.CheckState.Checked)
             # Disable the drop down menu
             self.ccbxTopLevelClass.setDisabled(True)
         else:
             # Unselect all items in combobox with cdb_schemas, set status to 0 (Unchecked)
             for i in range(self.ccbxTopLevelClass.count()):
-                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.Unchecked)
+                 self.ccbxTopLevelClass.setItemCheckState(i, Qt.CheckState.Unchecked)
             # Enable the drop down menu
             self.ccbxTopLevelClass.setDisabled(False)
 
@@ -1031,11 +1032,11 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
         msg2: str = f"Data will be deleted from citydb schema '{self.CDB_SCHEMA}'.\n\nDo you REALLY want to proceed?"
         msg3: str = f"Data will be deleted from citydb schema '{self.CDB_SCHEMA}'.\n\nDo you REALLY REALLY want to proceed?\n\nIf you'll lose data, don't tell we didn't warn you..."
         res = QMessageBox.question(self, "Clean up citydb schema", msg1)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             res = QMessageBox.question(self, "Clean up citydb schema", msg2)
-            if res == QMessageBox.Yes:
+            if res == QMessageBox.StandardButton.Yes:
                 res = QMessageBox.question(self, "Clean up citydb schema", msg3)
-                if res == QMessageBox.Yes:
+                if res == QMessageBox.StandardButton.Yes:
                     # This thread will also take care of checking what happens after deletion,
                     # e.g. in case that the database is completely emptied.
                     # The user will be eventually informed
