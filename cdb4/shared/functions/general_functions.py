@@ -10,18 +10,18 @@ from qgis.gui import QgsCheckableComboBox
 
 from .... import cdb_tools_main_constants as main_c
 
+# See: https://doc.qt.io/qt-6/qt.html#CheckState-enum
+# 0 Qt.CheckState.Unchecked
+# 1 Qt.CheckState.PartiallyChecked
+# 2 Qt.CheckState.Checked
+
 def get_checkedItemsData(ccbx: QgsCheckableComboBox) -> list:
     """Function to extract the QVariant data from a QgsCheckableComboBox widget.
     Replaces built-in method: checkedItemsData()
     """
-    # 0 Qt.Unchecked
-    # 1 Qt.PartiallyChecked
-    # 2 Qt.Checked
-    # See: https://doc.qt.io/qt-6/qt.html#CheckState-enum
-
     checked_items = []
     for idx in range(ccbx.count()):
-        if ccbx.itemCheckState(idx) == Qt.Checked:
+        if ccbx.itemCheckState(idx) == Qt.CheckState.Checked:
             checked_items.append(ccbx.itemData(idx))
     return checked_items
 
@@ -61,7 +61,7 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
     location = ">".join([location, function_name])
 
     # Specify in the header the type of error and where it happened.
-    header = f"{header} ERROR at {location}<br> ERROR: "
+    header = f"{header} ERROR at {location}\nERROR: "
 
     # Show the error in the log panel. Should open it even if it is closed.
     QgsMessageLog.logMessage(message=header + str(error), tag=main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Critical, notifyUser=True)
