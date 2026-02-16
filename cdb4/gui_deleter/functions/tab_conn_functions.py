@@ -30,7 +30,8 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: Optional[list[tupl
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
 
-    if not cdb_schemas:
+    #if not cdb_schemas:
+    if (cdb_schemas is None) or len(cdb_schemas) == 0:
         # Disable the combobox
         dlg.cbxSchema.setDisabled(True)
         dlg.lblSchema.setDisabled(True)
@@ -55,6 +56,7 @@ def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
     dlg.ccbxTopLevelClass.clear()
     dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
 
+    top_level_features = []
     top_level_features = [tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if tlf.exists]
 
     if len(top_level_features) == 0: 
@@ -66,9 +68,9 @@ def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
         for tlf in top_level_features:
             label = f"{tlf.name} ({tlf.n_features})" 
             dlg.ccbxTopLevelClass.addItemWithCheckState(
-                text=label,
-                state=0,
-                userData=tlf) # this is the value retrieved later
+                text = label,
+                state = Qt.CheckState.Unchecked, # i.e. state = 0,
+                userData = tlf) # this is the value retrieved later
         # Reorder items alphabetically
         dlg.ccbxTopLevelClass.model().sort(0)
     return None
@@ -92,9 +94,9 @@ def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
         for ft in feat_types:
             label = f"{ft.name} ({ft.n_features})" 
             dlg.ccbxFeatType.addItemWithCheckState(
-                text=label,
-                state=0,
-                userData=ft) # this is the value retrieved later
+                text = label,
+                state = Qt.CheckState.Unchecked, # i.e. state = 0,
+                userData = ft) # this is the value retrieved later
         # Reorder items alphabetically
         dlg.ccbxFeatType.model().sort(0)
     return None
@@ -144,7 +146,7 @@ def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_level_
         tlf.n_features = 0 
 
     # If there are any tlf, then update
-    if len(top_level_features) != 0:
+    if top_level_features and len(top_level_features) != 0:
         # Set to true only for those Feature Types that exist
         for top_level_feature in top_level_features:
             tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.root_class]
@@ -168,7 +170,7 @@ def update_top_level_features_registry_is_selected(dlg: CDB4DeleterDialog, sel_t
     for tlf in dlg.TopLevelFeaturesRegistry.values():
         tlf.is_selected = False
 
-    if len(sel_top_level_features) != 0:
+    if sel_top_level_features and len(sel_top_level_features) != 0:
         # Set to true only for those Feature Types that are selected
         for top_level_feature in sel_top_level_features:
             tlf = dlg.TopLevelFeaturesRegistry[top_level_feature.name]
@@ -216,7 +218,7 @@ def update_feature_type_registry_exists(dlg: CDB4DeleterDialog) -> None:
     tlf_existing = [tlf for tlf in cast(Iterable[TopLevelFeature], dlg.TopLevelFeaturesRegistry.values()) if tlf.exists is True]
 
     # Set to true only for those Feature Types that exist and sum the values to get the total
-    if len(tlf_existing) != 0:
+    if tlf_existing and len(tlf_existing) != 0:
         for tlf in tlf_existing:
             ft = dlg.FeatureTypesRegistry[tlf.feature_type]
             ft.exists = True
@@ -236,7 +238,7 @@ def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_ty
     for ft in dlg.FeatureTypesRegistry.values():
         ft.is_selected = False
 
-    if len(sel_feat_types) != 0:
+    if sel_feat_types and len(sel_feat_types) != 0:
         # Set to true only for those Feature Types that are selected
         for feat_type in sel_feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type.name]
@@ -296,7 +298,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             # Create new rubber band
             cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(dlg.CANVAS, QgsWkbTypes.PolygonGeometry)
             # cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.DashLine)
+            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
 
             # Drop the old magenta one
             dlg.RUBBER_DELETE.reset()
