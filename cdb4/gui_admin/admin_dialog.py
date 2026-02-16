@@ -194,7 +194,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         self.bar = QProgressBar(parent=self.msg_bar)
 
         # Setup progress bar.
-        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.bar.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
@@ -264,13 +264,13 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         Responsible to add VALID new connection to the 'Existing connections'.
         """
         # Bypass the input blockade for the connector dialogue.
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
 
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
-        dlgConnector.setWindowModality(Qt.ApplicationModal)
+        dlgConnector.setWindowModality(Qt.WindowModality.ApplicationModal)
         dlgConnector.show()
-        dlgConnector.exec_()
+        dlgConnector.exec()
 
         # Add new connection to the Existing connections
         if dlgConnector.conn_params:
@@ -278,7 +278,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
             # dlgConnector.close()
 
         # Re-set the input blockage
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
 
     def evt_btnConnectToDb_clicked(self) -> None:
@@ -579,7 +579,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.QGIS_PKG_SCHEMA}' will be replaced!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer creation, the label will be set accordingly.
             self.lblMainInst_out.setText(c.ongoing_html.format(text=c.INST_ONGOING_MSG.format(pkg=self.QGIS_PKG_SCHEMA)))
@@ -594,7 +594,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling '{self.QGIS_PKG_SCHEMA}'!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer creation, the label will be set accordingly.
             self.lblMainInst_out.setText(c.ongoing_html.format(text=c.UNINST_ONGOING_MSG.format(pkg=self.QGIS_PKG_SCHEMA)))
@@ -743,7 +743,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         """
         msg = f"Any previous installation of '{self.USR_SCHEMA}' will be replaced!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Installation", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer creation, the label will be set accordingly.
             self.lblUserInst_out.setText(c.ongoing_html.format(text=c.INST_ONGOING_MSG.format(pkg=self.USR_SCHEMA)))
@@ -812,7 +812,7 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         """
         msg = f"Uninstalling user schema '{self.USR_SCHEMA}'!\n\nDo you want to proceed?"
         res = QMessageBox.question(self, "Uninstallation", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer creation, the label will be set accordingly.
             self.lblUserInst_out.setText(c.ongoing_html.format(text=c.UNINST_ONGOING_MSG.format(pkg=self.USR_SCHEMA)))
@@ -832,13 +832,13 @@ class CDB4AdminDialog(QDialog, FORM_CLASS):
         if status: # Selected/Checked
             # Select all items in combobox with cdb_schemas, set status to 2 (Checked)
             for i in range(self.ccbSelCDBSch.count()):
-                 self.ccbSelCDBSch.setItemCheckState(i, Qt.Checked)
+                 self.ccbSelCDBSch.setItemCheckState(i, Qt.CheckState.Checked)
             # Disable the drop down menu
             self.ccbSelCDBSch.setDisabled(True)
         else:
             # Unselect all items in combobox with cdb_schemas, set status to 0 (Unchecked)
             for i in range(self.ccbSelCDBSch.count()):
-                 self.ccbSelCDBSch.setItemCheckState(i, Qt.Unchecked)
+                 self.ccbSelCDBSch.setItemCheckState(i, Qt.CheckState.Unchecked)
             # Enable the drop down menu
             self.ccbSelCDBSch.setDisabled(False)
             
