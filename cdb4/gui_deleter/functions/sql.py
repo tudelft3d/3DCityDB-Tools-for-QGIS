@@ -280,7 +280,7 @@ def list_top_level_features(dlg: CDB4DeleterDialog, extents_wkt_2d: Optional[str
             top_level_features = []
         else: 
             top_level_features = res
-        
+    
         return top_level_features 
 
     except (Exception, psycopg2.Error) as error:
