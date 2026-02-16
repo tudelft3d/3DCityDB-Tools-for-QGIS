@@ -42,13 +42,12 @@ if TYPE_CHECKING:
 import os.path
 import platform
 
-from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication, QT_VERSION_STR
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QMenu
 from qgis.core import Qgis, QgsSettings, QgsMessageLog
 from qgis.gui import QgisInterface
 
-from .resources import qInitResources
 from . import cdb_tools_main_constants as main_c
 from .shared.functions import shared_functions as sh_f
 from .cdb4.gui_db_connector.other_classes import DBConnectionInfo
@@ -69,9 +68,6 @@ class CDBToolsMain:
         """
         # Variable referencing to the QGIS interface.
         self.iface: QgisInterface = iface
-
-        # Initialize Qt resources from file resources.py.
-        qInitResources()
 
         # Determine the platform we are running on
 
@@ -116,7 +112,7 @@ class CDBToolsMain:
 
         # Welcome message upon (re)loading
         # PLEASE NOTE: Rich text support is not recognised anymore and stripped from msg strings since 3.40 of QgsMeesageLog.
-        msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} plug-in running on QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
+        msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} plug-in for Qt {QT_VERSION_STR} running on QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
  
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
@@ -495,13 +491,13 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        # self.loader_dlg.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to other windows.
-        self.loader_dlg.setWindowModality(Qt.NonModal) # i.e. The window does not block input to other windows.
+        # self.loader_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window blocks input to other windows.
+        self.loader_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.loader_dlg.show()
         # Run the dialog event loop.
-        res = self.loader_dlg.exec_()
+        res = self.loader_dlg.exec()
 
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
@@ -557,13 +553,13 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        # self.deleter_dlg.setWindowModality(Qt.ApplicationModal) # The window blocks input from other windows.
-        self.deleter_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
+        # self.deleter_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # The window blocks input from other windows.
+        self.deleter_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.deleter_dlg.show()
         # Run the dialog event loop.
-        res = self.deleter_dlg.exec_()
+        res = self.deleter_dlg.exec()
 
         if not res: # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
@@ -624,7 +620,7 @@ class CDBToolsMain:
             if close_dlg or close_conn:
                 msg: str = f"In order to launch the '{self.MENU_LABEL_ADMIN}', you must first close all active connections and - if applicable - exit from other open {self.PLUGIN_NAME} GUI dialogs.\nIf you choose to proceed, they will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(self.admin_dlg, "Concurrent dialogs", msg)
-                if res == QMessageBox.Yes:
+                if res == QMessageBox.StandardButton.Yes:
 
                     for key, dlg in self.DialogRegistry.items():
                         if key != self.DLG_NAME_ADMIN:
@@ -640,13 +636,13 @@ class CDBToolsMain:
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        self.admin_dlg.setWindowModality(Qt.ApplicationModal) # i.e. The window is modal to the application and blocks input to all windows.
-        # self.admin_dlg.setWindowModality(Qt.NonModal) # i.e. The window does not block input to other windows.
+        self.admin_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window is modal to the application and blocks input to all windows.
+        # self.admin_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.admin_dlg.show()
         # Run the dialog event loop.
-        res = self.admin_dlg.exec_()
+        res = self.admin_dlg.exec()
       
         if not res: # Dialog has been closed (X button was pressed)
             # Reset the dialog widgets. (Closes the current open connection.)
@@ -685,13 +681,13 @@ class CDBToolsMain:
             self.about_dlg = CDBAboutDialog(cdbMain=self)
 
         # Set the window modality.
-        #self.about_dlg.setWindowModality(Qt.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
-        self.about_dlg.setWindowModality(Qt.NonModal) # i.e. 0, The window does not block input to other windows.
+        #self.about_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
+        self.about_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. 0, The window does not block input to other windows.
 
         # Show the dialog
         self.about_dlg.show()
         # Run the dialog event loop.
-        res = self.about_dlg.exec_()
+        res = self.about_dlg.exec()
       
         if not res: # Dialog has been closed (X button was pressed)
             # Reset the dialog widget.
@@ -718,7 +714,7 @@ class CDBToolsMain:
             if close_admin_dlg:
                 msg: str = f"In order to launch the '{dlg.DLG_NAME_LABEL}', you must first close the '{self.admin_dlg.DLG_NAME_LABEL}'. If you choose to proceed, it will be automatically closed.\n\nDo you want to continue?"
                 res = QMessageBox.question(dlg, "Concurrent dialogs", msg)
-                if res == QMessageBox.Yes:
+                if res == QMessageBox.StandardButton.Yes:
                     if close_admin_conn:
                         self.admin_dlg.conn.close()
                     if close_admin_dlg:
@@ -731,27 +727,40 @@ class CDBToolsMain:
     def check_QGIS_version(self) -> None:
         """ Check if QGIS is supported by the plug-in (LTR versions)
         """
-        if self.QGIS_VERSION_MINOR in main_c.QGIS_LTR:
+        # ****** For testing purposed only
+        #from qgis.PyQt.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+        #print("Qt: v.", QT_VERSION_STR,"\tPyQt5: v.", PYQT_VERSION_STR)        
+        #self.QGIS_VERSION_MINOR = 46
+        # ********************************
+
+        if self.QGIS_VERSION_MINOR in main_c.QGIS3_VERSION_MINOR:
             self.IS_QGIS_SUPPORTED = True
         else:
             self.IS_QGIS_SUPPORTED = False
-        # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
+            # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
-            msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
+            lowest_supported_minor_version :int = min(main_c.QGIS3_VERSION_MINOR)
+            #print('lowest_supported_minor_version', lowest_supported_minor_version)
 
-            v_length = len(main_c.QGIS_LTR)
+            if self.QGIS_VERSION_MINOR < lowest_supported_minor_version:
+                msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, which is not supported anymore and for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in, but you may encounter some unexpected behaviour.<br><br>You are suggested to use a more recent version of <b>QGIS LTR (Long Term Release)</b>.<br>"
+
+            else:
+                msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
+
+            v_length = len(main_c.QGIS3_VERSION_MINOR)
             if v_length == 1:
-                v_supp_txt =f"3.{main_c.QGIS_LTR[0]}" 
+                v_supp_txt =f"3.{main_c.QGIS3_VERSION_MINOR[0]}" 
                 msg_rich = msg_rich + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
             else:
                 if v_length == 2:
-                    v_supp_txt = f"3.{main_c.QGIS_LTR[0]} and 3.{main_c.QGIS_LTR[1]}"
+                    v_supp_txt = f"3.{main_c.QGIS3_VERSION_MINOR[0]} and 3.{main_c.QGIS3_VERSION_MINOR[1]}"
                 elif v_length >= 3:
-                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_LTR) if i < (v_length - 1)]))                
-                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_LTR[-1]}"
+                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS3_VERSION_MINOR) if i < (v_length - 1)]))                
+                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS3_VERSION_MINOR[-1]}"
                 msg_rich = msg_rich + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
-            QMessageBox.warning(None, "Unsupported QGIS version", msg_rich, QMessageBox.Ok)
+            QMessageBox.warning(None, "Unsupported QGIS version", msg_rich, QMessageBox.StandardButton.Ok)
 
         return None
 
