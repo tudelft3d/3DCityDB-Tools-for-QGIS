@@ -9,7 +9,7 @@
         author(s)            : Giorgio Agugiaro
                                Tendai Mbwanda
         email                : g.agugiaro@tudelft.nl 
-                               t.mbwanda@student.tudelft.nl
+                               tmbwanda@yahoo.com
                                                              
  ***************************************************************************/
 
