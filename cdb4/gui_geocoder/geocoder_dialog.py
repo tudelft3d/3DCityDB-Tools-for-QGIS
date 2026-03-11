@@ -9,7 +9,7 @@
         author(s)            : Giorgio Agugiaro
                                Tendai Mbwanda
         email                : g.agugiaro@tudelft.nl 
-                               t.mbwanda@student.tudelft.nl
+                               tmbwanda@yahoo.com
                                                              
  ***************************************************************************/
 
@@ -45,7 +45,6 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
     The GUI is imported from an external .ui xml
     """
 
-    # def __init__(self, cdbMain: CDBToolsMain, parent=None):
     def __init__(self, dlg_crs: QgsCoordinateReferenceSystem, dlg_cdb_extents: QgsRectangle, dlg_canvas: QgsMapCanvas, parent=None):
         """Constructor"""
         super(GeoCoderDialog, self).__init__(parent)
