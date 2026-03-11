@@ -9,9 +9,9 @@ import os.path
 # Qt.WindowModality.ApplicationModal	# 2	The window is modal to the application and blocks input to all windows.
 
 # Supported QGIS minor versions, i.e. version 3.xx
-#QGIS3_VERSION_MAJOR: int = 3
+#QGIS_VERSION_MAJOR: int = 3
 # QGIS_VERSION_MINOR: tuple = (44,) # With one-item tuples, do not forget to add a column after it!! :-)
-QGIS3_VERSION_MINOR: tuple = (40, 44) 
+QGIS_VERSION_MINOR: tuple = (40, 44)
 
 
 # Plugin current version
