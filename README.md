@@ -45,7 +45,7 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-The plug-in has been developed using [**QGIS**](https://www.qgis.org/en/site/forusers/download.html) **3.22 LTR**, **3.28 LTR**, **3.34 LTR**, **3.40 LTR** and **3.44 LTR**. Please note that support and further development focuses only on LTR versions.
+For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**, but it should work also with previous LTR versions back to **3.22 LTR**. 
 
 The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
@@ -64,7 +64,7 @@ The plug-in is currently developed by:
 - [Konstantinos Pantelios](mailto:konstantinospantelios@yahoo.com)
 
 with contributions by:
-- [Tendai Mbwanda](mailto:tmbwanda52@gmail.com)
+- [Tendai Mbwanda](mailto:tmbwanda@yahoo.com)
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
