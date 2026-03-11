@@ -60,14 +60,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         ############################################################
         ## Variables and/or constants
         ############################################################
-        #self.cdbMain = cdbMain
         self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
-
-        # Variable to store the name of this dialog (same as the label in the menu)
-        # self.DLG_NAME_LABEL: str = cdbMain.MENU_LABEL_ABOUT
-        # Variable to store the name of this dialog
-        # self.DLG_NAME: str = cdbMain.DLG_NAME_ABOUT
-
         self.PLUGIN_ABS_PATH:    str = cdbMain.PLUGIN_ABS_PATH
         self.PLATFORM_SYSTEM:    str = cdbMain.PLATFORM_SYSTEM
         self.PLUGIN_VERSION_TXT: str = cdbMain.PLUGIN_VERSION_TXT
@@ -80,27 +73,27 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         url.setUrl(c.HTML_ABOUT)
         self.txtAbout.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txtAbout.doSetSource(url, QTextDocument.HtmlResource)
+        self.txtAbout.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         url.setUrl(c.HTML_DEVELOPERS)
         self.txtDevelopers.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txtDevelopers.doSetSource(url, QTextDocument.HtmlResource)
+        self.txtDevelopers.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         url.setUrl(c.HTML_CHANGELOG)
         self.txtChangelog.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txtChangelog.doSetSource(url, QTextDocument.HtmlResource)
+        self.txtChangelog.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         url.setUrl(c.HTML_REFERENCES)
         self.txtReferences.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txtReferences.doSetSource(url, QTextDocument.HtmlResource)
+        self.txtReferences.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         url.setUrl(c.HTML_LICENSE)
         self.txtLicense.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txtLicense.doSetSource(url, QTextDocument.HtmlResource)
+        self.txtLicense.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         url.setUrl(c.HTML_3DCITYDB)
         self.txt3DCityDB.setSearchPaths([c.HTML_SEARCH_PATH])
-        self.txt3DCityDB.doSetSource(url, QTextDocument.HtmlResource)
+        self.txt3DCityDB.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
         #- SIGNALS  (start)  ################################################################
 

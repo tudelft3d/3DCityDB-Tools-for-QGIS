@@ -68,9 +68,6 @@ def create_qgis_usr_schema_name(dlg: Union[CDB4AdminDialog, CDB4LoaderDialog, CD
             res = cur.fetchone()[0] # Trailing comma
         dlg.conn.commit()
         usr_schema: str = res
-        
-        # Asign the value to the variable in the plugin
-        # dlg.USR_SCHEMA = usr_schema
 
         return usr_schema
 

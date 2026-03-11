@@ -282,8 +282,8 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         # Create QProgressBar instance into QgsMessageBar.
         self.bar = QProgressBar(parent=self.msg_bar)
 
-        # Setup progress bar.
-        self.bar.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        # Setup progress bar.        
+        self.bar.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.bar.setStyleSheet("text-align: left;")
 
         # Show progress bar in message bar.
@@ -353,9 +353,9 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         """
         # Create/Show/Execute additional dialog for the new connection
         dlgConnector = DBConnectorDialog()
-        dlgConnector.setWindowModality(Qt.ApplicationModal) # i.e. the window is Modal to the application and blocks input to all other windows.
+        dlgConnector.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. the window is Modal to the application and blocks input to all other windows.
         dlgConnector.show()
-        dlgConnector.exec_()
+        dlgConnector.exec()
 
         # Add new connection to the existing connections
         if dlgConnector.conn_params:
@@ -751,7 +751,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 # Create new rubber band, with dahed line style
                 cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
                 # cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-                cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.DashLine)
+                cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
 
                 # Set up the canvas to the new extents of the cdb_schema.
                 # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
@@ -919,9 +919,9 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         dlg_canvas = self.CANVAS
 
         dlgGeocoder = GeoCoderDialog(dlg_crs=dlg_crs, dlg_cdb_extents=dlg_cdb_extents, dlg_canvas=dlg_canvas)
-        dlgGeocoder.setWindowModality(Qt.ApplicationModal) # i.e. The window blocks input to all other windows.
+        dlgGeocoder.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window blocks input to all other windows.
         dlgGeocoder.show()
-        dlgGeocoder.exec_()
+        dlgGeocoder.exec()
 
         return None
 
@@ -946,6 +946,21 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
     def evt_btnCreateLayers_clicked(self) -> None:
         """Event that is called when the 'Create layers for schema {sch}' pushButton (btnCreateLayers) is pressed.
         """
+        # One last test, before creating the layers for real.
+        tc_f.update_feature_type_registry_exists(dlg=self)
+        
+        test :bool = False
+        for ft in self.FeatureTypesRegistry.values():
+            if ft.exists: 
+                test = True
+                break
+
+        if test is False:
+            msg = "There are no Feature Types in the selected area. Please change the extents."
+            QMessageBox.warning(self, "No Feature Types found", msg)
+            return None # Exit
+
+        # Now check that you have selected something
         if self.gbxFeatSel.isChecked():
             # Update the FeatureTypeMetadata with the information about the selected ones
             tc_f.update_feature_type_registry_is_selected(self)
@@ -954,11 +969,8 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
             if len(selected_feat_types) == 0:
                 msg = "You must select at least one Feature Type. Otherwise deactivate the Feature Type selection box."
-                QMessageBox.warning(self, "User schema not found", msg)
+                QMessageBox.warning(self, "Feature Types not found", msg)
                 return None # Exit
-        else:
-            # All existing FeatureTypes are selected by default
-            pass
 
         # Set the label to the "ongoing" message
         # Upon successful layer creation, the label will be set accordingly.
@@ -975,7 +987,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         """
         msg: str = "Refreshing layers can take long time.\nDo you want to proceed?"
         res = QMessageBox.question(self, "Layer refresh", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             # Set the label to the "ongoing" message
             # Upon successful layer refresh, the label will be set accordingly.
             self.lblLayerRefr_out.setText(c.ongoing_html.format(text=c.REFR_LAYERS_ONGOING_MSG))
@@ -1006,7 +1018,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 msg_rich: str = f"This will force the <b>automatic removal of all layers, detail views and look-up tables</b> currently loaded in QGIS and visible in group <b>'{curr_cdb_schema_node_label}'</b> of <b>'{self.DB.db_toc_node_label}'</b>.<br><br>Do you want to proceed anyway?"
                 res = QMessageBox.question(self, "Drop layers", msg_rich)
 
-                if res == QMessageBox.Yes:
+                if res == QMessageBox.StandardButton.Yes:
                     curr_db_node.removeChildNode(curr_cdb_schema_node)
                 else:
                     drop_layers = False
@@ -1181,7 +1193,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         if counter > self.settings.max_features_to_import_default:
             msg: str = f"Many features ({counter}) within the selected area!\nThis could reduce QGIS performance and may lead to crashes.\n\nDo you want to continue anyway?"
             res = QMessageBox.question(self, "Warning", msg)
-            if res != QMessageBox.Yes:
+            if res != QMessageBox.StandardButton.Yes:
                 return None # Import Cancelled
 
         # Codelist settings and loading of the configs

@@ -86,7 +86,7 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         
         msg: str = f"The connection parameters are going to be stored locally on this machine and will not be encrypted.\n\nDo you want to continue anyway?"
         res = QMessageBox.question(self, "Save connection parameters?", msg)
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
 
             new_conn_params = QgsSettings()
             conn_path= f'PostgreSQL/connections/{self.conn_params.connection_name}'

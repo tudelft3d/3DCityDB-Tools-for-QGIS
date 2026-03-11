@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ...shared.dataTypes import CDBSchemaPrivs
 
+from qgis.PyQt.QtCore import Qt
+
 from ...shared.dataTypes import DetailViewMetadata
 from ...shared.functions import general_functions as gen_f
 from ..other_classes import FeatureType, CDBDetailView, EnumConfig
@@ -20,7 +22,7 @@ def fill_cdb_schemas_box(dlg: CDB4LoaderDialog, cdb_schemas: list[CDBSchemaPrivs
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
 
-    if not cdb_schemas:
+    if (cdb_schemas is None) or len(cdb_schemas) == 0:
         # Disable the combobox
         dlg.cbxSchema.setDisabled(True)
         dlg.lblSchema.setDisabled(True)
@@ -50,7 +52,7 @@ def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
     # Eventually, THIS will be the correct line of code.
     # feat_types: list = [ft for ft in dlg.FeatureTypesRegistry.values() if ft.exists]
 
-    if len(feat_types) == 0: 
+    if (feat_types is None) or (len(feat_types) == 0): 
         dlg.cbxFeatType.setDefaultText('None available')
         # Disable the combobox
         dlg.cbxFeatType.setDisabled(True) 
@@ -60,9 +62,9 @@ def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
             label = f"{ft.name}"
             dlg.cbxFeatType.addItemWithCheckState(
                 # text=f'{layer.layer_name} ({layer.n_selected})',
-                text=label, # must be a string!!
-                state=0,
-                userData=label) # this is the value retrieved later for picking the selected ones
+                text = label, # must be a string!!
+                state = Qt.CheckState.Unchecked, # i.e. state = 0,
+                userData= label) # this is the value retrieved later for picking the selected ones
             dlg.cbxFeatType.model().sort(0)
         if not dlg.cbxFeatType.isEnabled():
             dlg.cbxFeatType.setDisabled(False)
@@ -103,7 +105,7 @@ def update_feature_type_registry_exists(dlg: CDB4LoaderDialog) -> None:
     # Get the list (tuple) of available Feature Types in the current cdb_schema
     feat_types = sql.list_unique_feature_types(dlg=dlg)
 
-    if len(feat_types) != 0:
+    if feat_types and len(feat_types) != 0:
     # Set to true only for those Feature Types that exist
         for feat_type in feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type]
@@ -127,7 +129,7 @@ def update_feature_type_registry_is_selected(dlg: CDB4LoaderDialog) -> None:
     feat_types = gen_f.get_checkedItemsData(dlg.cbxFeatType)
 
     # Set to true only for those Feature Types that are selected
-    if len(feat_types) != 0:
+    if feat_types and len(feat_types) != 0:
         for feat_type in feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type]
             ft.is_selected = True

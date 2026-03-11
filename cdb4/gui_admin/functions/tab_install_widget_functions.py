@@ -12,11 +12,13 @@ if TYPE_CHECKING:
     from ...gui_admin.admin_dialog import CDB4AdminDialog
     from ...shared.dataTypes import CDBSchemaPrivs
 
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtCore import Qt
 
 from . import sql
 from . import tab_install_widget_functions as ti_wf
 from . import tab_settings_widget_functions as ts_wf
+
+from .. import admin_constants as c
 
 #############################################
 # Set up widget functions
@@ -25,7 +27,7 @@ from . import tab_settings_widget_functions as ts_wf
 def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, ...]] = None) -> None:
     """Function to reset the combobox containing the list of users.
     """
-    usr_icon = QIcon(":/plugins/citydb_loader/icons/user.svg")
+    usr_icon = c.usr_icon
 
     # Clean combo box from previous leftovers.
     dlg.cbxSelUser4Grp.clear()
@@ -51,7 +53,7 @@ def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, .
     """Function to reset the combobox (drop down menu) containing the list of plugin users
     and the associated remove user from group.
     """
-    usr_icon = QIcon(":/plugins/citydb_loader/icons/user.svg")
+    usr_icon = c.usr_icon
 
     # Clean combo box from previous leftovers.
     dlg.cbxUser.clear()
@@ -91,9 +93,9 @@ def fill_cdb_schemas_privs_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: Opti
     else:
         for cdb_schema in cdb_schemas_with_priv:
             dlg.ccbSelCDBSch.addItemWithCheckState(
-                text=f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type})", # Must be a string! ;-)
-                state=0,
-                userData=f"{cdb_schema.cdb_schema}") # Must put it here, as the gen_sh.function retrieves this field
+                text = f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type})", # Must be a string!
+                state = Qt.CheckState.Unchecked, # i.e. state = 0,
+                userData = f"{cdb_schema.cdb_schema}") # Must put it here, as the gen_sh.function retrieves this field
         if dlg.ckbSelAllCDBSch.isChecked():
             # Disable the check all
             dlg.ckbSelAllCDBSch.setChecked(False)
@@ -242,8 +244,6 @@ def gbxUserSchemaInst_reset(dlg: CDB4AdminDialog) -> None:
     """
     dlg.gbxUserInst.setDisabled(True)
     dlg.btnRemoveUserFromGrp.setDisabled(False)
-    #dlg.btnUsrInst.setText(dlg.btnUsrInst.init_text)
-    #dlg.btnUsrUninst.setText(dlg.btnUsrUninst.init_text)
     dlg.cbxUser.clear()
 
     return None
