@@ -112,7 +112,7 @@ class CDBToolsMain:
 
         # Welcome message upon (re)loading
         # PLEASE NOTE: Rich text support is not recognised anymore and stripped from msg strings since 3.40 of QgsMeesageLog.
-        msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} v. {self.PLUGIN_VERSION_TXT} plug-in for Qt {QT_VERSION_STR} running on QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
+        msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} {self.PLUGIN_VERSION_TXT} plug-in for Qt {QT_VERSION_STR} running on QGIS {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
  
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
@@ -182,7 +182,7 @@ class CDBToolsMain:
             add_to_toolbar: bool = True,
             status_tip: Optional[str] = None,
             whats_this: Optional[str] = None,
-            parent: Optional[QWidget] = None) -> QAction:
+            parent: Optional[QWidget] = None): # Returns a QAction object
         """Add a toolbar icon to the toolbar.
 
         *   :param icon_path: Path to the icon for this action. Can be a
@@ -344,7 +344,7 @@ class CDBToolsMain:
             add_to_toolbar = True)
 
         # Add separator
-        sep: QAction = QAction() # must create a new object every time!
+        sep = QAction() # must create a new object every time!
         sep.setSeparator(True)
         sep.setParent(self.iface.mainWindow())
         self.iface.addPluginToDatabaseMenu(name=self.PLUGIN_NAME, action=sep)
@@ -733,13 +733,13 @@ class CDBToolsMain:
         #self.QGIS_VERSION_MINOR = 46
         # ********************************
 
-        if self.QGIS_VERSION_MINOR in main_c.QGIS3_VERSION_MINOR:
+        if self.QGIS_VERSION_MINOR in main_c.QGIS_VERSION_MINOR:
             self.IS_QGIS_SUPPORTED = True
         else:
             self.IS_QGIS_SUPPORTED = False
             # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
-            lowest_supported_minor_version :int = min(main_c.QGIS3_VERSION_MINOR)
+            lowest_supported_minor_version :int = min(main_c.QGIS_VERSION_MINOR)
             #print('lowest_supported_minor_version', lowest_supported_minor_version)
 
             if self.QGIS_VERSION_MINOR < lowest_supported_minor_version:
@@ -748,16 +748,16 @@ class CDBToolsMain:
             else:
                 msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in (and it will generally work fine!), but you may encounter some unexpected behaviour.<br><br>You are suggested to use a <b>QGIS LTR (Long Term Release) version</b>.<br>"
 
-            v_length = len(main_c.QGIS3_VERSION_MINOR)
+            v_length = len(main_c.QGIS_VERSION_MINOR)
             if v_length == 1:
-                v_supp_txt =f"3.{main_c.QGIS3_VERSION_MINOR[0]}" 
+                v_supp_txt =f"3.{main_c.QGIS_VERSION_MINOR[0]}" 
                 msg_rich = msg_rich + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
             else:
                 if v_length == 2:
-                    v_supp_txt = f"3.{main_c.QGIS3_VERSION_MINOR[0]} and 3.{main_c.QGIS3_VERSION_MINOR[1]}"
+                    v_supp_txt = f"3.{main_c.QGIS_VERSION_MINOR[0]} and 3.{main_c.QGIS_VERSION_MINOR[1]}"
                 elif v_length >= 3:
-                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS3_VERSION_MINOR) if i < (v_length - 1)]))                
-                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS3_VERSION_MINOR[-1]}"
+                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_VERSION_MINOR) if i < (v_length - 1)]))                
+                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_VERSION_MINOR[-1]}"
                 msg_rich = msg_rich + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
             QMessageBox.warning(None, "Unsupported QGIS version", msg_rich, QMessageBox.StandardButton.Ok)
