@@ -60,7 +60,7 @@ class DefaultSettings:
         self.force_all_layers_creation_default: bool = False
         self.force_all_layers_creation_label: str = "Forces QGIS Package to generate all layers, even if empty"
 
-        self.enable_3d_renderer_default: bool = True
+        self.enable_3d_renderer_default: bool = False
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
         self.enable_ui_based_forms: bool = False
