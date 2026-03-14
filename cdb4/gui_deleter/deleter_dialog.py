@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 import os
 from psycopg2.extensions import connection as pyconn
 
-from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
+from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsGeometry, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 
 from qgis.PyQt import uic
@@ -141,12 +141,8 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
 
         # Variable to store a rubberband formed by the current extents.
 
-        # QgsWkbTypes.PolygonGeometry works from 3.22 till (at least) 3.34
-        # Qgis.GeometryType.Polygon won't work in 3.22 and 3.28. Introduced in 3.32.
-        self.RUBBER_CDB_SCHEMA = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
-        # self.RUBBER_CDB_SCHEMA = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-        self.RUBBER_DELETE = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
-        # self.RUBBER_DELETE = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+        self.RUBBER_DELETE = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
 
         # Enhance various Qt Objects with their initial text.
         # This is used in order to revert to the original state in reset operations when original text has already changed.
