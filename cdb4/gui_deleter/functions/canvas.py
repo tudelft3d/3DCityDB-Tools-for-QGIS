@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, cast, Iterable
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
 from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayer
@@ -9,6 +9,7 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
 
 from .. import deleter_constants as c
+
 
 def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRectangle = c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem = c.OSM_INIT_CRS, clear: bool = True) -> None:
     """Function to set up the additional map canvas that shows the extents.
@@ -29,7 +30,7 @@ def canvas_setup(dlg: CDB4DeleterDialog, canvas: QgsMapCanvas, extents: QgsRecta
     # OSM id of layer.
     # registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     registryOSM_id = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
-    dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
+    dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)  # Signal emitted for qgbxExtents.
 
     # Set CRS and extents of the canvas
     canvas.setDestinationCrs(crs=crs)

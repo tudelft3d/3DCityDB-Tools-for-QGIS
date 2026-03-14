@@ -1,6 +1,7 @@
 import os.path
 from . import loader_constants as c
 
+
 class DialogChecks:
     def __init__(self):
         self.is_conn_successful: bool = False
@@ -22,7 +23,6 @@ class DialogChecks:
             f"Have layers been refreshed? {self.layers_refreshed}<br>"
         return return_str
 
-
     def are_requirements_fulfilled(self) -> bool:
         """Method that is used to check whether layers can be loaded in the ""Layers' tab"
 
@@ -40,7 +40,7 @@ class DialogChecks:
         else:
             return False
 
-    
+
 class DefaultSettings:
     """ Contains all DEFAULT settings of the CDB4-Loader dialog, and their explanation.
     """
@@ -59,13 +59,12 @@ class DefaultSettings:
 
         self.force_all_layers_creation_default: bool = False
         self.force_all_layers_creation_label: str = "Forces QGIS Package to generate all layers, even if empty"
-        
-        self.enable_3d_renderer_default: bool = False
+
+        self.enable_3d_renderer_default: bool = True
         self.enable_3d_renderer_label: str = "Toggles on or off the 3D rendered and the assignment of the 3D styles to the layers"
 
         self.enable_ui_based_forms: bool = False
         self.enable_ui_based_forms_label: str = "Toggles on or off the usage of ui-based forms (EXPERIMENTAL)"
-
 
     def __str__(self) -> str:
         return_str: str = \
@@ -83,26 +82,26 @@ class CDBLayer():
     into objects to be used (for example) in the LayerRegistry
     """
     def __init__(self,
-            l_id: int,
-            cdb_schema: str,
-            ade_prefix: str,
-            layer_type: str,
-            feature_type: str,
-            root_class: str,
-            curr_class: str,
-            lod: str,
-            layer_name: str,
-            gv_name: str,
-            av_name: str,
-            n_features: int,
-            creation_date: str,
-            refresh_date: str,
-            qml_form: str,
-            qml_symb: str,
-            qml_3d: str,
-            enum_cols: str,
-            codelist_cols: str
-            ):
+                 l_id: int,
+                 cdb_schema: str,
+                 ade_prefix: str,
+                 layer_type: str,
+                 feature_type: str,
+                 root_class: str,
+                 curr_class: str,
+                 lod: str,
+                 layer_name: str,
+                 gv_name: str,
+                 av_name: str,
+                 n_features: int,
+                 creation_date: str,
+                 refresh_date: str,
+                 qml_form: str,
+                 qml_symb: str,
+                 qml_3d: str,
+                 enum_cols: str,
+                 codelist_cols: str
+                 ):
 
         self.l_id = l_id
         self.cdb_schema = cdb_schema
@@ -140,8 +139,8 @@ class CDBLayer():
             self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
 
         # #########################################
-        # Initial test to support UI-based forms - Added 25 February 2023 
-        
+        # Initial test to support UI-based forms - Added 25 February 2023
+
         self.qml_ui_form_with_path: str = None
         self.ui_file_with_path: str = None
 
@@ -160,19 +159,19 @@ class CDBDetailView():
     into objects to be used (for example) in the DetailViewRegistry
     """
     def __init__(self,
-            id: int,
-            cdb_schema: str,
-            layer_type: str,
-            # feature_type: str,
-            # root_class: str,
-            curr_class: str,
-            layer_name: str,
-            gen_name: str,    # currently takes the value of av_name field in table layer attributes
-            # creation_date: str,
-            qml_form: str,
-            qml_symb: str,
-            qml_3d: str
-            ):
+                 id: int,
+                 cdb_schema: str,
+                 layer_type: str,
+                 # feature_type: str,
+                 # root_class: str,
+                 curr_class: str,
+                 layer_name: str,
+                 gen_name: str,    # currently takes the value of av_name field in table layer attributes
+                 # creation_date: str,
+                 qml_form: str,
+                 qml_symb: str,
+                 qml_3d: str
+                 ):
 
         self.id = id
         self.cdb_schema = cdb_schema
@@ -198,7 +197,7 @@ class CDBDetailView():
             self.form_tab_name = "Ext ref (Name)"
         elif gen_name == "ext_ref_uri":
             self.form_tab_name = "Ext ref (Uri)"
-        elif gen_name == "gen_attrib_string":  
+        elif gen_name == "gen_attrib_string":
             self.form_tab_name = "Gen Attrib (String)"
         elif gen_name == "gen_attrib_integer":
             self.form_tab_name = "Gen Attrib (Integer)"
@@ -213,7 +212,7 @@ class CDBDetailView():
         elif gen_name == "gen_attrib_blob":
             self.form_tab_name = "Gen Attrib (Blob)"
         elif gen_name in ["address_bdg", "address_bri", "address_bdg_door", "address_bri_door"]:
-             self.form_tab_name = "Addresses"
+            self.form_tab_name = "Addresses"
         else:
             pass
 
@@ -230,8 +229,8 @@ class CDBDetailView():
             self.qml_3d_with_path: str = os.path.join(c.QML_PATH, c.QML_3D_DIR, qml_3d)
 
         # #########################################
-        # Initial test to support UI-based forms - Added 25 February 2023 
-        
+        # Initial test to support UI-based forms - Added 25 February 2023
+
         self.qml_ui_form_with_path: str = None
         self.ui_file_with_path: str = None
 
@@ -247,16 +246,16 @@ class CDBDetailView():
 
 class FeatureType():
     def __init__(self,
-                name: str, 
-                alias: str,
-                layers_create_function: str = None,
-                layers_refresh_function: str = None,
-                layers_drop_function: str = None,
-                exists: bool = None,                   # i.e. exists in the selected cdb_schema?
-                is_ade: bool = False,
-                is_selected: bool = True,
-                n_features: int = 0
-                ):
+                 name: str,
+                 alias: str,
+                 layers_create_function: str = None,
+                 layers_refresh_function: str = None,
+                 layers_drop_function: str = None,
+                 exists: bool = None,  # i.e. exists in the selected cdb_schema?
+                 is_ade: bool = False,
+                 is_selected: bool = True,
+                 n_features: int = 0
+                 ):
         self.name = name
         self.alias = alias
 
@@ -275,12 +274,12 @@ class FeatureType():
         else:
             self.layers_drop_function = "_".join(["drop_layers", alias])
 
-        self.exists = exists 
+        self.exists = exists
         self.is_ade = is_ade
         self.is_selected = is_selected
         self.n_features = n_features
-        self.layers = [] # Will contain the CDBLayer objects to be loaded
-    
+        self.layers = []  # Will contain the CDBLayer objects to be loaded
+
     def __str__(self) -> str:
         return_str: str = \
             f"alias: {self.alias}\n" + \
@@ -296,22 +295,22 @@ class FeatureType():
 
 class EnumConfig():
     def __init__(self,
-            id: int,
-            ade_prefix: str,
-            source_class: str,
-            source_table: str,
-            source_column: str,
-            target_table: str,
-            key_column: str,
-            value_column: str,
-            filter_expression: str,
-            num_columns: int,
-            allow_multi: bool,
-            allow_null: bool,
-            order_by_value: bool,
-            use_completer: bool,
-            description: str
-            ):
+                 id: int,
+                 ade_prefix: str,
+                 source_class: str,
+                 source_table: str,
+                 source_column: str,
+                 target_table: str,
+                 key_column: str,
+                 value_column: str,
+                 filter_expression: str,
+                 num_columns: int,
+                 allow_multi: bool,
+                 allow_null: bool,
+                 order_by_value: bool,
+                 use_completer: bool,
+                 description: str
+                 ):
 
         self.id = id
         self.ade_prefix = ade_prefix
@@ -332,23 +331,23 @@ class EnumConfig():
 
 class CodeListConfig():
     def __init__(self,
-            id: int,
-            name: str,
-            ade_prefix: str,
-            source_class: str,
-            source_table: str,
-            source_column: str,
-            target_table: str,
-            key_column: str,
-            value_column: str,
-            filter_expression: str,
-            num_columns: int,
-            allow_multi: bool,
-            allow_null: bool,
-            order_by_value: bool,
-            use_completer: bool,
-            description: str
-            ):
+                 id: int,
+                 name: str,
+                 ade_prefix: str,
+                 source_class: str,
+                 source_table: str,
+                 source_column: str,
+                 target_table: str,
+                 key_column: str,
+                 value_column: str,
+                 filter_expression: str,
+                 num_columns: int,
+                 allow_multi: bool,
+                 allow_null: bool,
+                 order_by_value: bool,
+                 use_completer: bool,
+                 description: str
+                 ):
 
         self.id = id
         self.name = name

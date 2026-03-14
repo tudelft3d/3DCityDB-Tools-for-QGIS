@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING, cast
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ...shared.dataTypes import CDBSchemaPrivs
 
@@ -34,7 +34,7 @@ def fill_cdb_schemas_box(dlg: CDB4LoaderDialog, cdb_schemas: list[CDBSchemaPrivs
             # Enable the combobox
             dlg.cbxSchema.setDisabled(False)
             dlg.lblSchema.setDisabled(False)
-   
+
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
     return None
 
@@ -52,23 +52,23 @@ def fill_feature_types_box(dlg: CDB4LoaderDialog) -> None:
     # Eventually, THIS will be the correct line of code.
     # feat_types: list = [ft for ft in dlg.FeatureTypesRegistry.values() if ft.exists]
 
-    if (feat_types is None) or (len(feat_types) == 0): 
+    if (feat_types is None) or (len(feat_types) == 0):
         dlg.cbxFeatType.setDefaultText('None available')
         # Disable the combobox
-        dlg.cbxFeatType.setDisabled(True) 
+        dlg.cbxFeatType.setDisabled(True)
     else:
-        # ft: FeatureType            
+        # ft: FeatureType
         for ft in feat_types:
             label = f"{ft.name}"
             dlg.cbxFeatType.addItemWithCheckState(
                 # text=f'{layer.layer_name} ({layer.n_selected})',
-                text = label, # must be a string!!
-                state = Qt.CheckState.Unchecked, # i.e. state = 0,
-                userData= label) # this is the value retrieved later for picking the selected ones
+                text=label,  # must be a string!!
+                state=Qt.CheckState.Unchecked,
+                userData=label)  # this is the value retrieved later for picking the selected ones
             dlg.cbxFeatType.model().sort(0)
         if not dlg.cbxFeatType.isEnabled():
             dlg.cbxFeatType.setDisabled(False)
-    
+
     return None
 
 
@@ -76,20 +76,18 @@ def initialize_feature_type_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to create the dictionary containing Feature Type metadata.
     """
     dlg.FeatureTypesRegistry = {}
-        
     dlg.FeatureTypesRegistry = {
-        "Bridge"          : FeatureType(name="Bridge"         , alias='bridge'         ),
-        "Building"        : FeatureType(name="Building"       , alias='building'       ),
-        "CityFurniture"   : FeatureType(name="CityFurniture"  , alias='cityfurniture'  ),
+        "Bridge"          : FeatureType(name="Bridge"         , alias='bridge'),
+        "Building"        : FeatureType(name="Building"       , alias='building'),
+        "CityFurniture"   : FeatureType(name="CityFurniture"  , alias='cityfurniture'),
         "CityObjectGroup" : FeatureType(name="CityObjectGroup", alias='cityobjectgroup'),
-        "Generics"        : FeatureType(name="Generics"       , alias='generics'       ),
-        "LandUse"         : FeatureType(name="LandUse"        , alias='landuse'        ),
-        "Relief"          : FeatureType(name="Relief"         , alias='relief'         ),
-        "Transportation"  : FeatureType(name="Transportation" , alias='transportation' ),
-        "Tunnel"          : FeatureType(name="Tunnel"         , alias='tunnel'         ),
-        "Vegetation"      : FeatureType(name="Vegetation"     , alias='vegetation'     ),
-        "WaterBody"       : FeatureType(name="WaterBody"      , alias='waterbody'      )
-        }
+        "Generics"        : FeatureType(name="Generics"       , alias='generics'),
+        "LandUse"         : FeatureType(name="LandUse"        , alias='landuse'),
+        "Relief"          : FeatureType(name="Relief"         , alias='relief'),
+        "Transportation"  : FeatureType(name="Transportation" , alias='transportation'),
+        "Tunnel"          : FeatureType(name="Tunnel"         , alias='tunnel'),
+        "Vegetation"      : FeatureType(name="Vegetation"     , alias='vegetation'),
+        "WaterBody"       : FeatureType(name="WaterBody"      , alias='waterbody')}
 
     return None
 
@@ -106,7 +104,7 @@ def update_feature_type_registry_exists(dlg: CDB4LoaderDialog) -> None:
     feat_types = sql.list_unique_feature_types(dlg=dlg)
 
     if feat_types and len(feat_types) != 0:
-    # Set to true only for those Feature Types that exist
+        # Set to true only for those Feature Types that exist
         for feat_type in feat_types:
             ft = dlg.FeatureTypesRegistry[feat_type]
             ft.exists = True
@@ -120,7 +118,6 @@ def update_feature_type_registry_exists(dlg: CDB4LoaderDialog) -> None:
 def update_feature_type_registry_is_selected(dlg: CDB4LoaderDialog) -> None:
     """Function to update the dictionary containing Feature Type metadata for the current cdb_schema.
     """
-
     # Reset the status from potential previous selections
     for ft in dlg.FeatureTypesRegistry.values():
         ft.is_selected = False
@@ -143,7 +140,6 @@ def update_feature_type_registry_is_selected(dlg: CDB4LoaderDialog) -> None:
 def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
     """Function to create the dictionary containing Detail Views metadata.
     """
-
     # This is a list of named tuples, extracted from the db sorting by gen_name
     detail_views_metadata = sql.get_detail_view_metadata(dlg=dlg)
     # print(detail_views_metadata)
@@ -158,7 +154,7 @@ def populate_detail_views_registry(dlg: CDB4LoaderDialog) -> None:
 
     dlg.DetailViewsRegistry = {}
     dlg.DetailViewsRegistry = dict(zip(detail_views_keys, detail_views_values))
-    
+
     # print('Initializing:\n', dlg.DetailViewsRegistry)
     # print('Initializing:\n', dlg.DetailViewsRegistry["address_bdg"].__dict__)
     # print('Initializing:\n', dlg.DetailViewsRegistry["gen_attrib_integer"].__dict__)
@@ -204,7 +200,7 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
     # Check if user package has already some layers corresponding to the current schema.
     has_layers_in_current_schema = sql.has_layers_for_cdb_schema(dlg=dlg)
 
-    if not has_layers_in_current_schema: # There are no layers
+    if not has_layers_in_current_schema:  # There are no layers
         # Set the labels in the connection tab: There are no layers
         dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.checks.layers_exist = False
@@ -227,7 +223,7 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         dlg.btnRefreshLayers.setDisabled(True)
         # Disable the Drop Layers button (there is nothing to drop)
         dlg.btnDropLayers.setDisabled(True)
-    
+
     else:   # There are already layers from before
         # Set the labels in the connection tab: There are layers
         dlg.lblLayerExist_out.setText(c.success_html.format(text=c.SCHEMA_LAYER_MSG.format(sch=dlg.CDB_SCHEMA)))
@@ -243,13 +239,12 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
             dlg.lblLayerRefr_out.setText(c.failure_html.format(text=c.REFR_LAYERS_FAIL_MSG))
             dlg.checks.layers_refreshed = False
 
-        else: # The layers do already exist, AND have already been refreshed/populated
+        else:  # The layers do already exist, AND have already been refreshed/populated
             dlg.lblLayerRefr_out.setText(c.success_html.format(text=c.REFR_LAYERS_MSG.format(date=date)))
             dlg.checks.layers_refreshed = True
 
-
         # In both cases that the layers already exist:
-        # Disable everything but the Refresh button and the MapCanvas 
+        # Disable everything but the Refresh button and the MapCanvas
         dlg.gbxBasemap.setDisabled(False)
         dlg.qgbxExtents.setDisabled(True)
         dlg.btnCityExtents.setDisabled(True)
@@ -290,17 +285,7 @@ def check_layers_status(dlg: CDB4LoaderDialog) -> bool:
         if CityGML_codelist_set_names:
             tl_wf.fill_CityGML_codelist_selection_box(dlg=dlg, CityGML_codelist_set_names=CityGML_codelist_set_names)
 
-        # TO DO
-        #
-        # Add similar step to retrieve ADE codelist set
-        #
-        # if dlg.ADE_PREFIX:
-        #     ADE_codelist_set_names: list = sql.fetch_ADE_codelist_set_names(dlg)
-        #     # print("Initializing combo box with:", codelist_set_names)
-        #     if ADE_codelist_set_names:
-        #         tl_wf.fill_ADE_codelist_selection_box(dlg, ADE_codelist_set_names)            
-
     else:
-        tl_wf.tabLayers_reset(dlg=dlg) # it disables itself, too
+        tl_wf.tabLayers_reset(dlg=dlg)  # it disables itself, too
 
     return has_layers_in_current_schema

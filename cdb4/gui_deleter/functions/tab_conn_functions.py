@@ -5,8 +5,8 @@ These functions are usually called from widget_setup functions
 relating to child widgets of the 'Connection Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Iterable, cast, Optional   #, Union
-if TYPE_CHECKING:       
+from typing import TYPE_CHECKING, Iterable, cast, Optional  # , Union
+if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
     from ...shared.dataTypes import TopLevelFeatureCounter
 
@@ -22,6 +22,7 @@ from . import tab_conn_widget_functions as tc_wf
 from . import tab_settings_widget_functions as ts_wf
 from . import canvas, sql
 
+
 def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: Optional[list[tuple[str, bool, str]]] = None) -> None:
     """Function that fills the 'Citydb schema(s)' checkable combo box.
     The passed list of tuples is actually a list of named tuples
@@ -30,7 +31,7 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: Optional[list[tupl
     # Clean combo box from previous leftovers.
     dlg.cbxSchema.clear()
 
-    #if not cdb_schemas:
+    # if not cdb_schemas:
     if (cdb_schemas is None) or len(cdb_schemas) == 0:
         # Disable the combobox
         dlg.cbxSchema.setDisabled(True)
@@ -43,7 +44,7 @@ def fill_cdb_schemas_box(dlg: CDB4DeleterDialog, cdb_schemas: Optional[list[tupl
             # Enable the combobox
             dlg.cbxSchema.setDisabled(False)
             dlg.lblSchema.setDisabled(False)
-   
+
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
     return None
 
@@ -59,18 +60,18 @@ def fill_top_level_features_box(dlg: CDB4DeleterDialog) -> None:
     top_level_features = []
     top_level_features = [tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if tlf.exists]
 
-    if len(top_level_features) == 0: 
+    if len(top_level_features) == 0:
         dlg.ccbxTopLevelClass.setDefaultText('None available')
         # Disable the combobox
         dlg.ccbxTopLevelClass.setDisabled(True)
     else:
         tlf: TopLevelFeature
         for tlf in top_level_features:
-            label = f"{tlf.name} ({tlf.n_features})" 
+            label = f"{tlf.name} ({tlf.n_features})"
             dlg.ccbxTopLevelClass.addItemWithCheckState(
-                text = label,
-                state = Qt.CheckState.Unchecked, # i.e. state = 0,
-                userData = tlf) # this is the value retrieved later
+                text=label,
+                state=Qt.CheckState.Unchecked,
+                userData=tlf)  # this is the value retrieved later
         # Reorder items alphabetically
         dlg.ccbxTopLevelClass.model().sort(0)
     return None
@@ -85,18 +86,18 @@ def fill_feature_types_box(dlg: CDB4DeleterDialog) -> None:
 
     feat_types = [ft for ft in dlg.FeatureTypesRegistry.values() if ft.exists]
 
-    if len(feat_types) == 0: 
+    if len(feat_types) == 0:
         dlg.ccbxFeatType.setDefaultText('None available')
         # Disable the combobox
-        dlg.ccbxFeatType.setDisabled(True) 
+        dlg.ccbxFeatType.setDisabled(True)
     else:
         # ft: FeatureType
         for ft in feat_types:
-            label = f"{ft.name} ({ft.n_features})" 
+            label = f"{ft.name} ({ft.n_features})"
             dlg.ccbxFeatType.addItemWithCheckState(
-                text = label,
-                state = Qt.CheckState.Unchecked, # i.e. state = 0,
-                userData = ft) # this is the value retrieved later
+                text=label,
+                state=Qt.CheckState.Unchecked,
+                userData=ft)  # this is the value retrieved later
         # Reorder items alphabetically
         dlg.ccbxFeatType.model().sort(0)
     return None
@@ -107,29 +108,28 @@ def initialise_top_level_features_registry(dlg: CDB4DeleterDialog) -> None:
     """
     # Clean up from possible previous runs
     dlg.TopLevelFeaturesRegistry = {}
-    
+
     dlg.TopLevelFeaturesRegistry = {
-        "Bridge"                   : TopLevelFeature(name="Bridge"                  , objectclass_id = 64, feature_type = "Bridge"          , del_function= "del_bridge"),
-        "Building"                 : TopLevelFeature(name="Building"                , objectclass_id = 26, feature_type = "Building"        , del_function= "del_building"),
-        "CityFurniture"            : TopLevelFeature(name="CityFurniture"           , objectclass_id = 21, feature_type = "CityFurniture"   , del_function= "del_city_furniture"),
-        "CityObjectGroup"          : TopLevelFeature(name="CityObjectGroup"         , objectclass_id = 23, feature_type = "CityObjectGroup" , del_function= "del_cityobjectgroup"),
-        "GenericCityObject"        : TopLevelFeature(name="GenericCityObject"       , objectclass_id =  5, feature_type = "Generics"        , del_function= "del_generic_cityobject"),
-        "LandUse"                  : TopLevelFeature(name="LandUse"                 , objectclass_id =  4, feature_type = "LandUse"         , del_function= "del_land_use"),
-        "ReliefFeature"            : TopLevelFeature(name="ReliefFeature"           , objectclass_id = 14, feature_type = "Relief"          , del_function= "del_relief_feature"),
-        "TINRelief"                : TopLevelFeature(name="TINRelief"               , objectclass_id = 16, feature_type = "Relief"          , del_function= "del_tin_relief"),
-        "MassPointRelief"          : TopLevelFeature(name="MassPointRelief"         , objectclass_id = 17, feature_type = "Relief"          , del_function= "del_masspoint_relief"),
-        "BreaklineRelief"          : TopLevelFeature(name="BreaklineRelief"         , objectclass_id = 18, feature_type = "Relief"          , del_function= "del_relief_component"),
-        "RasterRelief"             : TopLevelFeature(name="RasterRelief"            , objectclass_id = 19, feature_type = "Relief"          , del_function= "del_raster_relief"),
-        "TransportationComplex"    : TopLevelFeature(name="TransportationComplex"   , objectclass_id = 42, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Track"                    : TopLevelFeature(name="Track"                   , objectclass_id = 43, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Railway"                  : TopLevelFeature(name="Railway"                 , objectclass_id = 44, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Road"                     : TopLevelFeature(name="Road"                    , objectclass_id = 45, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Square"                   : TopLevelFeature(name="Square"                  , objectclass_id = 46, feature_type = "Transportation"  , del_function= "del_transportation_complex"),
-        "Tunnel"                   : TopLevelFeature(name="Tunnel"                  , objectclass_id = 85, feature_type = "Tunnel"          , del_function= "del_tunnel"),
-        "SolitaryVegetationObject" : TopLevelFeature(name="SolitaryVegetationObject", objectclass_id =  7, feature_type = "Vegetation"      , del_function= "del_solitary_vegetat_object"),
-        "PlantCover"               : TopLevelFeature(name="PlantCover"              , objectclass_id =  8, feature_type = "Vegetation"      , del_function= "del_plant_cover"),
-        "WaterBody"                : TopLevelFeature(name="WaterBody"               , objectclass_id =  9, feature_type = "WaterBody"       , del_function= "del_waterbody")
-        }
+        "Bridge"                   : TopLevelFeature(name="Bridge"                  , objectclass_id=64, feature_type="Bridge"         , del_function="del_bridge"),
+        "Building"                 : TopLevelFeature(name="Building"                , objectclass_id=26, feature_type="Building"       , del_function="del_building"),
+        "CityFurniture"            : TopLevelFeature(name="CityFurniture"           , objectclass_id=21, feature_type="CityFurniture"  , del_function="del_city_furniture"),
+        "CityObjectGroup"          : TopLevelFeature(name="CityObjectGroup"         , objectclass_id=23, feature_type="CityObjectGroup", del_function="del_cityobjectgroup"),
+        "GenericCityObject"        : TopLevelFeature(name="GenericCityObject"       , objectclass_id=5 , feature_type="Generics"       , del_function="del_generic_cityobject"),
+        "LandUse"                  : TopLevelFeature(name="LandUse"                 , objectclass_id=4 , feature_type="LandUse"        , del_function="del_land_use"),
+        "ReliefFeature"            : TopLevelFeature(name="ReliefFeature"           , objectclass_id=14, feature_type="Relief"         , del_function="del_relief_feature"),
+        "TINRelief"                : TopLevelFeature(name="TINRelief"               , objectclass_id=16, feature_type="Relief"         , del_function="del_tin_relief"),
+        "MassPointRelief"          : TopLevelFeature(name="MassPointRelief"         , objectclass_id=17, feature_type="Relief"         , del_function="del_masspoint_relief"),
+        "BreaklineRelief"          : TopLevelFeature(name="BreaklineRelief"         , objectclass_id=18, feature_type="Relief"         , del_function="del_relief_component"),
+        "RasterRelief"             : TopLevelFeature(name="RasterRelief"            , objectclass_id=19, feature_type="Relief"         , del_function="del_raster_relief"),
+        "TransportationComplex"    : TopLevelFeature(name="TransportationComplex"   , objectclass_id=42, feature_type="Transportation" , del_function="del_transportation_complex"),
+        "Track"                    : TopLevelFeature(name="Track"                   , objectclass_id=43, feature_type="Transportation" , del_function="del_transportation_complex"),
+        "Railway"                  : TopLevelFeature(name="Railway"                 , objectclass_id=44, feature_type="Transportation" , del_function="del_transportation_complex"),
+        "Road"                     : TopLevelFeature(name="Road"                    , objectclass_id=45, feature_type="Transportation" , del_function="del_transportation_complex"),
+        "Square"                   : TopLevelFeature(name="Square"                  , objectclass_id=46, feature_type="Transportation" , del_function="del_transportation_complex"),
+        "Tunnel"                   : TopLevelFeature(name="Tunnel"                  , objectclass_id=85, feature_type="Tunnel"         , del_function="del_tunnel"),
+        "SolitaryVegetationObject" : TopLevelFeature(name="SolitaryVegetationObject", objectclass_id=7 , feature_type="Vegetation"     , del_function="del_solitary_vegetat_object"),
+        "PlantCover"               : TopLevelFeature(name="PlantCover"              , objectclass_id=8 , feature_type="Vegetation"     , del_function="del_plant_cover"),
+        "WaterBody"                : TopLevelFeature(name="WaterBody"               , objectclass_id=9 , feature_type="WaterBody"      , del_function="del_waterbody")}
 
     return None
 
@@ -143,7 +143,7 @@ def update_top_level_features_registry_exists(dlg: CDB4DeleterDialog, top_level_
     # Reset the status from potential previous checks
     for tlf in dlg.TopLevelFeaturesRegistry.values():
         tlf.exists = False
-        tlf.n_features = 0 
+        tlf.n_features = 0
 
     # If there are any tlf, then update
     if top_level_features and len(top_level_features) != 0:
@@ -199,8 +199,7 @@ def initialize_feature_types_registry(dlg: CDB4DeleterDialog) -> None:
         "Transportation"  : FeatureType(name="Transportation"  , alias='transportation' ),
         "Tunnel"          : FeatureType(name="Tunnel"          , alias='tunnel'         ),
         "Vegetation"      : FeatureType(name="Vegetation"      , alias='vegetation'     ),
-        "WaterBody"       : FeatureType(name="WaterBody"       , alias='waterbody'      )
-        }
+        "WaterBody"       : FeatureType(name="WaterBody"       , alias='waterbody'      )}
 
     return None
 
@@ -250,12 +249,11 @@ def update_feature_type_registry_is_selected(dlg: CDB4DeleterDialog, sel_feat_ty
     return None
 
 
-def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
+def refresh_extents(dlg: CDB4DeleterDialog) -> None:
     """Function to update the extents of the cdb_schema after deleting data.
     """
     # Recompute the extents
-    is_geom_null, x_min, y_min, x_max, y_max, srid = sql.compute_cdb_schema_extents(dlg=dlg)
-    srid = None # Discard unneeded variable.
+    is_geom_null, x_min, y_min, x_max, y_max, _ = sql.compute_cdb_schema_extents(dlg=dlg)
 
     if not is_geom_null:
 
@@ -285,7 +283,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             # 2) Update the registries
             refresh_registries(dlg=dlg)
 
-            return None # Exit
+            return None  # Exit
 
         else:
             # The extents have changed. Show them on the map as dashed line
@@ -321,7 +319,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
             # Define the new cdb_extents
             dlg.CDB_SCHEMA_EXTENTS = temp_cdb_extents_new
 
-            # Drop the dashed bbox 
+            # Drop the dashed bbox
             cdb_extents_new_rubber_band.reset()
             # Drop the old cdb_extents
             dlg.RUBBER_CDB_SCHEMA.reset()
@@ -361,7 +359,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) ->  None:
     return None
 
 
-def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
+def refresh_registries(dlg: CDB4DeleterDialog) -> None:
     """Function to set up the 'Feature Selection' groupbox, when it is checked.
     """
     # Overview
@@ -370,7 +368,7 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     # 3) set up/update the top-level features registry
     # 4) set up/update the Feature Type registry
     # 5) fill the top-level features checkable combobox
-    # 6) fill the feature type checkable combobox    
+    # 6) fill the feature type checkable combobox
     # 7) Now we are ready for the user to choose and click the delete selected features button.
 
     curr_extents: Optional[QgsRectangle]
@@ -402,7 +400,7 @@ def refresh_registries(dlg: CDB4DeleterDialog) ->  None:
     # 5) Fill the top-level checkable combobox
     fill_top_level_features_box(dlg=dlg)
 
-    # 6) Fill the Feature type checkable combobox 
+    # 6) Fill the Feature type checkable combobox
     fill_feature_types_box(dlg=dlg)
 
     # msg: str = f"Registries of '{dlg.CDB_SCHEMA}' updated."

@@ -8,7 +8,7 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING, cast, Iterable
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
 
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -22,11 +22,12 @@ from . import canvas, sql
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 ####################################################
-## Setup widget functions for 'User Connection' tab
+# # Setup widget functions for 'User Connection' tab
 ####################################################
 
+
 # In 'Basemap (OMS)' groupBox.
-def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
+def gbxBasemap_setup(dlg: CDB4DeleterDialog) -> None:
     """Function to setup the 'Basemap' groupbox.
     It uses an additional canvas instance to store an OSM map from which extents can be extracted
     for further spatial queries.
@@ -36,7 +37,7 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
     # Get the crs_id stored in the selected {cdb_schema}
     srid = sql.get_cdb_schema_srid(dlg=dlg)
     # Format CRS variable as QGIS Epsg code.
-    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
+    crs: str = ":".join(["EPSG", str(srid)])  # e.g. EPSG:28992
     # Store the crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
     dlg.CRS_is_geographic = dlg.CRS.isGeographic()
@@ -48,7 +49,7 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
         cdb_extents_wkt = sql.get_precomputed_cdb_schema_extents(dlg=dlg)
         if not cdb_extents_wkt:
             # Something went wrong on the server when computin the bbox
-            msg: str = f"Something went wrong while computing the extents on the server."
+            msg: str = "Something went wrong while computing the extents on the server."
             QMessageBox.critical(dlg, "Ups, server... not serving!", msg)
             QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             return None
@@ -92,7 +93,7 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) ->  None:
 
 
 ####################################################
-## Reset widget functions for 'User Connection' tab
+# # Reset widget functions for 'User Connection' tab
 ####################################################
 
 def tabConnection_reset(dlg: CDB4DeleterDialog) -> None:
@@ -105,7 +106,7 @@ def tabConnection_reset(dlg: CDB4DeleterDialog) -> None:
     gbxCleanUpSchema_reset(dlg=dlg)
     gbxBasemap_reset(dlg=dlg)
     gbxFeatSel_reset(dlg=dlg)
-    
+
     dlg.btnCloseConn.setDisabled(True)
 
     return None
@@ -180,7 +181,7 @@ def gbxFeatType_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Feature Type' groupbox (in 'User Connection' tab).
     """
     dlg.gbxFeatType.setDisabled(True)
-    dlg.ccbxFeatType.clear() # This clears also the default text
+    dlg.ccbxFeatType.clear()  # This clears also the default text
     dlg.ckbFeatTypeAll.setChecked(False)
     dlg.ccbxFeatType.setDefaultText('Select feature type(s)')
     dlg.ccbxFeatType.setDisabled(True)
@@ -192,11 +193,11 @@ def gbxTopLevelClass_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'top-level Feature' groupbox (in 'User Connection' tab).
     """
     dlg.gbxTopLevelClass.setDisabled(True)
-    dlg.ccbxTopLevelClass.clear() # This clears also the default text
+    dlg.ccbxTopLevelClass.clear()  # This clears also the default text
     dlg.ckbTopLevelClassAll.setChecked(False)
     dlg.ccbxTopLevelClass.setDefaultText('Select top-level feature(s)')
     dlg.ccbxTopLevelClass.setDisabled(True)
-    
+
     return None
 
 
@@ -215,7 +216,7 @@ def gbxConnStatus_reset(dlg: CDB4DeleterDialog) -> None:
 
 def workaround_gbxFeatType(dlg: CDB4DeleterDialog) -> None:
     ##########################################
-    # This is to take care of a bizarre behaviour of 
+    # This is to take care of a bizarre behaviour of
     # the groupbox not keeping the status of the child
     # combobox that gets activated once we add items
     ##########################################
@@ -229,7 +230,7 @@ def workaround_gbxFeatType(dlg: CDB4DeleterDialog) -> None:
 
 def workaround_gbxTopLevelClass(dlg: CDB4DeleterDialog) -> None:
     ##########################################
-    # This is to take care of a bizarre behaviour of 
+    # This is to take care of a bizarre behaviour of
     # the groupbox not keeping the status of the child
     # combobox that gets activated once we add items
     ##########################################

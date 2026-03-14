@@ -8,7 +8,7 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_admin.admin_dialog import CDB4AdminDialog
     from ...shared.dataTypes import CDBSchemaPrivs
 
@@ -23,6 +23,7 @@ from .. import admin_constants as c
 #############################################
 # Set up widget functions
 #############################################
+
 
 def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, ...]] = None) -> None:
     """Function to reset the combobox containing the list of users.
@@ -43,7 +44,7 @@ def fill_database_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str,
         for usr_name in usr_names:
             dlg.cbxSelUser4Grp.addItem(usr_icon, usr_name)
         if not dlg.cbxSelUser4Grp.isEnabled():
-            # Enable the combobox 
+            # Enable the combobox
             dlg.cbxSelUser4Grp.setDisabled(False)
             # Enable the associated button
             dlg.btnAddUserToGrp.setDisabled(False)
@@ -57,7 +58,7 @@ def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, .
 
     # Clean combo box from previous leftovers.
     dlg.cbxUser.clear()
-    # Disable the "Remove from group" button from previous runs 
+    # Disable the "Remove from group" button from previous runs
     dlg.btnRemoveUserFromGrp.setDisabled(True)
 
     if not usr_names:
@@ -66,15 +67,15 @@ def fill_plugin_users_box(dlg: CDB4AdminDialog, usr_names: Optional[tuple[str, .
         # Disable the combobox
         dlg.cbxUser.setDisabled(True)
         # Disable the remove user button
-        dlg.btnRemoveUserFromGrp.setDisabled(True)       
+        dlg.btnRemoveUserFromGrp.setDisabled(True)
     else:
         for usr_name in usr_names:
             dlg.cbxUser.addItem(usr_icon, usr_name)
 
         if not dlg.cbxUser.isEnabled():
-            # Enable the combobox 
+            # Enable the combobox
             dlg.cbxUser.setDisabled(False)
-    
+
     return None
 
 
@@ -89,27 +90,27 @@ def fill_cdb_schemas_privs_box(dlg: CDB4AdminDialog, cdb_schemas_with_priv: Opti
     if not cdb_schemas_with_priv:
         dlg.ccbSelCDBSch.setDefaultText('None available')
         # Disable the combobox
-        dlg.ccbSelCDBSch.setDisabled(True) 
+        dlg.ccbSelCDBSch.setDisabled(True)
     else:
         for cdb_schema in cdb_schemas_with_priv:
             dlg.ccbSelCDBSch.addItemWithCheckState(
-                text = f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type})", # Must be a string!
-                state = Qt.CheckState.Unchecked, # i.e. state = 0,
-                userData = f"{cdb_schema.cdb_schema}") # Must put it here, as the gen_sh.function retrieves this field
+                text=f"{cdb_schema.cdb_schema} ({cdb_schema.priv_type})",  # Must be a string!
+                state=Qt.CheckState.Unchecked,  # i.e. state = 0,
+                userData=f"{cdb_schema.cdb_schema}")  # Must put it here, as the gen_sh.function retrieves this field
         if dlg.ckbSelAllCDBSch.isChecked():
             # Disable the check all
             dlg.ckbSelAllCDBSch.setChecked(False)
         if not dlg.ccbSelCDBSch.isEnabled():
             # Enable the combobox
             dlg.ccbSelCDBSch.setDisabled(False)
-    
+
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
     return None
 
 
 def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     """ Function to set up the widgets after:
-        - The existence of the qgis_pkg has been checked upon (re)load of the GUI 
+        - The existence of the qgis_pkg has been checked upon (re)load of the GUI
             AND
           the current version of the QGIS package is supported
         - After the qgis_pkg has been successfully installed
@@ -120,7 +121,7 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     dlg.btnMainUninst.setDisabled(False)
 
     # Reset and Disable the Settings Tab
-    ts_wf.tabSettings_reset(dlg=dlg) # This also disables it
+    ts_wf.tabSettings_reset(dlg=dlg)  # This also disables it
 
     # Reset the user installation GroupBox
     ti_wf.gbxUserInst_reset(dlg=dlg)
@@ -128,7 +129,7 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     # Enable the User Installation Group box
     dlg.gbxUserInstCont.setDisabled(False)
 
-    # 1) Users and group membership 
+    # 1) Users and group membership
 
     # Enable the User selection Group Box (Group Membership)
     dlg.gbxGroupMemb.setDisabled(False)
@@ -140,10 +141,10 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
     # Fill and enable the combobox in Group Membership group
     # Depending on whether the tuple is populated or not,
     # the function fills the names and activates the relative button
-    # Otherwise it keeps itself and the button disabled 
+    # Otherwise it keeps itself and the button disabled
     ti_wf.fill_database_users_box(dlg=dlg, usr_names=db_usr_names)
 
-    # 2) User schema creation 
+    # 2) User schema creation
     # Fill the combobox with the list of plugin users (i.e. members of the group)
 
     # Enable the User Schema Installation Group Box (User Installation)
@@ -151,7 +152,7 @@ def setup_post_qgis_pkg_installation(dlg: CDB4AdminDialog) -> None:
 
     # Get users belonging to the group 'qgis_pkg_usrgroup_*' from current database.
     # The superuser will always be member of it, as it cannot kick itself out
-    # when it removes people from the group 
+    # when it removes people from the group
     usr_names_plugin = sql.list_qgis_pkg_usrgroup_members(dlg=dlg)
     # print('Group members:', usr_names_plugin)
 
@@ -181,20 +182,21 @@ def setup_post_qgis_pkg_uninstallation(dlg: CDB4AdminDialog) -> None:
     dlg.btnMainUninst.setDisabled(True)
 
     # Reset and disable the User Installation groupbox (in Installation Tab)
-    ti_wf.gbxUserInst_reset(dlg=dlg) # this also disables it
+    ti_wf.gbxUserInst_reset(dlg=dlg)  # this also disables it
     # Reset the Settings tab
-    ts_wf.tabSettings_reset(dlg=dlg) # this also disables it
+    ts_wf.tabSettings_reset(dlg=dlg)  # this also disables it
 
     # Enable the Settings tab
     dlg.tabSettings.setDisabled(False)
     dlg.gbxDefaultUsers.setDisabled(False)
     dlg.btnResetToDefault.setDisabled(False)
-   
+
     return None
 
 #############################################
 # Reset widget functions
 #############################################
+
 
 def tabInstall_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Settings' tab. Resets: gbxInstall and lblInfoText.
@@ -235,7 +237,7 @@ def gbxGroupMemb_reset(dlg: CDB4AdminDialog) -> None:
     dlg.cbxSelUser4Grp.clear()
     dlg.cbxSelUser4Grp.setDisabled(False)
     dlg.btnAddUserToGrp.setDisabled(False)
-    
+
     return None
 
 
@@ -253,7 +255,7 @@ def gbxPriv_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Database privileges' groupBox
     """
     dlg.gbxPriv.setDisabled(True)
-    dlg.ccbSelCDBSch.clear() # This clears also the default text
+    dlg.ccbSelCDBSch.clear()  # This clears also the default text
     dlg.ccbSelCDBSch.setDefaultText('Select schema(s)')
     dlg.ckbSelAllCDBSch.setChecked(False)
 
@@ -270,5 +272,5 @@ def gbxConnStatus_reset(dlg: CDB4AdminDialog) -> None:
     dlg.lbl3DCityDBInst_out.clear()
     dlg.lblMainInst_out.clear()
     dlg.lblUserInst_out.clear()
-    
+
     return None

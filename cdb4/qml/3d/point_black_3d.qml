@@ -1,10 +1,9 @@
-<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.22.13-Białowieża" styleCategories="Symbology3D">
+<qgis styleCategories="Symbology3D" version="3.40.15-Bratislava">
   <renderer-3d type="vector" layer="_xx_layer_id_xx_">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="point" shape="sphere" material_type="phong">
       <data alt-clamping="absolute"/>
-      <material diffuse="0,0,0,255" ambient="0,0,0,255" specular="255,255,255,255" shininess="0">
+      <material shininess="0" opacity="1" kd="1" ka="1" ks="0" diffuse="0,0,0,255" ambient="0,0,0,255" specular="255,255,255,255">
         <data-defined-properties>
           <Option type="Map">
             <Option type="QString" value="" name="name"/>
@@ -16,7 +15,7 @@
       <shape-properties>
         <Option type="Map">
           <Option type="QString" value="" name="model"/>
-          <Option type="double" value="0" name="radius"/>
+          <Option type="double" value="0.01" name="radius"/>
         </Option>
       </shape-properties>
       <transform matrix="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>

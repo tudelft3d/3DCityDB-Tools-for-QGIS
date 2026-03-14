@@ -1,5 +1,4 @@
-<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.22.13-Białowieża" styleCategories="Symbology3D">
+<qgis styleCategories="Symbology3D" version="3.40.15-Bratislava">
   <renderer-3d type="vector" layer="_xx_layer_id_xx_">
     <vector-layer-3d-tiling zoom-levels-count="3" show-bounding-boxes="0"/>
     <symbol type="line" material_type="simpleline">
