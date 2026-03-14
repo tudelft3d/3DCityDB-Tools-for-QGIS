@@ -389,13 +389,7 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
     rel.setName(name='re_' + layer.name() + "_" + dv_layer.name())
     rel.setId(id="id_" + rel.name())
-
-    # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
-    if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
-        rel.setStrength(0)  # integer, 0 is association, 1 composition
-    else:
-        rel.setStrength(strength=Qgis.RelationshipStrength.Association)
-
+    rel.setStrength(strength=Qgis.RelationshipStrength.Association)
     # print("rel.is_valid", rel.isValid())
     if rel.isValid():
         QgsProject.instance().relationManager().addRelation(rel)
@@ -471,13 +465,7 @@ def create_layer_relation_to_dv_ext_ref(dlg: CDB4LoaderDialog, layer: QgsVectorL
         rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
         rel.setName(name='re_' + layer.name() + "_" + dv_layer.name())
         rel.setId(id="id_" + rel.name())
-
-        # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
-        if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
-            rel.setStrength(0)  # integer, 0 is association, 1 composition
-        else:
-            rel.setStrength(strength=Qgis.RelationshipStrength.Association)
-
+        rel.setStrength(strength=Qgis.RelationshipStrength.Association)
         # print("rel.is_valid", rel.isValid())
         if rel.isValid():  # Success
             QgsProject.instance().relationManager().addRelation(rel)
@@ -551,13 +539,7 @@ def create_layer_relation_to_dv_gen_attrib(dlg: CDB4LoaderDialog, layer: QgsVect
         rel.addFieldPair(referencingField='cityobject_id', referencedField='id')
         rel.setName(name='re_' + layer.name() + "_" + dv_layer.name())
         rel.setId(id="id_" + rel.name())
-
-        # Till QGIS 3.26 the argument of setStrength is numeric, from QGIS 3.28 it is an enumeration
-        if dlg.QGIS_VERSION_MAJOR == 3 and dlg.QGIS_VERSION_MINOR < 28:
-            rel.setStrength(0)  # integer, 0 is association, 1 composition
-        else:
-            rel.setStrength(strength=Qgis.RelationshipStrength.Association)
-
+        rel.setStrength(strength=Qgis.RelationshipStrength.Association)
         # print("rel.is_valid", rel.isValid())
         if rel.isValid():
             QgsProject.instance().relationManager().addRelation(rel)
