@@ -1,6 +1,6 @@
 # 3DCityDB Tools for QGIS
 
-This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database** (aka 3DCityDB), which currently supports CityGML 1.0 and 2.0.
+This repository contains code of a **QGIS plug-in** that facilitates management and visualization of data stored in the CityGML **3D City Database 4.x** (aka 3DCityDB), which currently supports **CityGML 1.0** and **2.0**.
 
 <p align="center">
 <br>
@@ -45,7 +45,7 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**, but it should work also with previous LTR versions back to **3.22 LTR**. 
+For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**. 
 
 The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
@@ -68,6 +68,14 @@ with contributions by:
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
+# Future
+
+Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
+- Support for appearances (at least for X3D Materials, if possible)
+- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
+- Initial tests to support the 3DCityDB 5.0 (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b) 
+- ...the sky is the limit...
+
 # Citation
 
 If you use the 3DCityDB-Tools sowtware in scientific work, please cite our paper:
@@ -77,13 +85,10 @@ If you use the 3DCityDB-Tools sowtware in scientific work, please cite our paper
 Recent Advances in 3D Geoinformation Science - Proceedings of the 18th 3D GeoInfo Conference, Springer, 2024, pp. 797–821.<br/>
 Link to [open-access PDF](https://research.tudelft.nl/files/181225651/978-3-031-43699-4_48.pdf).
 
-# Future
-
-Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
-- Support for appearances (at least for X3D Materials, if possible)
-- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
-- Initial tests to support the 3DCityDB 5.0 (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b) 
-- ...the sky is the limit...
+- Tsai, B.-S., Agugiaro, G., León-Sánchez, C., Yao, Z., Nagel, C.,<br/>
+**Introducing server-side support for 3DCityDB 5.0 to the 3DCityDB-Tools plug-in for QGIS**.<br/>
+ISPRS Ann. Photogramm. Remote Sens. Spatial Inf. Sci, X-4/W6-2025, pp. 193-200<br/>
+Link to [open-access PDF](https://doi.org/10.5194/isprs-annals-X-4-W6-2025-193-2025).
 
 # Disclaimer
 
