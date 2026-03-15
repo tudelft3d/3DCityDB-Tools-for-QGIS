@@ -295,13 +295,17 @@ def add_group_node_to_ToC(parent_node: QgsLayerTreeGroup, child_name: str) -> Qg
     *   :returns: The newly created node object (or the existing one).
         :rtype: QgsLayerTreeGroup
     """
-    # node_name group (e.g. test_db)
-    if not parent_node.findGroup(child_name):
-        # Create group
-        node = parent_node.addGroup(child_name)
+    group_node = parent_node.findGroup(name=child_name)
+
+    if group_node is None:
+        # Create new node
+        node = parent_node.addGroup(name=child_name)
     else:
-        # Get existing group
-        node = parent_node.findGroup(child_name)
+        # Get existing node
+        # node = parent_node.findGroup(name=child_name)
+        # It already exists, return it as it is
+        node = group_node
+
     return node
 
 
