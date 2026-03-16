@@ -1,5 +1,4 @@
-<!-- <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'> -->
-<qgis styleCategories="Fields|Forms" version="3.22.7-Białowieża">
+<qgis styleCategories="Fields|Forms" version="3.40.15-Bratislava">
   <fieldConfiguration>
 <!-- cityobject attributes -->
     <field configurationFlags="None" name="id">

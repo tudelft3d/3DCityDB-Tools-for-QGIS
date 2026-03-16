@@ -19,13 +19,14 @@ update following the heavy process taking place in the worker thread.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
-import psycopg2, psycopg2.sql as pysql
+import psycopg2
+import psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.dataTypes import BBoxType
@@ -37,8 +38,9 @@ from . import sql
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 #####################################################################################
-##### CREATE LAYERS WORKER ##########################################################
+# #### CREATE LAYERS WORKER ##########################################################
 #####################################################################################
+
 
 def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that creates layers in the user schema in the database
@@ -47,12 +49,12 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
         if not widget:
-            continue # Needed to avoid errors with layouts, vertical spacers, etc.
+            continue  # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the installation procedure.
-            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index + 1)
             break
-   
+
     # Create new thread object.
     dlg.thread = QThread()
     # Instantiate worker object for the operation.
@@ -60,10 +62,10 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
-    #-SIGNALS (start) #######################################################
+    # -SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
     dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
 
     dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
 
@@ -93,9 +95,9 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
-    # 
+
     # Feature select, Create, Refresh, Drop, Buttons will be taken care by function tc_f.check_layers_status(dlg=dlg)
-    # 
+
     dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
@@ -105,7 +107,7 @@ def run_create_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.worker.sig_success.connect(lambda: evt_create_layers_success(dlg))
     dlg.worker.sig_fail.connect(lambda: evt_create_layers_fail(dlg))
 
-    #-SIGNALS (end) #######################################################
+    # -SIGNALS (end) #######################################################
 
     # Initiate worker thread
     dlg.thread.start()
@@ -143,13 +145,11 @@ class CreateLayersWorker(QObject):
             # Update the FeatureTypeMetadata with the information about the existing ones
             for ft in dlg.FeatureTypesRegistry.values():
                 if ft.exists and ft.name != "CityObjectGroup":
-                # if ft.exists:
                     funcs_list.append(ft.layers_create_function)
         # print("selected feature types funcs", funcs_list)
 
         # 1) Create the layers: len(funcs_list)
         # 2) Create the detail views: +1
-
 
         n_iter_steps = len(funcs_list) + 1
         # Set progress bar goal
@@ -164,19 +164,18 @@ class CreateLayersWorker(QObject):
             x_min = str(dlg.LAYER_EXTENTS.xMinimum())
             y_max = str(dlg.LAYER_EXTENTS.yMaximum())
             x_max = str(dlg.LAYER_EXTENTS.xMaximum())
-            bbox = "{"+",".join([x_min, y_min, x_max, y_max])+"}"
+            bbox = "{" + ",".join([x_min, y_min, x_max, y_max]) + "}"
 
         # Set function input
         params = [
             dlg.DB.username,
             dlg.CDB_SCHEMA,
-            int(dlg.gbxGeomSimp.isChecked()), # 0 (False) or 1 (True)
+            int(dlg.gbxGeomSimp.isChecked()),  # 0 (False) or 1 (True)
             dlg.qspbDecimalPrec.value(),
             dlg.qspbMinArea.value(),
             bbox,
-            dlg.CRS_is_geographic,           # True or False
-            dlg.cbxForceLayerGen.isChecked() # True or False
-            ]
+            dlg.CRS_is_geographic,  # True or False
+            dlg.cbxForceLayerGen.isChecked()]  # True or False
 
         try:
             # Open new temp session
@@ -186,16 +185,15 @@ class CreateLayersWorker(QObject):
                 # Start measuring time
                 time_start = time.time()
 
-                # 1) Create the layers 
+                # 1) Create the layers
                 for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
-                                SELECT {_qgis_pkg_schema}.{_module_func}({_params});
-                                """).format(
-                                _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                                _module_func = pysql.Identifier(module_func),
-                                _params = pysql.SQL(", ").join(pysql.Placeholder() * len(params))
-                                )
+                        SELECT {_qgis_pkg_schema}.{_module_func}({_params});
+                        """).format(
+                        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                        _module_func=pysql.Identifier(module_func),
+                        _params=pysql.SQL(", ").join(pysql.Placeholder() * len(params)))
 
                     # Update progress bar
                     msg = f"Executing: {module_func}"
@@ -218,15 +216,14 @@ class CreateLayersWorker(QObject):
                         break
 
                 # 2) Create the detail views
-                step += 1 
+                step += 1
                 query = pysql.SQL("""
-                            SELECT {_qgis_pkg_schema}.create_detail_view({_usr_name},{_cdb_schema},{_bbox});
-                            """).format(
-                            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                            _usr_name = pysql.Literal(dlg.DB.username),
-                            _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-                            _bbox = pysql.Literal(bbox)
-                            )
+                    SELECT {_qgis_pkg_schema}.create_detail_view({_usr_name},{_cdb_schema},{_bbox});
+                    """).format(
+                    _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                    _usr_name=pysql.Literal(dlg.DB.username),
+                    _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+                    _bbox=pysql.Literal(bbox))
 
                 # Update progress bar
                 msg = "Creating detail views"
@@ -262,13 +259,14 @@ class CreateLayersWorker(QObject):
         # No FAIL = SUCCESS
         if not fail_flag:
             self.sig_success.emit()
-        
+
         self.sig_finished.emit()
         # Close temp connection
         temp_conn.close()
         return None
 
-###--EVENTS (start)########################################################
+# ##--EVENTS (start)########################################################
+
 
 def evt_create_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer creation finishes successfully.
@@ -284,7 +282,7 @@ def evt_create_layers_success(dlg: CDB4LoaderDialog) -> None:
     check_layers_refresh_status = tc_f.check_layers_status(dlg=dlg)
 
     if not check_layers_refresh_status:
-        evt_create_layers_fail(dlg=dlg) 
+        evt_create_layers_fail(dlg=dlg)
 
     return None
 
@@ -304,18 +302,19 @@ def evt_create_layers_fail(dlg: CDB4LoaderDialog) -> None:
     # Inform user
     dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
     QgsMessageLog.logMessage(
-            message=c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
-    
+        message=c.LAYER_CR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Critical,
+        notifyUser=True)
+
     return None
 
-###--EVENTS (end) ########################################################
+# ##--EVENTS (end) ########################################################
 
 #####################################################################################
-##### REFRESH LAYERS WORKER #########################################################
+# #### REFRESH LAYERS WORKER #########################################################
 #####################################################################################
+
 
 def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that refreshes the materialized views in the database
@@ -327,7 +326,7 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
             continue
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the installation procedure.
-            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index + 1)
             break
 
     # Create new thread object.
@@ -337,7 +336,7 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
-    #-SIGNALS---(start)--################################################################
+    # -SIGNALS---(start)--################################################################
     # Disable widgets to avoid queuing signals.
     dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
@@ -373,11 +372,11 @@ def run_refresh_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
 
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
-    
+
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
 
     dlg.worker.sig_finished.connect(lambda: evt_refresh_layers_success(dlg))
-    #-SIGNALS---(end)--################################################################
+    # -SIGNALS---(end)--################################################################
 
     # Initiate worker thread
     dlg.thread.start()
@@ -409,9 +408,8 @@ class RefreshLayersWorker(QObject):
         fail_flag: bool = False
 
         # Get feature types from layer_metadata table.
-        cols_to_fetch: list[str] = ["feature_type","gv_name"]
-        col_names, feattype_geom_mview = sql.get_layer_metadata(dlg=dlg, cols_list=cols_to_fetch)
-        col_names = None # Discard byproduct.
+        cols_to_fetch: list[str] = ["feature_type", "gv_name"]
+        _, feattype_geom_mview = sql.get_layer_metadata(dlg=dlg, cols_list=cols_to_fetch)
 
         # Set progress bar goal
         dlg.bar.setMaximum(len(feattype_geom_mview))
@@ -429,17 +427,15 @@ class RefreshLayersWorker(QObject):
                     query = pysql.SQL("""
                         REFRESH MATERIALIZED VIEW {_usr_schema}.{_gv_name};
                         """).format(
-                        _usr_schema = pysql.Identifier(usr_schema),
-                        _gv_name = pysql.Identifier(mview)
-                        )
+                        _usr_schema=pysql.Identifier(usr_schema),
+                        _gv_name=pysql.Identifier(mview))
                     query2 = pysql.SQL("""
                         UPDATE {_usr_schema}.layer_metadata
                         SET refresh_date = clock_timestamp()
                         WHERE gv_name = {_gv_name};
                         """).format(
-                        _usr_schema = pysql.Identifier(usr_schema),
-                        _gv_name = pysql.Literal(mview)
-                        )
+                        _usr_schema=pysql.Identifier(usr_schema),
+                        _gv_name=pysql.Literal(mview))
 
                     # Update progress bar
                     msg = f"Refreshing {ftype} layers"
@@ -478,14 +474,14 @@ class RefreshLayersWorker(QObject):
         if not fail_flag:
             # self.sig_success.emit() # At the moment, there is not success signal slot
             pass
-        
+
         self.sig_finished.emit()
         # Close temp connection
         temp_conn.close()
         return None
 
 
-###--EVENTS (start)########################################################
+# ##--EVENTS (start)########################################################
 
 def evt_refresh_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the refresh finishes successfully.
@@ -494,15 +490,16 @@ def evt_refresh_layers_success(dlg: CDB4LoaderDialog) -> None:
     Shows success message in Connection Status groupbox
     Shows success message in QgsMessageLog
     """
-    tc_f.check_layers_status(dlg=dlg)    
+    tc_f.check_layers_status(dlg=dlg)
 
     return None
 
-###--EVENTS (end) ########################################################
+# ##--EVENTS (end) ########################################################
 
 #####################################################################################
-##### DROP LAYERS WORKER ############################################################
+# #### DROP LAYERS WORKER ############################################################
 #####################################################################################
+
 
 def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     """Function that drops layers of the user schema in the database
@@ -512,11 +509,11 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # the layout, in order to put the progress bar just below it.
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
-        if not widget: 
+        if not widget:
             continue
         if widget.objectName() == "gbxLayerButtons":
             # Add a new progress bar to follow the dropping procedure.
-            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index + 1)
             break
 
     # Create new thread object.
@@ -526,10 +523,10 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
-    #-SIGNALS--(start)--################################################################
+    # -SIGNALS--(start)--################################################################
     # Disable widgets to avoid queuing signals.
     dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
 
     dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
 
@@ -564,9 +561,9 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     dlg.thread.finished.connect(lambda: dlg.btnCreateLayers.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnDropLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.btnRefreshLayers.setDisabled(True))
-    
+
     dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
-    
+
     dlg.thread.finished.connect(lambda: dlg.tabLayers.setDisabled(True))
     dlg.thread.finished.connect(lambda: dlg.tabSettings.setDisabled(False))
     dlg.thread.finished.connect(dlg.msg_bar.clearWidgets)
@@ -574,7 +571,7 @@ def run_drop_layers_thread(dlg: CDB4LoaderDialog) -> None:
     # On installation status
     dlg.worker.sig_success.connect(lambda: evt_drop_layers_success(dlg))
     dlg.worker.sig_fail.connect(lambda: evt_drop_layers_fail(dlg))
-    #-SIGNALS--(end)---################################################################
+    # -SIGNALS--(end)---################################################################
 
     # Initiate worker thread
     dlg.thread.start()
@@ -634,18 +631,17 @@ class DropLayersWorker(QObject):
                 for step, module_func in enumerate(funcs_list, start=1):
 
                     query = pysql.SQL("""
-                                SELECT {_qgis_pkg_schema}.{_module_func}({_usr_schema}, {_cdb_schema});
-                                """).format(
-                                _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                                _module_func = pysql.Identifier(module_func),
-                                _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-                                _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA)
-                                )
+                        SELECT {_qgis_pkg_schema}.{_module_func}({_usr_schema}, {_cdb_schema});
+                        """).format(
+                        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                        _module_func=pysql.Identifier(module_func),
+                        _usr_schema=pysql.Literal(dlg.USR_SCHEMA),
+                        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA))
 
                     # Update progress bar
                     msg = f"Executing: {module_func}"
                     self.sig_progress.emit(step, msg)
-                    
+
                     try:
                         with temp_conn.cursor() as cur:
                             cur.execute(query)
@@ -664,12 +660,11 @@ class DropLayersWorker(QObject):
 
                 # 2) Drop the detail views
                 query = pysql.SQL("""
-                            SELECT {_qgis_pkg_schema}.drop_detail_view({_usr_schema},{_cdb_schema});
-                            """).format(
-                            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-                            _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-                            _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-                            )
+                    SELECT {_qgis_pkg_schema}.drop_detail_view({_usr_schema},{_cdb_schema});
+                    """).format(
+                    _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+                    _usr_schema=pysql.Literal(dlg.USR_SCHEMA),
+                    _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA))
 
                 # Update progress bar
                 msg = "Dropping detail views"
@@ -703,16 +698,16 @@ class DropLayersWorker(QObject):
                 error=error)
             self.sig_fail.emit()
 
-        if not fail_flag: # No FAIL = SUCCESS
+        if not fail_flag:  # No FAIL = SUCCESS
             self.sig_success.emit()
-        
+
         self.sig_finished.emit()
         # Close temp connection
         temp_conn.close()
         return None
 
+# ##--EVENTS (start)########################################################
 
-###--EVENTS (start)########################################################
 
 def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
     """Event that is called when the thread executing the layer dropping finishes successfully.
@@ -723,7 +718,7 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
     """
     layers_exist_status = tc_f.check_layers_status(dlg=dlg)
 
-    if not layers_exist_status: # i.e. we have successfully dropped all layers
+    if not layers_exist_status:  # i.e. we have successfully dropped all layers
 
         # Replace with Success msg.
         msg = dlg.msg_bar.createMessage(c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA))
@@ -733,10 +728,10 @@ def evt_drop_layers_success(dlg: CDB4LoaderDialog) -> None:
         dlg.lblLayerExist_out.setText(c.failure_html.format(text=c.SCHEMA_LAYER_FAIL_MSG.format(sch=dlg.CDB_SCHEMA)))
         dlg.lblLayerRefr_out
         QgsMessageLog.logMessage(
-                message=c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA),
-                tag=dlg.PLUGIN_NAME,
-                level=Qgis.MessageLevel.Success,
-                notifyUser=True)
+            message=c.LAYER_DR_SUCC_MSG.format(sch=dlg.USR_SCHEMA),
+            tag=dlg.PLUGIN_NAME,
+            level=Qgis.MessageLevel.Success,
+            notifyUser=True)
 
     else:
         evt_drop_layers_fail(dlg=dlg)
@@ -759,10 +754,10 @@ def evt_drop_layers_fail(dlg: CDB4LoaderDialog) -> None:
     # Inform user that the layers are now corrupted.
     dlg.lblLayerExist_out.setText(c.crit_warning_html.format(text=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA)))
     QgsMessageLog.logMessage(
-            message=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
+        message=c.LAYER_DR_ERROR_MSG.format(sch=dlg.USR_SCHEMA),
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Critical,
+        notifyUser=True)
 
     return None
-###--EVENTS (end) ########################################################
+# ##--EVENTS (end) ########################################################

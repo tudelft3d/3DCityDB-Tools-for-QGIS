@@ -1,7 +1,7 @@
 """
 /***************************************************************************
  Class CDBToolsMain
- 
+
         This is a QGIS plugin for the CityGML 3D City Database.
 
         begin                : 2021-09-30
@@ -30,21 +30,20 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 from __future__ import annotations
 from typing import TYPE_CHECKING, Union, Optional, Callable
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog
     from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog
-    from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog    
+    from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog
     from .shared.gui_about.about_dialog import CDBAboutDialog
- 
+
 import os.path
 import platform
 
-from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication, QT_VERSION_STR
+from qgis.PyQt.QtCore import Qt, QCoreApplication, QT_VERSION_STR  # , QSettings, QTranslator,
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QMenu
+from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox  # , QMenu
 from qgis.core import Qgis, QgsSettings, QgsMessageLog
 from qgis.gui import QgisInterface
 
@@ -91,14 +90,14 @@ class CDBToolsMain:
 
         self.PLUGIN_VERSION_MAJOR: int = main_c.PLUGIN_VERSION_MAJOR
         self.PLUGIN_VERSION_MINOR: int = main_c.PLUGIN_VERSION_MINOR
-        self.PLUGIN_VERSION_REV:   int = main_c.PLUGIN_VERSION_REV
-        self.PLUGIN_VERSION_TXT:   str = ".".join([str(self.PLUGIN_VERSION_MAJOR), str(self.PLUGIN_VERSION_MINOR), str(self.PLUGIN_VERSION_REV)])
+        self.PLUGIN_VERSION_REV: int = main_c.PLUGIN_VERSION_REV
+        self.PLUGIN_VERSION_TXT: str = ".".join([str(self.PLUGIN_VERSION_MAJOR), str(self.PLUGIN_VERSION_MINOR), str(self.PLUGIN_VERSION_REV)])
 
         # QGIS current version
-        self.QGIS_VERSION_STR: str = Qgis.version() 
+        self.QGIS_VERSION_STR: str = Qgis.version()
         self.QGIS_VERSION_MAJOR: int = int(self.QGIS_VERSION_STR.split(".")[0])
         self.QGIS_VERSION_MINOR: int = int(self.QGIS_VERSION_STR.split(".")[1])
-        self.QGIS_VERSION_REV:   int = int(self.QGIS_VERSION_STR.split(".")[2].split("-")[0])
+        self.QGIS_VERSION_REV: int = int(self.QGIS_VERSION_STR.split(".")[2].split("-")[0])
 
         ######################################################
         # Only for testing purposes
@@ -108,12 +107,12 @@ class CDBToolsMain:
 
         # Is QGIS supported by the plugin?
         self.IS_QGIS_SUPPORTED: bool = None
-        self.first_check_QGIS_supported: bool = True        
+        self.first_check_QGIS_supported: bool = True
 
         # Welcome message upon (re)loading
         # PLEASE NOTE: Rich text support is not recognised anymore and stripped from msg strings since 3.40 of QgsMeesageLog.
         msg: str = f"\n\n------ WELCOME! -------\nYou are using the {self.PLUGIN_NAME} {self.PLUGIN_VERSION_TXT} plug-in for Qt {QT_VERSION_STR} running on QGIS {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV} on a {self.PLATFORM_SYSTEM} machine.\n-----------------------------\n"
- 
+
         QgsMessageLog.logMessage(msg, self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=False)
 
         self.StoredConns = self.list_qgis_postgres_stored_conns()
@@ -160,9 +159,8 @@ class CDBToolsMain:
         # Declare instance attributes.
         self.actions: list = []
 
-
     def tr(self, message: str) -> str:
-        """Get the translation for a string using Qt translation API. We implement this ourselves since we do not inherit QObject. 
+        """Get the translation for a string using Qt translation API. We implement this ourselves since we do not inherit QObject.
 
         *   :param message: String for translation.
             :type message: str
@@ -172,17 +170,16 @@ class CDBToolsMain:
         """
         return QCoreApplication.translate("3DCityDB Tools", message)
 
-
     def add_action(self,
-            icon_path: str,
-            txt: str,
-            callback: Callable[..., None],
-            enabled_flag: bool = True,
-            add_to_menu: bool = True,
-            add_to_toolbar: bool = True,
-            status_tip: Optional[str] = None,
-            whats_this: Optional[str] = None,
-            parent: Optional[QWidget] = None): # Returns a QAction object
+                   icon_path: str,
+                   txt: str,
+                   callback: Callable[..., None],
+                   enabled_flag: bool = True,
+                   add_to_menu: bool = True,
+                   add_to_toolbar: bool = True,
+                   status_tip: Optional[str] = None,
+                   whats_this: Optional[str] = None,
+                   parent: Optional[QWidget] = None):  # Returns a QAction object
         """Add a toolbar icon to the toolbar.
 
         *   :param icon_path: Path to the icon for this action. Can be a
@@ -247,7 +244,8 @@ class CDBToolsMain:
             self.iface.addDatabaseToolBarIcon(qAction=action)
         # Adds plugin to "Database" menu.
         if add_to_menu:
-            # In order to add the plugin into the database menu we follow the 'hacky' approach below to bypass possibly a bug:
+            # In order to add the plugin into the database menu we follow the
+            # 'hacky' approach below to bypass possibly a bug:
             #
             # The bug: Using the method addPluginToDatabaseMenu causes
             # the plugin to be inserted in a submenu of itself
@@ -257,8 +255,8 @@ class CDBToolsMain:
             # hidden state. Note that this method, for some bizarre reasons,
             # works for all the menus except the database menu.
             # Using the addPluginToDatabaseMenu method BEFORE the addAction
-            # method seems to bypass this issue. 
-            # 
+            # method seems to bypass this issue.
+            #
             # TODO Needs further investigation.
 
             # Add the action to the database menu (bug countermeasure)
@@ -274,7 +272,6 @@ class CDBToolsMain:
 
         return action
 
-
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI.
         """
@@ -284,7 +281,7 @@ class CDBToolsMain:
         # qmenu_list = []
         # qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() in plugin_sub_menu_names]
         # if qmenu_list:
-        #     print("Deleting submenus:")            
+        #     print("Deleting submenus:")
         #     # print([i.title() for i in qmenu_list])
         #     # print([i for i in qmenu_list])
         #     for item in qmenu_list:
@@ -297,54 +294,53 @@ class CDBToolsMain:
         # qmenu_list = []
         # qmenu_list: list = [i for i in self.iface.mainWindow().findChildren(QMenu) if i.title() == main_c.PLUGIN_NAME_LABEL]
         # if qmenu_list:
-        #     print("Menus:")  
+        #     print("Menus:")
         #     print([i for i in qmenu_list])
-            # print([i.title() for i in qmenu_list])
-            # for item in qmenu_list:
-            #     m_action = item.menuAction()
-            #     item.removeAction(m_action)
-            #     m_action.deleteLater()
-            #     item.deleteLater()
-            #     pass
+        #     print([i.title() for i in qmenu_list])
+        #     for item in qmenu_list:
+        #         m_action = item.menuAction()
+        #         item.removeAction(m_action)
+        #         m_action.deleteLater()
+        #         item.deleteLater()
+        #         pass
 
         # The icon path is set from the compiled resources file (in main dir), or directly with path to the file.
-        # admin_icon_path   = ":/plugins/citydb_loader/icons/settings_icon.svg"
-        icon_path_loader  = os.path.join(self.PLUGIN_ABS_PATH, "icons", "loader_icon.png")
+        icon_path_loader = os.path.join(self.PLUGIN_ABS_PATH, "icons", "loader_icon.png")
         icon_path_deleter = os.path.join(self.PLUGIN_ABS_PATH, "icons", "deleter_icon.png")
-        icon_path_admin   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "admin_icon.png")
-        icon_path_usrguide= os.path.join(self.PLUGIN_ABS_PATH, "icons", "help_icon.png")
-        icon_path_about   = os.path.join(self.PLUGIN_ABS_PATH, "icons", "info_icon.png")
+        icon_path_admin = os.path.join(self.PLUGIN_ABS_PATH, "icons", "admin_icon.png")
+        icon_path_usrguide = os.path.join(self.PLUGIN_ABS_PATH, "icons", "help_icon.png")
+        icon_path_about = os.path.join(self.PLUGIN_ABS_PATH, "icons", "info_icon.png")
 
         # Loader Dialog
         self.add_action(
-            icon_path = icon_path_loader,
-            #txt = self.tr(self.PLUGIN_NAME_LOADER),
-            txt = self.MENU_LABEL_LOADER,
-            callback = self.run_loader,
-            parent = self.iface.mainWindow(),
-            add_to_menu = True,
-            add_to_toolbar = True) # Default: True
+            icon_path=icon_path_loader,
+            # txt = self.tr(self.PLUGIN_NAME_LOADER),
+            txt=self.MENU_LABEL_LOADER,
+            callback=self.run_loader,
+            parent=self.iface.mainWindow(),
+            add_to_menu=True,
+            add_to_toolbar=True)  # Default: True
 
         # Deleter Dialog
         self.add_action(
-            icon_path = icon_path_deleter,
-            txt = main_c.MENU_LABEL_DELETER,
-            callback = self.run_deleter,
-            parent = self.iface.mainWindow(),
-            add_to_menu = True,
-            add_to_toolbar = True) # Default: True
+            icon_path=icon_path_deleter,
+            txt=main_c.MENU_LABEL_DELETER,
+            callback=self.run_deleter,
+            parent=self.iface.mainWindow(),
+            add_to_menu=True,
+            add_to_toolbar=True)  # Default: True
 
         # Admin Dialog
         self.add_action(
-            icon_path = icon_path_admin,
-            txt = self.MENU_LABEL_ADMIN,
-            callback = self.run_admin,
-            parent = self.iface.mainWindow(),
-            add_to_menu = True,
-            add_to_toolbar = True)
+            icon_path=icon_path_admin,
+            txt=self.MENU_LABEL_ADMIN,
+            callback=self.run_admin,
+            parent=self.iface.mainWindow(),
+            add_to_menu=True,
+            add_to_toolbar=True)
 
         # Add separator
-        sep = QAction() # must create a new object every time!
+        sep = QAction()  # must create a new object every time!
         sep.setSeparator(True)
         sep.setParent(self.iface.mainWindow())
         self.iface.addPluginToDatabaseMenu(name=self.PLUGIN_NAME, action=sep)
@@ -352,21 +348,21 @@ class CDBToolsMain:
 
         # User guide link
         self.add_action(
-            icon_path = icon_path_usrguide,
-            txt = main_c.MENU_LABEL_USRGUIDE,
-            callback = self.run_usr_guide,
-            parent = self.iface.mainWindow(),
-            add_to_menu = True,
-            add_to_toolbar = False)
+            icon_path=icon_path_usrguide,
+            txt=main_c.MENU_LABEL_USRGUIDE,
+            callback=self.run_usr_guide,
+            parent=self.iface.mainWindow(),
+            add_to_menu=True,
+            add_to_toolbar=False)
 
         # About Dialog - Leave this at the end, so it will be the last icon.
         self.add_action(
-            icon_path = icon_path_about,
-            txt = self.MENU_LABEL_ABOUT,
-            callback = self.run_about,
-            parent = self.iface.mainWindow(),
-            add_to_menu = True,
-            add_to_toolbar = True)
+            icon_path=icon_path_about,
+            txt=self.MENU_LABEL_ABOUT,
+            callback=self.run_about,
+            parent=self.iface.mainWindow(),
+            add_to_menu=True,
+            add_to_toolbar=False)
 
         #####################################################################
         #
@@ -379,9 +375,9 @@ class CDBToolsMain:
         # # print("Picking menus")
         # # print([i for i in qmenu_list])
         # # print("Picked menu")
-        # plugin_menu = qmenu_list[0]        
+        # plugin_menu = qmenu_list[0]
         # # print(plugin_menu)
-        
+
         # ############### Create submenu root entry
         # plugin_sub_menu_name = plugin_sub_menu_names[0]
         # plugin_sub_menu = plugin_menu.addMenu(plugin_sub_menu_name)
@@ -395,7 +391,7 @@ class CDBToolsMain:
         # ac1.setEnabled(True)
         # self.actions.append(ac1)
 
-        ################ Add submenu entry 1
+        # ############### Add submenu entry 1
         # action_name = "Do something else!"
         # ac1 = plugin_sub_menu.addAction(action_name) # Its parent is the plugin_sub_menu
         # ac1.setIcon(QIcon(loader_icon_path))
@@ -407,7 +403,6 @@ class CDBToolsMain:
         # print("-- Actions")
         # print([i.text() for i in self.actions])
 
-
     def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI.
         """
@@ -416,16 +411,13 @@ class CDBToolsMain:
             self.iface.removePluginDatabaseMenu(name=self.PLUGIN_NAME, action=action)
         return None
 
-
     # def run_test_action(self) -> None:
     #     print("This is a simple test")
     #     return None
 
-
     # def run_test_action2(self) -> None:
     #     print("This is another simple test")
     #     return None
-
 
     def run_loader(self) -> None:
         """Run method that performs all the real work.
@@ -434,7 +426,7 @@ class CDBToolsMain:
         -   Sets up the plugin signals
         -   Executes the dialog
         """
-        from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog # Loader dialog
+        from .cdb4.gui_loader.loader_dialog import CDB4LoaderDialog
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
@@ -465,7 +457,7 @@ class CDBToolsMain:
                 self.StoredConns = stored_conns
 
             # 1st run: box to be filled anyway
-            # Add the connection list to the combo box (cbxExistingConn) 
+            # Add the connection list to the combo box (cbxExistingConn)
             # An event is fired (dlg.evt_cbxExistingConn_changed())
             # It closes all exiting connections, and resets the dialog.
             self.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
@@ -475,7 +467,7 @@ class CDBToolsMain:
                 # print('Nth run: Changes in connection list')
                 self.StoredConns = stored_conns
                 # N-th run: to be carried out only in case of changes
-                # Add the connection list to the combo box (cbxExistingConn) 
+                # Add the connection list to the combo box (cbxExistingConn)
                 # An event is fired (dlg.evt_cbxExistingConn_changed())
                 # It closes all exiting connections, and resets the dialog.
                 self.fill_connection_list_box(dlg=self.loader_dlg, stored_conns=self.StoredConns)
@@ -492,19 +484,18 @@ class CDBToolsMain:
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.loader_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window blocks input to other windows.
-        self.loader_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. The window does not block input to other windows.
+        self.loader_dlg.setWindowModality(Qt.WindowModality.NonModal)  # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.loader_dlg.show()
         # Run the dialog event loop.
         res = self.loader_dlg.exec()
 
-        if not res: # Dialog has been closed (X button was pressed)
+        if not res:  # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
             pass
 
         return None
-
 
     def run_deleter(self) -> None:
         """Run method that performs all the real work.
@@ -513,7 +504,7 @@ class CDBToolsMain:
         -   Sets up the plugin signals
         -   Executes the dialog
         """
-        from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog # Deleter dialog
+        from .cdb4.gui_deleter.deleter_dialog import CDB4DeleterDialog
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
@@ -523,7 +514,7 @@ class CDBToolsMain:
         # Get/refresh the existing connections list from QGIS profile settings.
         stored_conns = self.list_qgis_postgres_stored_conns()
 
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
+        # Only create GUI ONCE in callback, so that it will only load when the plug-in is started.
         if self.first_start_deleter:
             self.first_start_deleter = False
 
@@ -554,19 +545,18 @@ class CDBToolsMain:
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
         # self.deleter_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # The window blocks input from other windows.
-        self.deleter_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. 0, The window does not block input to other windows.
+        self.deleter_dlg.setWindowModality(Qt.WindowModality.NonModal)  # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.deleter_dlg.show()
         # Run the dialog event loop.
         res = self.deleter_dlg.exec()
 
-        if not res: # Dialog has been closed (X button was pressed)
+        if not res:  # Dialog has been closed (X button was pressed)
             # Unlike with the admin Dialog, do not reset the GUI: the user may reopen it and use the same settings
             pass
-        
-        return None
 
+        return None
 
     def run_admin(self) -> None:
         """Run method that performs all the real work.
@@ -575,7 +565,7 @@ class CDBToolsMain:
         -   Sets up the plugin signals
         -   Executes the dialog
         """
-        from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog # Admin dialog
+        from .cdb4.gui_admin.admin_dialog import CDB4AdminDialog
 
         # Check once if the QGIS version is supported
         if self.first_check_QGIS_supported:
@@ -585,7 +575,7 @@ class CDBToolsMain:
         # Get/refresh the existing connections list from QGIS profile settings.
         stored_conns = self.list_qgis_postgres_stored_conns()
 
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
+        # Only create GUI ONCE in callback, so that it will only load when the plug-in is started.
         if self.first_start_admin:
             self.first_start_admin = False
             # Create the dialog with elements (after translation).
@@ -627,43 +617,40 @@ class CDBToolsMain:
                             if dlg:
                                 if dlg.conn:
                                     if dlg.conn.closed == 0:
-                                        dlg.conn.close() # close connection (if open)
-                                dlg.dlg_reset_all() # reset dialog
-                                dlg.close() # or dlg.reject()
+                                        dlg.conn.close()  # close connection (if open)
+                                dlg.dlg_reset_all()  # reset dialog
+                                dlg.close()
 
                 else:
-                    return None # Exit and do nothing
+                    return None  # Exit and do nothing
 
         # Set the window modality.
         # Desired mode: When this dialogue is open, inputs in any other windows are blocked.
-        self.admin_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e. The window is modal to the application and blocks input to all windows.
-        # self.admin_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. The window does not block input to other windows.
+        self.admin_dlg.setWindowModality(Qt.WindowModality.ApplicationModal)  # i.e. The window is modal to the application and blocks input to all windows.
+        # self.admin_dlg.setWindowModality(Qt.WindowModality.NonModal)  # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.admin_dlg.show()
         # Run the dialog event loop.
         res = self.admin_dlg.exec()
-      
-        if not res: # Dialog has been closed (X button was pressed)
+
+        if not res:  # Dialog has been closed (X button was pressed)
             # Reset the dialog widgets. (Closes the current open connection.)
-            self.admin_dlg.dlg_reset_all() 
+            self.admin_dlg.dlg_reset_all()
             if self.admin_dlg.conn:
                 self.admin_dlg.conn.close()
 
         return None
-    
 
     def run_usr_guide(self) -> None:
         """ Opens the PDF containing the User Guide of the plugin
         For Windows OS: Opens the default web browser with the PDF file containing the installation and user guide.
         Otherwise: Opens the url to the PDF in GitHub.
         """
-        file_name: str = "3DCityDB-Tools_UserGuide.pdf"
-        url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", file_name])
+        url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", main_c.USER_GUIDE_FILE_NAME])
         sh_f.open_online_url(url=url)
 
         return None
-
 
     def run_about(self) -> None:
         """Run method that performs all the real work.
@@ -672,29 +659,28 @@ class CDBToolsMain:
         -   Sets up the plugin signals
         -   Executes the dialog
         """
-        from .shared.gui_about.about_dialog import CDBAboutDialog # About dialog
+        from .shared.gui_about.about_dialog import CDBAboutDialog
 
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started.
+        # Only create GUI ONCE in callback, so that it will only load when the plug-in is started.
         if self.first_start_about:
             self.first_start_about = False
             # Create the dialog with elements (after translation).
             self.about_dlg = CDBAboutDialog(cdbMain=self)
 
         # Set the window modality.
-        #self.about_dlg.setWindowModality(Qt.WindowModality.ApplicationModal) # i.e The window is modal to the application and blocks input to all windows.
-        self.about_dlg.setWindowModality(Qt.WindowModality.NonModal) # i.e. 0, The window does not block input to other windows.
+        # self.about_dlg.setWindowModality(Qt.WindowModality.ApplicationModal)  # i.e The window is modal to the application and blocks input to all windows.
+        self.about_dlg.setWindowModality(Qt.WindowModality.NonModal)  # i.e. The window does not block input to other windows.
 
         # Show the dialog
         self.about_dlg.show()
         # Run the dialog event loop.
         res = self.about_dlg.exec()
-      
-        if not res: # Dialog has been closed (X button was pressed)
+
+        if not res:  # Dialog has been closed (X button was pressed)
             # Reset the dialog widget.
-            self.about_dlg.close() 
+            self.about_dlg.close()
 
         return None
-
 
     def check_concurrent_connections(self, dlg: Union[CDB4DeleterDialog, CDB4LoaderDialog]) -> None:
         """ Before opening a user dialog (e.g. the Loader or the Deleter), it checks whether
@@ -723,14 +709,13 @@ class CDBToolsMain:
 
             return None
 
-
     def check_QGIS_version(self) -> None:
         """ Check if QGIS is supported by the plug-in (LTR versions)
         """
         # ****** For testing purposed only
-        #from qgis.PyQt.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
-        #print("Qt: v.", QT_VERSION_STR,"\tPyQt5: v.", PYQT_VERSION_STR)        
-        #self.QGIS_VERSION_MINOR = 46
+        # from qgis.PyQt.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+        # print("Qt: v.", QT_VERSION_STR,"\tPyQt5: v.", PYQT_VERSION_STR)
+        # self.QGIS_VERSION_MINOR = 46
         # ********************************
 
         if self.QGIS_VERSION_MINOR in main_c.QGIS_VERSION_MINOR:
@@ -739,8 +724,8 @@ class CDBToolsMain:
             self.IS_QGIS_SUPPORTED = False
             # print(f"Is QGIS supported? {self.IS_QGIS_SUPPORTED}")
 
-            lowest_supported_minor_version :int = min(main_c.QGIS_VERSION_MINOR)
-            #print('lowest_supported_minor_version', lowest_supported_minor_version)
+            lowest_supported_minor_version: int = min(main_c.QGIS_VERSION_MINOR)
+            # print('lowest_supported_minor_version', lowest_supported_minor_version)
 
             if self.QGIS_VERSION_MINOR < lowest_supported_minor_version:
                 msg_rich: str = f"You are using <b>QGIS v. {self.QGIS_VERSION_MAJOR}.{self.QGIS_VERSION_MINOR}.{self.QGIS_VERSION_REV}</b>, which is not supported anymore and for which the <b>{self.PLUGIN_NAME}</b> plug-in is not thorougly tested. You can still use the plug-in, but you may encounter some unexpected behaviour.<br><br>You are suggested to use a more recent version of <b>QGIS LTR (Long Term Release)</b>.<br>"
@@ -750,13 +735,13 @@ class CDBToolsMain:
 
             v_length = len(main_c.QGIS_VERSION_MINOR)
             if v_length == 1:
-                v_supp_txt =f"3.{main_c.QGIS_VERSION_MINOR[0]}" 
+                v_supp_txt = f"3.{main_c.QGIS_VERSION_MINOR[0]}"
                 msg_rich = msg_rich + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
             else:
                 if v_length == 2:
                     v_supp_txt = f"3.{main_c.QGIS_VERSION_MINOR[0]} and 3.{main_c.QGIS_VERSION_MINOR[1]}"
                 elif v_length >= 3:
-                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_VERSION_MINOR) if i < (v_length - 1)]))                
+                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_VERSION_MINOR) if i < (v_length - 1)]))
                     v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_VERSION_MINOR[-1]}"
                 msg_rich = msg_rich + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
@@ -764,10 +749,9 @@ class CDBToolsMain:
 
         return None
 
-
-    def fill_connection_list_box(self, dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog], 
-                                stored_conns: Optional[list[tuple[str, dict]]] = None
-                                ) -> None:
+    def fill_connection_list_box(self, dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog, CDB4AdminDialog],
+                                 stored_conns: Optional[list[tuple[str, dict]]] = None
+                                 ) -> None:
         """Function that fills the the 'cbxExistingConn' combobox
         """
         # Clear the contents of the comboBox from previous runs
@@ -795,7 +779,6 @@ class CDBToolsMain:
 
         return None
 
-
     def list_qgis_postgres_stored_conns(self) -> Optional[list[tuple[str, dict]]]:
         """Function that reads the QGIS user settings to look for existing connections
         It results in a list[tuple[str, dict]]
@@ -818,27 +801,23 @@ class CDBToolsMain:
             db_conn_info_dict = dict()
 
             qgis_settings.beginGroup(prefix=stored_conn)
-            # Populate the object BEGIN
+
             db_conn_info_dict['database']          = qgis_settings.value(key='database')
             db_conn_info_dict['host']              = qgis_settings.value(key='host')
             db_conn_info_dict['port']              = qgis_settings.value(key='port')
             db_conn_info_dict['username']          = qgis_settings.value(key='username')
             db_conn_info_dict['password']          = qgis_settings.value(key='password')
             db_conn_info_dict['db_toc_node_label'] = qgis_settings.value(key='database') + " @ " + qgis_settings.value(key='host') + ":" + str(qgis_settings.value(key='port'))
-
             # print('read from stored conns', db_conn_info_dict['db_toc_node_label'])
 
-            # Populate the object END
             qgis_settings.endGroup()
 
             t: tuple[str, dict] = (stored_conn, db_conn_info_dict)
             stored_conns: list[tuple[str, dict]]
             stored_conns.append(t)
-        
+
         stored_conns.sort()
         # stored_conns.sort(reverse=True)
         # print(stored_conns)
 
         return stored_conns
-
-

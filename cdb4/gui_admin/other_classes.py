@@ -25,14 +25,14 @@ class DefaultSettings:
 
         self.enable_rw_user_access_default: int = False
         self.enable_rw_user_access_label: str = "Grants the 'qgis_user_rw' access to all existing citydb schemas upon installation of the QGIS Package"
-    
+
 
 class FeatureType():
     def __init__(self,
-                alias: str,
-                layers_drop_function: str = None,
-                ade_prefix: str = None
-                ):
+                 alias: str,
+                 layers_drop_function: str = None,
+                 ade_prefix: str = None
+                 ):
         self.alias = alias
 
         if layers_drop_function:
@@ -46,7 +46,7 @@ class FeatureType():
         else:
             self.is_ade = False
         # self.n_features = n_features
-    
+
     def __str__(self):
         return_str: str = \
             f"alias: {self.alias}\n" + \
@@ -54,6 +54,3 @@ class FeatureType():
             f"is_ade? {self.is_ade}\n"
 
         return return_str
-
-
-    

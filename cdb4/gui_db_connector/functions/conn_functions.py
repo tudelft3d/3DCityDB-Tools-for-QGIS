@@ -24,7 +24,7 @@ def open_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c.P
 
     *   :param db_connection: The connection custom object
         :rtype: DBConnectionInfo
- 
+
     *   :param app_name: A name for the session
         :rtype: str
 
@@ -34,15 +34,14 @@ def open_db_connection(db_connection: DBConnectionInfo, app_name: str = main_c.P
     open_conn: pyconn = None
 
     try:
-        open_conn = psycopg2.connect(dbname          = db_connection.database_name,
-                                    user             = db_connection.username,
-                                    password         = db_connection.password,
-                                    host             = db_connection.host,
-                                    port             = db_connection.port,    
-                                    application_name = app_name)
-        
+        open_conn = psycopg2.connect(dbname=db_connection.database_name,
+                                     user=db_connection.username,
+                                     password=db_connection.password,
+                                     host=db_connection.host,
+                                     port=db_connection.port,
+                                     application_name=app_name)
         return open_conn
-    
+
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=open_db_connection,
@@ -60,7 +59,7 @@ def get_posgresql_server_version(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog,
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query="""SHOW server_version;""")
-            version = str(cur.fetchone()[0]) # Tuple has trailing comma.
+            version = str(cur.fetchone()[0])  # Tuple has trailing comma.
         dlg.conn.commit()
         return version
 
@@ -84,7 +83,7 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
     non_admin_dlgs = []
     non_admin_dlgs = [dlg for k, dlg in cdbMain.DialogRegistry.items() if k not in [main_c.DLG_NAME_ADMIN, curr_DIALOG_NAME]]
 
-    # Conditions: 
+    # Conditions:
     # 1) Connection exists, is open
     # 2) Same connection variables (database, usr)
     # 3) Same selected cdb_schema
@@ -98,10 +97,9 @@ def check_connection_uniqueness(dlg: Union[CDB4LoaderDialog, CDB4DeleterDialog],
                                 curr_DB.database_name == dlg.DB.database_name,
                                 curr_DB.username == dlg.DB.username,
                                 curr_CDB_SCHEMA == dlg.CDB_SCHEMA,
-                            )):
+                                )):
                             is_unique = False
                             break
-
     # print(is_unique)
     if is_unique:
         return True

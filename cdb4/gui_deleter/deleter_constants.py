@@ -48,7 +48,7 @@ LAYER_DR_ERROR_MSG: str = "Error while removing layers from schema '{sch}'"
 # Widget initial embedded text | Note: empty spaces are for positioning.
 btnConnectToDB_t: str  = "Connect to database '{db}'"
 
-btnCleanUpSchema_t:str = "Truncate ALL tables in schema '{sch}'"
+btnCleanUpSchema_t: str = "Truncate ALL tables in schema '{sch}'"
 
 btnRefreshCDBExtents_t: str  = "Refresh '{sch}' extents"
 btnCityExtents_t: str  = "Set to schema '{sch}'"
@@ -58,27 +58,27 @@ btnDelSelFeatures_t: str    = "Delete data from schema '{sch}'"
 
 # Text - Messages - Log
 icon_msg_core: str = """
-                <html><head/><body><p> 
-                <img src="{image_rc}" style='vertical-align: bottom'/> 
+                <html><head/><body><p>
+                <img src="{image_rc}" style='vertical-align: bottom'/>
                 <span style=" color:{color_hex};">{additional_text}</span>
                 </p></body></html>
                 """
 success_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
-    color_hex = '#00E400',   # green
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
+    color_hex='#00E400',   # green
+    additional_text='{text}')
 
 failure_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
-    color_hex = '#FF0000',  # red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
+    color_hex='#FF0000',  # red
+    additional_text='{text}')
 
 warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
-    color_hex = '#FFA701',  # orange1
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
+    color_hex='#FFA701',  # orange1
+    additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
-    color_hex = '#DA4453', # pale red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
+    color_hex='#DA4453',  # pale red
+    additional_text='{text}')

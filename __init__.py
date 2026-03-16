@@ -1,7 +1,7 @@
 """
 /***************************************************************************
                         3DCityDB Tools for QGIS
- 
+
         This is a QGIS plugin for the CityGML 3D City Database.
                              -------------------
         begin                : 2021-09-30
@@ -32,6 +32,7 @@
 """
 from qgis.gui import QgisInterface
 from .cdb_tools_main import CDBToolsMain
+
 
 def classFactory(iface: QgisInterface):
     """Load CDBToolsMain class from file cdb_tools_main.py

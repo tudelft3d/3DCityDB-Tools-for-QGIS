@@ -8,7 +8,7 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from ...shared.functions import general_functions as gen_f
@@ -18,8 +18,9 @@ from . import canvas
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 ####################################################
-## Setup widget functions for 'Layer' tab
+# # Setup widget functions for 'Layer' tab
 ####################################################
+
 
 def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_set_names: tuple[str, ...] = None) -> None:
     """Function that fills the 'Select CodeLists group' combo box.
@@ -41,37 +42,13 @@ def fill_CityGML_codelist_selection_box(dlg: CDB4LoaderDialog, CityGML_codelist_
             # Enable the combobox
             dlg.cbxCodeListSelCityGML.setDisabled(False)
             dlg.lblCodeListSelCityGML.setDisabled(False)
-   
-    # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
-    return None
 
-# def fill_ADE_codelist_selection_box(dlg: CDB4LoaderDialog, ADE_codelist_set_names: list = None) -> None:
-#     """Function that fills the 'Select CodeLists group' combo box.
-#     """
-#     # Clean combo box from previous leftovers.
-#     dlg.cbxCodeListSelADE.clear()
-
-#     if not ADE_codelist_set_names:
-#         # Disable the combobox
-#         dlg.cbxCodeListSelADE.setDisabled(True)
-#         dlg.cbxCodeListSelADE.setDisabled(True)
-#     else:
-#         label: str = f"None"
-#         dlg.cbxCodeListSelADE.addItem(label, userData=label)
-#         for codelist_set_name in ADE_codelist_set_names:
-#             label: str = f"{codelist_set_name}"
-#             dlg.cbxCodeListSelADE.addItem(label, userData=label)
-#         if not dlg.cbxCodeListSelADE.isEnabled():
-#             # Enable the combobox
-#             dlg.cbxCodeListSelADE.setDisabled(False)
-#             dlg.lblCodeListSelADE.setDisabled(False)
-   
     # REMEMBER: don't use method 'setSeparator', it adds a custom separator to join string of selected items
     return None
 
 
 # In 'Basemap (OMS)' groupBox.
-def gbxBasemapL_setup(dlg: CDB4LoaderDialog) ->  None:
+def gbxBasemapL_setup(dlg: CDB4LoaderDialog) -> None:
     """Function to setup the 'Basemap' groupbox. It uses an additional canvas instance to store an OSM map
     from which extents can be extracted for further spatial queries.
     The basemap is zoomed-in to the city model's extents (in 'Layers' tab)
@@ -95,7 +72,7 @@ def gbxBasemapL_setup(dlg: CDB4LoaderDialog) ->  None:
 
 
 ####################################################
-## Reset widget functions for 'Layer' tab
+# # Reset widget functions for 'Layer' tab
 ####################################################
 
 def tabLayers_reset(dlg: CDB4LoaderDialog) -> None:

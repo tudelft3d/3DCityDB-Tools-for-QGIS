@@ -4,13 +4,14 @@ These functions are responsible to communicate and fetch data from
 the database with sql queries or sql function calls.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, cast, Iterable, Optional, Literal, Union
-if TYPE_CHECKING:       
+from typing import TYPE_CHECKING, cast, Iterable, Optional, Union
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
     from ...shared.dataTypes import CDBSchemaPrivs, DetailViewMetadata, LookupTableConfig
     from ..other_classes import CDBLayer
 
-import psycopg2, psycopg2.sql as pysql
+import psycopg2
+import psycopg2.sql as pysql
 from psycopg2.extras import NamedTupleCursor
 
 from ...shared.dataTypes import BBoxType
@@ -18,20 +19,20 @@ from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
+
 def list_cdb_schemas_privs(dlg: CDB4LoaderDialog) -> list[CDBSchemaPrivs]:
-    """SQL function that retrieves the database cdb_schemas for the current database, 
+    """SQL function that retrieves the database cdb_schemas for the current database,
     included the privileges status for the selected usr_name
 
-    *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts, 
+    *   :returns: A list of named tuples with all usr_schemas, the number of available cityobecjts,
          and the user's privileges for each cdb_schema in the current database
         :rtype: list[NamedTuple(cdb_schema, is_empty, priv_type)]
     """
     query = pysql.SQL("""
         SELECT cdb_schema, is_empty, priv_type FROM {_qgis_pkg_schema}.list_cdb_schemas_privs({_usr_name});
         """).format(
-        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _usr_name = pysql.Literal(dlg.DB.username)
-        )
+        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+        _usr_name=pysql.Literal(dlg.DB.username))
 
     try:
         with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -43,7 +44,7 @@ def list_cdb_schemas_privs(dlg: CDB4LoaderDialog) -> list[CDBSchemaPrivs]:
             res = []
 
         return res
-    
+
     except (Exception, psycopg2.Error) as error:
         gen_f.critical_log(
             func=list_cdb_schemas_privs,
@@ -53,8 +54,8 @@ def list_cdb_schemas_privs(dlg: CDB4LoaderDialog) -> list[CDBSchemaPrivs]:
         dlg.conn.rollback()
 
 
-def get_precomputed_extents(dlg: CDB4LoaderDialog, 
-                            bbox_type: Literal[BBoxType.CDB_SCHEMA, BBoxType.MAT_VIEW, BBoxType.QGIS]
+def get_precomputed_extents(dlg: CDB4LoaderDialog,
+                            bbox_type: Union[BBoxType.CDB_SCHEMA: str, BBoxType.MAT_VIEW: str, BBoxType.QGIS: str]
                             ) -> Optional[str]:
     """SQL query that reads and retrieves extents stored in {usr_schema}.extents
 
@@ -70,13 +71,12 @@ def get_precomputed_extents(dlg: CDB4LoaderDialog,
 
     # Get cdb_schema extents from server as WKT rectangular polygon _withouth_ srid.
     query = pysql.SQL("""
-        SELECT ST_AsText(envelope) FROM {_usr_schema}.extents 
+        SELECT ST_AsText(envelope) FROM {_usr_schema}.extents
         WHERE cdb_schema = {_cdb_schema} AND bbox_type = {_ext_type};
         """).format(
-        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _ext_type = pysql.Literal(bbox_type_value)
-        )
+        _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _ext_type=pysql.Literal(bbox_type_value))
 
     try:
         with dlg.conn.cursor() as cur:
@@ -84,8 +84,8 @@ def get_precomputed_extents(dlg: CDB4LoaderDialog,
             extents = cur.fetchone()
             # extents = (None,) when the envelope is Null,
             # BUT extents = None when the query returns NO results.
-            if type(extents) == tuple:
-                extents = extents[0] # Get the value without trailing comma.
+            if isinstance(extents, tuple):
+                extents = extents[0]  # Get the value without trailing comma.
 
         dlg.conn.commit()
         return extents
@@ -109,14 +109,13 @@ def get_cdb_schema_srid(dlg: CDB4LoaderDialog) -> int:
     query = pysql.SQL("""
         SELECT srid FROM {_cdb_schema}.database_srs LIMIT 1;
         """).format(
-        _cdb_schema = pysql.Identifier(dlg.CDB_SCHEMA)
-        )
-   
+        _cdb_schema=pysql.Identifier(dlg.CDB_SCHEMA))
+
     try:
         with dlg.conn.cursor() as cur:
 
             cur.execute(query)
-            srid = cur.fetchone()[0] # Tuple has trailing comma.
+            srid = cur.fetchone()[0]  # Tuple has trailing comma.
         dlg.conn.commit()
         return srid
 
@@ -130,7 +129,7 @@ def get_cdb_schema_srid(dlg: CDB4LoaderDialog) -> int:
 
 
 def get_layer_metadata(dlg: CDB4LoaderDialog, cols_list: list[str] = ["*"]) -> tuple[list[str], list[tuple]]:
-    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
+    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table.
     By default it retrieves all columns.
 
     *   :param cols: The columns to retrieve from the table.
@@ -141,27 +140,25 @@ def get_layer_metadata(dlg: CDB4LoaderDialog, cols_list: list[str] = ["*"]) -> t
         the attributes names
         :rtype: tuple(attribute_names, metadata)
     """
-    if cols_list == ["*"]:    
+    if cols_list == ["*"]:
         query = pysql.SQL("""
-                    SELECT * FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
-                    ORDER BY feature_type, lod, root_class, layer_name;
-                    """).format(
-                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-                    )
+            SELECT * FROM {_usr_schema}.layer_metadata
+            WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
+            ORDER BY feature_type, lod, root_class, layer_name;
+            """).format(
+            _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+            _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+            _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
     else:
         query = pysql.SQL("""
-                    SELECT {_cols} FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
-                    ORDER BY feature_type, lod, root_class, layer_name;
-                    """).format(
-                    _cols = pysql.SQL(', ').join(pysql.Identifier(col) for col in cols_list),
-                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-                    )
+            SELECT {_cols} FROM {_usr_schema}.layer_metadata
+            WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('VectorLayer', 'VectorLayerNoGeom')
+            ORDER BY feature_type, lod, root_class, layer_name;
+            """).format(
+            _cols=pysql.SQL(', ').join(pysql.Identifier(col) for col in cols_list),
+            _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+            _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+            _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
 
     try:
         with dlg.conn.cursor() as cur:
@@ -187,11 +184,11 @@ def get_layer_metadata(dlg: CDB4LoaderDialog, cols_list: list[str] = ["*"]) -> t
 
 
 def get_detail_view_metadata(dlg: CDB4LoaderDialog) -> list[DetailViewMetadata]:
-    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table. 
+    """SQL query that retrieves the current schema's layer metadata from {usr_schema}.layer_metadata table.
     By default it retrieves all columns.
-    
-    keys: id, cdb_schema, layer_type, class, layer_name, av_name, qml_form, qml_symb, qml_3d 
-    
+
+    keys: id, cdb_schema, layer_type, class, layer_name, av_name, qml_form, qml_symb, qml_3d
+
     *   :param dlg: The dialog we are working with
         :type dlg: CDB4LoaderDialog
 
@@ -200,15 +197,14 @@ def get_detail_view_metadata(dlg: CDB4LoaderDialog) -> list[DetailViewMetadata]:
         :rtype: list(named tuples)
     """
     query = pysql.SQL("""
-                    SELECT id, cdb_schema, layer_type, class AS curr_class, layer_name, av_name AS gen_name, qml_form, qml_symb, qml_3d
-                    FROM {_usr_schema}.layer_metadata
-                    WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
-                    ORDER BY av_name;
-                    """).format(
-                    _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-                    _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-                    _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-                    )
+        SELECT id, cdb_schema, layer_type, class AS curr_class, layer_name, av_name AS gen_name, qml_form, qml_symb, qml_3d
+        FROM {_usr_schema}.layer_metadata
+        WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND layer_type IN ('DetailView', 'DetailViewNoGeom')
+        ORDER BY av_name;
+        """).format(
+        _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
 
     try:
         with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -242,13 +238,12 @@ def list_lookup_tables(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()
         WHERE table_schema = {_usr_schema}
         AND table_type = 'VIEW' AND (table_name LIKE '%codelist%' OR table_name LIKE '%enumeration%');
         """).format(
-        _usr_schema = pysql.Literal(dlg.USR_SCHEMA)
-        )
+        _usr_schema=pysql.Literal(dlg.USR_SCHEMA))
 
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            res=cur.fetchall()
+            res = cur.fetchall()
         dlg.conn.commit()
 
         if not res:
@@ -280,10 +275,9 @@ def compute_cdb_schema_extents(dlg: CDB4LoaderDialog) -> tuple[bool, float, floa
     query = pysql.SQL("""
         SELECT * FROM {_qgis_pkg_schema}.compute_cdb_schema_extents({_cdb_schema},{_is_geographic});
         """).format(
-        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
-        )
+        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _is_geographic=pysql.Literal(dlg.CRS_is_geographic))
 
     try:
         with dlg.conn.cursor() as cur:
@@ -313,22 +307,21 @@ def exec_gview_counter(dlg: CDB4LoaderDialog, layer: CDBLayer) -> int:
     """
     # Convert QgsRectanlce into WKT polygon format
     extents = dlg.CURRENT_EXTENTS.asWktPolygon()
-    
+
     # Prepare query to execute server function to get the number of objects in extents.
     query = pysql.SQL("""
         SELECT {_qgis_pkg_schema}.gview_counter({_usr_schema},{_cdb_schema},{_gv_name},{_extents});
         """).format(
-        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _gv_name = pysql.Literal(layer.gv_name),  
-        _extents = pysql.Literal(extents)
-        )
+        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+        _usr_schema=pysql.Literal(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _gv_name=pysql.Literal(layer.gv_name),
+        _extents=pysql.Literal(extents))
 
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            count = cur.fetchone()[0] # Tuple has trailing comma.
+            count = cur.fetchone()[0]  # Tuple has trailing comma.
         dlg.conn.commit()
 
         # Assign the result to the view object.
@@ -355,16 +348,15 @@ def has_layers_for_cdb_schema(dlg: CDB4LoaderDialog) -> bool:
     query = pysql.SQL("""
         SELECT {_qgis_pkg_schema}.has_layers_for_cdb_schema({_usr_schema},{_cdb_schema},{_ade_prefix});
         """).format(
-        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-        )
+        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+        _usr_schema=pysql.Literal(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
 
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            result_bool = cur.fetchone()[0] # Tuple has trailing comma.
+            result_bool = cur.fetchone()[0]  # Tuple has trailing comma.
         dlg.conn.commit()
         return result_bool
 
@@ -377,8 +369,8 @@ def has_layers_for_cdb_schema(dlg: CDB4LoaderDialog) -> bool:
         dlg.conn.rollback()
 
 
-def upsert_extents(dlg: CDB4LoaderDialog, 
-                   bbox_type: Literal[BBoxType.CDB_SCHEMA, BBoxType.MAT_VIEW, BBoxType.QGIS],
+def upsert_extents(dlg: CDB4LoaderDialog,
+                   bbox_type: Union[BBoxType.CDB_SCHEMA: str, BBoxType.MAT_VIEW: str, BBoxType.QGIS: str],
                    extents_wkt_2d_poly: Optional[str]
                    ) -> Optional[int]:
     """Calls a QGIS Package function to insert (or update) the extents geometry in table qgis_{usr}.extents.
@@ -400,18 +392,17 @@ def upsert_extents(dlg: CDB4LoaderDialog,
     query = pysql.SQL("""
         SELECT {_qgis_pkg_schema}.upsert_extents({_usr_schema},{_cdb_schema},{_bbox_type},{_extents},{_is_geographic});
         """).format(
-        _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-        _usr_schema = pysql.Literal(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _bbox_type = pysql.Literal(bbox_type_value),
-        _extents = pysql.Literal(extents_wkt_2d_poly),
-        _is_geographic = pysql.Literal(dlg.CRS_is_geographic)
-        )
+        _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+        _usr_schema=pysql.Literal(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _bbox_type=pysql.Literal(bbox_type_value),
+        _extents=pysql.Literal(extents_wkt_2d_poly),
+        _is_geographic=pysql.Literal(dlg.CRS_is_geographic))
 
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
-            upserted_id = cur.fetchone()[0] # Tuple has trailing comma.
+            upserted_id = cur.fetchone()[0]  # Tuple has trailing comma.
         dlg.conn.commit()
         if upserted_id:
             return upserted_id
@@ -440,25 +431,24 @@ def list_unique_feature_types(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], t
         extents_wkt = None
     else:
         # Convert QgsRectangle into WKT polygon format
-        extents_wkt = dlg.CURRENT_EXTENTS.asWktPolygon()  
+        extents_wkt = dlg.CURRENT_EXTENTS.asWktPolygon()
 
     query = pysql.SQL("""
-        SELECT feature_type 
-        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents}) 
-        WHERE exists_in_db IS TRUE 
+        SELECT feature_type
+        FROM qgis_pkg.feature_type_checker({_cdb_schema},{_ade_prefix},{_extents})
+        WHERE exists_in_db IS TRUE
         ORDER BY feature_type;
         """).format(
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX),
-        _extents = pysql.Literal(extents_wkt)
-        )
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix=pysql.Literal(dlg.ADE_PREFIX),
+        _extents=pysql.Literal(extents_wkt))
 
     try:
         with dlg.conn.cursor() as cur:
             cur.execute(query)
             res = cur.fetchall()
         dlg.conn.commit()
-        #feat_types = tuple(elem[0] for elem in cast(Iterable[tuple[str, ...]], res))
+        # feat_types = tuple(elem[0] for elem in cast(Iterable[tuple[str, ...]], res))
         if res:
             feat_types: tuple[str, ...]
             feat_types = tuple(zip(*res))[0]
@@ -477,22 +467,21 @@ def list_unique_feature_types(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], t
 
 def list_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()]]:
     """SQL query that retrieves the list of unique feature types (CityGML modules) in
-    table layer_metadata 
+    table layer_metadata
 
     *   :returns: Tuple of unique feature types
         :rtype: tuple[str, ...]
     """
 
     query = pysql.SQL("""
-        SELECT DISTINCT feature_type 
+        SELECT DISTINCT feature_type
         FROM {_usr_schema}.layer_metadata
         WHERE cdb_schema = {_cdb_schema} AND ade_prefix IS NOT DISTINCT FROM {_ade_prefix} AND feature_type IS NOT NULL
         ORDER BY feature_type ASC;
         """).format(
-        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-        _cdb_schema = pysql.Literal(dlg.CDB_SCHEMA),
-        _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-        )
+        _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+        _cdb_schema=pysql.Literal(dlg.CDB_SCHEMA),
+        _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
 
     try:
         with dlg.conn.cursor() as cur:
@@ -503,11 +492,11 @@ def list_unique_feature_types_in_layer_metadata(dlg: CDB4LoaderDialog) -> Union[
         if not res:
             feat_types = ()
         else:
-            #feat_types = tuple(elem[0] for elem in cast(Iterable[tuple[str]], res))
+            # feat_types = tuple(elem[0] for elem in cast(Iterable[tuple[str]], res))
             feat_types: tuple[str, ...]
             feat_types = tuple(zip(*res))[0]
             # print(feat_types)
-        
+
         return feat_types
 
     except (Exception, psycopg2.Error) as error:
@@ -523,9 +512,9 @@ def get_enum_lookup_config(dlg: CDB4LoaderDialog) -> list[LookupTableConfig]:
     """SQL query that retrieves the configuration values to set up
     the look-up tables containing enumerations via combo boxes
     in the attribute forms
-    
+
     *   :returns: the contents of table enum_lookup_config as NamedTuples
-        :rtype: list[LookupTableConfig] 
+        :rtype: list[LookupTableConfig]
     """
     if not dlg.ADE_PREFIX:
         query = pysql.SQL("""
@@ -533,17 +522,15 @@ def get_enum_lookup_config(dlg: CDB4LoaderDialog) -> list[LookupTableConfig]:
             WHERE ade_prefix IS NULL
             ORDER BY id;
             """).format(
-            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA)
-            )
-    else: 
+            _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA))
+    else:
         query = pysql.SQL("""
             SELECT * FROM {_qgis_pkg_schema}.enum_lookup_config
             WHERE ade_prefix IS NULL OR ade_prefix = {_ade_prefix}
             ORDER BY id;
             """).format(
-            _qgis_pkg_schema = pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
-            _ade_prefix = pysql.Literal(dlg.ADE_PREFIX)
-            )
+            _qgis_pkg_schema=pysql.Identifier(dlg.QGIS_PKG_SCHEMA),
+            _ade_prefix=pysql.Literal(dlg.ADE_PREFIX))
 
     try:
         with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -570,7 +557,7 @@ def get_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) ->
     in the attribute forms
 
     *   :returns: the contents of table codelist_lookup_config as NamedTuples
-        :rtype: list[LookupTableConfig]     
+        :rtype: list[LookupTableConfig]
     """
 
     query = pysql.SQL("""
@@ -578,9 +565,8 @@ def get_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) ->
         WHERE name = {_codelist_set_name}
         ORDER BY id;
         """).format(
-        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-        _codelist_set_name = pysql.Literal(codelist_set_name)
-        )
+        _usr_schema=pysql.Identifier(dlg.USR_SCHEMA),
+        _codelist_set_name=pysql.Literal(codelist_set_name))
 
     try:
         with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -603,8 +589,8 @@ def get_codelist_lookup_config(dlg: CDB4LoaderDialog, codelist_set_name: str) ->
 
 
 def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> Union[tuple[str, ...], tuple[()]]:
-    """SQL query that retrieves the codelist set names to fill the codelist selection box 
-    
+    """SQL query that retrieves the codelist set names to fill the codelist selection box
+
     *   :returns: the unique names in table codelist_lookup_config
         :rtype: Union[tuple[str, ...], tuple[()]]
     """
@@ -613,8 +599,7 @@ def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> Union[tuple[str, .
         WHERE ade_prefix IS NULL
         ORDER BY name;
         """).format(
-        _usr_schema = pysql.Identifier(dlg.USR_SCHEMA)
-        )
+        _usr_schema=pysql.Identifier(dlg.USR_SCHEMA))
 
     try:
         with dlg.conn.cursor() as cur:
@@ -628,7 +613,7 @@ def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> Union[tuple[str, .
             # codelist_set_names = tuple(elem[0] for elem in cast(Iterable[tuple[str, ...]], res))
             codelist_set_names: tuple[str, ...]
             codelist_set_names = tuple(zip(*res))[0]
-     
+
         return codelist_set_names
 
     except (Exception, psycopg2.Error) as error:
@@ -638,41 +623,3 @@ def list_CityGML_codelist_set_names(dlg: CDB4LoaderDialog) -> Union[tuple[str, .
             header=f"Retrieving CityGML codelist set from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
             error=error)
         dlg.conn.rollback()
-
-
-# def fetch_ADE_codelist_set_names(dlg: CDB4LoaderDialog) -> list:
-#     """SQL query that retrieves the codelist set names to fill the codelist selection box 
-    
-#     *   :returns: the unique names in table codelist_lookup_config
-#         :rtype: list of tuples
-#     """
-#     query = pysql.SQL("""
-#         SELECT DISTINCT name FROM {_usr_schema}.codelist_lookup_config
-#         WHERE ade_prefix = {_ade_prefix}
-#         ORDER BY name;
-#         """).format(
-#         _usr_schema = pysql.Identifier(dlg.USR_SCHEMA),
-#         _ade_prefix = pysql.Identifier(dlg.ADE_PREFIX)
-#         )
-
-#     try:
-#         # with dlg.conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-#         with dlg.conn.cursor() as cur:
-#             cur.execute(query)
-#             res = cur.fetchall()
-#         dlg.conn.commit()
-
-#         codelist_set_names = [elem[0] for elem in res]
-
-#         if not codelist_set_names:
-#             codelist_set_names = []
-     
-#         return codelist_set_names
-
-#     except (Exception, psycopg2.Error) as error:
-#         gen_f.critical_log(
-#             func=fetch_ADE_codelist_set_names,
-#             location=FILE_LOCATION,
-#             header=f"Retrieving ADE codelist set from table '{dlg.USR_SCHEMA}.codelist_lookup_config'",
-#             error=error)
-#         dlg.conn.rollback()

@@ -1,28 +1,29 @@
 """This module contains shared functions
 """
-import os.path, requests, webbrowser
+import os.path
+import requests
+import webbrowser
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsMessageLog, Qgis
 
 from ... import cdb_tools_main_constants as main_c
 
+
 def open_online_url(url: str) -> None:
     """ Opens the default web browser.
     Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
     available from pyQGIS
-
-    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using Python v. 3.12 at the moment)
     """
     # **** Only for debugging purposes *****
     # Override the variable, just for testing
-    # url = "https://www.arepubblica.it"
+    # url = "https://www.larepubblica.it"
     # **************************************
 
     plugin_name: str = main_c.PLUGIN_NAME_LABEL
 
     try:
-        r = requests.head(url)
-        if r.ok: # it is a boolean
+        r = requests.head(url=url, timeout=5)  # 5 seconds
+        if r.ok:  # it is a boolean
             try:
                 webbrowser.open_new_tab(url)
             except webbrowser.Error as e:
@@ -37,10 +38,15 @@ def open_online_url(url: str) -> None:
             msg = f"Error with URL: {url}"
             msg_rich = f"Error with URL<br><br><a href=\"{url}\">{url}</a>"
             QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
-            QMessageBox.warning(None, "URL unreachable", msg_rich) 
+            QMessageBox.warning(None, "URL unreachable", msg_rich)
 
-    except requests.ConnectionError as e:
-        # print(e)
+    except requests.exceptions.Timeout:
+        msg = f"Request to URL {url} timed out."
+        msg_rich = f"Request to URL <a href=\"{url}\">{url}</a> timed out."
+        QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
+        QMessageBox.warning(None, "The request timed out", msg_rich)
+
+    except requests.ConnectionError:
         msg = f"URL {url} could not be opened.\n\nIs your internet connection up and working?"
         msg_rich = f"URL <a href=\"{url}\">{url}</a> could not be opened.<br><br>Is your internet connection up and working?"
         QgsMessageLog.logMessage(msg, plugin_name, level=Qgis.MessageLevel.Warning, notifyUser=True)
@@ -53,12 +59,10 @@ def open_local_PDF(pdf_path: str) -> None:
     """ Opens a PDF file in the default web browser.
     Qt offers PyQt5.QtWebEngineWidgets (QWebEngineView, QWebEngineSettings) but they are not
     available from pyQGIS
-
-    NOTE: webbrowser will be removed from Python v. 3.13 (QGIS using Python v. 3.9 at the moment)
     """
     plugin_name: str = main_c.PLUGIN_NAME_LABEL
 
-    if os.path.isfile(pdf_path): # The file exists
+    if os.path.isfile(pdf_path):  # i.e the file exists
         webbrowser.open_new_tab("file:///" + pdf_path)
     else:
         msg = f"The following file could not be found in your system:\n\n{pdf_path}"

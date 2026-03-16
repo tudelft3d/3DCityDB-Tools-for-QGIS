@@ -1,4 +1,4 @@
-"""This module contains constant values that are used within the CityDB-Tools plugin for 3DCityDB v. 4.x
+"""This module contains constant values that are used within the CityDB-Tools plug-in for 3DCityDB v. 4.x
 """
 import os.path
 
@@ -11,7 +11,7 @@ PG_MIN_VERSION: int = 10
 
 # 3D City Database minimum version
 CDB_MIN_VERSION_MAJOR: int = 4
-CDB_MIN_VERSION_MINOR: int = 0 # Currently not used
+CDB_MIN_VERSION_MINOR: int = 0  # Currently not used
 
 # QGIS Package minimum version
 QGIS_PKG_MIN_VERSION_MAJOR: int = 0
@@ -49,32 +49,32 @@ usr_icon = QIcon(usr_icon_path)
 
 # Text - Messages - Log
 icon_msg_core: str = """
-                <html><head/><body><p> 
-                <img src="{image_rc}" style='vertical-align: bottom'/> 
+                <html><head/><body><p>
+                <img src="{image_rc}" style='vertical-align: bottom'/>
                 <span style=" color:{color_hex};">{additional_text}</span>
                 </p></body></html>
                 """
 success_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
-    color_hex = '#00E400',   # green
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
+    color_hex='#00E400',  # green
+    additional_text='{text}')
 
 failure_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
-    color_hex = '#FF0000',  # red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
+    color_hex='#FF0000',  # red
+    additional_text='{text}')
 
 ongoing_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
-    color_hex  ='#FF7E33',  # orange2
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
+    color_hex='#FF7E33',  # orange2
+    additional_text='{text}')
 
 warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
-    color_hex  ='#FFA701',  # orange1
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
+    color_hex='#FFA701',  # orange1
+    additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
-    color_hex  ='#DA4453', # pale red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
+    color_hex='#DA4453',  # pale red
+    additional_text='{text}')
