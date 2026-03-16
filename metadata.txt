@@ -2,12 +2,11 @@
 # Mandatory items:
 
 [general]
-name=3DCityDB Tools for QGIS 3 (DEV)
-qgisMinimumVersion=3.40
-qgisMaximumVersion=3.99
-supportsQt6=false
+name=3DCityDB Tools for QGIS 4
+qgisMinimumVersion=4.00
+qgisMaximumVersion=4.99
 description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database 4.x
-version=0.8.14
+version=0.9.0
 author=Giorgio Agugiaro, Konstantinos Pantelios
 email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
@@ -31,29 +30,7 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.8.14 Fixed styles for 3D Map visualisation
- 0.8.13 Minor changes for future porting to Qt6
- 0.8.12 Added support for QGIS 3.44 and tested with PostgreSQL 18
- 0.8.11 Fixed issue with PostgreSQL 17
- 0.8.10 Added support for QGIS 3.40, some server-side bug fixes
- 0.8.9 Minor changes
- 0.8.8 Minor edits
- 0.8.7 Bug fixes and minor improvements
- 0.8.6 Added About dialog GUI and other minor improvements
- 0.8.5 Fixed minor bugs in the QGIS client
- 0.8.4 Fixed minor bugs in the QGIS Package
- 0.8.3 Minor changes to the Layer Loader dialog GUI
- 0.8.2 Minor changes to comply with QGIS Plugin repository
- 0.8.1 Detail View are set to ro/rw depending on user privileges
- 0.8 Redesigned and extended attribute forms
- 0.7.1 Added logic to deal with concurrent dialogs
- 0.7 Extended Loader and Admin, added Deleter
- 0.6 Further code cleaning and refactoring
- 0.5 Major code cleaning and refactoring, moved to TUD GitHub
- 0.4 First public release (as MSc thesis @ TUD)
- 0.3 Internal release: improved GUI, added dynamic ToC
- 0.2 Internal release: added PostgreSQL/PostGIS back-end
- 0.1 First internal release
+changelog= 0.9.0 Minor changes for QGIS 4. Same functionalities as for QGIS 3
 
 # Tags are comma separated with spaces allowed
 tags=PostgreSQL, PostGIS, 3DCityDB, CityGML, CityJSON
