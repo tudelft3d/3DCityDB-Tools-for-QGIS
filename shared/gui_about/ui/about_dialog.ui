@@ -645,7 +645,7 @@ p, li { white-space: pre-wrap; }
     </font>
    </property>
    <property name="text">
-    <string>3DCityDB Tools for QGIS 3</string>
+    <string>3DCityDB Tools for QGIS 4</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
