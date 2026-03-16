@@ -5,12 +5,12 @@ These functions are usually called from widget_setup functions
 relating to child widgets of the 'Connection Tab'.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Iterable, cast, Optional
+from typing import TYPE_CHECKING, Iterable, cast, Optional  # , Union
 if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
     from ...shared.dataTypes import TopLevelFeatureCounter
 
-from qgis.core import Qgis, QgsMessageLog, QgsRectangle
+from qgis.core import Qgis, QgsMessageLog, QgsRectangle, QgsWkbTypes
 from qgis.gui import QgsRubberBand
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -189,17 +189,17 @@ def initialize_feature_types_registry(dlg: CDB4DeleterDialog) -> None:
     dlg.FeatureTypesRegistry = {}
 
     dlg.FeatureTypesRegistry = {
-        "Bridge"          : FeatureType(name="Bridge"          , alias='bridge'),
-        "Building"        : FeatureType(name="Building"        , alias='building'),
-        "CityFurniture"   : FeatureType(name="CityFurniture"   , alias='cityfurniture'),
+        "Bridge"          : FeatureType(name="Bridge"          , alias='bridge'         ),
+        "Building"        : FeatureType(name="Building"        , alias='building'       ),
+        "CityFurniture"   : FeatureType(name="CityFurniture"   , alias='cityfurniture'  ),
         "CityObjectGroup" : FeatureType(name="CityObjectGroup" , alias='cityobjectgroup'),
-        "Generics"        : FeatureType(name="Generics"        , alias='generics'),
-        "LandUse"         : FeatureType(name="LandUse"         , alias='landuse'),
-        "Relief"          : FeatureType(name="Relief"          , alias='relief'),
-        "Transportation"  : FeatureType(name="Transportation"  , alias='transportation'),
-        "Tunnel"          : FeatureType(name="Tunnel"          , alias='tunnel'),
-        "Vegetation"      : FeatureType(name="Vegetation"      , alias='vegetation'),
-        "WaterBody"       : FeatureType(name="WaterBody"       , alias='waterbody')}
+        "Generics"        : FeatureType(name="Generics"        , alias='generics'       ),
+        "LandUse"         : FeatureType(name="LandUse"         , alias='landuse'        ),
+        "Relief"          : FeatureType(name="Relief"          , alias='relief'         ),
+        "Transportation"  : FeatureType(name="Transportation"  , alias='transportation' ),
+        "Tunnel"          : FeatureType(name="Tunnel"          , alias='tunnel'         ),
+        "Vegetation"      : FeatureType(name="Vegetation"      , alias='vegetation'     ),
+        "WaterBody"       : FeatureType(name="WaterBody"       , alias='waterbody'      )}
 
     return None
 
@@ -294,7 +294,8 @@ def refresh_extents(dlg: CDB4DeleterDialog) -> None:
             temp_cdb_extents_new: QgsRectangle = QgsRectangle().fromWkt(wkt=cdb_extents_new_wkt)
 
             # Create new rubber band
-            cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+            cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(dlg.CANVAS, QgsWkbTypes.PolygonGeometry)
+            # cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
             cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
 
             # Drop the old magenta one
