@@ -12,7 +12,7 @@ from qgis.PyQt.QtCore import Qt
 from collections import OrderedDict
 from qgis.core import (QgsProject, QgsMessageLog, QgsEditorWidgetSetup,
                        QgsVectorLayer, QgsDataSourceUri, QgsAttributeEditorElement,
-                       QgsAttributeEditorRelation, Qgis, QgsLayerTreeGroup,
+                       QgsAttributeEditorRelation, Qgis, QgsLayerTree, QgsLayerTreeGroup,
                        QgsRelation, QgsAttributeEditorContainer, QgsMapLayer, QgsLayerTreeLayer)
 
 from ..other_classes import CDBLayer, CodeListConfig
@@ -295,16 +295,14 @@ def add_group_node_to_ToC(parent_node: QgsLayerTreeGroup, child_name: str) -> Qg
     *   :returns: The newly created node object (or the existing one).
         :rtype: QgsLayerTreeGroup
     """
-    group_node = parent_node.findGroup(name=child_name)
+    child_node = parent_node.findGroup(name=child_name)
 
-    if group_node is None:
+    if child_node is None:
         # Create new node
         node = parent_node.addGroup(name=child_name)
     else:
-        # Get existing node
-        # node = parent_node.findGroup(name=child_name)
         # It already exists, return it as it is
-        node = group_node
+        node = child_node
 
     return node
 
@@ -322,9 +320,6 @@ def add_layer_node_to_ToC(dlg: CDB4LoaderDialog, layer: CDBLayer) -> QgsLayerTre
 
     # Database group (e.g. delft @ localhost:5432)
     node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.db_toc_node_label)
-    # Database group (e.g. delft)
-    # node_cdb = add_group_node_to_ToC(parent_node=root, child_name=dlg.DB.database_name)
-
     # Schema group (e.g. citydb)
     node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([dlg.DB.username, layer.cdb_schema]))
     # FeatureType group (e.g. Building)
@@ -363,7 +358,6 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
         :type layer: QgsVectorLayer
     """
     dv_gen_names: list = [k for k in dlg.DetailViewsRegistry.keys() if k.startswith("address_")]
-    # print("dv_gen_names", dv_gen_names)
 
     if dv_gen_name not in dv_gen_names:
         # We're creating relations that may not be valid, so exit.
@@ -375,16 +369,13 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
     # Isolate the layers' ToC environment to avoid grabbing the first layer encountered in the WHOLE ToC.
     root = QgsProject.instance().layerTreeRoot()
 
-    db_node = root.findGroup(dlg.DB.db_toc_node_label)
-    # db_node = root.findGroup(dlg.DB.database_name)
-
-    schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))
-    detail_views_node = schema_node.findGroup(c.detail_views_group_alias)
+    db_node = root.findGroup(dlg.DB.db_toc_node_label)  # e.g. qgis_test@localhost:5433
+    schema_node = db_node.findGroup("@".join([dlg.DB.username, dlg.CDB_SCHEMA]))  # e.g. postgres@alderaan
+    detail_views_node = schema_node.findGroup(c.detail_views_group_alias)  # e.g. Form detail views
     dv_layers: list = detail_views_node.findLayers()
-    # print("dv_layers", dv_layers)
+
     # dv_layer: QgsLayerTreeLayer
     dv_layer = [elem for elem in cast(Iterable[QgsLayerTreeLayer], dv_layers) if elem.name().endswith(dv.gen_name)][0]  # it should be only one!
-    # print("dv_layer", dv_layer)
 
     # Create new Relation object
     rel = QgsRelation()
@@ -420,12 +411,12 @@ def create_layer_relation_to_dv_address(dlg: CDB4LoaderDialog, layer: QgsVectorL
 
         # Create an 'attribute form' relation object from the 'relation' object
         relation_field = QgsAttributeEditorRelation(relation=rel, parent=container_dv)
-        relation_field.setLabel(c.detail_views_group_alias)
-        relation_field.setShowLabel(False)  # No point setting a label then.
+        relation_field.setLabel(label=c.detail_views_group_alias)
+        relation_field.setShowLabel(showLabel=False)  # No point setting a label then.
         # Add the relation to the 'Address(es)' container (tab).
         container_dv.addChildElement(relation_field)
 
-        layer.setEditFormConfig(layer_configuration)
+        layer.setEditFormConfig(editFormConfig=layer_configuration)
 
     return None
 
@@ -809,7 +800,7 @@ def create_qgis_vector_layer(dlg: CDB4LoaderDialog, layer_name: str) -> QgsVecto
 def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) -> int:
     """Function to imports the selected layer(s) in the user's qgis project.
 
-    *   :param layers: A list containing View object that correspond to the server views.
+    *   :param layers: A list containing View objects that correspond to the server views.
         :type layers: list(CDBLayer)
 
     *   :returns: The number of actually imported layers (excluding those already loaded)
@@ -825,10 +816,14 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
     db = dlg.DB
     cdb_schema: str = dlg.CDB_SCHEMA
 
-    root = QgsProject.instance().layerTreeRoot()
-    node_cdb: QgsLayerTreeGroup = root.findGroup(db.db_toc_node_label)
+    root: QgsLayerTree = QgsProject.instance().layerTreeRoot()
+
+    # The first time ever, it will be None!
+    node_cdb: QgsLayerTreeGroup = root.findGroup(name=db.db_toc_node_label)  # e.g. qgis_test@localhost:5432
     node_cdb_schema: QgsLayerTreeGroup = None
     node_featureType: QgsLayerTreeGroup = None
+    # node_dv: QgsLayerTreeGroup = None
+    # node_lookup: QgsLayerTreeGroup = None
     node_feature: QgsLayerTreeGroup = None
     node_lod: QgsLayerTreeGroup = None
 
@@ -837,55 +832,56 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
     layer_found: bool = False
 
     if node_cdb:
-        node_cdb_schema = root.findGroup("@".join([db.username, cdb_schema]))
+        node_cdb_schema = root.findGroup(name="@".join([db.username, cdb_schema]))  # e.g. postgres@alderaan
         if node_cdb_schema:
             # Check whether the generic attribute table is already loaded
-            node_dv = node_cdb_schema.findGroup(c.detail_views_group_alias)
+            node_dv = node_cdb_schema.findGroup(name=c.detail_views_group_alias)
             if node_dv:
-                dv_layers: list = node_dv.findLayers()
+                dv_layers: list[QgsLayerTreeLayer] = node_dv.findLayers()
                 if len(dv_layers) == len(dlg.DetailViewsRegistry):
                     detail_views_found = True
 
             # Check whether the look-up table for enumerations is already loaded
-            node_lookup = node_cdb_schema.findGroup(c.lookup_tables_group_alias)
+            node_lookup = node_cdb_schema.findGroup(name=c.lookup_tables_group_alias)
             if node_lookup:
-                lu_layers: list = node_lookup.findLayers()
+                lu_layers: list[QgsLayerTreeLayer] = node_lookup.findLayers()
                 for lu_layer in lu_layers:
                     if lu_layer.name() == "_".join([cdb_schema, c.enumerations_table]):
                         lookup_found = True
+
         else:
-            node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
+            node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([db.username, cdb_schema]))
     else:
-        node_cdb = add_group_node_to_ToC(root, db.db_toc_node_label)
-        node_cdb_schema = add_group_node_to_ToC(node_cdb, "@".join([db.username, cdb_schema]))
+        node_cdb = add_group_node_to_ToC(parent_node=root, child_name=db.db_toc_node_label)
+        node_cdb_schema = add_group_node_to_ToC(parent_node=node_cdb, child_name="@".join([db.username, cdb_schema]))
 
     # Load the generic attributes table if it is not already loaded
     if not detail_views_found:
-        node_dv = add_group_node_to_ToC(node_cdb_schema, c.detail_views_group_alias)
-        add_detail_view_tables_to_ToC(dlg)
+        node_dv = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=c.detail_views_group_alias)
+        add_detail_view_tables_to_ToC(dlg=dlg)
     else:
-        # msg: str = "Generic attributes table already loaded: skipping"
-        # QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+        msg: str = "Generic attributes table already loaded: skipping"
+        QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
         pass
 
     # Load the look-up tables if they are not already loaded
     if not lookup_found:
-        node_lookup = add_group_node_to_ToC(node_cdb_schema, c.lookup_tables_group_alias)
-        add_lookup_tables_to_ToC(dlg)
+        node_lookup = add_group_node_to_ToC(parent_node=node_cdb_schema, child_name=c.lookup_tables_group_alias)
+        add_lookup_tables_to_ToC(dlg=dlg)
     else:
-        # msg: str = "Look-up tables already loaded: skipping"
-        # QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+        msg: str = "Look-up tables already loaded: skipping"
+        QgsMessageLog.logMessage(message=msg, tag=dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
         pass
 
     # Start loading the selected layer(s)
     for layer in layers:
         # Check if the layer has already been loaded before
         layer_found = False
-        node_featureType = node_cdb_schema.findGroup(f"FeatureType: {layer.feature_type}")
+        node_featureType = node_cdb_schema.findGroup(name=f"FeatureType: {layer.feature_type}")
         if node_featureType:
-            node_feature = node_featureType.findGroup(layer.root_class)
+            node_feature = node_featureType.findGroup(name=layer.root_class)
             if node_feature:
-                node_lod = node_feature.findGroup(layer.lod)
+                node_lod = node_feature.findGroup(name=layer.lod)
                 if node_lod:
                     existing_layers = node_lod.findLayers()
                     for existing_layer in existing_layers:
@@ -900,9 +896,9 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
             continue
 
         # Build the Table of Contents Tree or Restructure it.
-        node_lod = add_layer_node_to_ToC(dlg, layer)
+        node_lod = add_layer_node_to_ToC(dlg=dlg, layer=layer)
 
-        new_layer: QgsVectorLayer = create_qgis_vector_layer(dlg, layer_name=layer.layer_name)
+        new_layer: QgsVectorLayer = create_qgis_vector_layer(dlg=dlg, layer_name=layer.layer_name)
 
         if new_layer or new_layer.isValid():  # Success
             pass
@@ -913,7 +909,7 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
 
         # Set the layer as read-only if the current cdb_schema is read only
         if dlg.CDBSchemaPrivileges == "ro":
-            new_layer.setReadOnly()
+            new_layer.setReadOnly(readonly=True)
 
         ###########################################################################################
         # To use "normal" (old) forms, simply set the value to FALSE in the dlg.settings.
@@ -939,27 +935,27 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
 
             # Insert the layer to the assigned group
             node_lod.addLayer(new_layer)
-            QgsProject.instance().addMapLayer(new_layer, False)
+            QgsProject.instance().addMapLayer(mapLayer=new_layer, addToLegend=False)
 
             # Filter out those layers that are not cityobjects and for which there is no need for the Generic Attributes link
-            if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
 
+            if layer.curr_class != "Address":  # might change to: not in ["Address", "...", "..."]
                 if layer.curr_class in ["Building", "BuildingPart"]:
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bdg")
+                    create_layer_relation_to_dv_address(dlg=dlg, layer=new_layer, dv_gen_name="address_bdg")
                 elif layer.curr_class == "BuildingDoor":
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bdg_door")
+                    create_layer_relation_to_dv_address(dlg=dlg, layer=new_layer, dv_gen_name="address_bdg_door")
                 if layer.curr_class in ["Bridge", "BridgePart"]:
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bri")
+                    create_layer_relation_to_dv_address(dlg=dlg, layer=new_layer, dv_gen_name="address_bri")
                 elif layer.curr_class == "BridgeDoor":
-                    create_layer_relation_to_dv_address(dlg, layer=new_layer, dv_gen_name="address_bri_door")
+                    create_layer_relation_to_dv_address(dlg=dlg, layer=new_layer, dv_gen_name="address_bri_door")
 
                 # Now, for all layers that are CityObjects
-                create_layer_relation_to_dv_gen_attrib(dlg, layer=new_layer)
-                create_layer_relation_to_dv_ext_ref(dlg, layer=new_layer)
+                create_layer_relation_to_dv_gen_attrib(dlg=dlg, layer=new_layer)
+                create_layer_relation_to_dv_ext_ref(dlg=dlg, layer=new_layer)
 
                 # Setup the relations for this layer to the look-up tables
-                create_layer_relation_to_enumerations(dlg, layer=new_layer, layer_metadata=layer)
-                create_layer_relation_to_codelists(dlg, layer=new_layer, layer_metadata=layer)
+                create_layer_relation_to_enumerations(dlg=dlg, layer=new_layer, layer_metadata=layer)
+                create_layer_relation_to_codelists(dlg=dlg, layer=new_layer, layer_metadata=layer)
 
             # Finally, increment the counter after loading the layer and all the associated stuff
             import_counter += 1
@@ -969,5 +965,5 @@ def add_selected_layers_to_ToC(dlg: CDB4LoaderDialog, layers: list[CDBLayer]) ->
             pass
 
     # Return the number of layers that have been really loaded.
-    # print(f"Imported {import_counter} layers into QGIS")
+    # print(f"Imported {import_counter} layers into QGIS\n****************************")
     return import_counter
