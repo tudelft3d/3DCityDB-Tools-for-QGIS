@@ -36,19 +36,19 @@ if TYPE_CHECKING:
 import os.path
 
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import QUrl 
+from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QTextDocument
 
-from ..functions import shared_functions as sh_f 
+from ..functions import shared_functions as sh_f
 from . import about_constants as c
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "about_dialog.ui"))
 
+
 class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
     """About Dialog class of the plugin. The GUI is imported from an external .ui xml
     """
-
     def __init__(self, cdbMain: CDBToolsMain, parent=None):
         """Constructor"""
         super(CDBAboutDialog, self).__init__(parent)
@@ -58,16 +58,16 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## Variables and/or constants
+        # # Variables and/or constants
         ############################################################
         self.PLUGIN_NAME: str = cdbMain.PLUGIN_NAME
-        self.PLUGIN_ABS_PATH:    str = cdbMain.PLUGIN_ABS_PATH
-        self.PLATFORM_SYSTEM:    str = cdbMain.PLATFORM_SYSTEM
+        self.PLUGIN_ABS_PATH: str = cdbMain.PLUGIN_ABS_PATH
+        self.PLATFORM_SYSTEM: str = cdbMain.PLATFORM_SYSTEM
         self.PLUGIN_VERSION_TXT: str = cdbMain.PLUGIN_VERSION_TXT
-        self.URL_GITHUB_PLUGIN:  str = cdbMain.URL_GITHUB_PLUGIN
+        self.URL_GITHUB_PLUGIN: str = cdbMain.URL_GITHUB_PLUGIN
 
         ############################################################
-        ## Dialog initialization
+        # # Dialog initialization
         ############################################################
         url: QUrl = QUrl()
 
@@ -95,7 +95,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         self.txt3DCityDB.setSearchPaths([c.HTML_SEARCH_PATH])
         self.txt3DCityDB.doSetSource(url, QTextDocument.ResourceType.HtmlResource)
 
-        #- SIGNALS  (start)  ################################################################
+        # - SIGNALS  (start)  ################################################################
 
         self.listMenu.itemClicked.connect(self.evt_listMenu_ItemClicked)
 
@@ -110,7 +110,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.btnClose.clicked.connect(self.evt_btnClose_clicked)
 
-        #-SIGNALS  (end)  ################################################################
+        # -SIGNALS  (end)  ################################################################
 
     # "NORMAL" FUNCTIONS (begin)  #####################################################################
 
@@ -125,9 +125,8 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         # print(self.listMenu.currentItem().text())
         clickedRow: int = self.listMenu.currentRow()
         self.stackedContents.setCurrentIndex(clickedRow)
-        
-        return None
 
+        return None
 
     def evt_btnOpenGitHub_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
@@ -138,7 +137,6 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return None
 
-
     def evt_btnIdeas_clicked(self) -> None:
         """Event that is called when the Button 'btnIdeas' is pressed.
         """
@@ -147,7 +145,6 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         sh_f.open_online_url(url)
 
         return None
-
 
     def evt_btnIssueBug_clicked(self) -> None:
         """Event that is called when the Button 'btnOpenGitHub' is pressed.
@@ -158,7 +155,6 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return None
 
-
     def evt_btn3DCityDBDownload_clicked(self) -> None:
         """Event that is called when the Button 'btn3DCityDBDownload' is pressed.
         """
@@ -167,7 +163,6 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         sh_f.open_online_url(url)
 
         return None
-
 
     def evt_btn3DCityDBInstall_clicked(self) -> None:
         """ Event that is called when the Button 'btn3DCityDBInstall' is pressed.
@@ -181,7 +176,7 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         # url = "/".join([self.URL_GITHUB_PLUGIN, "blob", "v." + self.PLUGIN_VERSION_TXT, "manuals", "3dcitydb_install"])
         # url = "/".join([self.URL_GITHUB_PLUGIN, "tree", "master", "manuals", "3dcitydb_install"])
         # sh_f.open_online_url(url)
-        # 
+        #
         # **************************************
 
         # Simply point to the GitHub folder
@@ -189,26 +184,21 @@ class CDBAboutDialog(QtWidgets.QDialog, FORM_CLASS):
         # print(url)
         sh_f.open_online_url(url)
 
-
         return None
-
 
     def evt_btnOnline3DCityDBManual_clicked(self) -> None:
         """Event that is called when the Button 'btn3DCityDBManual' is pressed.
         """
-        
         url: str = c.URL_GITHUB_3DCITYDB_MANUAL
         # print(url)
         sh_f.open_online_url(url)
-    
-        return None
 
+        return None
 
     def evt_btnClose_clicked(self) -> None:
         """Event that is called when the 'Close' pushButton (btnClose) is pressed.
         """
-
         self.close()
         return None
 
-    #-EVENT FUNCTIONS (end) #####################################################################
+    # -EVENT FUNCTIONS (end) #####################################################################

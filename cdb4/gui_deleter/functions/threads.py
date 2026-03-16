@@ -19,14 +19,16 @@ update following the heavy process taking place in the worker thread.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_deleter.deleter_dialog import CDB4DeleterDialog
     from ..other_classes import TopLevelFeature
 
-import math, time
+import math
+import time
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.core import Qgis, QgsMessageLog
-import psycopg2, psycopg2.sql as pysql
+import psycopg2
+import psycopg2.sql as pysql
 
 from ...gui_db_connector.functions import conn_functions as conn_f
 from ...shared.functions import general_functions as gen_f
@@ -36,8 +38,9 @@ from . import tab_conn_functions as tc_f
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 #####################################################################################
-##### CLEAN UP SCHEMA ###############################################################
+# #### CLEAN UP SCHEMA ###############################################################
 #####################################################################################
+
 
 def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     """Function that uninstalls the qgis_pkg schema from the database
@@ -47,10 +50,10 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
         if not widget:
-            continue # Needed to avoid errors with layouts, vertical spacers, etc.
+            continue  # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxCleanUpSchema":
             # Add a new progress bar to follow the deletion procedure.
-            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index + 1)
             break
 
     # Create new thread object.
@@ -60,10 +63,10 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
-    #-SIGNALS (start) #######################################################
+    # -SIGNALS (start) #######################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
     dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxFeatSel.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
@@ -81,7 +84,7 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
 
     # Re-enable the GUI
     dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
-    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))  
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.gbxFeatSel.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
@@ -91,14 +94,14 @@ def run_cleanup_schema_thread(dlg: CDB4DeleterDialog) -> None:
     # On installation status
     dlg.worker.sig_success.connect(lambda: evt_clean_up_schema_success(dlg))
     dlg.worker.sig_fail.connect(lambda: evt_clean_up_schema_fail(dlg))
-    #-SIGNALS (end) #######################################################
+    # -SIGNALS (end) #######################################################
 
     # Initiate worker thread
     dlg.thread.start()
 
 
 class CleanUpSchemaWorker(QObject):
-    """Class to assign Worker that bulk deletes the selected features 
+    """Class to assign Worker that bulk deletes the selected features
     either as groups of FeatureTypes or as top-level Features from the current database.
     """
     # Create custom signals.
@@ -135,11 +138,11 @@ class CleanUpSchemaWorker(QObject):
             "opening_to_them_surface",
             "relief_feat_to_rel_comp",
             "textureparam",
-            "appearance", 
-            "address", 
+            "appearance",
+            "address",
             "external_reference",
-            "surface_data", 
-            "surface_geometry", 
+            "surface_data",
+            "surface_geometry",
             "cityobject_genericattrib",
             "building",
             "bridge",
@@ -151,29 +154,27 @@ class CleanUpSchemaWorker(QObject):
             "land_use",
             "generic_cityobject",
             "cityobjectgroup",
-            "cityobject"
-            )
+            "cityobject")
 
         # Set progress bar goal:
         steps_tot: int = len(table_names) + 1
         dlg.bar.setMaximum(steps_tot)
         curr_step: int = 0
-        
+
         try:
             # Open new temp session, reserved for installation.
             temp_conn = conn_f.open_db_connection(db_connection=dlg.DB, app_name=" ".join([dlg.DLG_NAME_LABEL, "(Clean up schema (TRUNCATE)"]))
             with temp_conn:
                 # Start measuring time
-                time_start = time.time()                
+                time_start = time.time()
 
                 for table_name in table_names:
 
                     query = pysql.SQL("""
                         TRUNCATE {_cdb_schema}.{_table_name} RESTART IDENTITY CASCADE;
-                    """).format(
-                    _cdb_schema = pysql.Identifier(cdb_schema),
-                    _table_name = pysql.Identifier(table_name)
-                    )
+                        """).format(
+                        _cdb_schema=pysql.Identifier(cdb_schema),
+                        _table_name=pysql.Identifier(table_name))
 
                     # Update progress bar
                     msg = f"Truncating {cdb_schema}.{table_name}"
@@ -203,10 +204,9 @@ class CleanUpSchemaWorker(QObject):
                 # 2) Eventually, run the generic clean up function, just to be sure...
                 query = pysql.SQL("""
                     SELECT {_qgis_pkg_schema}.cleanup_schema({_cdb_schema});
-                """).format(
-                _qgis_pkg_schema = pysql.Identifier(qgis_pkg_schema),
-                _cdb_schema = pysql.Literal(cdb_schema)
-                )
+                    """).format(
+                    _qgis_pkg_schema=pysql.Identifier(qgis_pkg_schema),
+                    _cdb_schema=pysql.Literal(cdb_schema))
 
                 # Update progress bar
                 msg = "Finalizing the clean-up"
@@ -228,7 +228,6 @@ class CleanUpSchemaWorker(QObject):
                         error=error)
                     self.sig_fail.emit()
 
-
             # Measure elapsed time
             print(f"Running qgis_pkg.cleanup_schema() completed in {round((time.time() - time_middle), 4)} seconds")
             # Measure elapsed time
@@ -248,11 +247,12 @@ class CleanUpSchemaWorker(QObject):
             self.sig_success.emit()
 
         self.sig_finished.emit()
-        # Close temporary connection       
+        # Close temporary connection
         temp_conn.close()
         return None
 
-#--EVENTS  (start)  ##############################################################
+# --EVENTS  (start)  ##############################################################
+
 
 def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation finishes successfully.
@@ -269,10 +269,10 @@ def evt_clean_up_schema_success(dlg: CDB4DeleterDialog) -> None:
 
     # Inform user
     QgsMessageLog.logMessage(
-            message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Success,
-            notifyUser=True)
+        message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Success,
+        notifyUser=True)
 
     tc_f.refresh_extents(dlg=dlg)
 
@@ -291,19 +291,20 @@ def evt_clean_up_schema_fail(dlg: CDB4DeleterDialog) -> None:
     # Replace with Failure msg.
     msg = dlg.msg_bar.createMessage(error)
     dlg.msg_bar.pushWidget(widget=msg, level=Qgis.MessageLevel.Critical, duration=4)
-    
+
     # Inform user
     QgsMessageLog.logMessage(
-            message=error,
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
-    
+        message=error,
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Critical,
+        notifyUser=True)
+
     return None
 
 #####################################################################################
-##### BULK FEATURE DELETER ##########################################################
+# #### BULK FEATURE DELETER ##########################################################
 #####################################################################################
+
 
 def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     """Function that bulk deletes Features from the selected schema.
@@ -312,10 +313,10 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     for index in range(dlg.vLayoutUserConn.count()):
         widget = dlg.vLayoutUserConn.itemAt(index).widget()
         if not widget:
-            continue # Needed to avoid errors with layouts, vertical spacers, etc.
+            continue  # Needed to avoid errors with layouts, vertical spacers, etc.
         if widget.objectName() == "gbxFeatSel":
             # Add a new progress bar to follow the deletion procedure.
-            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index+1)
+            dlg.create_progress_bar(layout=dlg.vLayoutUserConn, position=index + 1)
             break
 
     # Create new thread object.
@@ -325,10 +326,10 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     # Move worker object to the be executed on the new thread.
     dlg.worker.moveToThread(dlg.thread)
 
-    #-SIGNALS--(start)--################################################################
+    # -SIGNALS--(start)--################################################################
     # Anti-panic clicking: Disable widgets to avoid queuing signals.
     dlg.thread.started.connect(lambda: dlg.gbxConnection.setDisabled(True))
-    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))  
+    dlg.thread.started.connect(lambda: dlg.gbxDatabase.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxBasemap.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.gbxCleanUpSchema.setDisabled(True))
     dlg.thread.started.connect(lambda: dlg.btnCloseConn.setDisabled(True))
@@ -346,7 +347,7 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
 
     # Re-enable the GUI
     dlg.thread.finished.connect(lambda: dlg.gbxConnection.setDisabled(False))
-    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))  
+    dlg.thread.finished.connect(lambda: dlg.gbxDatabase.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.gbxBasemap.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.gbxCleanUpSchema.setDisabled(False))
     dlg.thread.finished.connect(lambda: dlg.btnCloseConn.setDisabled(False))
@@ -356,14 +357,14 @@ def run_bulk_delete_thread(dlg: CDB4DeleterDialog, delete_mode: str) -> None:
     # On installation status
     dlg.worker.sig_success.connect(lambda: evt_bulk_delete_success(dlg))
     dlg.worker.sig_fail.connect(lambda: evt_buld_delete_fail(dlg))
-    #-SIGNALS--(end)---################################################################
+    # -SIGNALS--(end)---################################################################
 
     # Initiate worker thread
     dlg.thread.start()
 
 
 class BulkDeleteWorker(QObject):
-    """Class to assign Worker that bulk deletes the selected features 
+    """Class to assign Worker that bulk deletes the selected features
     either as groups of FeatureTypes or as top-level Features from the current database.
     """
     # Create custom signals.
@@ -376,7 +377,6 @@ class BulkDeleteWorker(QObject):
         super().__init__()
         self.dlg = dlg
         self.delete_mode = delete_mode
-
 
     def bulk_delete_thread(self):
         """Execution method that bulk deletes the features.
@@ -391,7 +391,7 @@ class BulkDeleteWorker(QObject):
 
         sql_where: str
         if dlg.DELETE_EXTENTS == dlg.CDB_SCHEMA_EXTENTS:
-            sql_where = "" # Empty string
+            sql_where = ""  # Empty string
         else:
             # Get corners coordinates
             x_min = str(dlg.DELETE_EXTENTS.xMinimum())
@@ -405,8 +405,8 @@ class BulkDeleteWorker(QObject):
         if not self.delete_mode:
             self.sig_fail.emit()
             self.sig_finished.emit()
-            return None # Exit and activate fail event.
-        
+            return None  # Exit and activate fail event.
+
         elif self.delete_mode == "del_FeatureTypes":
             # 1a) Select the all Features that belong to the selected Feature Types
             # sel_fts: list[str] = []
@@ -418,31 +418,31 @@ class BulkDeleteWorker(QObject):
             ft_rel = dlg.FeatureTypesRegistry['Relief']
             ft_cog = dlg.FeatureTypesRegistry['CityObjectGroup']
 
-            # 2a) Filter the top-level features based on the selected Featuere Types 
+            # 2a) Filter the top-level features based on the selected Featuere Types
             # sel_tlfs = []  # :list[TopLevelFeature] # Used for all the top-level features, except the CityObjectGroup
-            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.feature_type in sel_fts) and (tlf.n_features != 0)], key = lambda x: x.name)
+            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.feature_type in sel_fts) and (tlf.n_features != 0)], key=lambda x: x.name)
 
-            # 3a) Put the ReliefFeature and the CityObjectGroup top-level features at the end of the list 
+            # 3a) Put the ReliefFeature and the CityObjectGroup top-level features at the end of the list
             if (not ft_rel.is_selected) and (not ft_cog.is_selected):
-                pass # Nothing to do
+                pass  # Nothing to do
 
             elif (ft_rel.is_selected) and (not ft_cog.is_selected):
                 # a) Remove from the list
-                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "ReliefFeature"], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "ReliefFeature"], key=lambda x: x.name)
                 # b) add it at the end of the list
                 sel_tlfs.append(dlg.TopLevelFeaturesRegistry["ReliefFeature"])
 
             elif (not ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature at the end of the rcf list
                 # a) Remove from the list
-                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "CityObjectGroup"], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name != "CityObjectGroup"], key=lambda x: x.name)
                 # b) add it at the end of the list
                 sel_tlfs.append(dlg.TopLevelFeaturesRegistry["CityObjectGroup"])
 
             elif (ft_rel.is_selected) and (ft_cog.is_selected):
                 # Move the ReliefFeature and the CityObjectGroup at the end of the rcf list
                 # a) Remove from the list
-                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name not in ["ReliefFeature", "CityObjectGroup"]], key = lambda x: x.name)
+                sel_tlfs = sorted([tlf for tlf in sel_tlfs if tlf.name not in ["ReliefFeature", "CityObjectGroup"]], key=lambda x: x.name)
                 # b) add at the end of the list
                 sel_tlfs.append(dlg.TopLevelFeaturesRegistry["ReliefFeature"])
                 sel_tlfs.append(dlg.TopLevelFeaturesRegistry["CityObjectGroup"])
@@ -452,24 +452,24 @@ class BulkDeleteWorker(QObject):
             # tlf: TopLevelFeature
             n_iter: int = 0
             for tlf in sel_tlfs:
-                n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
+                n_iter = math.ceil(tlf.n_features / co_id_array_length)  # approximates to the next integer, so always >= 1
                 tlf.n_del_iter = n_iter
                 tot_del_iter += n_iter
 
         elif self.delete_mode == "del_TopLevelFeatures":
-            # 1b) Pick only those top-level features that have been selected (except ReliefFeature and CityObjectGroup, added later) 
+            # 1b) Pick only those top-level features that have been selected (except ReliefFeature and CityObjectGroup, added later)
             # sel_tlfs = []   # : list[TopLevelFeature] Used for all the top-level features, except the CityObjectGroup and ReliefFeature
-            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.is_selected) and (tlf.name not in ["ReliefFeature", "CityObjectGroup"])], key = lambda x: x.name)
+            sel_tlfs = sorted([tlf for tlf in dlg.TopLevelFeaturesRegistry.values() if (tlf.is_selected) and (tlf.name not in ["ReliefFeature", "CityObjectGroup"])], key=lambda x: x.name)
 
             # tlf_rel: TopLevelFeature
             # tlf_cog: TopLevelFeature
             tlf_rel = dlg.TopLevelFeaturesRegistry['ReliefFeature']
             tlf_cog = dlg.TopLevelFeaturesRegistry['CityObjectGroup']
 
-            if tlf_rel.is_selected: # for sure it has n_features > 0, bacause it could be selected
+            if tlf_rel.is_selected:  # for sure it has n_features > 0, bacause it could be selected
                 sel_tlfs.append(tlf_rel)
 
-            if tlf_cog.is_selected: # for sure it has n_features > 0, bacause it could be selected
+            if tlf_cog.is_selected:  # for sure it has n_features > 0, bacause it could be selected
                 sel_tlfs.append(tlf_cog)
 
             # Update the number of delete iterations for each selected top-level feature
@@ -478,7 +478,7 @@ class BulkDeleteWorker(QObject):
             # tlf: TopLevelFeature = None
             n_iter: int = 0
             for tlf in sel_tlfs:
-                n_iter = math.ceil(tlf.n_features / co_id_array_length) # approximates to the next integer, so always >= 1
+                n_iter = math.ceil(tlf.n_features / co_id_array_length)  # approximates to the next integer, so always >= 1
                 tlf.n_del_iter = n_iter
                 tot_del_iter += n_iter
 
@@ -517,13 +517,12 @@ class BulkDeleteWorker(QObject):
                                     LIMIT {_co_id_array_length} FOR UPDATE) AS foo
                                 )
                             SELECT {_cdb_schema}.{_del_func}(s.co_id_array) FROM s LIMIT 1;
-                        """).format(
-                        _cdb_schema = pysql.Identifier(cdb_schema),
-                        _objectclass_id = pysql.Placeholder('oc_id'),
-                        _sql_where = pysql.SQL(" ".join(["", sql_where])),
-                        _co_id_array_length = pysql.Placeholder('co_id_arr_len'),
-                        _del_func = pysql.Identifier(tlf.del_function)
-                        )
+                            """).format(
+                            _cdb_schema=pysql.Identifier(cdb_schema),
+                            _objectclass_id=pysql.Placeholder('oc_id'),
+                            _sql_where=pysql.SQL(" ".join(["", sql_where])),
+                            _co_id_array_length=pysql.Placeholder('co_id_arr_len'),
+                            _del_func=pysql.Identifier(tlf.del_function))
 
                         # Update progress bar
                         msg = f"Deleting '{tlf.name}' objects"
@@ -544,16 +543,15 @@ class BulkDeleteWorker(QObject):
                                 header=f"Deleting objects of top-level '{tlf.name}' in schema {cdb_schema}",
                                 error=error)
                             self.sig_fail.emit()
-                            break # Exit from the loop
+                            break  # Exit from the loop
 
                         # print(f"deleted {rcf.name} step {curr_step}/{steps_tot}")
 
                 # 2) Eventually, clean up the global appearances. Same as before, only one value is returned.
                 query = pysql.SQL("""
                     SELECT {_cdb_schema}.cleanup_appearances() LIMIT 1;
-                """).format(
-                _cdb_schema = pysql.Identifier(cdb_schema),
-                )
+                    """).format(
+                    _cdb_schema=pysql.Identifier(cdb_schema))
 
                 # Update progress bar
                 msg = "Cleaning up global appearances"
@@ -598,7 +596,8 @@ class BulkDeleteWorker(QObject):
         temp_conn.close()
         return None
 
-#--EVENTS  (start)  ##############################################################
+# --EVENTS  (start)  ##############################################################
+
 
 def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
     """Event that is called when the thread executing the delete operation finishes successfully.
@@ -615,10 +614,10 @@ def evt_bulk_delete_success(dlg: CDB4DeleterDialog) -> None:
 
     # Inform user
     QgsMessageLog.logMessage(
-            message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Success,
-            notifyUser=True)
+        message=c.BULK_DEL_SUCC_MSG.format(sch=cdb_schema),
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Success,
+        notifyUser=True)
 
     tc_f.refresh_extents(dlg=dlg)
 
@@ -640,12 +639,11 @@ def evt_buld_delete_fail(dlg: CDB4DeleterDialog) -> None:
 
     # Inform user
     QgsMessageLog.logMessage(
-            message=error,
-            tag=dlg.PLUGIN_NAME,
-            level=Qgis.MessageLevel.Critical,
-            notifyUser=True)
-    
+        message=error,
+        tag=dlg.PLUGIN_NAME,
+        level=Qgis.MessageLevel.Critical,
+        notifyUser=True)
+
     return None
 
-#--EVENTS  (end) ################################################################
-
+# --EVENTS  (end) ################################################################

@@ -8,7 +8,7 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING, cast, Iterable
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -22,10 +22,11 @@ from . import canvas, sql
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
 ####################################################
-## Setup widget functions for 'User Connection' tab
+# # Setup widget functions for 'User Connection' tab
 ####################################################
 
-def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
+
+def gbxBasemap_setup(dlg: CDB4LoaderDialog) -> None:
     """Function to setup the 'Basemap' groupbox.
     It uses an additional canvas instance to store an OSM map from which extents can be extracted
     for further spatial queries.
@@ -35,7 +36,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
     # Get the crs_id stored in the selected {cdb_schema}
     srid = sql.get_cdb_schema_srid(dlg)
     # Format CRS variable as QGIS Epsg code.
-    crs: str = ":".join(["EPSG", str(srid)]) # e.g. EPSG:28992
+    crs: str = ":".join(["EPSG", str(srid)])  # e.g. EPSG:28992
     # Store the crs into the plugin variable
     dlg.CRS = QgsCoordinateReferenceSystem(crs)
     dlg.CRS_is_geographic = dlg.CRS.isGeographic()
@@ -47,23 +48,14 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
         cdb_extents_wkt = sql.get_precomputed_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA)
         if not cdb_extents_wkt:
             # Something went wrong on the server when computin the bbox
-            msg: str = f"Something went wrong while computing the extents on the server."
+            msg: str = "Something went wrong while computing the extents on the server."
             QMessageBox.critical(dlg, "Ups, server... not serving!", msg)
             QgsMessageLog.logMessage(msg, dlg.PLUGIN_NAME, level=Qgis.MessageLevel.Critical, notifyUser=True)
             return None
 
-    # while not cdb_extents_wkt:
-    #     # Get the extents stored in server.
-    #     cdb_extents_wkt = sql.get_precomputed_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA)
-    #     # Extents could be None (not computed yet).
-    #     if not cdb_extents_wkt:
-    #         # There are no precomputed extents for the cdb_schema, so compute them "for real" (bbox of all cityobjects).
-    #         # This function automatically upserts the bbox to the table of the precomputed extents in the usr_schema
-    #         sql.upsert_extents(dlg=dlg, bbox_type=BBoxType.CDB_SCHEMA, extents_wkt_2d_poly=None)
-
     # Check whether the layer extents were already computed and stored in the database before
     layer_extents_wkt = sql.get_precomputed_extents(dlg=dlg, bbox_type=BBoxType.MAT_VIEW)
-   
+
     if not layer_extents_wkt:
         layer_extents_wkt = cdb_extents_wkt
 
@@ -95,7 +87,7 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) ->  None:
 
 
 ####################################################
-## Reset widget functions for 'User Connection' tab
+# # Reset widget functions for 'User Connection' tab
 ####################################################
 
 def tabConnection_reset(dlg: CDB4LoaderDialog) -> None:
@@ -109,7 +101,7 @@ def tabConnection_reset(dlg: CDB4LoaderDialog) -> None:
     gbxConnStatus_reset(dlg)
     gbxBasemap_reset(dlg)
     gbxFeatSel_reset(dlg)
-    
+
     btnCreateLayers_reset(dlg)
     dlg.gbxFeatSel.setDisabled(True)
 
@@ -155,7 +147,7 @@ def gbxBasemap_reset(dlg: CDB4LoaderDialog) -> None:
     # Remove extent rubber bands.
     if dlg.RUBBER_CDB_SCHEMA:
         dlg.RUBBER_CDB_SCHEMA.reset()
-    if dlg.RUBBER_LAYERS:        
+    if dlg.RUBBER_LAYERS:
         dlg.RUBBER_LAYERS.reset()
     if dlg.RUBBER_QGIS_L:
         dlg.RUBBER_QGIS_L.reset()

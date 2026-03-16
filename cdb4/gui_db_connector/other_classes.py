@@ -10,8 +10,8 @@ class DBConnectionInfo:
         self.password: str = None
         self.store_creds: bool = False
         self.is_active: bool = None
-        self.pg_server_version: str = None # PostgreSQL server version
-        self.citydb_version: str = None # 3DCityDB version
+        self.pg_server_version: str = None  # PostgreSQL server version
+        self.citydb_version: str = None  # 3DCityDB version
         self.db_toc_node_label: str = None
         self.id = id(self)
         self.hex_location = hex(self.id)

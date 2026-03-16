@@ -8,9 +8,9 @@
         git sha              : $Format:%H$
         author(s)            : Giorgio Agugiaro
                                Tendai Mbwanda
-        email                : g.agugiaro@tudelft.nl 
+        email                : g.agugiaro@tudelft.nl
                                tmbwanda@yahoo.com
-                                                             
+
  ***************************************************************************/
 
 /***************************************************************************
@@ -31,14 +31,16 @@
  *                                                                         *
  ***************************************************************************/
 """
-import os, requests
+import os
+import requests
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QMessageBox, QDialog
-from qgis.core import Qgis, QgsProject, QgsRectangle, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsPointXY
+from qgis.core import Qgis, QgsProject, QgsRectangle, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsPointXY
 from qgis.gui import QgsMapCanvas
 
 # This loads the .ui file so that PyQt can populate the plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "geocoder_dialog.ui"))
+
 
 class GeoCoderDialog(QDialog, FORM_CLASS):
     """GeoCoder Dialog class of the plugin.
@@ -54,7 +56,7 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## From here you can add your variables or constants
+        # # From here you can add your variables or constants
         ############################################################
         self.srid = dlg_crs.postgisSrid()
         self.extents = dlg_cdb_extents
@@ -62,19 +64,19 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
 
         self.inputField.setPlaceholderText("Type here a place name, e.g. 'Padova, Italy'")
 
-        ### SIGNALS (start) ############################
-        #### Query Tab
+        # ## SIGNALS (start) ############################
+        # ### Query Tab
         self.btnSearchPlace.clicked.connect(self.evt_btnSearchPlace_clicked)
         self.btnCancel1.clicked.connect(self.evt_btnCancel_clicked)
-        #### Zoom Tab
+        # ### Zoom Tab
         self.btnZoomTo.clicked.connect(self.evt_btnZoomTo_clicked)
         self.btnCancel2.clicked.connect(self.evt_btnCancel_clicked)
-        ### SIGNALS (end) ##############################
+        # ## SIGNALS (end) ##############################
 
     ################################################
-    ### EVENTS (start) ############################
+    # ## EVENTS (start) ############################
 
-    ##### Events for 'Query tab'
+    # #### Events for 'Query tab'
 
     def evt_btnSearchPlace_clicked(self) -> None:
         """Event that is called when the button 'btnSearchPlace' is clicked.
@@ -84,21 +86,21 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
 
         if not place_name:
             msg = "Please type a place name to search, or press 'Cancel' to exit."
-            QMessageBox.warning(self, "Geocoding unsuccessful", msg)
+            QMessageBox.warning(self, "Geocoding failed", msg)
             return None
 
         # Set up a CRS Transformer to go from the 3DCityDB CRS to LatLon (EPSG:4326)
-        CRSTransformer = QgsCoordinateTransform(                            
-                            QgsCoordinateReferenceSystem(f'EPSG:{self.srid}'),
-                            QgsCoordinateReferenceSystem('EPSG:4326'),
-                            QgsProject.instance())
+        CRSTransformer = QgsCoordinateTransform(
+            QgsCoordinateReferenceSystem(f'EPSG:{self.srid}'),
+            QgsCoordinateReferenceSystem('EPSG:4326'),
+            QgsProject.instance())
 
         # Create the reprojected version of the cdb_extents
         extents_4326: QgsRectangle
         extents_4326 = CRSTransformer.transformBoundingBox(
-                    rectangle = self.extents, 
-                    direction = Qgis.TransformDirection.Forward, 
-                    handle180Crossover = True)
+            rectangle=self.extents,
+            direction=Qgis.TransformDirection.Forward,
+            handle180Crossover=True)
 
         # Extract the vertices defining the bbox
         lon_min: float = extents_4326.xMinimum()
@@ -110,15 +112,21 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
         # Prefilter only those results that are within the bbox
         viewbox: str = f"&viewbox={lon_min},{lat_min},{lon_max},{lat_max}"
         url: str = f"https://nominatim.openstreetmap.org/search?q={place_name}&limit=50&format=json{viewbox}&bounded=1"
-        # print(url)    
-        
+        # print(url)
+
         # Get the list of places
         nominatim = None
         try:
-            nominatim = requests.get(url).json()
-        except:
-            msg = "Please check your internet connection."
-            QMessageBox.warning(self, "Geocoding unsuccessful", msg)
+            nominatim = requests.get(url=url, timeout=5).json()
+
+        except requests.exceptions.Timeout:
+            msg = "Request to URL timed out."
+            QMessageBox.warning(self, "Geocoding failed.", msg)
+            return None
+
+        except requests.ConnectionError:
+            msg = "Connection error."
+            QMessageBox.warning(self, "Geocoding failed.", msg)
             return None
 
         # If we get a response with at least one place, then
@@ -151,13 +159,12 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
 
         else:
             msg = "No matches found within the citydb extents. Please refine your search."
-            QMessageBox.warning(self, "Geocoding unsuccessful", msg)
+            QMessageBox.warning(self, "Geocoding failed", msg)
             return None
 
         return None
 
-        ##### Events for 'Zoom tab'
-
+    # #### Events for 'Zoom tab'
 
     def evt_btnZoomTo_clicked(self) -> None:
         """Event that is called when the button 'btnZoomTo' is clicked.
@@ -167,7 +174,6 @@ class GeoCoderDialog(QDialog, FORM_CLASS):
         self.close()
 
         return None
-
 
     def evt_btnCancel_clicked(self) -> None:
         """Event that is called when a button 'Cancel' is clicked.

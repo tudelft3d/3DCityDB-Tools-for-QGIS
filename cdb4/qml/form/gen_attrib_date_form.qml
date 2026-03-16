@@ -1,5 +1,4 @@
-<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Fields|Forms" version="3.22.16-Białowieża">
+<qgis styleCategories="Fields|Forms" version="3.40.15-Bratislava">
   <fieldConfiguration>
     <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import cast, Iterable, TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from qgis.core import QgsRectangle, QgsRasterLayer, QgsGeometry, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayer
@@ -10,9 +10,10 @@ from qgis.PyQt.QtGui import QColor
 
 from .. import loader_constants as c
 
+
 def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectangle = c.OSM_INIT_EXTS, crs: QgsCoordinateReferenceSystem = c.OSM_INIT_CRS, clear: bool = True) -> None:
     """Function to set up the additional map canvas that shows the extents.
-    For the basemap it uses a OSM maps WMS layer,         
+    For the basemap it uses a OSM maps WMS layer,
     (in 'User Connection' tab)
     (in 'Layers' tab)
 
@@ -32,15 +33,11 @@ def canvas_setup(dlg: CDB4LoaderDialog, canvas: QgsMapCanvas, extents: QgsRectan
     # registryOSM_id = [i.id() for i in QgsProject.instance().mapLayers().values() if c.OSM_NAME == i.name()]
     registryOSM_id = [i.id() for i in cast(Iterable[QgsMapLayer], QgsProject.instance().mapLayers().values()) if c.OSM_NAME == i.name()]
 
-    if canvas == dlg.CANVAS: # in 'User Connection' tab
+    if canvas == dlg.CANVAS:  # in 'User Connection' tab
         # Put CRS and extents coordinates into the widget. Signals emitted for qgbxExtents.
-        # In order to avoid firing twice the signar, we temporarily block the first one.
-        # dlg.qgbxExtents.blockSignals(True)
-        # dlg.qgbxExtents.setOutputCrs(crs)  # Signal emitted for qgbxExtents.
-        # dlg.qgbxExtents.blockSignals(False)
-        dlg.qgbxExtents.setOutputExtentFromUser(extents, crs) # Signal emitted for qgbxExtents.
+        dlg.qgbxExtents.setOutputExtentFromUser(extents, crs)  # Signal emitted for qgbxExtents.
 
-    elif canvas == dlg.CANVAS_L: # in 'Layers' tab
+    elif canvas == dlg.CANVAS_L:  # in 'Layers' tab
         # Put extents coordinates into the widget. Signal emitted for qgbxExtentsL.
         dlg.qgbxExtentsL.setOutputExtentFromUser(extents, crs)
 

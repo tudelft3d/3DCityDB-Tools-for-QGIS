@@ -8,12 +8,13 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_admin.admin_dialog import CDB4AdminDialog
 
 #############################################
 # Reset widget functions
 #############################################
+
 
 def tabSettings_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Settings' tab
@@ -23,6 +24,7 @@ def tabSettings_reset(dlg: CDB4AdminDialog) -> None:
     dlg.btnResetToDefault.setDisabled(True)
 
     return None
+
 
 def gbxDefaultUsers_reset(dlg: CDB4AdminDialog) -> None:
     """Function to reset the 'Default Users' groupBox

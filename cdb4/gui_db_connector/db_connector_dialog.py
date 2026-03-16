@@ -52,7 +52,6 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "db
 class DBConnectorDialog(QDialog, FORM_CLASS):
     """Connector Dialog. This dialog pops up when a user requests to make a new connection.
     """
-
     def __init__(self, parent=None):
         super(DBConnectorDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -61,7 +60,7 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         self.setupUi(self)
 
         ############################################################
-        ## From here you can add your variables or constants
+        # # From here you can add your variables or constants
         ############################################################
 
         # Connection object variable
@@ -70,26 +69,24 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         self.bar = QgsMessageBar()
         self.verticalLayout.addWidget(self.bar, 0)
 
-        ### SIGNALS (start) ############################
+        # ## SIGNALS (start) ############################
 
         # Connect signals
         self.btnTestConn.clicked.connect(self.evt_btnTestConn_clicked)
         self.btnOK.clicked.connect(self.evt_btnOK_clicked)
         self.btnCancel.clicked.connect(self.evt_btnCancel_clicked)
 
-        ### SIGNALS (end) ##############################
-
+        # ## SIGNALS (end) ##############################
 
     def store_conn_parameters(self) -> bool:
         """Function that stores the database connection parameters in the user's profile settings for future use.
         """
-        
-        msg: str = f"The connection parameters are going to be stored locally on this machine and will not be encrypted.\n\nDo you want to continue anyway?"
+        msg: str = "The connection parameters are going to be stored locally on this machine and will not be encrypted.\n\nDo you want to continue anyway?"
         res = QMessageBox.question(self, "Save connection parameters?", msg)
         if res == QMessageBox.StandardButton.Yes:
 
             new_conn_params = QgsSettings()
-            conn_path= f'PostgreSQL/connections/{self.conn_params.connection_name}'
+            conn_path = f'PostgreSQL/connections/{self.conn_params.connection_name}'
 
             new_conn_params.setValue(f'{conn_path}/database', self.conn_params.database_name)
             new_conn_params.setValue(f'{conn_path}/host', self.conn_params.host)
@@ -101,8 +98,7 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         else:
             return False
 
-        ### EVENTS (start) ############################
-
+        # ## EVENTS (start) ############################
 
     def evt_btnTestConn_clicked(self) -> None:
         """Event that is called when the 'Test connection' pushButton (btnTestConn) is pressed.
@@ -124,16 +120,16 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
 
         if self.checkBox.isChecked():
             NewConnParams.store_creds = True
-        
-        if any((not NewConnParams.connection_name, not NewConnParams.host, 
-                not NewConnParams.port, not NewConnParams.database_name, 
+
+        if any((not NewConnParams.connection_name, not NewConnParams.host,
+                not NewConnParams.port, not NewConnParams.database_name,
                 not NewConnParams.username)):
             self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
         else:
             temp_conn: pyconn = None
-            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            temp_conn = open_db_connection(db_connection=NewConnParams)  # attempt to open connection and keep it open
             if temp_conn:
-                temp_conn.close() # close connection after the test.
+                temp_conn.close()  # close connection after the test.
                 self.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
             else:
                 # Nothing to close, there is no connection.
@@ -141,10 +137,9 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
 
         return None
 
-
     def evt_btnOK_clicked(self) -> None:
         """Event that is called when the 'OK' pushButton (btnOK) is pressed. It checks the connection,
-        and, if successful, 
+        and, if successful,
         """
         # Instantiate a connection object
         NewConnParams = DBConnectionInfo()
@@ -163,17 +158,17 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         if self.checkBox.isChecked():
             NewConnParams.store_creds = True
 
-        if any((not NewConnParams.connection_name, not NewConnParams.host, 
-                not NewConnParams.port, not NewConnParams.database_name, 
+        if any((not NewConnParams.connection_name, not NewConnParams.host,
+                not NewConnParams.port, not NewConnParams.database_name,
                 not NewConnParams.username)):
             self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
         else:
-            NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" +  str(NewConnParams.port)
+            NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" + str(NewConnParams.port)
             # print('set from New conn Dialog', NewConnParams.db_toc_node_label)
             temp_conn: pyconn = None
-            temp_conn = open_db_connection(db_connection=NewConnParams) # attempt to open connection and keep it open
+            temp_conn = open_db_connection(db_connection=NewConnParams)  # attempt to open connection and keep it open
             if temp_conn:
-                temp_conn.close() # close connection after the test.
+                temp_conn.close()  # close connection after the test.
                 self.conn_params = NewConnParams
                 # Store the new connection parameters for future use.
                 if self.checkBox.isChecked():
@@ -186,9 +181,8 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
             else:
                 # Nothing to close, there is no connection.
                 self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
-            
-        return None
 
+        return None
 
     def evt_btnCancel_clicked(self) -> None:
         """Event that is called when the 'Cancel' pushButton (btnCancel) is pressed.
@@ -200,8 +194,8 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
 
         # Close the dialog
         self.close()
-        
+
         return None
 
-        ### EVENTS (end) ############################
+        # ## EVENTS (end) ############################
         ################################################

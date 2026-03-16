@@ -8,17 +8,17 @@ clearing widget items or selections and deactivating widgets.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:       
+if TYPE_CHECKING:
     from ...gui_loader.loader_dialog import CDB4LoaderDialog
 
 from ...shared.functions import general_functions as gen_f
 
 FILE_LOCATION = gen_f.get_file_relative_path(file=__file__)
 
+####################################################
+# # Reset widget functions for 'Settings' tab
+####################################################
 
-####################################################
-## Reset widget functions for 'Settings' tab
-####################################################
 
 def tabSettings_reset(dlg: CDB4LoaderDialog) -> None:
     """Function to reset the 'Settings' tab

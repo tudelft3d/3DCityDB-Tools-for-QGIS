@@ -1,5 +1,4 @@
-<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Symbology" version="3.22.7-Białowieża">
+<qgis styleCategories="Symbology" version="3.40.15-Bratislava">
   <renderer-v2 symbollevels="0" forceraster="0" type="singleSymbol" referencescale="-1" enableorderby="0">
     <symbols>
       <symbol force_rhr="0" clip_to_extent="1" type="fill" name="0" alpha="1">

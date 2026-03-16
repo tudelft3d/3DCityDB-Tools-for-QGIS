@@ -6,7 +6,6 @@ class DialogChecks:
         self.is_usr_pkg_installed: bool = False
         self.is_superuser: bool = False
 
-
     def __str__(self):
         return_str: str = \
             f"Is the connection to the database established? {self.is_conn_successful}\n" + \
@@ -16,7 +15,7 @@ class DialogChecks:
             f"Is the user a database superuser? {self.is_superuser}\n"
         return return_str
 
-   
+
 class DefaultSettings:
     """ Contains all DEFAULT settings of the CDBDeleterDialog, and their explanation.
     """
@@ -37,26 +36,25 @@ class DefaultSettings:
 
 class TopLevelFeature():
     def __init__(self,
-                name: str,
-                feature_type: str,
-                objectclass_id: int,
-                del_function: str = None,
-                exists: bool = False, # i.e. exists in the selected cdb_schema?
-                is_ade: bool = False,
-                is_selected: bool = False,
-                n_features: int = 0,
-                n_del_iter: int = 0
-                ):
+                 name: str,
+                 feature_type: str,
+                 objectclass_id: int,
+                 del_function: str = None,
+                 exists: bool = False,  # i.e. exists in the selected cdb_schema?
+                 is_ade: bool = False,
+                 is_selected: bool = False,
+                 n_features: int = 0,
+                 n_del_iter: int = 0):
         self.name = name
         self.feature_type = feature_type
         self.objectclass_id = objectclass_id
         self.del_function = del_function
-        self.exists = exists 
+        self.exists = exists
         self.is_ade = is_ade
         self.is_selected = is_selected
         self.n_features = n_features
         self.n_del_iter = n_del_iter
-    
+
     def __str__(self):
         return_str: str = \
             f"name: {self.name}\n" + \
@@ -73,17 +71,16 @@ class TopLevelFeature():
 
 class FeatureType():
     def __init__(self,
-                name: str,
-                alias: str,
-                layers_drop_function: str = None,
-                exists: bool = None, # i.e. exists in the selected cdb_schema?
-                is_ade: bool = False,
-                is_selected: bool = False,
-                n_features: int = 0,
-                top_level_features: list = []
-                ):
-        
-        self.name = name 
+                 name: str,
+                 alias: str,
+                 layers_drop_function: str = None,
+                 exists: bool = None,  # i.e. exists in the selected cdb_schema?
+                 is_ade: bool = False,
+                 is_selected: bool = False,
+                 n_features: int = 0,
+                 top_level_features: list = []):
+
+        self.name = name
         self.alias = alias
 
         if layers_drop_function:
@@ -91,12 +88,12 @@ class FeatureType():
         else:
             self.layers_drop_function = "_".join(["drop_layers", alias])
 
-        self.exists = exists 
+        self.exists = exists
         self.is_ade = is_ade
         self.is_selected = is_selected
         self.n_features = n_features
-        self.top_level_features = top_level_features # Will contain the Top-Level Features objects to be deleted
-    
+        self.top_level_features = top_level_features  # Will contain the Top-Level Features objects to be deleted
+
     def __str__(self):
         return_str: str = \
             f"name: {self.name}\n" + \
@@ -108,4 +105,3 @@ class FeatureType():
             f"features number: {self.n_features}\n" + \
             f"top-level features number: {len(self.top_level_features)}\n"
         return return_str
-

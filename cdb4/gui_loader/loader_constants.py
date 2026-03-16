@@ -36,12 +36,10 @@ OSM_URI: str = f"type=xyz&url={OSM_URL}&zmax=22&zmin=0"
 OSM_INIT_EXTS: QgsRectangle = QgsRectangle(-14372453, -6084688, 16890255, 13952819)
 OSM_INIT_CRS: QgsCoordinateReferenceSystem = QgsCoordinateReferenceSystem("EPSG:3857")
 
-# ToC labels and constancts 
+# ToC labels and constancts
 detail_views_group_alias: str = "Form detail views"
 lookup_tables_group_alias: str = "Look-up tables"
-
 generics_table: str = "cityobject_genericattrib"
-
 enumerations_table: str = "v_enumeration_value"
 codelists_table: str = "v_codelist_value"
 
@@ -59,9 +57,9 @@ SCHEMA_LAYER_FAIL_MSG: str = "Layers need to be created for schema '{sch}'"
 REFR_LAYERS_MSG: str = "Latest refresh: {date}"
 REFR_LAYERS_ONGOING_MSG: str = "Layers are being refreshed. Please wait!"
 REFR_LAYERS_FAIL_MSG: str = "Layers must be refreshed"
-LAYER_CR_SUCC_MSG: str  = "Layers created in schema '{sch}'"
+LAYER_CR_SUCC_MSG: str = "Layers created in schema '{sch}'"
 LAYER_CR_ERROR_MSG: str = "Error while creating layers in schema '{sch}'"
-LAYER_DR_SUCC_MSG: str  = "Layers removed from schema '{sch}'"
+LAYER_DR_SUCC_MSG: str = "Layers removed from schema '{sch}'"
 LAYER_DR_ERROR_MSG: str = "Error while removing layers from schema '{sch}'"
 
 # Widget initial embedded text | Note: empty spaces are for positioning.
@@ -77,32 +75,32 @@ ccbxFeatures_t: str = "Select available features to import"
 
 # Text - Messages - Log
 icon_msg_core: str = """
-                <html><head/><body><p> 
-                <img src="{image_rc}" style='vertical-align: bottom'/> 
+                <html><head/><body><p>
+                <img src="{image_rc}" style='vertical-align: bottom'/>
                 <span style=" color:{color_hex};">{additional_text}</span>
                 </p></body></html>
                 """
 success_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
-    color_hex = '#00E400',   # green
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
+    color_hex='#00E400',   # green
+    additional_text='{text}')
 
 failure_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
-    color_hex = '#FF0000',  # red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
+    color_hex='#FF0000',  # red
+    additional_text='{text}')
 
 ongoing_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
-    color_hex  ='#FF7E33',  # orange2
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
+    color_hex='#FF7E33',  # orange2
+    additional_text='{text}')
 
 warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
-    color_hex  ='#FFA701',  # orange1
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
+    color_hex='#FFA701',  # orange1
+    additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
-    image_rc = os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
-    color_hex  ='#DA4453', # pale red
-    additional_text = '{text}')
+    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
+    color_hex='#DA4453',  # pale red
+    additional_text='{text}')
