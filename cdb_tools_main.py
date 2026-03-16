@@ -735,14 +735,14 @@ class CDBToolsMain:
 
             v_length = len(main_c.QGIS_VERSION_MINOR)
             if v_length == 1:
-                v_supp_txt = f"3.{main_c.QGIS_VERSION_MINOR[0]}"
+                v_supp_txt = f"4.{main_c.QGIS_VERSION_MINOR[0]}"
                 msg_rich = msg_rich + f"Currently, only this version is supported: <b>{v_supp_txt}</b>!"
             else:
                 if v_length == 2:
-                    v_supp_txt = f"3.{main_c.QGIS_VERSION_MINOR[0]} and 3.{main_c.QGIS_VERSION_MINOR[1]}"
-                elif v_length >= 3:
-                    v_supp_txt = ", ".join(tuple(["3." + str(val) for i, val in enumerate(main_c.QGIS_VERSION_MINOR) if i < (v_length - 1)]))
-                    v_supp_txt = f"{v_supp_txt} and 3.{main_c.QGIS_VERSION_MINOR[-1]}"
+                    v_supp_txt = f"4.{main_c.QGIS_VERSION_MINOR[0]} and 4.{main_c.QGIS_VERSION_MINOR[1]}"
+                elif v_length >= 4:
+                    v_supp_txt = ", ".join(tuple(["4." + str(val) for i, val in enumerate(main_c.QGIS_VERSION_MINOR) if i < (v_length - 1)]))
+                    v_supp_txt = f"{v_supp_txt} and 4.{main_c.QGIS_VERSION_MINOR[-1]}"
                 msg_rich = msg_rich + f"Currently, these versions are supported: <b>{v_supp_txt}</b>!"
 
             QMessageBox.warning(None, "Unsupported QGIS version", msg_rich, QMessageBox.StandardButton.Ok)
