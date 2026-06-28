@@ -1284,7 +1284,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Info,
-                title="Settings"
+                title=self.btnSaveSettings.text()
             )
             return None  # Exit
 
@@ -1308,7 +1308,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Warning,
-                title="Settings"
+                title=self.btnSaveSettings.text()
             )
 
             return None  # Exit
@@ -1321,7 +1321,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             index=-1,
             message=msg,
             message_type=Qgis.MessageLevel.Success,
-            title="Settings"
+            title=self.btnSaveSettings.text()
         )
 
         return None
@@ -1340,7 +1340,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Warning,
-                title="Settings"
+                title=self.btnLoadSettings.text()
             )
 
             return None  # Exit without updating the settings
@@ -1371,7 +1371,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             index=-1,
             message=msg,
             message_type=Qgis.MessageLevel.Success,
-            title="Settings"
+            title=self.btnLoadSettings.text()
         )
         return None
 
