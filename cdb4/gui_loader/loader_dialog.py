@@ -1277,8 +1277,15 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 enable3D == self.settings.enable_3d_renderer_default
                 )):
             # No need to store the settings, they are unchanged. Inform the user
-            msg: str = "No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+            msg: str = f"No need to store the settings, they coincide with the default values in the DB - {self.USR_SCHEMA}.settings."
+            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True) #notifyUser doens't works as assumed. Implementation is cryptic: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Info,
+                title="Settings"
+            )
             return None  # Exit
 
         settings_list = [
@@ -1295,13 +1302,28 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         if not res:
             # Inform the user
-            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved!"
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved in DB - {self.USR_SCHEMA}.settings!"
             QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Warning,
+                title="Settings"
+            )
+
             return None  # Exit
 
         # Inform the user
-        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved!"
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved in DB - {self.USR_SCHEMA}.settings!"
         QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+        gen_f.push_message_bar_message(
+            layout=self.verticalLayout_container,
+            index=-1,
+            message=msg,
+            message_type=Qgis.MessageLevel.Success,
+            title="Settings"
+        )
 
         return None
 
@@ -1313,8 +1335,16 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         if not settings_list:
             # Inform the user
-            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded!"
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded from DB - {self.USR_SCHEMA}.settings!"
             QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Warning,
+                title="Settings"
+            )
+
             return None  # Exit without updating the settings
 
         s: dict
@@ -1336,9 +1366,15 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 pass
 
         # Inform the user
-        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded!"
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded from DB - {self.USR_SCHEMA}.settings!"
         QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
-
+        gen_f.push_message_bar_message(
+            layout=self.verticalLayout_container,
+            index=-1,
+            message=msg,
+            message_type=Qgis.MessageLevel.Success,
+            title="Settings"
+        )
         return None
 
     # ## EVENTS (end) ############################
