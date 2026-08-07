@@ -295,7 +295,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) -> None:
 
             # Create new rubber band
             cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
+            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStyle.DashLine)
 
             # Drop the old magenta one
             dlg.RUBBER_DELETE.reset()
