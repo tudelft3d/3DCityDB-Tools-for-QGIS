@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 import os
 from psycopg2.extensions import connection as pyconn
 
-from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsWkbTypes, QgsCoordinateReferenceSystem
+from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsRectangle, QgsGeometry, QgsCoordinateReferenceSystem
 from qgis.gui import QgsRubberBand, QgsMapCanvas, QgsMessageBar
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QThread
@@ -161,8 +161,8 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         self.CANVAS.setMaximumHeight(350)
 
         # Variable to store a rubberband formed by the current extents.
-        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA = QgsRubberBand(self.CANVAS, Qgis.GeometryType.Polygon)
+        self.RUBBER_LAYERS = QgsRubberBand(self.CANVAS, Qgis.GeometryType.Polygon)
 
         # Variable to store an additional canvas (to show the extents in the LAYERS TAB).
         self.CANVAS_L = QgsMapCanvas()
@@ -170,12 +170,9 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         self.CANVAS_L.setMinimumWidth(300)
         self.CANVAS_L.setMaximumHeight(350)
 
-        # Variable to store a rubberband formed by the current extents.
-        # QgsWkbTypes.PolygonGeometry works from 3.22 till (at least) 3.34
-        # Qgis.GeometryType.Polygon won't work in 3.22 and 3.28. Introduced in 3.32.
-        self.RUBBER_CDB_SCHEMA_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_LAYERS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
-        self.RUBBER_QGIS_L = QgsRubberBand(self.CANVAS_L, QgsWkbTypes.PolygonGeometry)
+        self.RUBBER_CDB_SCHEMA_L = QgsRubberBand(self.CANVAS_L, Qgis.GeometryType.Polygon)
+        self.RUBBER_LAYERS_L = QgsRubberBand(self.CANVAS_L, Qgis.GeometryType.Polygon)
+        self.RUBBER_QGIS_L = QgsRubberBand(self.CANVAS_L, Qgis.GeometryType.Polygon)
 
         # Enhance various Qt Objects with their initial text.
         # This is used in order to revert to the original state in reset operations when original text has already changed.
@@ -736,8 +733,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 cdb_extents_union.combineExtentWith(rect=cdb_extents_new)
 
                 # Create new rubber band, with dahed line style
-                cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=QgsWkbTypes.PolygonGeometry)
-                # cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
+                cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
                 cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
 
                 # Set up the canvas to the new extents of the cdb_schema.
@@ -1281,8 +1277,15 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 enable3D == self.settings.enable_3d_renderer_default
                 )):
             # No need to store the settings, they are unchanged. Inform the user
-            msg: str = "No need to store the settings, they coincide with the default values."
-            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+            msg: str = f"No need to store the settings, they coincide with the default values in the DB - {self.USR_SCHEMA}.settings."
+            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True) #notifyUser doens't works as assumed. Implementation is cryptic: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Info,
+                title="Settings"
+            )
             return None  # Exit
 
         settings_list = [
@@ -1299,13 +1302,28 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         if not res:
             # Inform the user
-            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved!"
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be saved in DB - {self.USR_SCHEMA}.settings!"
             QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Warning,
+                title="Settings"
+            )
+
             return None  # Exit
 
         # Inform the user
-        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved!"
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been saved in DB - {self.USR_SCHEMA}.settings!"
         QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
+        gen_f.push_message_bar_message(
+            layout=self.verticalLayout_container,
+            index=-1,
+            message=msg,
+            message_type=Qgis.MessageLevel.Success,
+            title="Settings"
+        )
 
         return None
 
@@ -1317,8 +1335,16 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
         if not settings_list:
             # Inform the user
-            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded!"
+            msg: str = f"Settings for '{self.DLG_NAME_LABEL}' could not be loaded from DB - {self.USR_SCHEMA}.settings!"
             QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Warning, notifyUser=True)
+            gen_f.push_message_bar_message(
+                layout=self.verticalLayout_container,
+                index=-1,
+                message=msg,
+                message_type=Qgis.MessageLevel.Warning,
+                title="Settings"
+            )
+
             return None  # Exit without updating the settings
 
         s: dict
@@ -1340,9 +1366,15 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 pass
 
         # Inform the user
-        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded!"
+        msg: str = f"Settings for '{self.DLG_NAME_LABEL}' have been loaded from DB - {self.USR_SCHEMA}.settings!"
         QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
-
+        gen_f.push_message_bar_message(
+            layout=self.verticalLayout_container,
+            index=-1,
+            message=msg,
+            message_type=Qgis.MessageLevel.Success,
+            title="Settings"
+        )
         return None
 
     # ## EVENTS (end) ############################
