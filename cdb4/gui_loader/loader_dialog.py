@@ -1278,7 +1278,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values in the DB - {self.USR_SCHEMA}.settings."
-            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True) #notifyUser doens't works as assumed. Implementation is cryptic: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
+            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True) #notifyUser doesn't work as assumed. Implementation is vague: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
             gen_f.push_message_bar_message(
                 layout=self.verticalLayout_container,
                 index=-1,
