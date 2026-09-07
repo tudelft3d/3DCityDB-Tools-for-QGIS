@@ -2,13 +2,13 @@
 """
 import os.path
 
-# QGIS_VERSION_MINOR: tuple = (0,) # With one-item tuples, do not forget to add a column after it!! :-)
-QGIS_VERSION_MINOR: tuple = (0, )
+# QGIS_VERSION_MINOR: tuple = (2,) # With one-item tuples, do not forget to add a column after it!! :-)
+QGIS_VERSION_MINOR: tuple = (2, )
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 9
-PLUGIN_VERSION_REV: int = 0
+PLUGIN_VERSION_REV: int = 1
 
 # Paths
 PLUGIN_ABS_PATH: str = os.path.normpath(os.path.dirname(__file__))
