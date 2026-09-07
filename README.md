@@ -45,7 +45,8 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**. 
+For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports version **3.44 LTR**. 
+For **QGIS 4**, the plug-in supports version **4.2 LTR**.
 
 The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
