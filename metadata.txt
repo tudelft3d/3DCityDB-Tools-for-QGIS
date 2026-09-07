@@ -2,11 +2,11 @@
 # Mandatory items:
 
 [general]
-name=3DCityDB Tools for QGIS 4
-qgisMinimumVersion=4.00
+name=3DCityDB Tools for QGIS 4.x
+qgisMinimumVersion=4.2
 qgisMaximumVersion=4.99
 description=Tools to visualize and manipulate CityGML 2.0 data stored in the 3D City Database 4.x
-version=0.9.0
+version=0.9.1
 author=Giorgio Agugiaro, Konstantinos Pantelios
 email=g.agugiaro@tudelft.nl, konstantinospantelios@yahoo.com, 
 
@@ -30,7 +30,8 @@ repository=https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS
 hasProcessingProvider=no
 
 # Uncomment the following line and add your changelog:
-changelog= 0.9.0 Minor changes for QGIS 4. Same functionalities as for QGIS 3
+changelog= 0.9.1 Minor bugfixes
+ 0.9.0 Minor changes for QGIS 4. Same functionalities as for QGIS 3
 
 # Tags are comma separated with spaces allowed
 tags=PostgreSQL, PostGIS, 3DCityDB, CityGML, CityJSON
