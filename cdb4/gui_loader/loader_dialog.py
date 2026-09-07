@@ -734,7 +734,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
 
                 # Create new rubber band, with dahed line style
                 cdb_extents_new_rubber_band = QgsRubberBand(mapCanvas=self.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-                cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
+                cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStyle.DashLine)
 
                 # Set up the canvas to the new extents of the cdb_schema.
                 # Fires evt_qgbxExtents_ext_changed and evt_canvas_ext_changed
