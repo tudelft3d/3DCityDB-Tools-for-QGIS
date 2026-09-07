@@ -5,7 +5,7 @@ from typing import Callable
 
 from qgis.PyQt.QtCore import Qt
 from qgis.core import QgsMessageLog, Qgis
-from qgis.gui import QgsCheckableComboBox
+from qgis.gui import QgsCheckableComboBox, QgsMessageBar
 
 from .... import cdb_tools_main_constants as main_c
 
@@ -60,3 +60,41 @@ def critical_log(func: Callable, location: str, header: str, error: str) -> None
 
     # Show the error in the log panel. Should open it even if it is closed.
     QgsMessageLog.logMessage(message=header + str(error), tag=main_c.PLUGIN_NAME_LABEL, level=Qgis.MessageLevel.Critical, notifyUser=True)
+
+def push_message_bar_message(
+    layout,
+    index: int,
+    message: str,
+    message_type: Qgis.MessageLevel,
+    title: str
+) -> None:
+    """Function used to push a message to a QgsMessageBar in the specified layout position and message level.
+
+    *   :param layout: The layout where the message bar will be inserted
+        :type layout: QVBoxLayout, QHBoxLayout etc.
+
+    *   :param index: The position index in the layout where the message bar will be inserted
+        :type index: int
+
+    *   :param message: The message text to display
+        :type message: str
+
+    *   :param message_type: The message level (Info, Warning, Critical, Success)
+        :type message_type: Qgis.MessageLevel
+
+    *   :param title: The title for the message
+        :type title: str
+    """
+    bar = QgsMessageBar()
+    layout.insertWidget(index, bar)
+
+    if message_type == Qgis.MessageLevel.Info:
+        bar.pushInfo(title, message)
+    elif message_type == Qgis.MessageLevel.Warning:
+        bar.pushWarning(title, message)
+    elif message_type == Qgis.MessageLevel.Critical:
+        bar.pushCritical(title, message)
+    elif message_type == Qgis.MessageLevel.Success:
+        bar.pushSuccess(title, message)
+    else:
+        bar.pushMessage(title, message)

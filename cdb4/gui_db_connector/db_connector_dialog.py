@@ -35,7 +35,6 @@ import os
 from psycopg2.extensions import connection as pyconn
 
 from qgis.core import Qgis, QgsSettings
-from qgis.gui import QgsMessageBar
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
@@ -65,9 +64,6 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
 
         # Connection object variable
         self.conn_params: DBConnectionInfo = None
-
-        self.bar = QgsMessageBar()
-        self.verticalLayout.addWidget(self.bar, 0)
 
         # ## SIGNALS (start) ############################
 
@@ -124,17 +120,19 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host,
                 not NewConnParams.port, not NewConnParams.database_name,
                 not NewConnParams.username)):
-            self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
+            msg_missing: str = "Missing connection parameters"
+            gen_f.push_message_bar_message(self.verticalLayout, 0, msg_missing, Qgis.MessageLevel.Warning, self.btnTestConn.text())
         else:
             temp_conn: pyconn = None
             temp_conn = open_db_connection(db_connection=NewConnParams)  # attempt to open connection and keep it open
             if temp_conn:
                 temp_conn.close()  # close connection after the test.
-                self.bar.pushMessage("Success", "Connection parameters are valid!", level=Qgis.MessageLevel.Success, duration=3)
+                msg_valid: str = "Connection parameters are valid!"
+                gen_f.push_message_bar_message(self.verticalLayout, 0, msg_valid, Qgis.MessageLevel.Success, self.btnTestConn.text())
             else:
                 # Nothing to close, there is no connection.
-                self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
-
+                msg_error: str = "Connection could not be established"
+                gen_f.push_message_bar_message(self.verticalLayout, 0, msg_error, Qgis.MessageLevel.Critical, self.btnTestConn.text())
         return None
 
     def evt_btnOK_clicked(self) -> None:
@@ -161,7 +159,8 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
         if any((not NewConnParams.connection_name, not NewConnParams.host,
                 not NewConnParams.port, not NewConnParams.database_name,
                 not NewConnParams.username)):
-            self.bar.pushMessage("Error", "Missing connection parameters", level=Qgis.MessageLevel.Warning, duration=3)
+                msg_missing: str = "Missing connection parameters"
+                gen_f.push_message_bar_message(self.verticalLayout, 0, msg_missing, Qgis.MessageLevel.Warning, self.btnOK.text())
         else:
             NewConnParams.db_toc_node_label = NewConnParams.database_name + " @ " + NewConnParams.host + ":" + str(NewConnParams.port)
             # print('set from New conn Dialog', NewConnParams.db_toc_node_label)
@@ -180,7 +179,8 @@ class DBConnectorDialog(QDialog, FORM_CLASS):
                     self.close()
             else:
                 # Nothing to close, there is no connection.
-                self.bar.pushMessage("Error", "Connection could not be established", level=Qgis.MessageLevel.Critical, duration=3)
+                msg_error: str = "Connection could not be established"
+                gen_f.push_message_bar_message(self.verticalLayout, 0, msg_error, Qgis.MessageLevel.Critical, self.btnOK.text())
 
         return None
 
