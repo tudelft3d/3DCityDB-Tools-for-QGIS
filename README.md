@@ -87,7 +87,7 @@ Run the unit tests locally with:
 python -m unittest discover -s .\test -p "test*.py"
 ```
 
-> **Note:** Your Python environment must be configured for PyQGIS. The current unit tests use mocks; additional integration test suites requiring the QGIS runtime are planned.
+> **Note:** Your Python environment must be configured for PyQGIS. Additional integration test suites requiring the QGIS runtime are planned.
 
 # Future
 
