@@ -66,7 +66,7 @@ class TestSharedGeneralFunctions(unittest.TestCase):
             pass
 
         message_spy = QSignalSpy(
-            QgsApplication.messageLog().messageReceivedWithFormat
+            QgsApplication.messageLog().messageReceived
         )
         notification_spy = QSignalSpy(
             QgsApplication.messageLog().messageReceived[bool]
@@ -80,7 +80,7 @@ class TestSharedGeneralFunctions(unittest.TestCase):
         )
 
         self.assertEqual(len(message_spy), 1)
-        message, tag, level, _ = message_spy[0]
+        message, tag, level = message_spy[0]
         self.assertEqual(
             message,
             (
