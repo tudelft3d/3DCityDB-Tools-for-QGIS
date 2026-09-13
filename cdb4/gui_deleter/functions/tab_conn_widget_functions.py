@@ -71,7 +71,9 @@ def gbxBasemap_setup(dlg: CDB4DeleterDialog) -> None:
     # Test if the delete extents are the same or smaller, to set the current extents
     cdb_extents_poly = QgsGeometry.fromWkt(cdb_extents_wkt)
     delete_extents_poly = QgsGeometry.fromWkt(delete_extents_wkt)
-    if cdb_extents_poly.equals(delete_extents_poly):
+
+    engine = QgsGeometry.createGeometryEngine(cdb_extents_poly.constGet())
+    if engine.isEqual(delete_extents_poly.constGet()):
         dlg.CURRENT_EXTENTS = dlg.CDB_SCHEMA_EXTENTS
     else:
         dlg.CURRENT_EXTENTS = dlg.DELETE_EXTENTS
@@ -100,12 +102,11 @@ def tabConnection_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Connection' tab.
     Resets: gbxConnStatus and gbxDatabase.
     """
+    gbxCleanUpSchema_reset(dlg=dlg)
+    gbxFeatSel_reset(dlg=dlg)
+    gbxBasemap_reset(dlg=dlg)
     gbxDatabase_reset(dlg=dlg)
     gbxConnStatus_reset(dlg=dlg)
-
-    gbxCleanUpSchema_reset(dlg=dlg)
-    gbxBasemap_reset(dlg=dlg)
-    gbxFeatSel_reset(dlg=dlg)
 
     dlg.btnCloseConn.setDisabled(True)
 
