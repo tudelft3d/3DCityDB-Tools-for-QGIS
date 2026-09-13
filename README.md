@@ -67,7 +67,28 @@ The plug-in is currently developed by:
 with contributions by:
 - [Tendai Mbwanda](mailto:tmbwanda@yahoo.com)
 
-and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
+and with additional suggestions and feedback by Camilo León-Sánchez (Wageningen University and Research), Claus Nagel (VirtualCitySystems GmbH) and Zhihang Yao (Huchschule für Technik Stuttgart).
+
+# Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork this repository.
+2. Clone your fork to your local development environment.
+3. Create a branch for your changes.
+4. Implement and test your changes.
+5. Push the branch to your fork.
+6. Open a pull request targeting the `gio-dev-qgis3` and/or `gio-dev-qgis4` branch of this repository.
+
+## Running tests
+
+Run the unit tests locally with:
+
+```powershell
+python -m unittest discover -s .\test -p "test*.py"
+```
+
+> **Note:** Your Python environment must be configured for PyQGIS. Additional integration test suites requiring the QGIS runtime are planned.
 
 # Contributing
 

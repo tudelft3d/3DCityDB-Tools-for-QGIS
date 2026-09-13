@@ -1278,13 +1278,15 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 )):
             # No need to store the settings, they are unchanged. Inform the user
             msg: str = f"No need to store the settings, they coincide with the default values in the DB - {self.USR_SCHEMA}.settings."
-            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True) #notifyUser doens't works as assumed. Implementation is cryptic: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
+            # notifyUser doens't works as assumed.
+            # Implementation is vague: https://qgis.org/pyqgis/3.44/core/QgsMessageLog.html#module-QgsMessageLog
+            QgsMessageLog.logMessage(message=msg, tag=self.PLUGIN_NAME, level=Qgis.MessageLevel.Info, notifyUser=True)
             gen_f.push_message_bar_message(
                 layout=self.verticalLayout_container,
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Info,
-                title="Settings"
+                title=self.btnSaveSettings.text()
             )
             return None  # Exit
 
@@ -1296,7 +1298,6 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             {'name': 'frcLayerGen', 'data_type': 4, 'data_value': int(frcLayerGen), 'label': self.settings.force_all_layers_creation_label},
             {'name': 'enable3D'   , 'data_type': 4, 'data_value': int(enable3D)   , 'label': self.settings.enable_3d_renderer_label},
         ]
-        # print(settings_list)
 
         res = sh_sql.upsert_plugin_settings(dlg=self, usr_schema=self.USR_SCHEMA, dialog_name=self.DLG_NAME_LABEL, settings_list=settings_list)
 
@@ -1309,7 +1310,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Warning,
-                title="Settings"
+                title=self.btnSaveSettings.text()
             )
 
             return None  # Exit
@@ -1322,7 +1323,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             index=-1,
             message=msg,
             message_type=Qgis.MessageLevel.Success,
-            title="Settings"
+            title=self.btnSaveSettings.text()
         )
 
         return None
@@ -1331,7 +1332,6 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         """Event that is called when the button 'Save settings' is clicked
         """
         settings_list = sh_sql.get_plugin_settings(dlg=self, usr_schema=self.USR_SCHEMA, dialog_name=self.DLG_NAME_LABEL)
-        # print(settings_list)
 
         if not settings_list:
             # Inform the user
@@ -1342,7 +1342,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
                 index=-1,
                 message=msg,
                 message_type=Qgis.MessageLevel.Warning,
-                title="Settings"
+                title=self.btnLoadSettings.text()
             )
 
             return None  # Exit without updating the settings
@@ -1373,7 +1373,7 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             index=-1,
             message=msg,
             message_type=Qgis.MessageLevel.Success,
-            title="Settings"
+            title=self.btnLoadSettings.text()
         )
         return None
 
