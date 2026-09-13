@@ -3,12 +3,12 @@
 import os.path
 
 # QGIS_VERSION_MINOR: tuple = (44,) # With one-item tuples, do not forget to add a column after it!! :-)
-QGIS_VERSION_MINOR: tuple = (40, 44)
+QGIS_VERSION_MINOR: tuple = (44,)
 
 # Plugin current version
 PLUGIN_VERSION_MAJOR: int = 0
 PLUGIN_VERSION_MINOR: int = 8
-PLUGIN_VERSION_REV: int = 14
+PLUGIN_VERSION_REV: int = 15
 
 # Paths
 PLUGIN_ABS_PATH: str = os.path.normpath(os.path.dirname(__file__))
