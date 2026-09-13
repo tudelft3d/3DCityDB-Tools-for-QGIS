@@ -45,10 +45,10 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**. 
-The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
+For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports version **3.44 LTR**. 
+For **QGIS 4**, the plug-in currently supports version **4.2 LTR**. 
 
-A porting for **QGIS 4** is also available, however be aware that it is still an early-development version - just like QGIS 4.x!
+The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
 Otherwise, only a working instance of the 3D City Database is required. The currently supported version of the [3DCityDB](https://github.com/3dcitydb) is the 4.x. To set up the 3D City Database and import (or export) CityGML/CityJSON data from/to it, we heartily recommend to use the free and open-source, Java-based [Importer-Exporter](https://github.com/3dcitydb/importer-exporter). Alternatively, the [3D City Database Suite](https://github.com/3dcitydb/3dcitydb-suite/releases) already ships with all necessary software tools. Further information can be found [here](https://3dcitydb-docs.readthedocs.io/en/latest/).
 
@@ -69,13 +69,33 @@ with contributions by:
 
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
+# Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork this repository.
+2. Clone your fork to your local development environment.
+3. Create a branch for your changes.
+4. Implement and test your changes.
+5. Push the branch to your fork.
+6. Open a pull request targeting the `gio-dev-qgis3` and/or `gio-dev-qgis4` branch of this repository.
+
+## Running tests
+
+Run the unit tests locally with:
+
+```powershell
+python -m unittest discover -s .\test -p "test*.py"
+```
+
+> **Note:** Your Python environment must be configured for PyQGIS. Additional integration test suites requiring the QGIS runtime are planned.
+
 # Future
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
-- Initial tests to support the 3DCityDB 5.0 (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b) 
-- ...the sky is the limit...
+- Explorative tests to support the Energy ADE 1.0 have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
+- Initial tests to support the 3DCityDB 5.x (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b). The results have shown that adding support for the 3DCityDB 5.x will required a major overhaul of the plug-in. Nevertheless, stay tuned... 
 
 # Citation
 
