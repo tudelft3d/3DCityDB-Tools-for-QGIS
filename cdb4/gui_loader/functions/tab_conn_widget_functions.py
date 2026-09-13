@@ -65,7 +65,11 @@ def gbxBasemap_setup(dlg: CDB4LoaderDialog) -> None:
     # Test if the layers bbox is the same or smaller, to set the current extents
     cdb_extents_poly = QgsGeometry.fromWkt(cdb_extents_wkt)
     layer_extents_poly = QgsGeometry.fromWkt(layer_extents_wkt)
-    if cdb_extents_poly.equals(layer_extents_poly):
+
+
+    engine = QgsGeometry.createGeometryEngine(cdb_extents_poly.constGet())
+    if engine.isEqual(layer_extents_poly.constGet()):
+    # if cdb_extents_poly.equals(layer_extents_poly):
         dlg.CURRENT_EXTENTS = dlg.CDB_SCHEMA_EXTENTS
     else:
         dlg.CURRENT_EXTENTS = dlg.LAYER_EXTENTS
