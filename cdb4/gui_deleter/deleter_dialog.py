@@ -705,7 +705,8 @@ class CDB4DeleterDialog(QDialog, FORM_CLASS):
             new_poly = QgsGeometry.fromRect(new_extent)
             old_poly = QgsGeometry.fromRect(old_extent)
 
-            if new_poly.equals(old_poly):
+            engine = QgsGeometry.createGeometryEngine(new_poly.constGet())
+            if engine.isEqual(old_poly.constGet()):
                 # do nothing
                 # print("same extents, same CRS, do nothing")
                 pass
