@@ -310,7 +310,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) -> None:
             canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=vis_extents)
 
             # Inform the user
-            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' have changed, the blue dashed line represents the new ones. They will be automatically updated."
+            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' have changed, the black dashed line represents the new ones. They will be automatically updated."
             QMessageBox.information(dlg, "Extents changed!", msg)
 
             # Update the the cdb_extents in the extents table in PostgreSQL
