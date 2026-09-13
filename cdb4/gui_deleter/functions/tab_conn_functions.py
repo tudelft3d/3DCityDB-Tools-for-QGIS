@@ -295,7 +295,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) -> None:
 
             # Create new rubber band
             cdb_extents_new_rubber_band: QgsRubberBand = QgsRubberBand(mapCanvas=dlg.CANVAS, geometryType=Qgis.GeometryType.Polygon)
-            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStype.DashLine)
+            cdb_extents_new_rubber_band.setLineStyle(penStyle=Qt.PenStyle.DashLine)
 
             # Drop the old magenta one
             dlg.RUBBER_DELETE.reset()
@@ -309,7 +309,7 @@ def refresh_extents(dlg: CDB4DeleterDialog) -> None:
             canvas.zoom_to_extents(canvas=dlg.CANVAS, extents=vis_extents)
 
             # Inform the user
-            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' have changed, the blue dashed line represents the new ones. They will be automatically updated."
+            msg: str = f"Extents of '{dlg.CDB_SCHEMA}' have changed, the black dashed line represents the new ones. They will be automatically updated."
             QMessageBox.information(dlg, "Extents changed!", msg)
 
             # Update the the cdb_extents in the extents table in PostgreSQL

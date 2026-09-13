@@ -100,12 +100,11 @@ def tabConnection_reset(dlg: CDB4DeleterDialog) -> None:
     """Function to reset the 'Connection' tab.
     Resets: gbxConnStatus and gbxDatabase.
     """
+    gbxCleanUpSchema_reset(dlg=dlg)
+    gbxFeatSel_reset(dlg=dlg)
+    gbxBasemap_reset(dlg=dlg)
     gbxDatabase_reset(dlg=dlg)
     gbxConnStatus_reset(dlg=dlg)
-
-    gbxCleanUpSchema_reset(dlg=dlg)
-    gbxBasemap_reset(dlg=dlg)
-    gbxFeatSel_reset(dlg=dlg)
 
     dlg.btnCloseConn.setDisabled(True)
 
