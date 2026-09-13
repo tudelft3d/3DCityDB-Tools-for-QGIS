@@ -45,7 +45,8 @@ Some datasets for testing purposes are available, too, and are contained in the 
 
 # Requirements
 
-For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports versions **3.40 LTR** and **3.44 LTR**. 
+For [**QGIS 3**](https://www.qgis.org/en/site/forusers/download.html), the plug-in supports version **3.44 LTR**. 
+For **QGIS 4**, the plug-in currently supports version **4.2 LTR**. 
 
 The server-side part of the plug-in requires PostgreSQL version >= 10 and PostGIS version >= 2.
 
@@ -69,6 +70,7 @@ with contributions by:
 and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
 
 # Contributing
+
 Contributions are welcome! To contribute:
 
 1. Fork this repository.
@@ -92,9 +94,8 @@ python -m unittest discover -s .\test -p "test*.py"
 
 Besides further testing and debugging, there are a number of improvements that we are thinking of, such as:
 - Support for appearances (at least for X3D Materials, if possible)
-- Initial tests to support ADEs (namely, the Energy ADE) have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
-- Initial tests to support the 3DCityDB 5.0 (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b) 
-- ...the sky is the limit...
+- Explorative tests to support the Energy ADE 1.0 have been carried out in a [MSc Geomatics thesis at TU Delft](https://repository.tudelft.nl/record/uuid:6786ac5c-b61d-4e17-8501-e3cf2c7a9577)
+- Initial tests to support the 3DCityDB 5.x (and therefore CityGML 3.0) have been carried out in another [MSc Geomatics thesis at TU Delft](https://resolver.tudelft.nl/uuid:5992ba24-8618-48d7-9e24-28839b5da16b). The results have shown that adding support for the 3DCityDB 5.x will required a major overhaul of the plug-in. Nevertheless, stay tuned... 
 
 # Citation
 
