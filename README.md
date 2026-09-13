@@ -67,7 +67,7 @@ The plug-in is currently developed by:
 with contributions by:
 - [Tendai Mbwanda](mailto:tmbwanda@yahoo.com)
 
-and with additional suggestions and feedback by Camilo León-Sánchez (TU Delft), Claus Nagel and Zhihang Yao (Virtual City Systems GmbH).
+and with additional suggestions and feedback by Camilo León-Sánchez (Wageningen University and Research), Claus Nagel (VirtualCitySystems GmbH) and Zhihang Yao (Huchschule für Technik Stuttgart).
 
 # Contributing
 
