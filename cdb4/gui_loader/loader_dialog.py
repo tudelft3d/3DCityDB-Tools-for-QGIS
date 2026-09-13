@@ -655,7 +655,9 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
             new_poly = QgsGeometry.fromRect(rect=new_extent)
             old_poly = QgsGeometry.fromRect(rect=old_extent)
 
-            if new_poly.equals(geometry=old_poly):
+            engine = QgsGeometry.createGeometryEngine(new_poly.constGet())
+            if engine.isEqual(old_poly.constGet()):
+            # if new_poly.equals(geometry=old_poly):
                 # print("same extents, same CRS, do nothing")
                 pass
             else:
@@ -1047,9 +1049,14 @@ class CDB4LoaderDialog(QDialog, FORM_CLASS):
         layer_exts = QgsGeometry.fromRect(rect=self.LAYER_EXTENTS)
 
         # Check validity of user extents relative to the City Model's extents.
-        if layer_exts.equals(geometry=qgis_exts) or layer_exts.intersects(geometry=qgis_exts):
+
+        engine1 = QgsGeometry.createGeometryEngine(layer_exts.constGet())
+        engine2 = QgsGeometry.createGeometryEngine(qgis_exts.constGet())
+        if engine1.isEqual(qgis_exts.constGet()) or engine1.intersects(qgis_exts.constGet()):
+        # if layer_exts.equals(geometry=qgis_exts) or layer_exts.intersects(geometry=qgis_exts):
             self.QGIS_EXTENTS = self.CURRENT_EXTENTS
-        elif qgis_exts.equals(geometry=QgsGeometry.fromRect(QgsRectangle(0, 0, 0, 0))):
+        elif engine2.isEqual(QgsGeometry.fromRect(QgsRectangle(0, 0, 0, 0)).constGet()):
+        # elif qgis_exts.equals(QgsGeometry.fromRect(QgsRectangle(0, 0, 0, 0))):
             # When the basemap is initialized (the first time),
             # the current extents are 0,0,0,0 and are compared against the extents
             # of the layers which are coming from the DB.
