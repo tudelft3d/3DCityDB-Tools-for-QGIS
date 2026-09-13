@@ -12,9 +12,9 @@ PLUGIN_VERSION_REV: int = 1
 
 # Paths
 PLUGIN_ABS_PATH: str = os.path.normpath(os.path.dirname(__file__))
-# print("PLUGIN_ABS_PATH", PLUGIN_ABS_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins\citydb-tools
+# print("PLUGIN_ABS_PATH", PLUGIN_ABS_PATH) # e.g. C:\...\QGIS4\profiles\default\python\plugins\citydb-tools
 PLUGIN_ROOT_PATH: str = os.path.split(os.path.dirname(__file__))[0]
-# print("PLUGIN_ROOT_PATH", PLUGIN_ROOT_PATH) # e.g. C:\...\QGIS3\profiles\default\python\plugins
+# print("PLUGIN_ROOT_PATH", PLUGIN_ROOT_PATH) # e.g. C:\...\QGIS4\profiles\default\python\plugins
 PLUGIN_ROOT_DIR: str = os.path.split(os.path.dirname(__file__))[1]
 # print("PLUGIN_ROOT_DIR", PLUGIN_ROOT_DIR) # e.g. citydb-tools
 URL_GITHUB_PLUGIN: str = "https://github.com/tudelft3d/3DCityDB-Tools-for-QGIS"
