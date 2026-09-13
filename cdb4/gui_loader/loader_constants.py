@@ -3,7 +3,7 @@
 import os.path
 
 from qgis.PyQt.QtGui import QColor
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt, QUrl
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from ... import cdb_tools_main_constants as main_c
@@ -81,26 +81,26 @@ icon_msg_core: str = """
                 </p></body></html>
                 """
 success_html: str = icon_msg_core.format(
-    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg"),
+    image_rc=QUrl.fromLocalFile(os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "success_icon.svg")).toString(),
     color_hex='#00E400',   # green
     additional_text='{text}')
 
 failure_html: str = icon_msg_core.format(
-    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg"),
+    image_rc=QUrl.fromLocalFile(os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "failure_icon.svg")).toString(),
     color_hex='#FF0000',  # red
     additional_text='{text}')
 
 ongoing_html: str = icon_msg_core.format(
-    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg"),
+    image_rc=QUrl.fromLocalFile(os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "refresh_icon_orange.svg")).toString(),
     color_hex='#FF7E33',  # orange2
     additional_text='{text}')
 
 warning_html: str = icon_msg_core.format(
-    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg"),
+    image_rc=QUrl.fromLocalFile(os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "warning_icon.svg")).toString(),
     color_hex='#FFA701',  # orange1
     additional_text='{text}')
 
 crit_warning_html: str = icon_msg_core.format(
-    image_rc=os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg"),
+    image_rc=QUrl.fromLocalFile(os.path.join(main_c.PLUGIN_ABS_PATH, "icons", "critical_warning_icon.svg")).toString(),
     color_hex='#DA4453',  # pale red
     additional_text='{text}')
